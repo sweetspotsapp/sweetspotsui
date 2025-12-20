@@ -2,21 +2,30 @@ import { useState } from "react";
 import { Heart } from "lucide-react";
 import type { Place } from "@/data/mockPlaces";
 import { cn } from "@/lib/utils";
+import { useApp } from "@/context/AppContext";
 
 interface PlaceCardProps {
   place: Place;
   index?: number;
   variant?: "poster" | "featured";
+  onClick?: () => void;
 }
 
-const PlaceCard = ({ place, index = 0, variant = "poster" }: PlaceCardProps) => {
-  const [isSaved, setIsSaved] = useState(false);
+const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardProps) => {
+  const { isSaved, toggleSave } = useApp();
+  const saved = isSaved(place.id);
+
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleSave(place);
+  };
 
   if (variant === "featured") {
     return (
       <div 
-        className="relative w-full rounded-2xl overflow-hidden shadow-card opacity-0 animate-fade-up"
+        className="relative w-full rounded-2xl overflow-hidden shadow-card opacity-0 animate-fade-up cursor-pointer active:scale-[0.98] transition-transform"
         style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
+        onClick={onClick}
       >
         {/* Featured Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
@@ -33,11 +42,11 @@ const PlaceCard = ({ place, index = 0, variant = "poster" }: PlaceCardProps) => 
           <button
             className={cn(
               "absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-md bg-background/20 transition-all duration-300",
-              isSaved ? "text-primary bg-primary/20" : "text-primary-foreground/80 hover:text-primary-foreground"
+              saved ? "text-primary bg-primary/20" : "text-primary-foreground/80 hover:text-primary-foreground"
             )}
-            onClick={() => setIsSaved(!isSaved)}
+            onClick={handleSaveClick}
           >
-            <Heart className={cn("w-5 h-5 transition-all", isSaved && "fill-current scale-110")} />
+            <Heart className={cn("w-5 h-5 transition-all", saved && "fill-current scale-110")} />
           </button>
           
           {/* Content overlay */}
@@ -62,9 +71,10 @@ const PlaceCard = ({ place, index = 0, variant = "poster" }: PlaceCardProps) => 
   return (
     <div 
       className={cn(
-        "group relative flex-shrink-0 w-28 opacity-0 animate-fade-up"
+        "group relative flex-shrink-0 w-28 opacity-0 animate-fade-up cursor-pointer"
       )}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'forwards' }}
+      onClick={onClick}
     >
       {/* Poster Card */}
       <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-soft transition-all duration-300 active:scale-95">
@@ -81,14 +91,11 @@ const PlaceCard = ({ place, index = 0, variant = "poster" }: PlaceCardProps) => 
         <button
           className={cn(
             "absolute top-1.5 right-1.5 p-1.5 rounded-full backdrop-blur-sm bg-background/20 transition-all duration-300",
-            isSaved && "text-primary bg-primary/20"
+            saved && "text-primary bg-primary/20"
           )}
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsSaved(!isSaved);
-          }}
+          onClick={handleSaveClick}
         >
-          <Heart className={cn("w-3.5 h-3.5", isSaved && "fill-current")} />
+          <Heart className={cn("w-3.5 h-3.5", saved && "fill-current")} />
         </button>
         
         {/* Vibe tag */}
