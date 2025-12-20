@@ -1,7 +1,7 @@
-import { ChevronRight, MapPin, Pencil } from "lucide-react";
+import { ChevronRight, MapPin, Pencil, RotateCcw } from "lucide-react";
 import PlaceCard from "./PlaceCard";
 import PlaceDetail from "./PlaceDetail";
-import { primaryPlaces, explorationPlaces, extractVibes } from "@/data/mockPlaces";
+import { primaryPlaces, explorationPlaces } from "@/data/mockPlaces";
 import { useApp } from "@/context/AppContext";
 import { useState } from "react";
 import type { Place } from "@/data/mockPlaces";
@@ -46,10 +46,9 @@ const PlaceRow = ({ title, subtitle, places, startIndex = 0, onPlaceClick }: Pla
 );
 
 const HomePage = () => {
-  const { userMood, userVibes } = useApp();
+  const { userMood, userVibes, resetOnboarding } = useApp();
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   
-  const vibes = extractVibes(userMood);
   const featuredPlace = primaryPlaces[0];
   const remainingPrimary = primaryPlaces.slice(1);
 
@@ -100,6 +99,12 @@ const HomePage = () => {
                 Your current vibe
               </h2>
               
+              {userMood && (
+                <p className="text-xs text-muted-foreground italic">
+                  "{userMood}"
+                </p>
+              )}
+              
               <div className="flex flex-wrap gap-1.5">
                 {userVibes.map((vibe, index) => (
                   <span 
@@ -111,8 +116,11 @@ const HomePage = () => {
                 ))}
               </div>
 
-              <button className="flex items-center gap-1 text-primary text-xs font-medium">
-                <Pencil className="w-3 h-3" />
+              <button 
+                onClick={resetOnboarding}
+                className="flex items-center gap-1 text-primary text-xs font-medium"
+              >
+                <RotateCcw className="w-3 h-3" />
                 Change what you're looking for
               </button>
             </div>

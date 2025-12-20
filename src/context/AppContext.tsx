@@ -1,5 +1,6 @@
 import { useState, createContext, useContext, ReactNode } from "react";
 import type { Place } from "@/data/mockPlaces";
+import { extractVibes } from "@/data/mockPlaces";
 
 interface AppContextType {
   savedPlaces: Place[];
@@ -8,15 +9,18 @@ interface AppContextType {
   userMood: string;
   setUserMood: (mood: string) => void;
   userVibes: string[];
+  hasCompletedOnboarding: boolean;
+  completeOnboarding: (mood: string) => void;
+  resetOnboarding: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
-  const [userMood, setUserMood] = useState("somewhere chill and good for talking");
-  
-  const userVibes = ["Chill", "Not too crowded", "Budget-friendly", "Good for conversation"];
+  const [userMood, setUserMood] = useState("");
+  const [userVibes, setUserVibes] = useState<string[]>([]);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   const toggleSave = (place: Place) => {
     setSavedPlaces(prev => {
@@ -30,8 +34,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const isSaved = (placeId: string) => savedPlaces.some(p => p.id === placeId);
 
+  const completeOnboarding = (mood: string) => {
+    setUserMood(mood);
+    setUserVibes(extractVibes(mood));
+    setHasCompletedOnboarding(true);
+  };
+
+  const resetOnboarding = () => {
+    setHasCompletedOnboarding(false);
+    setUserMood("");
+    setUserVibes([]);
+  };
+
   return (
-    <AppContext.Provider value={{ savedPlaces, toggleSave, isSaved, userMood, setUserMood, userVibes }}>
+    <AppContext.Provider value={{ 
+      savedPlaces, 
+      toggleSave, 
+      isSaved, 
+      userMood, 
+      setUserMood, 
+      userVibes,
+      hasCompletedOnboarding,
+      completeOnboarding,
+      resetOnboarding
+    }}>
       {children}
     </AppContext.Provider>
   );
