@@ -39,7 +39,7 @@ const MoodInput = ({ onSubmit }: MoodInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full space-y-6">
+    <form onSubmit={handleSubmit} className="w-full space-y-4">
       <div className="relative">
         <textarea
           value={value}
@@ -47,7 +47,7 @@ const MoodInput = ({ onSubmit }: MoodInputProps) => {
           placeholder={placeholders[placeholderIndex]}
           rows={3}
           className={`
-            w-full px-5 py-4 text-lg rounded-2xl border-2 border-border 
+            w-full px-4 py-3.5 text-base rounded-2xl border-2 border-border 
             bg-card text-foreground placeholder:text-muted-foreground
             focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10
             resize-none transition-all duration-300
@@ -60,13 +60,13 @@ const MoodInput = ({ onSubmit }: MoodInputProps) => {
         type="submit"
         variant="primary"
         size="lg"
-        className="w-full"
+        className="w-full h-12 text-base rounded-xl"
       >
         Show me places
         <ArrowRight className="w-5 h-5 ml-1" />
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-xs text-muted-foreground px-4">
         No planning. No pressure. You can change this anytime.
       </p>
     </form>
