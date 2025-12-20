@@ -2,7 +2,7 @@ import { X, Heart, MapPin, Clock, DollarSign, Sparkles, Users, ChevronLeft, Chev
 import { Button } from "@/components/ui/button";
 import type { Place } from "@/data/mockPlaces";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useApp } from "@/context/AppContext";
 
 interface PlaceDetailProps {
@@ -15,6 +15,11 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
   const { isSaved, toggleSave } = useApp();
   const saved = isSaved(place.id);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Touch swipe state
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
 
   const images = place.images || [place.image];
 
@@ -24,6 +29,32 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
 
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && images.length > 1) {
+      nextImage();
+    } else if (isRightSwipe && images.length > 1) {
+      prevImage();
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
   };
 
   const getPersonalizedReasons = () => {
@@ -56,8 +87,13 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
-      {/* Image Gallery - NO gradient overlay for clear view */}
-      <div className="relative h-[42vh] min-h-[300px] overflow-hidden bg-muted">
+      {/* Image Gallery with touch swipe */}
+      <div 
+        className="relative h-[42vh] min-h-[300px] overflow-hidden bg-muted touch-pan-y"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <img 
           src={images[currentImageIndex]} 
           alt={`${place.name} - Photo ${currentImageIndex + 1}`}
