@@ -26,7 +26,6 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  // Generate personalized reasons based on the place and user mood
   const getPersonalizedReasons = () => {
     const reasons = [
       {
@@ -42,12 +41,12 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
       {
         icon: MapPin,
         title: "Right in your area",
-        description: "Just 8 mins away. Close enough to be spontaneous."
+        description: `Just ${place.distance} away. Close enough to be spontaneous.`
       },
       {
         icon: Clock,
         title: "Timing works out",
-        description: "Open right now and usually not too busy at this hour."
+        description: `Open until ${place.openUntil} and usually not too busy at this hour.`
       }
     ];
     return reasons;
@@ -57,21 +56,18 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
-      {/* Image Gallery */}
-      <div className="relative h-[40vh] min-h-[280px] overflow-hidden">
+      {/* Image Gallery - NO gradient overlay for clear view */}
+      <div className="relative h-[42vh] min-h-[300px] overflow-hidden bg-muted">
         <img 
           src={images[currentImageIndex]} 
           alt={`${place.name} - Photo ${currentImageIndex + 1}`}
           className="w-full h-full object-cover transition-opacity duration-300"
         />
         
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
-        
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 left-4 p-2.5 rounded-full bg-background/80 backdrop-blur-sm text-foreground shadow-soft"
+          className="absolute top-4 left-4 p-2.5 rounded-full bg-background/90 backdrop-blur-sm text-foreground shadow-card"
         >
           <X className="w-5 h-5" />
         </button>
@@ -80,10 +76,10 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
         <button
           onClick={() => toggleSave(place)}
           className={cn(
-            "absolute top-4 right-4 p-2.5 rounded-full backdrop-blur-sm shadow-soft transition-all",
+            "absolute top-4 right-4 p-2.5 rounded-full backdrop-blur-sm shadow-card transition-all",
             saved 
-              ? "bg-primary/20 text-primary" 
-              : "bg-background/80 text-foreground"
+              ? "bg-primary text-primary-foreground" 
+              : "bg-background/90 text-foreground"
           )}
         >
           <Heart className={cn("w-5 h-5", saved && "fill-current")} />
@@ -94,54 +90,43 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
           <>
             <button
               onClick={prevImage}
-              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/60 backdrop-blur-sm text-foreground hover:bg-background/80 transition-all"
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/90 backdrop-blur-sm text-foreground shadow-card hover:bg-background transition-all"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={nextImage}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/60 backdrop-blur-sm text-foreground hover:bg-background/80 transition-all"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/90 backdrop-blur-sm text-foreground shadow-card hover:bg-background transition-all"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
           </>
         )}
 
-        {/* Image indicators */}
+        {/* Image counter badge */}
         {images.length > 1 && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {images.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentImageIndex(index)}
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all",
-                  index === currentImageIndex 
-                    ? "bg-primary w-4" 
-                    : "bg-background/60 hover:bg-background/80"
-                )}
-              />
-            ))}
+          <div className="absolute bottom-4 right-4 px-2.5 py-1 rounded-full bg-background/90 backdrop-blur-sm text-foreground text-xs font-medium shadow-card">
+            {currentImageIndex + 1} / {images.length}
           </div>
         )}
+      </div>
 
-        {/* Place info overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="flex gap-2 mb-2">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-              {place.vibeTag}
-            </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">
-              {place.category}
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">{place.name}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{place.practicalHint}</p>
+      {/* Place Header - Moved below image */}
+      <div className="px-4 pt-4 pb-2 border-b border-border">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+            {place.vibeTag}
+          </span>
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">
+            {place.category}
+          </span>
         </div>
+        <h1 className="text-2xl font-bold text-foreground">{place.name}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{place.practicalHint}</p>
       </div>
 
       {/* Content */}
-      <div className="px-4 py-5 space-y-5 pb-28">
+      <div className="px-4 py-4 space-y-5 pb-28">
         {/* Image thumbnails */}
         {images.length > 1 && (
           <section className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -152,7 +137,7 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
                 className={cn(
                   "flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
                   index === currentImageIndex 
-                    ? "border-primary" 
+                    ? "border-primary ring-2 ring-primary/20" 
                     : "border-transparent opacity-70 hover:opacity-100"
                 )}
               >
@@ -161,6 +146,22 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
             ))}
           </section>
         )}
+
+        {/* Quick info with actual prices */}
+        <section className="flex gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary/10 text-primary text-xs font-medium">
+            <DollarSign className="w-3.5 h-3.5" />
+            <span>{place.priceRange}</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
+            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Open until {place.openUntil}</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
+            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>{place.distance}</span>
+          </div>
+        </section>
 
         {/* Why this place section */}
         <section className="space-y-3">
@@ -213,22 +214,6 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
             </div>
           </section>
         )}
-
-        {/* Quick info */}
-        <section className="flex gap-2 flex-wrap opacity-0 animate-fade-up" style={{ animationDelay: '450ms', animationFillMode: 'forwards' }}>
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
-            <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>$$</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
-            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>Open until 11pm</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
-            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>0.8 miles</span>
-          </div>
-        </section>
       </div>
 
       {/* Bottom CTA */}

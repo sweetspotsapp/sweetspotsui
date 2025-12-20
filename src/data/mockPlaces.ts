@@ -2,11 +2,14 @@ export interface Place {
   id: string;
   name: string;
   image: string;
-  images: string[]; // Multiple images for gallery
+  images: string[];
   vibeTag: string;
   practicalHint: string;
   category: string;
   whatToPrepare?: string[];
+  priceRange: string; // e.g. "$8-15 per person"
+  distance: string;
+  openUntil: string;
 }
 
 export const primaryPlaces: Place[] = [
@@ -23,6 +26,9 @@ export const primaryPlaces: Place[] = [
     vibeTag: "Chill",
     practicalHint: "Great for conversation",
     category: "café",
+    priceRange: "$8-15 per person",
+    distance: "0.8 miles",
+    openUntil: "11pm",
     whatToPrepare: [
       "Bring a book if you're going solo",
       "Cash preferred, card accepted",
@@ -42,6 +48,9 @@ export const primaryPlaces: Place[] = [
     vibeTag: "Aesthetic",
     practicalHint: "Under $15",
     category: "café",
+    priceRange: "$10-18 per person",
+    distance: "1.2 miles",
+    openUntil: "9pm",
     whatToPrepare: [
       "Great for photos - bring your camera",
       "Reservations recommended on weekends",
@@ -61,6 +70,9 @@ export const primaryPlaces: Place[] = [
     vibeTag: "Cozy",
     practicalHint: "Quick & casual",
     category: "restaurant",
+    priceRange: "$12-20 per person",
+    distance: "0.5 miles",
+    openUntil: "2am",
     whatToPrepare: [
       "Come hungry - portions are big",
       "Counter seating only",
@@ -80,6 +92,9 @@ export const primaryPlaces: Place[] = [
     vibeTag: "Intimate",
     practicalHint: "Good for dates",
     category: "bar",
+    priceRange: "$15-30 per person",
+    distance: "1.5 miles",
+    openUntil: "1am",
     whatToPrepare: [
       "Smart casual dress code",
       "Make a reservation for weekends",
@@ -101,6 +116,9 @@ export const explorationPlaces: Place[] = [
     vibeTag: "Friendly",
     practicalHint: "Opens early",
     category: "bakery",
+    priceRange: "$5-12 per person",
+    distance: "0.3 miles",
+    openUntil: "6pm",
     whatToPrepare: [
       "Get there early for fresh croissants",
       "They sell out of pastries by noon",
@@ -119,6 +137,9 @@ export const explorationPlaces: Place[] = [
     vibeTag: "Trendy",
     practicalHint: "Great coffee",
     category: "café",
+    priceRange: "$6-14 per person",
+    distance: "0.9 miles",
+    openUntil: "8pm",
     whatToPrepare: [
       "Laptop-friendly with good WiFi",
       "Try their pour-over coffee",
@@ -138,6 +159,9 @@ export const explorationPlaces: Place[] = [
     vibeTag: "Social",
     practicalHint: "Good for groups",
     category: "restaurant",
+    priceRange: "$20-35 per person",
+    distance: "2.1 miles",
+    openUntil: "midnight",
     whatToPrepare: [
       "Book ahead for groups of 4+",
       "Rooftop seating has the best view",
@@ -168,7 +192,6 @@ export const extractVibes = (input: string): string[] => {
     }
   }
 
-  // Default vibes if nothing specific matched
   if (matchedVibes.length === 0) {
     return ["Open to anything", "Near you", "Worth exploring"];
   }
