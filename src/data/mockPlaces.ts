@@ -103,6 +103,112 @@ export const primaryPlaces: Place[] = [
   },
 ];
 
+export const lateNightSuggestions: Place[] = [
+  {
+    id: "ln1",
+    name: "Neon Nights Lounge",
+    image: "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=400&h=300&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&h=600&fit=crop",
+    ],
+    vibeTag: "Vibrant",
+    practicalHint: "Open till 3am",
+    category: "bar",
+    priceRange: "$12-25 per person",
+    distance: "1.1 miles",
+    openUntil: "3am",
+    whatToPrepare: [
+      "Great cocktails",
+      "Live DJ on weekends",
+      "Dress to impress"
+    ],
+  },
+  {
+    id: "ln2",
+    name: "24/7 Diner",
+    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&h=600&fit=crop",
+    ],
+    vibeTag: "Classic",
+    practicalHint: "Never closes",
+    category: "restaurant",
+    priceRange: "$10-18 per person",
+    distance: "0.7 miles",
+    openUntil: "24/7",
+    whatToPrepare: [
+      "Classic diner food",
+      "Cash only after midnight",
+      "Great milkshakes"
+    ],
+  },
+  {
+    id: "ln3",
+    name: "The Jazz Cellar",
+    image: "https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=400&h=300&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop",
+    ],
+    vibeTag: "Sophisticated",
+    practicalHint: "Live music nightly",
+    category: "bar",
+    priceRange: "$18-35 per person",
+    distance: "1.8 miles",
+    openUntil: "2am",
+    whatToPrepare: [
+      "Cover charge on weekends",
+      "Reserve a table for best views",
+      "Smart casual attire"
+    ],
+  },
+];
+
+export const brunchSuggestions: Place[] = [
+  {
+    id: "br1",
+    name: "Sunny Side Up",
+    image: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&h=300&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=800&h=600&fit=crop",
+    ],
+    vibeTag: "Cheerful",
+    practicalHint: "Best eggs in town",
+    category: "restaurant",
+    priceRange: "$12-22 per person",
+    distance: "0.6 miles",
+    openUntil: "3pm",
+    whatToPrepare: [
+      "Try the eggs benedict",
+      "Outdoor patio available",
+      "Busy on weekends - arrive early"
+    ],
+  },
+  {
+    id: "br2",
+    name: "Avocado Toast Co",
+    image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=800&h=600&fit=crop",
+    ],
+    vibeTag: "Modern",
+    practicalHint: "Instagrammable dishes",
+    category: "café",
+    priceRange: "$14-20 per person",
+    distance: "0.9 miles",
+    openUntil: "4pm",
+    whatToPrepare: [
+      "Everything is photogenic",
+      "Great cold brew",
+      "Vegan options available"
+    ],
+  },
+];
+
 export const explorationPlaces: Place[] = [
   {
     id: "5",
