@@ -18,7 +18,6 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
   
   const places = getCategoryPlaces(category.id);
   
@@ -35,9 +34,7 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
   };
   
   const suggestions = getSuggestions();
-  const allCards = [...places, ...suggestions.map(s => ({ ...s, isSuggestion: true }))];
-  const isShowingSuggestions = currentIndex >= places.length;
-  const currentCard = allCards[currentIndex] as (Place & { isSuggestion?: boolean }) | undefined;
+  const currentSuggestion = suggestions[currentIndex];
 
   const handleDelete = () => {
     deleteCategory(category.id);
@@ -62,7 +59,7 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
     
-    if (isLeftSwipe && currentIndex < allCards.length - 1) {
+    if (isLeftSwipe && currentIndex < suggestions.length - 1) {
       setCurrentIndex(prev => prev + 1);
     }
     if (isRightSwipe && currentIndex > 0) {
@@ -71,7 +68,7 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
   };
 
   const goNext = () => {
-    if (currentIndex < allCards.length - 1) {
+    if (currentIndex < suggestions.length - 1) {
       setCurrentIndex(prev => prev + 1);
     }
   };
@@ -86,7 +83,7 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
     <>
       <div className="fixed inset-0 z-50 bg-background animate-slide-in-bottom flex flex-col">
         {/* Header with gradient */}
-        <div className={`relative h-24 bg-gradient-to-br ${category.color} flex-shrink-0`}>
+        <div className={`relative h-20 bg-gradient-to-br ${category.color} flex-shrink-0`}>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3">
@@ -133,95 +130,119 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
           
           <div className="absolute bottom-2 left-4 right-4">
             <h1 className="text-lg font-bold text-white drop-shadow-lg">{category.name}</h1>
-            <p className="text-xs text-white/80">
-              {places.length} saved • {suggestions.length} suggestions
-            </p>
           </div>
         </div>
 
-        {/* Swipeable Card Area */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 overflow-hidden">
-          {allCards.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-sm">No places in this category yet</p>
-              <button 
-                onClick={onEdit}
-                className="mt-3 text-primary text-sm font-medium"
-              >
-                Add places
-              </button>
-            </div>
-          ) : currentCard ? (
-            <>
-              {/* Suggestion Banner */}
-              {isShowingSuggestions && (
-                <div className="flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full animate-fade-in">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-primary font-medium">Suggestions for you</span>
-                </div>
-              )}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Saved Places List */}
+          <div className="p-4">
+            <h2 className="text-sm font-semibold text-foreground mb-3">
+              Saved Places ({places.length})
+            </h2>
+            
+            {places.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-xl">
+                <p className="text-sm">No places saved yet</p>
+                <button 
+                  onClick={onEdit}
+                  className="mt-2 text-primary text-sm font-medium"
+                >
+                  Add places
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {places.map((place, index) => (
+                  <div 
+                    key={place.id}
+                    className="flex gap-3 p-2.5 bg-card rounded-xl border border-border/50 cursor-pointer active:scale-[0.98] transition-transform opacity-0 animate-fade-up"
+                    style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
+                    onClick={() => setSelectedPlace(place)}
+                  >
+                    <img 
+                      src={place.image} 
+                      alt={place.name}
+                      className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <h3 className="font-semibold text-foreground text-sm line-clamp-1">{place.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{place.practicalHint}</p>
+                      <span className="inline-flex self-start mt-1 px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-medium">
+                        {place.vibeTag}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <MapPin className="w-4 h-4 text-muted-foreground/60" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Recommendations Section */}
+          {suggestions.length > 0 && (
+            <div className="px-4 pb-24">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Discover More {category.name}
+                </h2>
+              </div>
               
-              {/* Card Counter */}
-              <div className="text-xs text-muted-foreground mb-3">
-                {currentIndex + 1} of {allCards.length}
+              {/* Counter */}
+              <div className="text-center text-xs text-muted-foreground mb-3">
+                {currentIndex + 1} of {suggestions.length}
               </div>
               
               {/* Swipeable Card */}
-              <div
-                ref={cardRef}
-                className="relative w-full max-w-[280px] aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing transition-transform duration-300"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-                onClick={() => setSelectedPlace(currentCard)}
-              >
-                <img 
-                  src={currentCard.image} 
-                  alt={currentCard.name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                
-                {/* Suggestion badge */}
-                {currentCard.isSuggestion && (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-primary rounded-full">
-                    <Sparkles className="w-3 h-3 text-primary-foreground" />
-                    <span className="text-[10px] font-semibold text-primary-foreground uppercase tracking-wide">New</span>
-                  </div>
-                )}
-                
-                {/* Save button for suggestions */}
-                {currentCard.isSuggestion && (
+              {currentSuggestion && (
+                <div
+                  className="relative w-full max-w-[300px] mx-auto aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing transition-transform duration-300"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                  onClick={() => setSelectedPlace(currentSuggestion)}
+                >
+                  <img 
+                    src={currentSuggestion.image} 
+                    alt={currentSuggestion.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  
+                  {/* Save button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleSave(currentCard);
+                      toggleSave(currentSuggestion);
                     }}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-background/20 backdrop-blur-sm hover:bg-background/40 transition-colors"
+                    className="absolute top-3 right-3 p-2.5 rounded-full bg-background/20 backdrop-blur-sm hover:bg-background/40 transition-colors"
                   >
                     <Bookmark 
-                      className={`w-5 h-5 ${isSaved(currentCard.id) ? 'text-primary fill-primary' : 'text-white'}`} 
+                      className={`w-5 h-5 ${isSaved(currentSuggestion.id) ? 'text-primary fill-primary' : 'text-white'}`} 
                     />
                   </button>
-                )}
-                
-                {/* Card Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <span className="inline-block px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-[10px] font-medium text-white mb-2">
-                    {currentCard.vibeTag}
-                  </span>
-                  <h3 className="text-lg font-bold text-white">{currentCard.name}</h3>
-                  <p className="text-xs text-white/80 mt-1">{currentCard.practicalHint}</p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-white/70">
-                    <span>{currentCard.distance}</span>
-                    <span>•</span>
-                    <span>Open until {currentCard.openUntil}</span>
+                  
+                  {/* Card Info */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5">
+                    <span className="inline-block px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium text-white mb-3">
+                      {currentSuggestion.vibeTag}
+                    </span>
+                    <h3 className="text-xl font-bold text-white">{currentSuggestion.name}</h3>
+                    <p className="text-sm text-white/80 mt-1">{currentSuggestion.practicalHint}</p>
+                    <div className="flex items-center gap-3 mt-2 text-sm text-white/70">
+                      <span>{currentSuggestion.distance}</span>
+                      <span>•</span>
+                      <span>Open until {currentSuggestion.openUntil}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
               
-              {/* Navigation Arrows */}
-              <div className="flex items-center gap-6 mt-6">
+              {/* Navigation */}
+              <div className="flex items-center justify-center gap-6 mt-5">
                 <button
                   onClick={goPrev}
                   disabled={currentIndex === 0}
@@ -232,16 +253,14 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
                 
                 {/* Dot indicators */}
                 <div className="flex gap-1.5">
-                  {allCards.map((_, idx) => (
+                  {suggestions.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentIndex(idx)}
-                      className={`w-2 h-2 rounded-full transition-all ${
+                      className={`h-2 rounded-full transition-all ${
                         idx === currentIndex 
-                          ? 'bg-primary w-4' 
-                          : idx >= places.length 
-                            ? 'bg-primary/30' 
-                            : 'bg-muted-foreground/30'
+                          ? 'bg-primary w-5' 
+                          : 'bg-muted-foreground/30 w-2'
                       }`}
                     />
                   ))}
@@ -249,19 +268,18 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
                 
                 <button
                   onClick={goNext}
-                  disabled={currentIndex === allCards.length - 1}
+                  disabled={currentIndex === suggestions.length - 1}
                   className="p-3 rounded-full bg-card border border-border shadow-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted transition-colors"
                 >
                   <ChevronRight className="w-5 h-5 text-foreground" />
                 </button>
               </div>
               
-              {/* Swipe hint */}
-              <p className="text-xs text-muted-foreground mt-4">
+              <p className="text-xs text-muted-foreground text-center mt-3">
                 Swipe or tap to explore
               </p>
-            </>
-          ) : null}
+            </div>
+          )}
         </div>
       </div>
 
