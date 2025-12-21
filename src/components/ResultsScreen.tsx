@@ -29,9 +29,9 @@ const PlaceRow = ({ title, subtitle, places, startIndex = 0 }: PlaceRowProps) =>
       </button>
     </div>
     
-    {/* Horizontal scroll container */}
+    {/* Horizontal scroll container - optimized for mobile */}
     <div 
-      className="flex gap-2.5 overflow-x-auto px-4 pb-1 snap-x snap-mandatory" 
+      className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollbar-hide" 
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
     >
       {places.map((place, index) => (
