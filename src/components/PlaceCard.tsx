@@ -71,13 +71,13 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
   return (
     <div 
       className={cn(
-        "group relative flex-shrink-0 w-28 opacity-0 animate-fade-up cursor-pointer"
+        "group relative flex-shrink-0 w-36 opacity-0 animate-fade-up cursor-pointer"
       )}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'forwards' }}
       onClick={onClick}
     >
-      {/* Poster Card */}
-      <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-soft transition-all duration-300 active:scale-95">
+      {/* Poster Card - Vertical Rectangle */}
+      <div className="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-soft transition-all duration-300 active:scale-95">
         <img 
           src={place.image} 
           alt={place.name}
@@ -85,32 +85,32 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
         />
         
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/30 to-transparent" />
         
-        {/* Save button - always visible on mobile */}
+        {/* Save button */}
         <button
           className={cn(
-            "absolute top-1.5 right-1.5 p-1.5 rounded-full backdrop-blur-sm bg-background/20 transition-all duration-300",
-            saved && "text-primary bg-primary/20"
+            "absolute top-2 right-2 p-2 rounded-full backdrop-blur-md bg-background/25 transition-all duration-300",
+            saved && "text-primary bg-primary/25"
           )}
           onClick={handleSaveClick}
         >
-          <Heart className={cn("w-3.5 h-3.5", saved && "fill-current")} />
+          <Heart className={cn("w-4 h-4", saved && "fill-current")} />
         </button>
         
         {/* Vibe tag */}
-        <div className="absolute top-1.5 left-1.5">
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-secondary/90 text-secondary-foreground text-[10px] font-medium backdrop-blur-sm">
+        <div className="absolute top-2 left-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/90 text-secondary-foreground text-[11px] font-medium backdrop-blur-sm">
             {place.vibeTag}
           </span>
         </div>
         
-        {/* Place name */}
-        <div className="absolute bottom-0 left-0 right-0 p-2">
-          <h3 className="text-primary-foreground font-semibold text-xs leading-tight line-clamp-2">
+        {/* Place info */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
+          <h3 className="text-primary-foreground font-semibold text-sm leading-tight line-clamp-2">
             {place.name}
           </h3>
-          <p className="text-primary-foreground/70 text-[10px] mt-0.5 line-clamp-1">
+          <p className="text-primary-foreground/80 text-[11px] line-clamp-1">
             {place.practicalHint}
           </p>
         </div>
