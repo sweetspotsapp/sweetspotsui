@@ -2,3 +2,6 @@ project_id = "bqjuoxckvrkykfqpbkpv"
 
 [functions.discover_candidates]
 verify_jwt = true
+
+[functions.rank_with_travel_time]
+verify_jwt = true
