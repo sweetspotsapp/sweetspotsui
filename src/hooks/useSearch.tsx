@@ -41,7 +41,7 @@ export const useSearch = (): UseSearchReturn => {
   const getLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error("Geolocation is not supported by your browser"));
+        reject(new Error("Geolocation is not supported by your browser. Please use a modern browser."));
         return;
       }
 
@@ -53,14 +53,29 @@ export const useSearch = (): UseSearchReturn => {
           });
         },
         (err) => {
-          // Default to a fallback location (e.g., city center) if geolocation fails
-          console.warn("Geolocation failed, using default location:", err.message);
-          // Default to San Francisco
-          resolve({ lat: 37.7749, lng: -122.4194 });
+          // Don't silently fallback - tell the user we need their location
+          console.error("Geolocation failed:", err.message, err.code);
+          let errorMessage = "Unable to get your location. ";
+          
+          switch (err.code) {
+            case err.PERMISSION_DENIED:
+              errorMessage += "Please enable location access in your browser settings and try again.";
+              break;
+            case err.POSITION_UNAVAILABLE:
+              errorMessage += "Location information is unavailable. Please check your device's location settings.";
+              break;
+            case err.TIMEOUT:
+              errorMessage += "Location request timed out. Please try again.";
+              break;
+            default:
+              errorMessage += "Please enable location access to get recommendations near you.";
+          }
+          
+          reject(new Error(errorMessage));
         },
         {
-          enableHighAccuracy: true,
-          timeout: 10000,
+          enableHighAccuracy: false, // Less strict for faster response
+          timeout: 15000, // 15 seconds
           maximumAge: 300000, // 5 minutes cache
         }
       );
