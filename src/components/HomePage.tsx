@@ -1,78 +1,35 @@
-import { useState, useMemo } from "react";
-import { Menu, Search, DollarSign, Car, TreePine, Star, Sparkles, Users, Coffee, Utensils, Music, Camera } from "lucide-react";
-import { useApp } from "@/context/AppContext";
-import PlaceDetail from "./PlaceDetail";
-import type { RankedPlace } from "@/hooks/useSearch";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { Menu, Search, DollarSign, Car, TreePine, Star, Sparkles, Users, Coffee, Utensils, Heart, MapPin, RefreshCw } from "lucide-react";
+import { useLocation } from "@/hooks/useLocation";
+import { useDiscoverySection, DiscoveredPlace } from "@/hooks/useDiscoverySection";
+import { useSavedPlaces } from "@/hooks/useSavedPlaces";
+import { Button } from "./ui/button";
+import { Skeleton } from "./ui/skeleton";
+import { Input } from "./ui/input";
+
+// Section configuration
+const SECTIONS = [
+  { key: 'budget', title: 'Hidden gems under $50', prompt: 'cheap affordable places under $50' },
+  { key: 'cbd', title: 'Chill spots near the CBD', prompt: 'chill relaxed spots near CBD city center' },
+  { key: 'friends', title: 'Great for friend groups', prompt: 'fun places for friend groups hangout' },
+];
 
 // Keyword to chip mapping
-const keywordChipMap: Record<string, { label: string; icon: React.ReactNode; keywords: string[] }> = {
-  budget: { label: "Under $50", icon: <DollarSign className="w-4 h-4" />, keywords: ["cheap", "budget", "free", "affordable", "$", "inexpensive", "low cost"] },
-  cbd: { label: "Near The CBD", icon: <Car className="w-4 h-4" />, keywords: ["cbd", "city", "downtown", "central", "urban", "metro"] },
-  nature: { label: "Nature & Outdoor", icon: <TreePine className="w-4 h-4" />, keywords: ["nature", "outdoor", "park", "garden", "beach", "hiking", "trail", "forest", "green"] },
-  friends: { label: "Friend Groups", icon: <Users className="w-4 h-4" />, keywords: ["friends", "group", "hangout", "social", "fun", "party", "gathering"] },
-  cafe: { label: "Cafes & Coffee", icon: <Coffee className="w-4 h-4" />, keywords: ["cafe", "coffee", "tea", "brunch", "breakfast"] },
-  food: { label: "Food & Dining", icon: <Utensils className="w-4 h-4" />, keywords: ["food", "restaurant", "dining", "eat", "lunch", "dinner", "cuisine"] },
-  music: { label: "Music & Nightlife", icon: <Music className="w-4 h-4" />, keywords: ["music", "bar", "nightlife", "club", "live", "concert", "drinks"] },
-  photo: { label: "Instagram Worthy", icon: <Camera className="w-4 h-4" />, keywords: ["photo", "instagram", "scenic", "view", "beautiful", "aesthetic", "pretty"] },
-};
-
-// Extract chips based on user's mood/prompt
-const extractChipsFromMood = (mood: string): { id: string; label: string; icon: React.ReactNode }[] => {
-  const lowerMood = mood.toLowerCase();
-  const chips: { id: string; label: string; icon: React.ReactNode }[] = [];
-  
-  Object.entries(keywordChipMap).forEach(([id, { label, icon, keywords }]) => {
-    if (keywords.some(kw => lowerMood.includes(kw))) {
-      chips.push({ id, label, icon });
-    }
-  });
-  
-  // Default chips if none matched
-  if (chips.length === 0) {
-    chips.push(
-      { id: "budget", label: "Under $50", icon: <DollarSign className="w-4 h-4" /> },
-      { id: "cbd", label: "Near The CBD", icon: <Car className="w-4 h-4" /> },
-      { id: "nature", label: "Nature & Outdoor", icon: <TreePine className="w-4 h-4" /> }
-    );
-  }
-  
-  return chips.slice(0, 4); // Max 4 chips
-};
-
-// Generate section titles from mood
-const generateSectionTitles = (mood: string, vibes: string[]): string[] => {
-  const lowerMood = mood.toLowerCase();
-  const titles: string[] = [];
-  
-  if (lowerMood.includes("cheap") || lowerMood.includes("budget") || lowerMood.includes("free")) {
-    titles.push("Hidden gems under $50");
-  } else {
-    titles.push("Top picks for you");
-  }
-  
-  if (lowerMood.includes("cbd") || lowerMood.includes("city") || lowerMood.includes("central")) {
-    titles.push("Chill spots near the CBD");
-  } else {
-    titles.push("Worth exploring nearby");
-  }
-  
-  if (lowerMood.includes("friend") || lowerMood.includes("group") || lowerMood.includes("hangout")) {
-    titles.push("Great for friend groups");
-  } else {
-    titles.push("You might also like");
-  }
-  
-  return titles;
-};
+const CHIPS = [
+  { id: 'budget', label: 'Under $50', icon: DollarSign, keywords: ['cheap', 'budget', 'free', 'affordable'] },
+  { id: 'cbd', label: 'Near The CBD', icon: Car, keywords: ['cbd', 'city', 'downtown', 'central'] },
+  { id: 'nature', label: 'Nature & Outdoor', icon: TreePine, keywords: ['nature', 'outdoor', 'park', 'beach'] },
+];
 
 interface ChipProps {
-  icon: React.ReactNode;
+  icon: React.ElementType;
   label: string;
   isActive?: boolean;
   onClick?: () => void;
 }
 
-const Chip: React.FC<ChipProps> = ({ icon, label, isActive, onClick }) => (
+const Chip: React.FC<ChipProps> = ({ icon: Icon, label, isActive, onClick }) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-1.5 px-4 py-2 rounded-full border whitespace-nowrap transition-all
@@ -82,58 +39,67 @@ const Chip: React.FC<ChipProps> = ({ icon, label, isActive, onClick }) => (
       }
       shadow-sm`}
   >
-    <span className="text-primary">{icon}</span>
+    <Icon className="w-4 h-4 text-primary" />
     <span className="text-sm font-medium">{label}</span>
   </button>
 );
 
+// Format ETA
+const formatEta = (seconds: number | null): string => {
+  if (seconds === null) return '';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+};
+
+// Format distance
+const formatDistance = (meters: number | null): string => {
+  if (meters === null) return '';
+  if (meters < 1000) return `${Math.round(meters)}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+};
+
 interface PlaceCardProps {
-  place: RankedPlace;
+  place: DiscoveredPlace;
+  onSave: (placeId: string) => void;
+  isSaved: boolean;
+  onClick: () => void;
 }
 
-const PlaceCard: React.FC<PlaceCardProps> = ({ place }) => {
+const PlaceCard: React.FC<PlaceCardProps> = ({ place, onSave, isSaved, onClick }) => {
   const [imageError, setImageError] = useState(false);
   
-  // Get photo URL
-  const getPhotoUrl = (photoName: string | null): string | null => {
-    if (!photoName) return null;
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    return `${supabaseUrl}/functions/v1/place-photo?photo=${encodeURIComponent(photoName)}&maxwidth=400&maxheight=500`;
+  const getPlaceholderImage = () => {
+    const category = place.categories?.[0]?.toLowerCase() || 'place';
+    return `https://source.unsplash.com/400x500/?${category},travel&${place.name.slice(0, 3)}`;
   };
   
-  const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
-    const category = categories?.[0]?.toLowerCase() || 'place';
-    const searchTerms: Record<string, string> = {
-      restaurant: 'restaurant,food',
-      cafe: 'coffee,cafe',
-      bar: 'bar,drinks',
-      park: 'park,nature',
-      museum: 'museum,art',
-      beach: 'beach,ocean',
-      default: 'travel,destination'
-    };
-    const term = Object.entries(searchTerms).find(([key]) => category.includes(key))?.[1] || searchTerms.default;
-    return `https://source.unsplash.com/400x500/?${term}&${name.slice(0, 3)}`;
-  };
-  
-  const imageUrl = getPhotoUrl(place.photo_name) || getPlaceholderImage(place.name, place.categories);
-  
-  // Format price label based on rating as a proxy for price level
-  const getPriceLabel = (): string => {
-    // Using a simple heuristic since we don't have price_level
-    return "free - 50";
-  };
+  const imageUrl = place.photo_url || getPlaceholderImage();
   
   return (
-    <div className="flex-shrink-0 w-[140px] relative">
-      <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted">
+    <div className="flex-shrink-0 w-[140px] relative" onClick={onClick}>
+      <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted cursor-pointer">
         <img
-          src={imageError ? '/placeholder.svg' : imageUrl}
+          src={imageError ? getPlaceholderImage() : imageUrl}
           alt={place.name}
           className="w-full h-full object-cover"
           onError={() => setImageError(true)}
         />
-        {/* Rating badge - bottom left */}
+        
+        {/* Save button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onSave(place.place_id);
+          }}
+          className="absolute top-2 right-2 p-1.5 bg-card/80 backdrop-blur-sm rounded-full shadow-sm"
+        >
+          <Heart className={`w-4 h-4 ${isSaved ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+        </button>
+        
+        {/* Rating badge */}
         <div className="absolute bottom-12 left-2">
           <div className="flex items-center gap-1 bg-card/95 backdrop-blur-sm px-2 py-1 rounded-full shadow-soft">
             <Star className="w-3 h-3 text-primary fill-primary" />
@@ -141,132 +107,291 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place }) => {
           </div>
         </div>
       </div>
-      {/* Price badge - below image */}
+      
+      {/* Price/ETA badge */}
       <div className="mt-2 flex justify-start">
         <div className="flex items-center gap-1 bg-card border border-border px-2 py-1 rounded-full shadow-sm">
           <DollarSign className="w-3 h-3 text-primary" />
-          <span className="text-xs font-medium text-muted-foreground">{getPriceLabel()}</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            {place.eta_seconds ? formatEta(place.eta_seconds) : 'free - 50'}
+          </span>
         </div>
       </div>
     </div>
   );
 };
 
-interface SectionRowProps {
-  title: string;
-  places: RankedPlace[];
-  onPlaceClick: (place: RankedPlace) => void;
-}
-
-const SectionRow: React.FC<SectionRowProps> = ({ title, places, onPlaceClick }) => (
-  <div className="mb-6">
-    <h2 className="text-lg font-semibold text-foreground mb-3 px-4">{title}</h2>
-    <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
-      {places.map((place) => (
-        <div key={place.place_id} onClick={() => onPlaceClick(place)} className="cursor-pointer">
-          <PlaceCard place={place} />
-        </div>
-      ))}
-    </div>
+const PlaceCardSkeleton = () => (
+  <div className="flex-shrink-0 w-[140px]">
+    <Skeleton className="aspect-[3/4] rounded-2xl" />
+    <Skeleton className="h-6 w-20 mt-2 rounded-full" />
   </div>
 );
 
-const HomePage = () => {
-  const { userMood, userVibes, resetOnboarding, rankedPlaces } = useApp();
-  const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
-  const [activeChip, setActiveChip] = useState<string | null>(null);
+interface SectionRowProps {
+  title: string;
+  places: DiscoveredPlace[];
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
+  onPlaceClick: (place: DiscoveredPlace) => void;
+  toggleSave: (placeId: string) => void;
+  isSaved: (placeId: string) => boolean;
+}
 
-  // Generate dynamic chips from user's mood
-  const chips = useMemo(() => extractChipsFromMood(userMood), [userMood]);
-  
-  // Generate section titles
-  const sectionTitles = useMemo(() => generateSectionTitles(userMood, userVibes), [userMood, userVibes]);
+const SectionRow: React.FC<SectionRowProps> = ({
+  title,
+  places,
+  isLoading,
+  error,
+  onRetry,
+  onPlaceClick,
+  toggleSave,
+  isSaved,
+}) => (
+  <div className="mb-6">
+    <h2 className="text-lg font-semibold text-foreground mb-3 px-4">{title}</h2>
+    
+    {error ? (
+      <div className="px-4 py-4 text-center">
+        <p className="text-sm text-destructive mb-2">{error}</p>
+        <Button variant="outline" size="sm" onClick={onRetry} className="gap-2">
+          <RefreshCw className="w-4 h-4" />
+          Retry
+        </Button>
+      </div>
+    ) : isLoading ? (
+      <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
+        {[1, 2, 3, 4].map(i => <PlaceCardSkeleton key={i} />)}
+      </div>
+    ) : places.length === 0 ? (
+      <div className="px-4 py-4 text-center">
+        <p className="text-sm text-muted-foreground">No places found nearby</p>
+      </div>
+    ) : (
+      <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
+        {places.map(place => (
+          <PlaceCard
+            key={place.place_id}
+            place={place}
+            onSave={toggleSave}
+            isSaved={isSaved(place.place_id)}
+            onClick={() => onPlaceClick(place)}
+          />
+        ))}
+      </div>
+    )}
+  </div>
+);
 
-  // Split places into sections
-  const section1Places = rankedPlaces.slice(0, 6);
-  const section2Places = rankedPlaces.slice(6, 12);
-  const section3Places = rankedPlaces.slice(12, 18);
+// Location permission CTA
+const LocationCTA: React.FC<{
+  onRetry: () => void;
+  onManualInput: (lat: number, lng: number) => void;
+}> = ({ onRetry, onManualInput }) => {
+  const [showManual, setShowManual] = useState(false);
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
+
+  const handleSubmit = () => {
+    const lat = parseFloat(manualLat);
+    const lng = parseFloat(manualLng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      onManualInput(lat, lng);
+    }
+  };
 
   return (
-    <>
-      <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
-        {/* Top App Bar */}
+    <div className="px-4 py-8 text-center">
+      <MapPin className="w-12 h-12 text-primary mx-auto mb-4" />
+      <h3 className="text-lg font-semibold text-foreground mb-2">Location Access Needed</h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        We need your location to find places near you. Please enable location access in your browser settings.
+      </p>
+      <Button onClick={onRetry} className="mb-3">
+        Try Again
+      </Button>
+      <button
+        onClick={() => setShowManual(!showManual)}
+        className="block mx-auto text-sm text-primary underline"
+      >
+        Or enter location manually
+      </button>
+      
+      {showManual && (
+        <div className="mt-4 space-y-3">
+          <div className="flex gap-2 justify-center">
+            <Input
+              type="number"
+              placeholder="Latitude"
+              value={manualLat}
+              onChange={(e) => setManualLat(e.target.value)}
+              className="w-32"
+              step="any"
+            />
+            <Input
+              type="number"
+              placeholder="Longitude"
+              value={manualLng}
+              onChange={(e) => setManualLng(e.target.value)}
+              className="w-32"
+              step="any"
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={handleSubmit}>
+            Use This Location
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const HomePage = () => {
+  const navigate = useNavigate();
+  const { location, isLoading: locationLoading, error: locationError, permissionDenied, requestLocation, setManualLocation } = useLocation();
+  const { toggleSave, isSaved } = useSavedPlaces();
+  
+  const [activeChip, setActiveChip] = useState<string | null>(null);
+
+  // Discovery hooks for each section
+  const section1 = useDiscoverySection('section1', 4000);
+  const section2 = useDiscoverySection('section2', 5000);
+  const section3 = useDiscoverySection('section3', 4000);
+
+  // Trigger discovery when location becomes available
+  useEffect(() => {
+    if (!location) return;
+
+    section1.discover(SECTIONS[0].prompt, location);
+    section2.discover(SECTIONS[1].prompt, location);
+    section3.discover(SECTIONS[2].prompt, location);
+  }, [location]);
+
+  const handlePlaceClick = (place: DiscoveredPlace) => {
+    navigate(`/place/${place.place_id}`);
+  };
+
+  const handleManualLocation = (lat: number, lng: number) => {
+    setManualLocation({ lat, lng });
+  };
+
+  // Show location permission CTA if denied
+  if (permissionDenied && !location) {
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-24">
+        {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
           <div className="flex items-center justify-between px-4 py-3">
-            <button className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors">
+            <button className="p-2 -ml-2 text-muted-foreground">
               <Menu className="w-6 h-6" />
             </button>
             <h1 className="text-xl font-bold text-primary">SweetSpots</h1>
-            <button 
-              onClick={resetOnboarding}
-              className="p-2 -mr-2 text-primary hover:text-primary/80 transition-colors"
-              title="Change Vibe"
-            >
-              <Sparkles className="w-6 h-6" />
+            <button className="p-2 -mr-2 text-muted-foreground">
+              <Search className="w-6 h-6" />
             </button>
           </div>
+        </div>
+        
+        <LocationCTA
+          onRetry={requestLocation}
+          onManualInput={handleManualLocation}
+        />
+      </div>
+    );
+  }
 
-          {/* Dynamic Chip Row based on user prompt */}
-          <div className="flex gap-2 overflow-x-auto px-4 pb-4 scrollbar-hide">
-            {chips.map((chip) => (
-              <Chip
-                key={chip.id}
-                icon={chip.icon}
-                label={chip.label}
-                isActive={activeChip === chip.id}
-                onClick={() => setActiveChip(activeChip === chip.id ? null : chip.id)}
-              />
-            ))}
+  // Show loading while getting location
+  if (locationLoading || !location) {
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-24">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button className="p-2 -ml-2 text-muted-foreground">
+              <Menu className="w-6 h-6" />
+            </button>
+            <h1 className="text-xl font-bold text-primary">SweetSpots</h1>
+            <button className="p-2 -mr-2 text-muted-foreground">
+              <Search className="w-6 h-6" />
+            </button>
           </div>
         </div>
+        
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-sm text-muted-foreground">Getting your location...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        {/* Main Content */}
-        <main className="pt-2">
-          {section1Places.length > 0 && (
-            <SectionRow 
-              title={sectionTitles[0]} 
-              places={section1Places} 
-              onPlaceClick={setSelectedPlace}
+  return (
+    <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
+      {/* Top App Bar */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Menu className="w-6 h-6" />
+          </button>
+          <h1 className="text-xl font-bold text-primary">SweetSpots</h1>
+          <button className="p-2 -mr-2 text-primary hover:text-primary/80 transition-colors">
+            <Search className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Chip Row */}
+        <div className="flex gap-2 overflow-x-auto px-4 pb-4 scrollbar-hide">
+          {CHIPS.map((chip) => (
+            <Chip
+              key={chip.id}
+              icon={chip.icon}
+              label={chip.label}
+              isActive={activeChip === chip.id}
+              onClick={() => setActiveChip(activeChip === chip.id ? null : chip.id)}
             />
-          )}
-          {section2Places.length > 0 && (
-            <SectionRow 
-              title={sectionTitles[1]} 
-              places={section2Places}
-              onPlaceClick={setSelectedPlace}
-            />
-          )}
-          {section3Places.length > 0 && (
-            <SectionRow 
-              title={sectionTitles[2]} 
-              places={section3Places}
-              onPlaceClick={setSelectedPlace}
-            />
-          )}
-          
-          {rankedPlaces.length === 0 && (
-            <div className="px-4 py-12 text-center">
-              <p className="text-muted-foreground">No places found yet.</p>
-              <button 
-                onClick={resetOnboarding}
-                className="mt-2 text-primary text-sm font-medium"
-              >
-                Try a new search
-              </button>
-            </div>
-          )}
-        </main>
+          ))}
+        </div>
       </div>
 
-      {/* Place Detail Modal */}
-      {selectedPlace && (
-        <PlaceDetail 
-          place={selectedPlace} 
-          onClose={() => setSelectedPlace(null)}
-          userMood={userMood}
+      {/* Main Content */}
+      <main className="pt-2">
+        <SectionRow
+          title={SECTIONS[0].title}
+          places={section1.places}
+          isLoading={section1.isLoading}
+          error={section1.error}
+          onRetry={section1.retry}
+          onPlaceClick={handlePlaceClick}
+          toggleSave={toggleSave}
+          isSaved={isSaved}
         />
-      )}
-    </>
+        
+        <SectionRow
+          title={SECTIONS[1].title}
+          places={section2.places}
+          isLoading={section2.isLoading}
+          error={section2.error}
+          onRetry={section2.retry}
+          onPlaceClick={handlePlaceClick}
+          toggleSave={toggleSave}
+          isSaved={isSaved}
+        />
+        
+        <SectionRow
+          title={SECTIONS[2].title}
+          places={section3.places}
+          isLoading={section3.isLoading}
+          error={section3.error}
+          onRetry={section3.retry}
+          onPlaceClick={handlePlaceClick}
+          toggleSave={toggleSave}
+          isSaved={isSaved}
+        />
+      </main>
+    </div>
   );
 };
 

@@ -1,0 +1,157 @@
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { useToast } from './use-toast';
+
+interface UseSavedPlacesReturn {
+  savedPlaceIds: Set<string>;
+  isLoading: boolean;
+  toggleSave: (placeId: string) => Promise<void>;
+  isSaved: (placeId: string) => boolean;
+  logInteraction: (placeId: string, action: string, weight: number) => Promise<void>;
+}
+
+export const useSavedPlaces = (): UseSavedPlacesReturn => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load saved places on mount/user change
+  useEffect(() => {
+    if (!user) {
+      setSavedPlaceIds(new Set());
+      return;
+    }
+
+    const loadSavedPlaces = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('saved_places')
+          .select('place_id')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error loading saved places:', error);
+          return;
+        }
+
+        setSavedPlaceIds(new Set(data.map(p => p.place_id)));
+      } catch (err) {
+        console.error('Failed to load saved places:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSavedPlaces();
+  }, [user]);
+
+  const logInteraction = useCallback(async (
+    placeId: string,
+    action: string,
+    weight: number
+  ) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('place_interactions')
+        .insert({
+          user_id: user.id,
+          place_id: placeId,
+          action,
+          weight,
+        });
+
+      if (error) {
+        console.error('Error logging interaction:', error);
+      }
+    } catch (err) {
+      console.error('Failed to log interaction:', err);
+    }
+  }, [user]);
+
+  const toggleSave = useCallback(async (placeId: string) => {
+    if (!user) {
+      toast({
+        title: 'Login required',
+        description: 'Please log in to save places',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const wasSaved = savedPlaceIds.has(placeId);
+
+    // Optimistic update
+    setSavedPlaceIds(prev => {
+      const next = new Set(prev);
+      if (wasSaved) {
+        next.delete(placeId);
+      } else {
+        next.add(placeId);
+      }
+      return next;
+    });
+
+    try {
+      if (wasSaved) {
+        // Unsave: delete from saved_places
+        const { error } = await supabase
+          .from('saved_places')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('place_id', placeId);
+
+        if (error) throw error;
+
+        // Log unsave interaction
+        await logInteraction(placeId, 'unsave', -2);
+      } else {
+        // Save: insert into saved_places
+        const { error } = await supabase
+          .from('saved_places')
+          .insert({
+            user_id: user.id,
+            place_id: placeId,
+          });
+
+        if (error) throw error;
+
+        // Log save interaction
+        await logInteraction(placeId, 'save', 3);
+      }
+    } catch (err) {
+      console.error('Error toggling save:', err);
+      
+      // Rollback optimistic update
+      setSavedPlaceIds(prev => {
+        const next = new Set(prev);
+        if (wasSaved) {
+          next.add(placeId);
+        } else {
+          next.delete(placeId);
+        }
+        return next;
+      });
+
+      toast({
+        title: 'Error',
+        description: wasSaved ? 'Failed to unsave place' : 'Failed to save place',
+        variant: 'destructive',
+      });
+    }
+  }, [user, savedPlaceIds, logInteraction, toast]);
+
+  const isSaved = useCallback((placeId: string) => savedPlaceIds.has(placeId), [savedPlaceIds]);
+
+  return {
+    savedPlaceIds,
+    isLoading,
+    toggleSave,
+    isSaved,
+    logInteraction,
+  };
+};
