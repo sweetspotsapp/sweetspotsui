@@ -13,21 +13,6 @@ interface RequestBody {
   radius_m: number;
 }
 
-interface GooglePlace {
-  place_id: string;
-  name: string;
-  formatted_address?: string;
-  geometry: {
-    location: {
-      lat: number;
-      lng: number;
-    };
-  };
-  types?: string[];
-  rating?: number;
-  user_ratings_total?: number;
-}
-
 interface PlaceCandidate {
   place_id: string;
   name: string;
@@ -103,73 +88,70 @@ serve(async (req) => {
 
     console.log('Search request:', { prompt, lat, lng, radius_m });
 
-    // Call Google Places Text Search API
-    const allPlaces: GooglePlace[] = [];
-    let nextPageToken: string | null = null;
-    const maxResults = 60;
+    // Use Places API (New) - Text Search
+    const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
+    
+    const requestBody = {
+      textQuery: prompt,
+      locationBias: {
+        circle: {
+          center: {
+            latitude: lat,
+            longitude: lng
+          },
+          radius: radius_m
+        }
+      },
+      maxResultCount: 20, // Max allowed per request for New API
+      languageCode: "en"
+    };
 
-    do {
-      const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
-      searchUrl.searchParams.set('query', prompt);
-      searchUrl.searchParams.set('location', `${lat},${lng}`);
-      searchUrl.searchParams.set('radius', radius_m.toString());
-      searchUrl.searchParams.set('key', googleMapsApiKey);
-      
-      if (nextPageToken) {
-        searchUrl.searchParams.set('pagetoken', nextPageToken);
-      }
+    console.log('Calling Places API (New)...');
+    const response = await fetch(searchUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': googleMapsApiKey,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount'
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-      console.log('Calling Google Places API...');
-      const response = await fetch(searchUrl.toString());
-      const data = await response.json();
+    const data = await response.json();
 
-      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        console.error('Google Places API error:', data.status, data.error_message);
-        return new Response(
-          JSON.stringify({ error: `Google Places API error: ${data.status}`, details: data.error_message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    if (!response.ok) {
+      console.error('Places API error:', data);
+      return new Response(
+        JSON.stringify({ error: 'Places API error', details: data.error?.message || 'Unknown error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-      if (data.results) {
-        allPlaces.push(...data.results);
-        console.log(`Fetched ${data.results.length} places, total: ${allPlaces.length}`);
-      }
-
-      nextPageToken = data.next_page_token || null;
-
-      // Google requires a short delay before using next_page_token
-      if (nextPageToken && allPlaces.length < maxResults) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    } while (nextPageToken && allPlaces.length < maxResults);
-
-    // Limit to max 60 results
-    const limitedPlaces = allPlaces.slice(0, maxResults);
-    console.log(`Processing ${limitedPlaces.length} places`);
+    const places = data.places || [];
+    console.log(`Fetched ${places.length} places`);
 
     // Extract and transform place data
-    const candidates: PlaceCandidate[] = limitedPlaces.map((place) => ({
-      place_id: place.place_id,
-      name: place.name,
-      address: place.formatted_address || null,
-      lat: place.geometry.location.lat,
-      lng: place.geometry.location.lng,
+    const candidates: PlaceCandidate[] = places.map((place: any) => ({
+      place_id: place.id,
+      name: place.displayName?.text || 'Unknown',
+      address: place.formattedAddress || null,
+      lat: place.location?.latitude || 0,
+      lng: place.location?.longitude || 0,
       categories: place.types || null,
       rating: place.rating || null,
-      ratings_total: place.user_ratings_total || null,
+      ratings_total: place.userRatingCount || null,
     }));
 
     // Upsert places into database using service role (bypasses RLS)
-    const placesToUpsert = limitedPlaces.map((place) => ({
-      place_id: place.place_id,
-      name: place.name,
-      address: place.formatted_address || null,
-      lat: place.geometry.location.lat,
-      lng: place.geometry.location.lng,
+    const placesToUpsert = places.map((place: any) => ({
+      place_id: place.id,
+      name: place.displayName?.text || 'Unknown',
+      address: place.formattedAddress || null,
+      lat: place.location?.latitude || 0,
+      lng: place.location?.longitude || 0,
       categories: place.types || null,
       rating: place.rating || null,
-      ratings_total: place.user_ratings_total || null,
+      ratings_total: place.userRatingCount || null,
       provider: 'google',
       raw: place,
       last_enriched_at: new Date().toISOString(),
@@ -203,7 +185,6 @@ serve(async (req) => {
 
     if (searchError) {
       console.error('Error inserting search:', searchError);
-      // Don't fail the whole request, just log the error
     } else {
       console.log('Search record inserted');
     }
