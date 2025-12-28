@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.place-photo]
 verify_jwt = false
+
+[functions.get_place_photo_url]
+verify_jwt = true
