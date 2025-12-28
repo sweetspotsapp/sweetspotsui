@@ -25,6 +25,13 @@ const Index = () => {
     hasCompletedOnboarding ? "main" : "onboarding"
   );
 
+  // Sync appState when onboarding is reset
+  useEffect(() => {
+    if (!hasCompletedOnboarding && appState === "main") {
+      setAppState("onboarding");
+    }
+  }, [hasCompletedOnboarding, appState]);
+
   // Redirect to auth if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
