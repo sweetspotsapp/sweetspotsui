@@ -28,6 +28,13 @@ interface CacheEntry {
 const sectionCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+// Generate photo URL using the place-photo proxy
+const getPhotoUrl = (photoName: string | null): string | null => {
+  if (!photoName) return null;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=400`;
+};
+
 interface UseDiscoverySectionReturn {
   places: DiscoveredPlace[];
   isLoading: boolean;
@@ -107,26 +114,10 @@ export const useDiscoverySection = (
         return;
       }
 
-      // Step 3: Resolve photos (batch)
-      const rankedPlaceIds = rankedPlaces.map(p => p.place_id);
-      const { data: photoData, error: photoError } = await supabase.functions.invoke(
-        'resolve_photos_for_places',
-        {
-          body: { place_ids: rankedPlaceIds, maxWidthPx: 400 },
-        }
-      );
-
-      // Merge photo URLs into places
-      const photoMap = new Map<string, string | null>();
-      if (!photoError && photoData?.photos) {
-        for (const photo of photoData.photos) {
-          photoMap.set(photo.place_id, photo.photo_url);
-        }
-      }
-
+      // Step 3: Generate photo URLs using the place-photo proxy (no API call needed)
       const placesWithPhotos = rankedPlaces.map(place => ({
         ...place,
-        photo_url: photoMap.get(place.place_id) || null,
+        photo_url: getPhotoUrl(place.photo_name),
       }));
 
       // Cache results
