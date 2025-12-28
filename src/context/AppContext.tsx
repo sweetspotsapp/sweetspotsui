@@ -1,6 +1,9 @@
-import { useState, createContext, useContext, ReactNode, useCallback } from "react";
+import { useState, createContext, useContext, ReactNode, useCallback, useEffect } from "react";
 import { extractVibes } from "@/data/mockPlaces";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import type { RankedPlace } from "@/hooks/useSearch";
+import type { OnboardingData } from "@/components/OnboardingWizard";
 
 export interface PlaceCategory {
   id: string;
@@ -8,6 +11,13 @@ export interface PlaceCategory {
   placeIds: string[];
   color: string;
   createdAt: Date;
+}
+
+// Section configuration based on onboarding answers
+export interface SectionConfig {
+  key: string;
+  title: string;
+  prompt: string;
 }
 
 interface AppContextType {
@@ -29,6 +39,13 @@ interface AppContextType {
   hasCompletedOnboarding: boolean;
   completeOnboarding: (mood: string, places: RankedPlace[]) => void;
   resetOnboarding: () => void;
+  
+  // Onboarding data (from wizard)
+  onboardingData: OnboardingData | null;
+  setOnboardingData: (data: OnboardingData) => void;
+  
+  // Dynamic sections based on onboarding
+  sections: SectionConfig[];
   
   // Travel mode
   travelMode: "drive" | "walk" | "bike";
@@ -53,7 +70,63 @@ const categoryColors = [
   "from-red-500 to-rose-600",
 ];
 
+// Map onboarding answers to section titles and prompts
+const INTENTION_SECTIONS: Record<string, SectionConfig> = {
+  relax: { key: 'intention', title: 'Perfect spots to relax', prompt: 'relaxing calm peaceful places to unwind' },
+  friends: { key: 'intention', title: 'Great for friend groups', prompt: 'fun places for friend groups hangout social' },
+  explore: { key: 'intention', title: 'Hidden gems to explore', prompt: 'hidden gems unique local spots off the beaten path' },
+  cultural: { key: 'intention', title: 'Cultural experiences', prompt: 'cultural historical museums art galleries heritage' },
+  discover: { key: 'intention', title: 'Cool spots to discover', prompt: 'cool trendy popular instagram-worthy spots' },
+};
+
+const BUDGET_SECTIONS: Record<string, SectionConfig> = {
+  under50: { key: 'budget', title: 'Best under $50', prompt: 'cheap affordable places under $50 budget-friendly' },
+  '50to100': { key: 'budget', title: 'Worth the $50-100', prompt: 'mid-range quality places $50 to $100' },
+  over100: { key: 'budget', title: 'Premium experiences', prompt: 'luxury premium upscale high-end places' },
+};
+
+const PERSONALITY_SECTIONS: Record<string, SectionConfig> = {
+  planner: { key: 'personality', title: 'Top-rated & reviewed', prompt: 'highly rated well reviewed popular reliable spots' },
+  spontaneous: { key: 'personality', title: 'Surprise finds', prompt: 'unique quirky unexpected surprise spots' },
+  balanced: { key: 'personality', title: 'Flexible favorites', prompt: 'versatile casual easygoing relaxed atmosphere' },
+};
+
+// Default sections when no onboarding data
+const DEFAULT_SECTIONS: SectionConfig[] = [
+  { key: 'budget', title: 'Hidden gems under $50', prompt: 'cheap affordable places under $50' },
+  { key: 'cbd', title: 'Chill spots near the CBD', prompt: 'chill relaxed spots near CBD city center' },
+  { key: 'friends', title: 'Great for friend groups', prompt: 'fun places for friend groups hangout' },
+];
+
+const generateSections = (data: OnboardingData | null): SectionConfig[] => {
+  if (!data) return DEFAULT_SECTIONS;
+
+  const sections: SectionConfig[] = [];
+
+  // Add section based on trip intention
+  if (data.trip_intention && INTENTION_SECTIONS[data.trip_intention]) {
+    sections.push(INTENTION_SECTIONS[data.trip_intention]);
+  }
+
+  // Add section based on budget
+  if (data.budget && BUDGET_SECTIONS[data.budget]) {
+    sections.push(BUDGET_SECTIONS[data.budget]);
+  }
+
+  // Add section based on personality (use first selected)
+  if (data.travel_personality.length > 0) {
+    const firstPersonality = data.travel_personality[0];
+    if (PERSONALITY_SECTIONS[firstPersonality]) {
+      sections.push(PERSONALITY_SECTIONS[firstPersonality]);
+    }
+  }
+
+  // Fallback to defaults if nothing selected
+  return sections.length > 0 ? sections : DEFAULT_SECTIONS;
+};
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [rankedPlaces, setRankedPlaces] = useState<RankedPlace[]>([]);
   const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
   const [userMood, setUserMood] = useState("");
@@ -61,6 +134,53 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [travelMode, setTravelMode] = useState<"drive" | "walk" | "bike">("drive");
   const [categories, setCategories] = useState<PlaceCategory[]>([]);
+  const [onboardingData, setOnboardingDataState] = useState<OnboardingData | null>(null);
+  const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
+
+  // Load profile data from Supabase on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('vibe, budget')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error loading profile:', error);
+          return;
+        }
+
+        if (data) {
+          const vibe = data.vibe as { trip_intention?: string; travel_personality?: string[] } | null;
+          const loadedData: OnboardingData = {
+            trip_intention: vibe?.trip_intention || null,
+            budget: data.budget || null,
+            travel_personality: vibe?.travel_personality || [],
+          };
+
+          // Only set if user has completed onboarding before
+          if (loadedData.trip_intention || loadedData.budget || loadedData.travel_personality.length > 0) {
+            setOnboardingDataState(loadedData);
+            setSections(generateSections(loadedData));
+            setHasCompletedOnboarding(true);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
+
+  const setOnboardingData = useCallback((data: OnboardingData) => {
+    setOnboardingDataState(data);
+    setSections(generateSections(data));
+  }, []);
 
   const toggleSave = useCallback((placeId: string) => {
     setSavedPlaceIds(prev => {
@@ -88,6 +208,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUserMood("");
     setUserVibes([]);
     setRankedPlaces([]);
+    setOnboardingDataState(null);
+    setSections(DEFAULT_SECTIONS);
   }, []);
 
   const createCategory = useCallback((name: string, placeIds: string[], color: string) => {
@@ -132,6 +254,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       hasCompletedOnboarding,
       completeOnboarding,
       resetOnboarding,
+      onboardingData,
+      setOnboardingData,
+      sections,
       travelMode,
       setTravelMode,
       categories,

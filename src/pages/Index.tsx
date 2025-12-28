@@ -4,19 +4,17 @@ import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import ProfilePage from "@/components/ProfilePage";
-import EntryScreen from "@/components/EntryScreen";
+import OnboardingWizard, { OnboardingData } from "@/components/OnboardingWizard";
 import LoadingTransition from "@/components/LoadingTransition";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
-import { useSearch } from "@/hooks/useSearch";
 import { useToast } from "@/hooks/use-toast";
 
 type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { hasCompletedOnboarding, completeOnboarding, travelMode } = useApp();
-  const { search, isSearching, error: searchError } = useSearch();
+  const { hasCompletedOnboarding, setOnboardingData, completeOnboarding } = useApp();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -25,9 +23,11 @@ const Index = () => {
     hasCompletedOnboarding ? "main" : "onboarding"
   );
 
-  // Sync appState when onboarding is reset
+  // Sync appState when onboarding status changes
   useEffect(() => {
-    if (!hasCompletedOnboarding && appState === "main") {
+    if (hasCompletedOnboarding && appState === "onboarding") {
+      setAppState("main");
+    } else if (!hasCompletedOnboarding && appState === "main") {
       setAppState("onboarding");
     }
   }, [hasCompletedOnboarding, appState]);
@@ -39,35 +39,15 @@ const Index = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Show search error
-  useEffect(() => {
-    if (searchError) {
-      toast({
-        title: "Search failed",
-        description: searchError,
-        variant: "destructive",
-      });
-    }
-  }, [searchError, toast]);
-
-  const handleMoodSubmit = async (mood: string) => {
+  const handleOnboardingComplete = (data: OnboardingData) => {
+    setOnboardingData(data);
     setAppState("loading");
     
-    const result = await search(mood, travelMode);
-    
-    if (result && result.places.length > 0) {
-      completeOnboarding(mood, result.places);
+    // Short loading transition
+    setTimeout(() => {
+      completeOnboarding("", []);
       setAppState("main");
-    } else if (result && result.places.length === 0) {
-      toast({
-        title: "No places found",
-        description: "Try a different search or expand your area.",
-      });
-      setAppState("onboarding");
-    } else {
-      // Error occurred, handled by useEffect above
-      setAppState("onboarding");
-    }
+    }, 1000);
   };
 
   // Show loading while checking auth
@@ -79,13 +59,13 @@ const Index = () => {
     );
   }
 
-  // Show onboarding screen
+  // Show onboarding wizard
   if (appState === "onboarding") {
-    return <EntryScreen onSubmit={handleMoodSubmit} />;
+    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
   }
 
   // Show loading transition
-  if (appState === "loading" || isSearching) {
+  if (appState === "loading") {
     return <LoadingTransition />;
   }
 
