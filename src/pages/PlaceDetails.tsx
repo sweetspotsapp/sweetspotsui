@@ -35,6 +35,13 @@ const PlaceDetailsPage = () => {
     }
   }, [placeId, logInteraction]);
 
+  // Generate photo URL using the place-photo proxy
+  const getPhotoUrl = (photoName: string | null): string | null => {
+    if (!photoName) return null;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=800`;
+  };
+
   // Fetch place details
   useEffect(() => {
     const fetchPlace = async () => {
@@ -59,16 +66,9 @@ const PlaceDetailsPage = () => {
 
         setPlace(data);
 
-        // Resolve photo
+        // Generate photo URL directly using the proxy
         if (data.photo_name) {
-          const { data: photoData } = await supabase.functions.invoke(
-            'resolve_photos_for_places',
-            { body: { place_ids: [placeId], maxWidthPx: 800 } }
-          );
-          
-          if (photoData?.photos?.[0]?.photo_url) {
-            setPhotoUrl(photoData.photos[0].photo_url);
-          }
+          setPhotoUrl(getPhotoUrl(data.photo_name));
         }
       } catch (err) {
         console.error('Error fetching place:', err);
