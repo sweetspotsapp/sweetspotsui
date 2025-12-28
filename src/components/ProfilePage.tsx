@@ -2,22 +2,23 @@ import { User, Heart, MapPin, Sparkles, TrendingUp, Coffee, Moon, Sun, Users, Vo
 import { useApp } from "@/context/AppContext";
 
 const ProfilePage = () => {
-  const { savedPlaces, userVibes } = useApp();
+  const { savedPlaceIds, userVibes, rankedPlaces } = useApp();
+
+  // Get saved places from rankedPlaces
+  const savedPlaces = rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
 
   // Analyze saved places to derive insights
   const getInsights = () => {
-    const vibeCount: Record<string, number> = {};
     const categoryCount: Record<string, number> = {};
     
     savedPlaces.forEach(place => {
-      vibeCount[place.vibeTag] = (vibeCount[place.vibeTag] || 0) + 1;
-      categoryCount[place.category] = (categoryCount[place.category] || 0) + 1;
+      const category = place.categories?.[0] || "other";
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
     });
 
-    const topVibe = Object.entries(vibeCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "Chill";
     const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "café";
 
-    return { topVibe, topCategory, totalSaved: savedPlaces.length };
+    return { topCategory, totalSaved: savedPlaces.length };
   };
 
   const insights = getInsights();
@@ -64,11 +65,11 @@ const ProfilePage = () => {
             <div className="text-[10px] text-muted-foreground mt-0.5">Saved spots</div>
           </div>
           <div className="bg-card rounded-xl p-3 border border-border text-center">
-            <div className="text-2xl font-bold text-primary">12</div>
+            <div className="text-2xl font-bold text-primary">{rankedPlaces.length}</div>
             <div className="text-[10px] text-muted-foreground mt-0.5">Places shown</div>
           </div>
           <div className="bg-card rounded-xl p-3 border border-border text-center">
-            <div className="text-2xl font-bold text-primary">3</div>
+            <div className="text-2xl font-bold text-primary">1</div>
             <div className="text-[10px] text-muted-foreground mt-0.5">Mood searches</div>
           </div>
         </section>

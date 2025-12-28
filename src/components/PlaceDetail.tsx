@@ -1,103 +1,69 @@
-import { X, Heart, MapPin, Clock, DollarSign, Sparkles, Users, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react";
+import { X, Heart, MapPin, Clock, Star, Sparkles, Navigation, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Place } from "@/data/mockPlaces";
 import { cn } from "@/lib/utils";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useApp } from "@/context/AppContext";
+import type { RankedPlace } from "@/hooks/useSearch";
 
 interface PlaceDetailProps {
-  place: Place;
+  place: RankedPlace;
   onClose: () => void;
   userMood?: string;
 }
 
+// Generate a placeholder image based on place name
+const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
+  const category = categories?.[0] || "place";
+  const encoded = encodeURIComponent(`${category} ${name}`);
+  return `https://source.unsplash.com/800x600/?${encoded}`;
+};
+
+// Format ETA to human readable
+const formatEta = (seconds: number | null): string => {
+  if (seconds === null) return "Unknown";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMins = minutes % 60;
+  return `${hours}h ${remainingMins}m`;
+};
+
+// Format distance to human readable
+const formatDistance = (meters: number | null): string => {
+  if (meters === null) return "Unknown";
+  if (meters < 1000) return `${Math.round(meters)}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+};
+
+// Get vibe tag from categories
+const getVibeTag = (categories: string[] | null): string => {
+  if (!categories || categories.length === 0) return "Spot";
+  return categories[0].replace(/_/g, " ").split(" ")[0];
+};
+
 const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
   const { isSaved, toggleSave } = useApp();
-  const saved = isSaved(place.id);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  // Touch swipe state
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-  const minSwipeDistance = 50;
+  const saved = isSaved(place.place_id);
+  const imageUrl = getPlaceholderImage(place.name, place.categories);
+  const vibeTag = getVibeTag(place.categories);
 
-  const images = place.images || [place.image];
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchEndX.current = null;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe && images.length > 1) {
-      nextImage();
-    } else if (isRightSwipe && images.length > 1) {
-      prevImage();
+  const openInMaps = () => {
+    if (place.lat && place.lng) {
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}&query_place_id=${place.place_id}`,
+        "_blank"
+      );
     }
-
-    touchStartX.current = null;
-    touchEndX.current = null;
   };
-
-  const getPersonalizedReasons = () => {
-    const reasons = [
-      {
-        icon: Sparkles,
-        title: "Perfect for your vibe",
-        description: `You mentioned wanting something "${place.vibeTag.toLowerCase()}" — this place nails that energy perfectly.`
-      },
-      {
-        icon: Users,
-        title: "Great for what you need",
-        description: `${place.practicalHint} — exactly what you were looking for tonight.`
-      },
-      {
-        icon: MapPin,
-        title: "Right in your area",
-        description: `Just ${place.distance} away. Close enough to be spontaneous.`
-      },
-      {
-        icon: Clock,
-        title: "Timing works out",
-        description: `Open until ${place.openUntil} and usually not too busy at this hour.`
-      }
-    ];
-    return reasons;
-  };
-
-  const reasons = getPersonalizedReasons();
 
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
-      {/* Image Gallery with touch swipe */}
-      <div 
-        className="relative h-[42vh] min-h-[300px] overflow-hidden bg-muted touch-pan-y"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
+      {/* Image */}
+      <div className="relative h-[42vh] min-h-[300px] overflow-hidden bg-muted">
         <img 
-          src={images[currentImageIndex]} 
-          alt={`${place.name} - Photo ${currentImageIndex + 1}`}
-          className="w-full h-full object-cover transition-opacity duration-300"
+          src={imageUrl} 
+          alt={place.name}
+          className="w-full h-full object-cover"
         />
         
         {/* Close button */}
@@ -110,7 +76,7 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
 
         {/* Save button */}
         <button
-          onClick={() => toggleSave(place)}
+          onClick={() => toggleSave(place.place_id)}
           className={cn(
             "absolute top-4 right-4 p-2.5 rounded-full backdrop-blur-sm shadow-card transition-all",
             saved 
@@ -120,132 +86,80 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
         >
           <Heart className={cn("w-5 h-5", saved && "fill-current")} />
         </button>
-
-        {/* Image navigation arrows */}
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={prevImage}
-              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/90 backdrop-blur-sm text-foreground shadow-card hover:bg-background transition-all"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={nextImage}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/90 backdrop-blur-sm text-foreground shadow-card hover:bg-background transition-all"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </>
-        )}
-
-        {/* Image counter badge */}
-        {images.length > 1 && (
-          <div className="absolute bottom-4 right-4 px-2.5 py-1 rounded-full bg-background/90 backdrop-blur-sm text-foreground text-xs font-medium shadow-card">
-            {currentImageIndex + 1} / {images.length}
-          </div>
-        )}
       </div>
 
-      {/* Place Header - Moved below image */}
+      {/* Place Header */}
       <div className="px-4 pt-4 pb-2 border-b border-border">
-        <div className="flex gap-2 mb-2">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-            {place.vibeTag}
+        <div className="flex gap-2 mb-2 flex-wrap">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium capitalize">
+            {vibeTag}
           </span>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">
-            {place.category}
-          </span>
+          {place.rating && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">
+              <Star className="w-3 h-3 fill-current" />
+              {place.rating.toFixed(1)}
+              {place.ratings_total && <span className="opacity-70">({place.ratings_total})</span>}
+            </span>
+          )}
         </div>
         <h1 className="text-2xl font-bold text-foreground">{place.name}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{place.practicalHint}</p>
+        {place.address && (
+          <p className="text-sm text-muted-foreground mt-1">{place.address}</p>
+        )}
       </div>
 
       {/* Content */}
       <div className="px-4 py-4 space-y-5 pb-28">
-        {/* Image thumbnails */}
-        {images.length > 1 && (
-          <section className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-            {images.map((img, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentImageIndex(index)}
-                className={cn(
-                  "flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
-                  index === currentImageIndex 
-                    ? "border-primary ring-2 ring-primary/20" 
-                    : "border-transparent opacity-70 hover:opacity-100"
-                )}
-              >
-                <img src={img} alt="" className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </section>
-        )}
-
-        {/* Quick info with actual prices */}
+        {/* Quick info */}
         <section className="flex gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary/10 text-primary text-xs font-medium">
-            <DollarSign className="w-3.5 h-3.5" />
-            <span>{place.priceRange}</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
-            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>Open until {place.openUntil}</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
-            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>{place.distance}</span>
-          </div>
+          {place.eta_seconds && (
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{formatEta(place.eta_seconds)}</span>
+            </div>
+          )}
+          {place.distance_meters && (
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
+              <Navigation className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>{formatDistance(place.distance_meters)}</span>
+            </div>
+          )}
+          {place.score && (
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card border border-border text-foreground text-xs">
+              <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Score: {Math.round(place.score * 100)}%</span>
+            </div>
+          )}
         </section>
 
         {/* Why this place section */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">Why we picked this for you</h2>
-          </div>
-          
-          <div className="space-y-2.5">
-            {reasons.map((reason, index) => {
-              const Icon = reason.icon;
-              return (
-                <div 
-                  key={index}
-                  className="flex gap-3 p-3 rounded-xl bg-card border border-border opacity-0 animate-fade-up"
-                  style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'forwards' }}
-                >
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-4 h-4 text-secondary-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-foreground">{reason.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{reason.description}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* What to prepare section */}
-        {place.whatToPrepare && place.whatToPrepare.length > 0 && (
-          <section className="space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: '350ms', animationFillMode: 'forwards' }}>
+        {place.why && (
+          <section className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
-                <Lightbulb className="w-3.5 h-3.5 text-accent-foreground" />
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
               </div>
-              <h2 className="text-base font-semibold text-foreground">What to prepare</h2>
+              <h2 className="text-base font-semibold text-foreground">Why we picked this</h2>
             </div>
             
-            <div className="bg-warm-cream rounded-xl p-4 space-y-2.5">
-              {place.whatToPrepare.map((tip, index) => (
-                <div key={index} className="flex gap-3 items-start">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                  <p className="text-sm text-foreground">{tip}</p>
-                </div>
+            <div className="p-3 rounded-xl bg-card border border-border">
+              <p className="text-sm text-foreground">{place.why}</p>
+            </div>
+          </section>
+        )}
+
+        {/* Categories */}
+        {place.categories && place.categories.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">Categories</h2>
+            <div className="flex flex-wrap gap-1.5">
+              {place.categories.slice(0, 6).map((category, index) => (
+                <span 
+                  key={index}
+                  className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium capitalize"
+                >
+                  {category.replace(/_/g, " ")}
+                </span>
               ))}
             </div>
           </section>
@@ -258,7 +172,7 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
           <Button 
             variant="outline" 
             className="flex-1 h-12 rounded-xl"
-            onClick={() => toggleSave(place)}
+            onClick={() => toggleSave(place.place_id)}
           >
             <Heart className={cn("w-5 h-5 mr-2", saved && "fill-current text-primary")} />
             {saved ? "Saved" : "Save"}
@@ -266,9 +180,11 @@ const PlaceDetail = ({ place, onClose, userMood }: PlaceDetailProps) => {
           <Button 
             variant="primary" 
             className="flex-1 h-12 rounded-xl"
+            onClick={openInMaps}
           >
             <MapPin className="w-5 h-5 mr-2" />
             Take me there
+            <ExternalLink className="w-4 h-4 ml-1" />
           </Button>
         </div>
       </div>

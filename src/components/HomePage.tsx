@@ -1,17 +1,17 @@
-import { ChevronRight, MapPin, Pencil, RotateCcw } from "lucide-react";
+import { ChevronRight, MapPin, RotateCcw, LogOut } from "lucide-react";
 import PlaceCard from "./PlaceCard";
 import PlaceDetail from "./PlaceDetail";
-import { primaryPlaces, explorationPlaces } from "@/data/mockPlaces";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
-import type { Place } from "@/data/mockPlaces";
+import type { RankedPlace } from "@/hooks/useSearch";
 
 interface PlaceRowProps {
   title: string;
   subtitle?: string;
-  places: typeof primaryPlaces;
+  places: RankedPlace[];
   startIndex?: number;
-  onPlaceClick: (place: Place) => void;
+  onPlaceClick: (place: RankedPlace) => void;
 }
 
 const PlaceRow = ({ title, subtitle, places, startIndex = 0, onPlaceClick }: PlaceRowProps) => (
@@ -32,7 +32,7 @@ const PlaceRow = ({ title, subtitle, places, startIndex = 0, onPlaceClick }: Pla
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
     >
       {places.map((place, index) => (
-        <div key={place.id} className="snap-start">
+        <div key={place.place_id} className="snap-start">
           <PlaceCard 
             place={place} 
             index={startIndex + index} 
@@ -46,11 +46,18 @@ const PlaceRow = ({ title, subtitle, places, startIndex = 0, onPlaceClick }: Pla
 );
 
 const HomePage = () => {
-  const { userMood, userVibes, resetOnboarding } = useApp();
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const { userMood, userVibes, resetOnboarding, rankedPlaces } = useApp();
+  const { signOut } = useAuth();
+  const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
   
-  const featuredPlace = primaryPlaces[0];
-  const remainingPrimary = primaryPlaces.slice(1);
+  const featuredPlace = rankedPlaces[0];
+  const topPicks = rankedPlaces.slice(1, 6);
+  const explorePlaces = rankedPlaces.slice(6, 12);
+  const morePlaces = rankedPlaces.slice(12, 20);
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -64,33 +71,44 @@ const HomePage = () => {
               </div>
               <span className="text-base font-semibold text-primary">Sweetspots</span>
             </div>
+            <button
+              onClick={handleSignOut}
+              className="p-2 rounded-full hover:bg-muted transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4 text-muted-foreground" />
+            </button>
           </div>
         </header>
 
         <div className="space-y-5 pt-4">
           {/* Featured Pick */}
-          <section className="px-4 space-y-2 opacity-0 animate-fade-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
-            <div>
-              <h2 className="text-base font-semibold text-foreground">
-                Our top pick for you
-              </h2>
-              <p className="text-[11px] text-muted-foreground">Based on your vibe</p>
-            </div>
-            <PlaceCard 
-              place={featuredPlace} 
-              index={0} 
-              variant="featured"
-              onClick={() => setSelectedPlace(featuredPlace)}
-            />
-          </section>
+          {featuredPlace && (
+            <section className="px-4 space-y-2 opacity-0 animate-fade-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
+              <div>
+                <h2 className="text-base font-semibold text-foreground">
+                  Our top pick for you
+                </h2>
+                <p className="text-[11px] text-muted-foreground">Based on your vibe</p>
+              </div>
+              <PlaceCard 
+                place={featuredPlace} 
+                index={0} 
+                variant="featured"
+                onClick={() => setSelectedPlace(featuredPlace)}
+              />
+            </section>
+          )}
 
-          {/* Primary Picks Row */}
-          <PlaceRow 
-            title="More picks for you" 
-            places={remainingPrimary}
-            startIndex={1}
-            onPlaceClick={setSelectedPlace}
-          />
+          {/* Top Picks Row */}
+          {topPicks.length > 0 && (
+            <PlaceRow 
+              title="More picks for you" 
+              places={topPicks}
+              startIndex={1}
+              onPlaceClick={setSelectedPlace}
+            />
+          )}
 
           {/* Understanding Section */}
           <section className="px-4 opacity-0 animate-fade-up" style={{ animationDelay: '350ms', animationFillMode: 'forwards' }}>
@@ -127,21 +145,38 @@ const HomePage = () => {
           </section>
 
           {/* Exploration Row */}
-          <PlaceRow 
-            title="Worth checking out" 
-            subtitle="Popular right now near you"
-            places={explorationPlaces}
-            startIndex={5}
-            onPlaceClick={setSelectedPlace}
-          />
+          {explorePlaces.length > 0 && (
+            <PlaceRow 
+              title="Worth checking out" 
+              subtitle="Popular right now near you"
+              places={explorePlaces}
+              startIndex={6}
+              onPlaceClick={setSelectedPlace}
+            />
+          )}
 
           {/* Additional discovery row */}
-          <PlaceRow 
-            title="You might also like" 
-            places={[...explorationPlaces].reverse()}
-            startIndex={8}
-            onPlaceClick={setSelectedPlace}
-          />
+          {morePlaces.length > 0 && (
+            <PlaceRow 
+              title="You might also like" 
+              places={morePlaces}
+              startIndex={12}
+              onPlaceClick={setSelectedPlace}
+            />
+          )}
+
+          {/* Empty state */}
+          {rankedPlaces.length === 0 && (
+            <div className="px-4 py-12 text-center">
+              <p className="text-muted-foreground">No places found yet.</p>
+              <button 
+                onClick={resetOnboarding}
+                className="mt-2 text-primary text-sm font-medium"
+              >
+                Try a new search
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
