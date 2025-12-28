@@ -57,6 +57,7 @@ export type Database = {
           lat: number | null
           lng: number | null
           name: string
+          photo_name: string | null
           place_id: string
           provider: string | null
           rating: number | null
@@ -70,6 +71,7 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           name: string
+          photo_name?: string | null
           place_id: string
           provider?: string | null
           rating?: number | null
@@ -83,6 +85,7 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           name?: string
+          photo_name?: string | null
           place_id?: string
           provider?: string | null
           rating?: number | null

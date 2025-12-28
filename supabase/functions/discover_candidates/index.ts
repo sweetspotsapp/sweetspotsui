@@ -22,6 +22,7 @@ interface PlaceCandidate {
   categories: string[] | null;
   rating: number | null;
   ratings_total: number | null;
+  photo_name: string | null;
 }
 
 serve(async (req) => {
@@ -102,7 +103,7 @@ serve(async (req) => {
           radius: radius_m
         }
       },
-      maxResultCount: 20, // Max allowed per request for New API
+      maxResultCount: 20,
       languageCode: "en"
     };
 
@@ -112,7 +113,7 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': googleMapsApiKey,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount'
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos'
       },
       body: JSON.stringify(requestBody)
     });
@@ -130,32 +131,40 @@ serve(async (req) => {
     const places = data.places || [];
     console.log(`Fetched ${places.length} places`);
 
-    // Extract and transform place data
-    const candidates: PlaceCandidate[] = places.map((place: any) => ({
-      place_id: place.id,
-      name: place.displayName?.text || 'Unknown',
-      address: place.formattedAddress || null,
-      lat: place.location?.latitude || 0,
-      lng: place.location?.longitude || 0,
-      categories: place.types || null,
-      rating: place.rating || null,
-      ratings_total: place.userRatingCount || null,
-    }));
+    // Extract and transform place data - include first photo name
+    const candidates: PlaceCandidate[] = places.map((place: any) => {
+      const firstPhoto = place.photos?.[0];
+      return {
+        place_id: place.id,
+        name: place.displayName?.text || 'Unknown',
+        address: place.formattedAddress || null,
+        lat: place.location?.latitude || 0,
+        lng: place.location?.longitude || 0,
+        categories: place.types || null,
+        rating: place.rating || null,
+        ratings_total: place.userRatingCount || null,
+        photo_name: firstPhoto?.name || null,
+      };
+    });
 
     // Upsert places into database using service role (bypasses RLS)
-    const placesToUpsert = places.map((place: any) => ({
-      place_id: place.id,
-      name: place.displayName?.text || 'Unknown',
-      address: place.formattedAddress || null,
-      lat: place.location?.latitude || 0,
-      lng: place.location?.longitude || 0,
-      categories: place.types || null,
-      rating: place.rating || null,
-      ratings_total: place.userRatingCount || null,
-      provider: 'google',
-      raw: place,
-      last_enriched_at: new Date().toISOString(),
-    }));
+    const placesToUpsert = places.map((place: any) => {
+      const firstPhoto = place.photos?.[0];
+      return {
+        place_id: place.id,
+        name: place.displayName?.text || 'Unknown',
+        address: place.formattedAddress || null,
+        lat: place.location?.latitude || 0,
+        lng: place.location?.longitude || 0,
+        categories: place.types || null,
+        rating: place.rating || null,
+        ratings_total: place.userRatingCount || null,
+        provider: 'google',
+        raw: place,
+        photo_name: firstPhoto?.name || null,
+        last_enriched_at: new Date().toISOString(),
+      };
+    });
 
     if (placesToUpsert.length > 0) {
       const { error: upsertError } = await supabaseAdmin
@@ -192,7 +201,7 @@ serve(async (req) => {
     // Return response
     const placeIds = candidates.map(c => c.place_id);
     
-    console.log('Returning', candidates.length, 'candidates');
+    console.log('Returning', candidates.length, 'candidates with photos');
     return new Response(
       JSON.stringify({ place_ids: placeIds, candidates }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

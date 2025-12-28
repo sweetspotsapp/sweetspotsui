@@ -11,7 +11,14 @@ interface PlaceCardProps {
   onClick?: () => void;
 }
 
-// Generate a placeholder image based on place name
+// Build photo URL from photo_name via our proxy edge function
+const getPhotoUrl = (photoName: string | null, maxWidth = 400, maxHeight = 600): string | null => {
+  if (!photoName) return null;
+  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+  return `${baseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}`;
+};
+
+// Fallback placeholder image
 const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
   const category = categories?.[0] || "place";
   const encoded = encodeURIComponent(`${category} ${name}`);
@@ -46,8 +53,16 @@ const getVibeTag = (categories: string[] | null): string => {
 const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardProps) => {
   const { isSaved, toggleSave } = useApp();
   const saved = isSaved(place.place_id);
-  const imageUrl = getPlaceholderImage(place.name, place.categories);
+  const [imgError, setImgError] = useState(false);
+  
+  // Use Google photo if available, otherwise fallback to placeholder
+  const googlePhotoUrl = getPhotoUrl(place.photo_name);
+  const placeholderUrl = getPlaceholderImage(place.name, place.categories);
+  const imageUrl = (!imgError && googlePhotoUrl) ? googlePhotoUrl : placeholderUrl;
+  
   const vibeTag = getVibeTag(place.categories);
+  
+  const handleImgError = () => setImgError(true);
 
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -68,6 +83,7 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
             alt={place.name}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={handleImgError}
           />
           
           {/* Gradient overlay */}
@@ -126,6 +142,7 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
           alt={place.name}
           className="w-full h-full object-cover"
           loading="lazy"
+          onError={handleImgError}
         />
         
         {/* Gradient overlay */}
