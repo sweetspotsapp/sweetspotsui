@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.get_place_photo_url]
 verify_jwt = true
+
+[functions.resolve_photos_for_places]
+verify_jwt = true
