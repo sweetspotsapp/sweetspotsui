@@ -1,4 +1,5 @@
-import { ChevronRight, MapPin, RotateCcw, LogOut } from "lucide-react";
+import { ChevronRight, MapPin, RotateCcw, LogOut, Sparkles } from "lucide-react";
+import { Button } from "./ui/button";
 import PlaceCard from "./PlaceCard";
 import PlaceDetail from "./PlaceDetail";
 import { useApp } from "@/context/AppContext";
@@ -71,13 +72,24 @@ const HomePage = () => {
               </div>
               <span className="text-base font-semibold text-primary">Sweetspots</span>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              title="Sign out"
-            >
-              <LogOut className="w-4 h-4 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={resetOnboarding}
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Change Vibe
+              </Button>
+              <button
+                onClick={handleSignOut}
+                className="p-2 rounded-full hover:bg-muted transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
           </div>
         </header>
 
