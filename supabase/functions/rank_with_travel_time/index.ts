@@ -379,44 +379,56 @@ serve(async (req) => {
     const targets = validPlaces.map(p => ({ location: [p.lng!, p.lat!] }));
 
     console.log('Calling Geoapify Route Matrix API...');
-    const matrixResponse = await fetch(
-      `https://api.geoapify.com/v1/routematrix?apiKey=${geoapifyApiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: geoapifyMode,
-          sources,
-          targets,
-        }),
-      }
-    );
-
-    const matrixData = await matrixResponse.json();
     
-    if (matrixData.error) {
-      console.error('Geoapify error:', matrixData.error);
-      return new Response(
-        JSON.stringify({ error: 'Route matrix API error', details: matrixData.error }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    let travelData: Map<string, { eta: number | null; distance: number | null }> = new Map();
+    let matrixSuccess = false;
+    
+    try {
+      const matrixResponse = await fetch(
+        `https://api.geoapify.com/v1/routematrix?apiKey=${geoapifyApiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: geoapifyMode,
+            sources,
+            targets,
+          }),
+        }
       );
+
+      if (!matrixResponse.ok) {
+        const errorText = await matrixResponse.text();
+        console.error('Geoapify HTTP error:', matrixResponse.status, errorText);
+        // Continue without travel data - we'll still rank by other factors
+      } else {
+        const matrixData = await matrixResponse.json();
+        
+        if (matrixData.error) {
+          console.error('Geoapify API error:', matrixData.error);
+          // Continue without travel data
+        } else if (matrixData.sources_to_targets && matrixData.sources_to_targets[0]) {
+          console.log('Route matrix received');
+          matrixSuccess = true;
+          const results = matrixData.sources_to_targets[0];
+          validPlaces.forEach((place, index) => {
+            const result = results[index];
+            travelData.set(place.place_id, {
+              eta: result?.time ?? null,
+              distance: result?.distance ?? null,
+            });
+          });
+        }
+      }
+    } catch (matrixError) {
+      console.error('Geoapify request failed:', matrixError);
+      // Continue without travel data
     }
-
-    console.log('Route matrix received');
-
-    // Extract travel times and distances
-    const travelData: Map<string, { eta: number | null; distance: number | null }> = new Map();
     
-    if (matrixData.sources_to_targets && matrixData.sources_to_targets[0]) {
-      const results = matrixData.sources_to_targets[0];
-      validPlaces.forEach((place, index) => {
-        const result = results[index];
-        travelData.set(place.place_id, {
-          eta: result?.time ?? null,
-          distance: result?.distance ?? null,
-        });
-      });
+    if (!matrixSuccess) {
+      console.log('Proceeding without travel time data - ranking by other factors');
     }
+
 
     // Find max values for normalization
     let maxEta = 0;
