@@ -1,23 +1,57 @@
 import { useState } from "react";
-import { Heart } from "lucide-react";
-import type { Place } from "@/data/mockPlaces";
+import { Heart, Clock, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
+import type { RankedPlace } from "@/hooks/useSearch";
 
 interface PlaceCardProps {
-  place: Place;
+  place: RankedPlace;
   index?: number;
   variant?: "poster" | "featured";
   onClick?: () => void;
 }
 
+// Generate a placeholder image based on place name
+const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
+  const category = categories?.[0] || "place";
+  const encoded = encodeURIComponent(`${category} ${name}`);
+  return `https://source.unsplash.com/400x600/?${encoded}`;
+};
+
+// Format ETA to human readable
+const formatEta = (seconds: number | null): string => {
+  if (seconds === null) return "";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMins = minutes % 60;
+  return `${hours}h ${remainingMins}m`;
+};
+
+// Format distance to human readable
+const formatDistance = (meters: number | null): string => {
+  if (meters === null) return "";
+  if (meters < 1000) return `${Math.round(meters)}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+};
+
+// Get vibe tag from categories
+const getVibeTag = (categories: string[] | null): string => {
+  if (!categories || categories.length === 0) return "Spot";
+  const category = categories[0];
+  // Clean up Google Places category format
+  return category.replace(/_/g, " ").split(" ")[0];
+};
+
 const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardProps) => {
   const { isSaved, toggleSave } = useApp();
-  const saved = isSaved(place.id);
+  const saved = isSaved(place.place_id);
+  const imageUrl = getPlaceholderImage(place.name, place.categories);
+  const vibeTag = getVibeTag(place.categories);
 
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleSave(place);
+    toggleSave(place.place_id);
   };
 
   if (variant === "featured") {
@@ -28,11 +62,12 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
         onClick={onClick}
       >
         {/* Featured Image */}
-        <div className="relative aspect-[4/3] overflow-hidden">
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           <img 
-            src={place.image} 
+            src={imageUrl} 
             alt={place.name}
             className="w-full h-full object-cover"
+            loading="lazy"
           />
           
           {/* Gradient overlay */}
@@ -52,16 +87,24 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
           {/* Content overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
             <div className="flex gap-2 flex-wrap">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/90 text-primary-foreground text-xs font-medium backdrop-blur-sm">
-                {place.vibeTag}
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/90 text-primary-foreground text-xs font-medium backdrop-blur-sm capitalize">
+                {vibeTag}
               </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-background/30 text-primary-foreground text-xs backdrop-blur-sm">
-                {place.practicalHint}
-              </span>
+              {place.eta_seconds && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-background/30 text-primary-foreground text-xs backdrop-blur-sm">
+                  <Clock className="w-3 h-3" />
+                  {formatEta(place.eta_seconds)}
+                </span>
+              )}
             </div>
             <h3 className="text-primary-foreground font-bold text-xl leading-tight">
               {place.name}
             </h3>
+            {place.why && (
+              <p className="text-primary-foreground/80 text-sm">
+                {place.why}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -77,11 +120,12 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
       onClick={onClick}
     >
       {/* Poster Card - Vertical Rectangle */}
-      <div className="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-soft transition-all duration-300 active:scale-95">
+      <div className="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-soft transition-all duration-300 active:scale-95 bg-muted">
         <img 
-          src={place.image} 
+          src={imageUrl} 
           alt={place.name}
           className="w-full h-full object-cover"
+          loading="lazy"
         />
         
         {/* Gradient overlay */}
@@ -100,8 +144,8 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
         
         {/* Vibe tag */}
         <div className="absolute top-2 left-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/90 text-secondary-foreground text-[11px] font-medium backdrop-blur-sm">
-            {place.vibeTag}
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/90 text-secondary-foreground text-[11px] font-medium backdrop-blur-sm capitalize">
+            {vibeTag}
           </span>
         </div>
         
@@ -110,9 +154,25 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
           <h3 className="text-primary-foreground font-semibold text-sm leading-tight line-clamp-2">
             {place.name}
           </h3>
-          <p className="text-primary-foreground/80 text-[11px] line-clamp-1">
-            {place.practicalHint}
-          </p>
+          <div className="flex items-center gap-2 text-primary-foreground/80 text-[11px]">
+            {place.eta_seconds && (
+              <span className="flex items-center gap-0.5">
+                <Clock className="w-3 h-3" />
+                {formatEta(place.eta_seconds)}
+              </span>
+            )}
+            {place.distance_meters && (
+              <span className="flex items-center gap-0.5">
+                <Navigation className="w-3 h-3" />
+                {formatDistance(place.distance_meters)}
+              </span>
+            )}
+          </div>
+          {place.rating && (
+            <p className="text-primary-foreground/70 text-[10px]">
+              ★ {place.rating.toFixed(1)} {place.ratings_total ? `(${place.ratings_total})` : ""}
+            </p>
+          )}
         </div>
       </div>
     </div>

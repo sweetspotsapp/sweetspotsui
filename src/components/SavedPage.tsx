@@ -4,15 +4,25 @@ import PlaceDetail from "./PlaceDetail";
 import CategoryEditor from "./CategoryEditor";
 import CategoryDetail from "./CategoryDetail";
 import { useState } from "react";
-import type { Place } from "@/data/mockPlaces";
+import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
 
+// Generate a placeholder image based on place name
+const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
+  const category = categories?.[0] || "place";
+  const encoded = encodeURIComponent(`${category} ${name}`);
+  return `https://source.unsplash.com/100x100/?${encoded}`;
+};
+
 const SavedPage = () => {
-  const { savedPlaces, categories } = useApp();
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const { savedPlaceIds, categories, rankedPlaces } = useApp();
+  const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
   const [showCategoryEditor, setShowCategoryEditor] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<PlaceCategory | null>(null);
   const [editingCategory, setEditingCategory] = useState<PlaceCategory | null>(null);
+
+  // Get saved places from rankedPlaces
+  const savedPlaces = rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
 
   const handleEditCategory = () => {
     if (selectedCategory) {
@@ -112,20 +122,22 @@ const SavedPage = () => {
               <div className="space-y-2">
                 {savedPlaces.slice(0, 5).map((place, index) => (
                   <div 
-                    key={place.id}
+                    key={place.place_id}
                     className="flex gap-3 p-2.5 bg-card rounded-xl border border-border/50 cursor-pointer active:scale-[0.98] transition-transform opacity-0 animate-fade-up"
                     style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
                     onClick={() => setSelectedPlace(place)}
                   >
                     <img 
-                      src={place.image} 
+                      src={getPlaceholderImage(place.name, place.categories)} 
                       alt={place.name}
-                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-muted"
                     />
                     <div className="flex-1 min-w-0 flex items-center">
                       <div>
                         <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
-                        <p className="text-[11px] text-muted-foreground">{place.vibeTag} · {place.category}</p>
+                        <p className="text-[11px] text-muted-foreground capitalize">
+                          {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center">

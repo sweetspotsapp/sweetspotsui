@@ -1,6 +1,6 @@
-import { useState, createContext, useContext, ReactNode } from "react";
-import type { Place } from "@/data/mockPlaces";
-import { extractVibes, primaryPlaces, explorationPlaces } from "@/data/mockPlaces";
+import { useState, createContext, useContext, ReactNode, useCallback } from "react";
+import { extractVibes } from "@/data/mockPlaces";
+import type { RankedPlace } from "@/hooks/useSearch";
 
 export interface PlaceCategory {
   id: string;
@@ -11,21 +11,35 @@ export interface PlaceCategory {
 }
 
 interface AppContextType {
-  savedPlaces: Place[];
-  toggleSave: (place: Place) => void;
+  // Ranked places from API
+  rankedPlaces: RankedPlace[];
+  setRankedPlaces: (places: RankedPlace[]) => void;
+  
+  // Saved places (local)
+  savedPlaceIds: Set<string>;
+  toggleSave: (placeId: string) => void;
   isSaved: (placeId: string) => boolean;
+  
+  // User mood/vibes
   userMood: string;
   setUserMood: (mood: string) => void;
   userVibes: string[];
+  
+  // Onboarding state
   hasCompletedOnboarding: boolean;
-  completeOnboarding: (mood: string) => void;
+  completeOnboarding: (mood: string, places: RankedPlace[]) => void;
   resetOnboarding: () => void;
+  
+  // Travel mode
+  travelMode: "drive" | "walk" | "bike";
+  setTravelMode: (mode: "drive" | "walk" | "bike") => void;
+  
   // Custom categories
   categories: PlaceCategory[];
   createCategory: (name: string, placeIds: string[], color: string) => void;
   updateCategory: (id: string, name: string, placeIds: string[]) => void;
   deleteCategory: (id: string) => void;
-  getCategoryPlaces: (categoryId: string) => Place[];
+  getCategoryPlaces: (categoryId: string) => RankedPlace[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -39,56 +53,44 @@ const categoryColors = [
   "from-red-500 to-rose-600",
 ];
 
-// Default dummy categories
-const defaultCategories: PlaceCategory[] = [
-  {
-    id: "late-nights",
-    name: "Late Nights",
-    placeIds: ["3", "4"], // Midnight Ramen & Quiet Library Bar
-    color: "from-indigo-600 to-purple-700",
-    createdAt: new Date(),
-  },
-  {
-    id: "brunches",
-    name: "Brunches",
-    placeIds: ["5", "2"], // Sunrise Bakery & Bloom Garden Café
-    color: "from-amber-400 to-orange-500",
-    createdAt: new Date(),
-  },
-];
-
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
+  const [rankedPlaces, setRankedPlaces] = useState<RankedPlace[]>([]);
+  const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
   const [userMood, setUserMood] = useState("");
   const [userVibes, setUserVibes] = useState<string[]>([]);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const [categories, setCategories] = useState<PlaceCategory[]>(defaultCategories);
+  const [travelMode, setTravelMode] = useState<"drive" | "walk" | "bike">("drive");
+  const [categories, setCategories] = useState<PlaceCategory[]>([]);
 
-  const toggleSave = (place: Place) => {
-    setSavedPlaces(prev => {
-      const exists = prev.some(p => p.id === place.id);
-      if (exists) {
-        return prev.filter(p => p.id !== place.id);
+  const toggleSave = useCallback((placeId: string) => {
+    setSavedPlaceIds(prev => {
+      const next = new Set(prev);
+      if (next.has(placeId)) {
+        next.delete(placeId);
+      } else {
+        next.add(placeId);
       }
-      return [...prev, place];
+      return next;
     });
-  };
+  }, []);
 
-  const isSaved = (placeId: string) => savedPlaces.some(p => p.id === placeId);
+  const isSaved = useCallback((placeId: string) => savedPlaceIds.has(placeId), [savedPlaceIds]);
 
-  const completeOnboarding = (mood: string) => {
+  const completeOnboarding = useCallback((mood: string, places: RankedPlace[]) => {
     setUserMood(mood);
     setUserVibes(extractVibes(mood));
+    setRankedPlaces(places);
     setHasCompletedOnboarding(true);
-  };
+  }, []);
 
-  const resetOnboarding = () => {
+  const resetOnboarding = useCallback(() => {
     setHasCompletedOnboarding(false);
     setUserMood("");
     setUserVibes([]);
-  };
+    setRankedPlaces([]);
+  }, []);
 
-  const createCategory = (name: string, placeIds: string[], color: string) => {
+  const createCategory = useCallback((name: string, placeIds: string[], color: string) => {
     const newCategory: PlaceCategory = {
       id: Date.now().toString(),
       name,
@@ -97,35 +99,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       createdAt: new Date(),
     };
     setCategories(prev => [...prev, newCategory]);
-  };
+  }, [categories.length]);
 
-  const updateCategory = (id: string, name: string, placeIds: string[]) => {
+  const updateCategory = useCallback((id: string, name: string, placeIds: string[]) => {
     setCategories(prev => prev.map(cat => 
       cat.id === id ? { ...cat, name, placeIds } : cat
     ));
-  };
+  }, []);
 
-  const deleteCategory = (id: string) => {
+  const deleteCategory = useCallback((id: string) => {
     setCategories(prev => prev.filter(cat => cat.id !== id));
-  };
+  }, []);
 
-  const getCategoryPlaces = (categoryId: string): Place[] => {
+  const getCategoryPlaces = useCallback((categoryId: string): RankedPlace[] => {
     const category = categories.find(c => c.id === categoryId);
     if (!category) return [];
-    // Return all places that match placeIds (from saved or mock data)
-    const allAvailablePlaces = [...savedPlaces, ...primaryPlaces, ...explorationPlaces];
-    // Remove duplicates by id
-    const uniquePlaces = allAvailablePlaces.filter((place, index, self) =>
-      index === self.findIndex(p => p.id === place.id)
-    );
     return category.placeIds
-      .map(id => uniquePlaces.find(p => p.id === id))
-      .filter((p): p is Place => p !== undefined);
-  };
+      .map(id => rankedPlaces.find(p => p.place_id === id))
+      .filter((p): p is RankedPlace => p !== undefined);
+  }, [categories, rankedPlaces]);
 
   return (
     <AppContext.Provider value={{ 
-      savedPlaces, 
+      rankedPlaces,
+      setRankedPlaces,
+      savedPlaceIds,
       toggleSave, 
       isSaved, 
       userMood, 
@@ -134,6 +132,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       hasCompletedOnboarding,
       completeOnboarding,
       resetOnboarding,
+      travelMode,
+      setTravelMode,
       categories,
       createCategory,
       updateCategory,
