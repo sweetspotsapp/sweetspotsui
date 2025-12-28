@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, DollarSign, Car, TreePine, Star, Heart, MapPin, RefreshCw } from "lucide-react";
+import { Menu, Search, DollarSign, Car, TreePine, Star, Heart, MapPin, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useLocation } from "@/hooks/useLocation";
 import { useDiscoverySection, DiscoveredPlace } from "@/hooks/useDiscoverySection";
 import { useSavedPlaces } from "@/hooks/useSavedPlaces";
@@ -8,9 +8,11 @@ import { useApp } from "@/context/AppContext";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Input } from "./ui/input";
+import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
 
 // Keyword to chip mapping
 const CHIPS = [
+  { id: 'filter', label: 'Filter', icon: SlidersHorizontal, keywords: [] },
   { id: 'budget', label: 'Under $50', icon: DollarSign, keywords: ['cheap', 'budget', 'free', 'affordable'] },
   { id: 'cbd', label: 'Near The CBD', icon: Car, keywords: ['cbd', 'city', 'downtown', 'central'] },
   { id: 'nature', label: 'Nature & Outdoor', icon: TreePine, keywords: ['nature', 'outdoor', 'park', 'beach'] },
@@ -248,6 +250,8 @@ const HomePage = () => {
   const { sections } = useApp();
   
   const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterState>({ budget: null, vibes: [] });
 
   // Discovery hooks for each section (up to 3)
   const section1 = useDiscoverySection('section1', 4000);
@@ -351,8 +355,16 @@ const HomePage = () => {
               key={chip.id}
               icon={chip.icon}
               label={chip.label}
-              isActive={activeChip === chip.id}
-              onClick={() => setActiveChip(activeChip === chip.id ? null : chip.id)}
+              isActive={chip.id === 'filter' 
+                ? (activeFilters.budget !== null || activeFilters.vibes.length > 0) 
+                : activeChip === chip.id}
+              onClick={() => {
+                if (chip.id === 'filter') {
+                  setIsFilterModalOpen(true);
+                } else {
+                  setActiveChip(activeChip === chip.id ? null : chip.id);
+                }
+              }}
             />
           ))}
         </div>
@@ -399,6 +411,18 @@ const HomePage = () => {
           />
         )}
       </main>
+
+      {/* Filter Modal */}
+      <TravelPersonalityFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        onConfirm={(filters) => {
+          setActiveFilters(filters);
+          // TODO: Use filters to refetch/rank places
+          console.log("Applied filters:", filters);
+        }}
+        initialFilters={activeFilters}
+      />
     </div>
   );
 };
