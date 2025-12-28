@@ -1,1 +1,4 @@
 project_id = "bqjuoxckvrkykfqpbkpv"
+
+[functions.discover_candidates]
+verify_jwt = true
