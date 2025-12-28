@@ -16,6 +16,7 @@ export interface RankedPlace {
   distance_meters: number | null;
   score: number;
   why: string;
+  photo_name: string | null;
 }
 
 interface SearchResult {
