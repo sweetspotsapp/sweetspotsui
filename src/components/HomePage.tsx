@@ -1,19 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, DollarSign, Car, TreePine, Star, Sparkles, Users, Coffee, Utensils, Heart, MapPin, RefreshCw } from "lucide-react";
+import { Menu, Search, DollarSign, Car, TreePine, Star, Heart, MapPin, RefreshCw } from "lucide-react";
 import { useLocation } from "@/hooks/useLocation";
 import { useDiscoverySection, DiscoveredPlace } from "@/hooks/useDiscoverySection";
 import { useSavedPlaces } from "@/hooks/useSavedPlaces";
+import { useApp } from "@/context/AppContext";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Input } from "./ui/input";
-
-// Section configuration
-const SECTIONS = [
-  { key: 'budget', title: 'Hidden gems under $50', prompt: 'cheap affordable places under $50' },
-  { key: 'cbd', title: 'Chill spots near the CBD', prompt: 'chill relaxed spots near CBD city center' },
-  { key: 'friends', title: 'Great for friend groups', prompt: 'fun places for friend groups hangout' },
-];
 
 // Keyword to chip mapping
 const CHIPS = [
@@ -249,12 +243,13 @@ const LocationCTA: React.FC<{
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { location, isLoading: locationLoading, error: locationError, permissionDenied, requestLocation, setManualLocation } = useLocation();
+  const { location, isLoading: locationLoading, permissionDenied, requestLocation, setManualLocation } = useLocation();
   const { toggleSave, isSaved } = useSavedPlaces();
+  const { sections } = useApp();
   
   const [activeChip, setActiveChip] = useState<string | null>(null);
 
-  // Discovery hooks for each section
+  // Discovery hooks for each section (up to 3)
   const section1 = useDiscoverySection('section1', 4000);
   const section2 = useDiscoverySection('section2', 5000);
   const section3 = useDiscoverySection('section3', 4000);
@@ -263,10 +258,17 @@ const HomePage = () => {
   useEffect(() => {
     if (!location) return;
 
-    section1.discover(SECTIONS[0].prompt, location);
-    section2.discover(SECTIONS[1].prompt, location);
-    section3.discover(SECTIONS[2].prompt, location);
-  }, [location]);
+    // Use dynamic sections from context
+    if (sections[0]) {
+      section1.discover(sections[0].prompt, location);
+    }
+    if (sections[1]) {
+      section2.discover(sections[1].prompt, location);
+    }
+    if (sections[2]) {
+      section3.discover(sections[2].prompt, location);
+    }
+  }, [location, sections]);
 
   const handlePlaceClick = (place: DiscoveredPlace) => {
     navigate(`/place/${place.place_id}`);
@@ -356,40 +358,46 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Dynamic sections */}
       <main className="pt-2">
-        <SectionRow
-          title={SECTIONS[0].title}
-          places={section1.places}
-          isLoading={section1.isLoading}
-          error={section1.error}
-          onRetry={section1.retry}
-          onPlaceClick={handlePlaceClick}
-          toggleSave={toggleSave}
-          isSaved={isSaved}
-        />
+        {sections[0] && (
+          <SectionRow
+            title={sections[0].title}
+            places={section1.places}
+            isLoading={section1.isLoading}
+            error={section1.error}
+            onRetry={section1.retry}
+            onPlaceClick={handlePlaceClick}
+            toggleSave={toggleSave}
+            isSaved={isSaved}
+          />
+        )}
         
-        <SectionRow
-          title={SECTIONS[1].title}
-          places={section2.places}
-          isLoading={section2.isLoading}
-          error={section2.error}
-          onRetry={section2.retry}
-          onPlaceClick={handlePlaceClick}
-          toggleSave={toggleSave}
-          isSaved={isSaved}
-        />
+        {sections[1] && (
+          <SectionRow
+            title={sections[1].title}
+            places={section2.places}
+            isLoading={section2.isLoading}
+            error={section2.error}
+            onRetry={section2.retry}
+            onPlaceClick={handlePlaceClick}
+            toggleSave={toggleSave}
+            isSaved={isSaved}
+          />
+        )}
         
-        <SectionRow
-          title={SECTIONS[2].title}
-          places={section3.places}
-          isLoading={section3.isLoading}
-          error={section3.error}
-          onRetry={section3.retry}
-          onPlaceClick={handlePlaceClick}
-          toggleSave={toggleSave}
-          isSaved={isSaved}
-        />
+        {sections[2] && (
+          <SectionRow
+            title={sections[2].title}
+            places={section3.places}
+            isLoading={section3.isLoading}
+            error={section3.error}
+            onRetry={section3.retry}
+            onPlaceClick={handlePlaceClick}
+            toggleSave={toggleSave}
+            isSaved={isSaved}
+          />
+        )}
       </main>
     </div>
   );
