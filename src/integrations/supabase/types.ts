@@ -14,7 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      place_interactions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          place_id: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          place_id: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          place_id?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_interactions_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["place_id"]
+          },
+        ]
+      }
+      places: {
+        Row: {
+          address: string | null
+          categories: string[] | null
+          last_enriched_at: string | null
+          lat: number | null
+          lng: number | null
+          name: string
+          place_id: string
+          provider: string | null
+          rating: number | null
+          ratings_total: number | null
+          raw: Json | null
+        }
+        Insert: {
+          address?: string | null
+          categories?: string[] | null
+          last_enriched_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name: string
+          place_id: string
+          provider?: string | null
+          rating?: number | null
+          ratings_total?: number | null
+          raw?: Json | null
+        }
+        Update: {
+          address?: string | null
+          categories?: string[] | null
+          last_enriched_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          place_id?: string
+          provider?: string | null
+          rating?: number | null
+          ratings_total?: number | null
+          raw?: Json | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          budget: string | null
+          created_at: string
+          dietary: Json | null
+          id: string
+          mobility: Json | null
+          vibe: Json | null
+        }
+        Insert: {
+          budget?: string | null
+          created_at?: string
+          dietary?: Json | null
+          id: string
+          mobility?: Json | null
+          vibe?: Json | null
+        }
+        Update: {
+          budget?: string | null
+          created_at?: string
+          dietary?: Json | null
+          id?: string
+          mobility?: Json | null
+          vibe?: Json | null
+        }
+        Relationships: []
+      }
+      saved_places: {
+        Row: {
+          created_at: string
+          id: string
+          place_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          place_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          place_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_places_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["place_id"]
+          },
+        ]
+      }
+      searches: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          mode: string | null
+          prompt: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          mode?: string | null
+          prompt: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          mode?: string | null
+          prompt?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
