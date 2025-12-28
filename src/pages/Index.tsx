@@ -4,9 +4,9 @@ import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import ProfilePage from "@/components/ProfilePage";
-import OnboardingWizard, { OnboardingData } from "@/components/OnboardingWizard";
+import OnboardingWizard from "@/components/OnboardingWizard";
 import LoadingTransition from "@/components/LoadingTransition";
-import { useApp } from "@/context/AppContext";
+import { useApp, OnboardingData } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 

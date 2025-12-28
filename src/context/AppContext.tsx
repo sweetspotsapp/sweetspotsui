@@ -1,10 +1,14 @@
 import { useState, createContext, useContext, ReactNode, useCallback, useEffect } from "react";
 import { extractVibes } from "@/data/mockPlaces";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import type { RankedPlace } from "@/hooks/useSearch";
-import type { OnboardingData } from "@/components/OnboardingWizard";
 
+// Onboarding data structure (defined here to avoid circular deps)
+export interface OnboardingData {
+  trip_intention: string | null;
+  budget: string | null;
+  travel_personality: string[];
+}
 export interface PlaceCategory {
   id: string;
   name: string;
@@ -126,7 +130,6 @@ const generateSections = (data: OnboardingData | null): SectionConfig[] => {
 };
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
   const [rankedPlaces, setRankedPlaces] = useState<RankedPlace[]>([]);
   const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
   const [userMood, setUserMood] = useState("");
@@ -136,46 +139,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [categories, setCategories] = useState<PlaceCategory[]>([]);
   const [onboardingData, setOnboardingDataState] = useState<OnboardingData | null>(null);
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
-
-  // Load profile data from Supabase on mount
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('vibe, budget')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error loading profile:', error);
-          return;
-        }
-
-        if (data) {
-          const vibe = data.vibe as { trip_intention?: string; travel_personality?: string[] } | null;
-          const loadedData: OnboardingData = {
-            trip_intention: vibe?.trip_intention || null,
-            budget: data.budget || null,
-            travel_personality: vibe?.travel_personality || [],
-          };
-
-          // Only set if user has completed onboarding before
-          if (loadedData.trip_intention || loadedData.budget || loadedData.travel_personality.length > 0) {
-            setOnboardingDataState(loadedData);
-            setSections(generateSections(loadedData));
-            setHasCompletedOnboarding(true);
-          }
-        }
-      } catch (err) {
-        console.error('Error loading profile:', err);
-      }
-    };
-
-    loadProfile();
-  }, [user]);
 
   const setOnboardingData = useCallback((data: OnboardingData) => {
     setOnboardingDataState(data);
