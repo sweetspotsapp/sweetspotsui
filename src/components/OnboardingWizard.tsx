@@ -4,13 +4,7 @@ import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-
-// Onboarding data structure
-export interface OnboardingData {
-  trip_intention: string | null;
-  budget: string | null;
-  travel_personality: string[];
-}
+import type { OnboardingData } from "@/context/AppContext";
 
 interface OnboardingWizardProps {
   onComplete: (data: OnboardingData) => void;
