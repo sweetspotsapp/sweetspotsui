@@ -4,18 +4,16 @@ import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import ProfilePage from "@/components/ProfilePage";
-import OnboardingWizard from "@/components/OnboardingWizard";
+import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
-import { useApp, OnboardingData } from "@/context/AppContext";
+import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 
 type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { hasCompletedOnboarding, setOnboardingData, completeOnboarding } = useApp();
-  const { toast } = useToast();
+  const { hasCompletedOnboarding, setUserMood, completeOnboarding } = useApp();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<"home" | "saved" | "profile">("home");
@@ -39,15 +37,24 @@ const Index = () => {
     }
   }, [user, authLoading, navigate]);
 
-  const handleOnboardingComplete = (data: OnboardingData) => {
-    setOnboardingData(data);
+  const handleMoodSubmit = (mood: string) => {
+    setUserMood(mood);
     setAppState("loading");
     
     // Short loading transition
     setTimeout(() => {
-      completeOnboarding("", []);
+      completeOnboarding(mood, []);
       setAppState("main");
     }, 1000);
+  };
+
+  const handleSkip = () => {
+    setAppState("loading");
+    
+    setTimeout(() => {
+      completeOnboarding("", []);
+      setAppState("main");
+    }, 800);
   };
 
   // Show loading while checking auth
@@ -59,9 +66,9 @@ const Index = () => {
     );
   }
 
-  // Show onboarding wizard
+  // Show mood input screen
   if (appState === "onboarding") {
-    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+    return <EntryScreen onSubmit={handleMoodSubmit} onSkip={handleSkip} />;
   }
 
   // Show loading transition

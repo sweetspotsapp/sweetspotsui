@@ -3,9 +3,10 @@ import MoodInput from "./MoodInput";
 
 interface EntryScreenProps {
   onSubmit: (mood: string) => void;
+  onSkip: () => void;
 }
 
-const EntryScreen = ({ onSubmit }: EntryScreenProps) => {
+const EntryScreen = ({ onSubmit, onSkip }: EntryScreenProps) => {
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
       {/* Top decorative element */}
@@ -24,28 +25,21 @@ const EntryScreen = ({ onSubmit }: EntryScreenProps) => {
       <main className="flex-1 flex flex-col justify-center px-5 pb-8 relative">
         <div className="w-full space-y-8">
           {/* Headlines */}
-          <div className="space-y-2 opacity-0 animate-fade-up" style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}>
+          <div className="space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}>
             <h1 className="text-2xl font-bold text-foreground leading-tight">
-              Don't know where to go?
+              What are you in the mood for right now?
             </h1>
             <p className="text-base text-muted-foreground">
-              That's okay. Just tell us what you're in the mood for.
+              Just describe what you're feeling, and we'll show you places that actually match.
             </p>
           </div>
 
           {/* Input */}
           <div className="opacity-0 animate-fade-up" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
-            <MoodInput onSubmit={onSubmit} />
+            <MoodInput onSubmit={onSubmit} onSkip={onSkip} />
           </div>
         </div>
       </main>
-
-      {/* Bottom tagline */}
-      <footer className="pb-8 pt-4 text-center opacity-0 animate-fade-up" style={{ animationDelay: '450ms', animationFillMode: 'forwards' }}>
-        <p className="text-xs text-muted-foreground">
-          Find places that feel right
-        </p>
-      </footer>
     </div>
   );
 };
