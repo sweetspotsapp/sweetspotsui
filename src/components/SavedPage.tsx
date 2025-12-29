@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, Plus, Menu, User, SortAsc } from "lucide-react";
+import { Plus, Menu, User, SortAsc } from "lucide-react";
 import { useApp, PlaceCategory } from "@/context/AppContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,40 @@ import BoardView from "./saved/BoardView";
 import BoardEditor from "./saved/BoardEditor";
 import EmptyState from "./saved/EmptyState";
 import PlaceDetail from "./PlaceDetail";
+
+// ============= DUMMY IMAGES FOR CONTEXT =============
+const PLACE_IMAGES: Record<string, string[]> = {
+  sp1: [
+    "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
+    "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400",
+  ],
+  sp2: [
+    "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400",
+    "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=400",
+  ],
+  sp3: [
+    "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=400",
+    "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400",
+  ],
+  sp4: [
+    "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400",
+    "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400",
+  ],
+  sp5: [
+    "https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=400",
+    "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400",
+  ],
+  sp6: [
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
+    "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400",
+  ],
+  sp7: [
+    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+  ],
+  sp8: [
+    "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400",
+  ],
+};
 
 // ============= DUMMY SAVED PLACES =============
 const DUMMY_SAVED_PLACES: RankedPlace[] = [
@@ -110,6 +144,38 @@ const DUMMY_SAVED_PLACES: RankedPlace[] = [
     score: 0.85,
     why: "Fresh sea breeze and great coffee",
   },
+  {
+    place_id: "sp7",
+    name: "Little Italy Kitchen",
+    categories: ["restaurant", "italian"],
+    rating: 4.7,
+    ratings_total: 298,
+    address: "88 Lygon St, Carlton",
+    lat: -37.8010,
+    lng: 144.9671,
+    photo_name: null,
+    provider: "google",
+    eta_seconds: 540,
+    distance_meters: 1500,
+    score: 0.91,
+    why: "Authentic pasta and cozy vibes",
+  },
+  {
+    place_id: "sp8",
+    name: "Twilight Lounge",
+    categories: ["bar", "cocktail"],
+    rating: 4.6,
+    ratings_total: 267,
+    address: "55 Flinders Lane, CBD",
+    lat: -37.8155,
+    lng: 144.9628,
+    photo_name: null,
+    provider: "google",
+    eta_seconds: 420,
+    distance_meters: 600,
+    score: 0.89,
+    why: "Creative cocktails in speakeasy style",
+  },
 ];
 
 // ============= DUMMY BOARDS =============
@@ -117,7 +183,7 @@ const DUMMY_BOARDS: PlaceCategory[] = [
   {
     id: "board1",
     name: "Date Night Spots",
-    placeIds: ["sp3", "sp5"],
+    placeIds: ["sp3", "sp5", "sp8"],
     color: "from-rose-500 to-pink-600",
     createdAt: new Date("2024-01-15"),
   },
@@ -135,18 +201,24 @@ const DUMMY_BOARDS: PlaceCategory[] = [
     color: "from-violet-500 to-purple-600",
     createdAt: new Date("2024-01-05"),
   },
+  {
+    id: "board4",
+    name: "Solo Coffee Runs",
+    placeIds: ["sp1", "sp6"],
+    color: "from-emerald-500 to-teal-600",
+    createdAt: new Date("2024-01-01"),
+  },
 ];
 
-const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
-  const category = categories?.[0] || "place";
-  return `https://source.unsplash.com/400x400/?${encodeURIComponent(`${category} ${name}`)}`;
+// Get images for a place
+const getPlaceImages = (placeId: string): string[] => {
+  return PLACE_IMAGES[placeId] || [];
 };
 
 type SortOption = "recent" | "alphabetical" | "most-saved";
 
 const SavedPage = () => {
   const navigate = useNavigate();
-  // Use dummy data instead of context for now
   const [boards, setBoards] = useState<PlaceCategory[]>(DUMMY_BOARDS);
   const savedPlaces = DUMMY_SAVED_PLACES;
   
@@ -157,11 +229,20 @@ const SavedPage = () => {
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [showSortMenu, setShowSortMenu] = useState(false);
   
-  // Get cover image for a board (first place's image or default)
-  const getBoardCoverImage = (board: PlaceCategory): string | undefined => {
-    const firstPlaceId = board.placeIds[0];
-    const place = savedPlaces.find(p => p.place_id === firstPlaceId);
-    return place ? getPlaceholderImage(place.name, place.categories) : undefined;
+  // Get cover images for a board (up to 3 for collage)
+  const getBoardCoverImages = (board: PlaceCategory): string[] => {
+    return board.placeIds
+      .slice(0, 3)
+      .map(placeId => getPlaceImages(placeId)[0])
+      .filter(Boolean);
+  };
+
+  // Get all saved places images for "All Saved" board
+  const getAllSavedImages = (): string[] => {
+    return savedPlaces
+      .slice(0, 3)
+      .map(place => getPlaceImages(place.place_id)[0])
+      .filter(Boolean);
   };
 
   // Sort boards
@@ -212,10 +293,10 @@ const SavedPage = () => {
         </header>
 
         {/* Page Title */}
-        <div className="px-4 pt-5 pb-3">
+        <div className="px-4 pt-6 pb-4">
           <h1 className="text-2xl font-bold text-foreground">Saved Spots</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Organize your favorite spots your way
+            Your curated collection of favorite places
           </p>
         </div>
 
@@ -223,10 +304,10 @@ const SavedPage = () => {
           <EmptyState type="boards" />
         ) : (
           <>
-            {/* Sort & Filter Bar */}
-            <div className="flex items-center justify-between px-4 py-2">
-              <span className="text-xs text-muted-foreground">
-                {boards.length + 1} {boards.length === 0 ? 'board' : 'boards'}
+            {/* Sort Bar */}
+            <div className="flex items-center justify-between px-4 pb-4">
+              <span className="text-xs text-muted-foreground font-medium">
+                {boards.length + 1} boards
               </span>
               
               <div className="relative">
@@ -262,14 +343,14 @@ const SavedPage = () => {
               </div>
             </div>
 
-            {/* Pinterest-Style Grid */}
+            {/* Pinterest-Style Masonry Grid */}
             <div className="px-4 pb-6">
               <div className="grid grid-cols-2 gap-3">
                 {/* All Saved Board - Always First */}
                 <BoardCard
                   isAllSaved
                   savedCount={savedPlaces.length}
-                  coverImage={savedPlaces[0] ? getPlaceholderImage(savedPlaces[0].name, savedPlaces[0].categories) : undefined}
+                  coverImages={getAllSavedImages()}
                   onClick={() => setSelectedBoard("all")}
                   animationDelay={0}
                 />
@@ -279,7 +360,7 @@ const SavedPage = () => {
                   <BoardCard
                     key={board.id}
                     board={board}
-                    coverImage={getBoardCoverImage(board)}
+                    coverImages={getBoardCoverImages(board)}
                     onClick={() => setSelectedBoard(board)}
                     onOptions={() => handleEditBoard(board)}
                     animationDelay={(index + 1) * 50}
@@ -292,7 +373,7 @@ const SavedPage = () => {
                     setEditingBoard(null);
                     setShowBoardEditor(true);
                   }}
-                  className="aspect-[4/3] rounded-2xl border-2 border-dashed border-border/60 
+                  className="aspect-[4/5] rounded-2xl border-2 border-dashed border-border/60 
                              flex flex-col items-center justify-center gap-2 text-muted-foreground 
                              hover:border-primary/50 hover:text-primary hover:bg-primary/5 
                              transition-all active:scale-[0.98]"
@@ -302,45 +383,6 @@ const SavedPage = () => {
                 </button>
               </div>
             </div>
-
-            {/* Recent Saves Preview */}
-            {savedPlaces.length > 0 && (
-              <div className="px-4 pb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-foreground">Recently Saved</h2>
-                  <button 
-                    onClick={() => setSelectedBoard("all")}
-                    className="text-xs text-primary font-medium"
-                  >
-                    See all
-                  </button>
-                </div>
-                
-                <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                  {savedPlaces.slice(0, 6).map((place, index) => (
-                    <div
-                      key={place.place_id}
-                      onClick={() => setSelectedPlace(place)}
-                      className="flex-shrink-0 w-[120px] cursor-pointer active:scale-[0.98] transition-transform 
-                                 opacity-0 animate-fade-up"
-                      style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
-                    >
-                      <div className="aspect-square rounded-xl overflow-hidden mb-1.5">
-                        <img 
-                          src={getPlaceholderImage(place.name, place.categories)} 
-                          alt={place.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <h3 className="text-xs font-medium text-foreground line-clamp-1">{place.name}</h3>
-                      <p className="text-[10px] text-muted-foreground capitalize line-clamp-1">
-                        {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>
@@ -350,6 +392,7 @@ const SavedPage = () => {
         <BoardView
           board={selectedBoard}
           places={savedPlaces}
+          placeImages={PLACE_IMAGES}
           onClose={() => setSelectedBoard(null)}
           onEdit={selectedBoard !== "all" ? () => handleEditBoard(selectedBoard) : undefined}
           onDelete={selectedBoard !== "all" ? () => handleDeleteBoard(selectedBoard) : undefined}
