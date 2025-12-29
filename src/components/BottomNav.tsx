@@ -24,6 +24,8 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
+              // Add data attribute for save animation targeting
+              data-saved-tab={tab.id === "saved" ? "true" : undefined}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all duration-200",
                 isActive 
