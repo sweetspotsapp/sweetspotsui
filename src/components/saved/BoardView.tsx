@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter } from "lucide-react";
-import { useApp, PlaceCategory } from "@/context/AppContext";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign } from "lucide-react";
+import { PlaceCategory } from "@/context/AppContext";
 import PlaceDetail from "../PlaceDetail";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
 
 interface BoardViewProps {
   board: PlaceCategory | "all";
+  places: RankedPlace[];
   onClose: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onPlaceClick?: (place: RankedPlace) => void;
 }
 
 const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
@@ -17,33 +19,56 @@ const getPlaceholderImage = (name: string, categories?: string[] | null): string
   return `https://source.unsplash.com/400x400/?${encodeURIComponent(`${category} ${name}`)}`;
 };
 
-const BoardView = ({ board, onClose, onEdit, onDelete }: BoardViewProps) => {
-  const { getCategoryPlaces, savedPlaceIds, rankedPlaces } = useApp();
+type SortOption = "recent" | "name" | "rating" | "distance";
+type FilterOption = "all" | "$$" | "$$$" | "nearby";
+
+const BoardView = ({ board, places, onClose, onEdit, onDelete, onPlaceClick }: BoardViewProps) => {
   const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [sortBy, setSortBy] = useState<"recent" | "name" | "rating">("recent");
+  const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [filterBy, setFilterBy] = useState<FilterOption>("all");
+  const [showFilters, setShowFilters] = useState(false);
   
   const isAllSaved = board === "all";
   const boardName = isAllSaved ? "All Saved" : board.name;
   const colorClass = isAllSaved ? "from-primary to-primary/80" : board.color;
   
   // Get places for this board
-  const places = isAllSaved 
-    ? rankedPlaces.filter(p => savedPlaceIds.has(p.place_id))
-    : getCategoryPlaces(board.id);
+  const boardPlaces = isAllSaved 
+    ? places
+    : places.filter(p => board.placeIds.includes(p.place_id));
+  
+  // Filter places
+  const filteredPlaces = boardPlaces.filter(place => {
+    if (filterBy === "all") return true;
+    if (filterBy === "nearby") return (place.distance_meters || 0) < 2000;
+    // Dummy price logic based on rating for demo
+    if (filterBy === "$$") return (place.rating || 0) < 4.6;
+    if (filterBy === "$$$") return (place.rating || 0) >= 4.6;
+    return true;
+  });
   
   // Sort places
-  const sortedPlaces = [...places].sort((a, b) => {
+  const sortedPlaces = [...filteredPlaces].sort((a, b) => {
     switch (sortBy) {
       case "name": return a.name.localeCompare(b.name);
       case "rating": return (b.rating || 0) - (a.rating || 0);
+      case "distance": return (a.distance_meters || 0) - (b.distance_meters || 0);
       default: return 0;
     }
   });
 
+  const handlePlaceClick = (place: RankedPlace) => {
+    if (onPlaceClick) {
+      onPlaceClick(place);
+    } else {
+      setSelectedPlace(place);
+    }
+  };
+
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-background animate-slide-in-bottom flex flex-col">
+      <div className="fixed inset-0 z-50 bg-background animate-slide-in-bottom flex flex-col max-w-md mx-auto">
         {/* Header with gradient */}
         <div className={cn("relative h-32 bg-gradient-to-br flex-shrink-0", colorClass)}>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
@@ -95,21 +120,21 @@ const BoardView = ({ board, onClose, onEdit, onDelete }: BoardViewProps) => {
           <div className="absolute bottom-4 left-4 right-4">
             <h1 className="text-xl font-bold text-white drop-shadow-lg">{boardName}</h1>
             <p className="text-white/80 text-sm mt-0.5">
-              {places.length} {places.length === 1 ? 'spot' : 'spots'} saved
+              {boardPlaces.length} {boardPlaces.length === 1 ? 'spot' : 'spots'} saved
             </p>
           </div>
         </div>
 
-        {/* Sort Bar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
-          <SortAsc className="w-4 h-4 text-muted-foreground" />
-          <div className="flex gap-1.5">
-            {(["recent", "name", "rating"] as const).map((option) => (
+        {/* Sort & Filter Bar */}
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border/50">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+            <SortAsc className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {(["recent", "name", "rating", "distance"] as SortOption[]).map((option) => (
               <button
                 key={option}
                 onClick={() => setSortBy(option)}
                 className={cn(
-                  "px-3 py-1 rounded-full text-xs font-medium transition-colors capitalize",
+                  "px-3 py-1 rounded-full text-xs font-medium transition-colors capitalize whitespace-nowrap",
                   sortBy === option 
                     ? "bg-primary text-primary-foreground" 
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -119,11 +144,44 @@ const BoardView = ({ board, onClose, onEdit, onDelete }: BoardViewProps) => {
               </button>
             ))}
           </div>
+          
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              "p-2 rounded-full transition-colors flex-shrink-0",
+              filterBy !== "all" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+            )}
+          >
+            <Filter className="w-4 h-4" />
+          </button>
         </div>
+        
+        {/* Filter Pills */}
+        {showFilters && (
+          <div className="flex gap-2 px-4 py-2 border-b border-border/50 overflow-x-auto scrollbar-hide">
+            {(["all", "nearby", "$$", "$$$"] as FilterOption[]).map((option) => (
+              <button
+                key={option}
+                onClick={() => setFilterBy(option)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex items-center gap-1",
+                  filterBy === option 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                {option === "nearby" && <MapPin className="w-3 h-3" />}
+                {option === "$$" && <DollarSign className="w-3 h-3" />}
+                {option === "$$$" && <><DollarSign className="w-3 h-3" /><DollarSign className="w-3 h-3 -ml-2" /></>}
+                {option === "all" ? "All" : option === "nearby" ? "< 2km" : option}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Grid of Places - Pinterest Masonry Style */}
         <div className="flex-1 overflow-y-auto p-4">
-          {places.length === 0 ? (
+          {sortedPlaces.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <MapPin className="w-7 h-7 text-muted-foreground" />
@@ -138,13 +196,11 @@ const BoardView = ({ board, onClose, onEdit, onDelete }: BoardViewProps) => {
               {sortedPlaces.map((place, index) => (
                 <div 
                   key={place.place_id}
-                  onClick={() => setSelectedPlace(place)}
+                  onClick={() => handlePlaceClick(place)}
                   className={cn(
                     "bg-card rounded-xl overflow-hidden border border-border/50",
                     "cursor-pointer active:scale-[0.98] transition-all duration-200",
-                    "opacity-0 animate-fade-up hover:shadow-md hover:border-primary/30",
-                    // Pinterest masonry effect - alternate heights
-                    index % 3 === 0 ? "row-span-1" : ""
+                    "opacity-0 animate-fade-up hover:shadow-md hover:border-primary/30"
                   )}
                   style={{ 
                     animationDelay: `${index * 50}ms`, 
@@ -166,16 +222,23 @@ const BoardView = ({ board, onClose, onEdit, onDelete }: BoardViewProps) => {
                         <span className="text-[10px] font-medium text-white">{place.rating.toFixed(1)}</span>
                       </div>
                     )}
+                    
+                    {/* Distance Badge */}
+                    {place.distance_meters && (
+                      <div className="absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-black/50 backdrop-blur-sm">
+                        <MapPin className="w-3 h-3 text-white" />
+                        <span className="text-[10px] font-medium text-white">
+                          {(place.distance_meters / 1000).toFixed(1)} km
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="p-2.5">
                     <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
-                    <div className="flex items-center gap-1 mt-1">
-                      <MapPin className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-[11px] text-muted-foreground capitalize line-clamp-1">
-                        {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
-                      </span>
-                    </div>
+                    <p className="text-[11px] text-muted-foreground capitalize line-clamp-1 mt-0.5">
+                      {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
+                    </p>
                   </div>
                 </div>
               ))}

@@ -12,6 +12,131 @@ import BoardEditor from "./saved/BoardEditor";
 import EmptyState from "./saved/EmptyState";
 import PlaceDetail from "./PlaceDetail";
 
+// ============= DUMMY SAVED PLACES =============
+const DUMMY_SAVED_PLACES: RankedPlace[] = [
+  {
+    place_id: "sp1",
+    name: "The Velvet Corner",
+    categories: ["café", "coffee"],
+    rating: 4.7,
+    ratings_total: 234,
+    address: "123 Cozy Lane, Melbourne CBD",
+    lat: -37.8136,
+    lng: 144.9631,
+    photo_name: null,
+    provider: "google",
+    eta_seconds: 600,
+    distance_meters: 1200,
+    score: 0.92,
+    why: "Perfect for a quiet work session",
+  },
+  {
+    place_id: "sp2",
+    name: "Midnight Ramen House",
+    categories: ["restaurant", "japanese"],
+    rating: 4.8,
+    ratings_total: 512,
+    address: "45 Noodle Street, Fitzroy",
+    lat: -37.7992,
+    lng: 144.9784,
+    photo_name: null,
+    provider: "google",
+    eta_seconds: 900,
+    distance_meters: 1800,
+    score: 0.95,
+    why: "Best late-night ramen in town",
+  },
+  {
+    place_id: "sp3",
+    name: "Rooftop Sunset Bar",
+    categories: ["bar", "rooftop"],
+    rating: 4.5,
+    ratings_total: 328,
+    address: "Level 12, 88 Collins St",
+    lat: -37.8142,
+    lng: 144.9632,
+    photo_name: null,
+    provider: "google",
+    eta_seconds: 480,
+    distance_meters: 800,
+    score: 0.88,
+    why: "Stunning city views at sunset",
+  },
+  {
+    place_id: "sp4",
+    name: "Green Garden Brunch",
+    categories: ["restaurant", "brunch"],
+    rating: 4.6,
+    ratings_total: 189,
+    address: "22 Chapel St, Prahran",
+    lat: -37.8497,
+    lng: 144.9926,
+    photo_name: null,
+    provider: "google",
+    eta_seconds: 720,
+    distance_meters: 2500,
+    score: 0.90,
+    why: "Amazing avocado toast and outdoor seating",
+  },
+  {
+    place_id: "sp5",
+    name: "The Jazz Cellar",
+    categories: ["bar", "music_venue"],
+    rating: 4.9,
+    ratings_total: 421,
+    address: "5 Basement Lane, CBD",
+    lat: -37.8125,
+    lng: 144.9644,
+    photo_name: null,
+    provider: "google",
+    eta_seconds: 360,
+    distance_meters: 500,
+    score: 0.97,
+    why: "Intimate jazz vibes every night",
+  },
+  {
+    place_id: "sp6",
+    name: "Ocean View Café",
+    categories: ["café", "coastal"],
+    rating: 4.4,
+    ratings_total: 156,
+    address: "1 Beach Road, St Kilda",
+    lat: -37.8676,
+    lng: 144.9741,
+    photo_name: null,
+    provider: "google",
+    eta_seconds: 1200,
+    distance_meters: 5000,
+    score: 0.85,
+    why: "Fresh sea breeze and great coffee",
+  },
+];
+
+// ============= DUMMY BOARDS =============
+const DUMMY_BOARDS: PlaceCategory[] = [
+  {
+    id: "board1",
+    name: "Date Night Spots",
+    placeIds: ["sp3", "sp5"],
+    color: "from-rose-500 to-pink-600",
+    createdAt: new Date("2024-01-15"),
+  },
+  {
+    id: "board2",
+    name: "Brunch Faves",
+    placeIds: ["sp1", "sp4", "sp6"],
+    color: "from-amber-500 to-orange-600",
+    createdAt: new Date("2024-01-10"),
+  },
+  {
+    id: "board3",
+    name: "Late Night Eats",
+    placeIds: ["sp2", "sp5"],
+    color: "from-violet-500 to-purple-600",
+    createdAt: new Date("2024-01-05"),
+  },
+];
+
 const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
   const category = categories?.[0] || "place";
   return `https://source.unsplash.com/400x400/?${encodeURIComponent(`${category} ${name}`)}`;
@@ -21,7 +146,9 @@ type SortOption = "recent" | "alphabetical" | "most-saved";
 
 const SavedPage = () => {
   const navigate = useNavigate();
-  const { savedPlaceIds, categories, rankedPlaces, deleteCategory } = useApp();
+  // Use dummy data instead of context for now
+  const [boards, setBoards] = useState<PlaceCategory[]>(DUMMY_BOARDS);
+  const savedPlaces = DUMMY_SAVED_PLACES;
   
   const [selectedBoard, setSelectedBoard] = useState<PlaceCategory | "all" | null>(null);
   const [showBoardEditor, setShowBoardEditor] = useState(false);
@@ -29,19 +156,16 @@ const SavedPage = () => {
   const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [showSortMenu, setShowSortMenu] = useState(false);
-
-  // Get saved places
-  const savedPlaces = rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
   
   // Get cover image for a board (first place's image or default)
   const getBoardCoverImage = (board: PlaceCategory): string | undefined => {
     const firstPlaceId = board.placeIds[0];
-    const place = rankedPlaces.find(p => p.place_id === firstPlaceId);
+    const place = savedPlaces.find(p => p.place_id === firstPlaceId);
     return place ? getPlaceholderImage(place.name, place.categories) : undefined;
   };
 
   // Sort boards
-  const sortedBoards = [...categories].sort((a, b) => {
+  const sortedBoards = [...boards].sort((a, b) => {
     switch (sortBy) {
       case "alphabetical": return a.name.localeCompare(b.name);
       case "most-saved": return b.placeIds.length - a.placeIds.length;
@@ -56,11 +180,11 @@ const SavedPage = () => {
   };
 
   const handleDeleteBoard = (board: PlaceCategory) => {
-    deleteCategory(board.id);
+    setBoards(prev => prev.filter(b => b.id !== board.id));
     setSelectedBoard(null);
   };
 
-  const hasBoards = categories.length > 0 || savedPlaces.length > 0;
+  const hasBoards = boards.length > 0 || savedPlaces.length > 0;
 
   return (
     <>
@@ -102,7 +226,7 @@ const SavedPage = () => {
             {/* Sort & Filter Bar */}
             <div className="flex items-center justify-between px-4 py-2">
               <span className="text-xs text-muted-foreground">
-                {categories.length + 1} {categories.length === 0 ? 'board' : 'boards'}
+                {boards.length + 1} {boards.length === 0 ? 'board' : 'boards'}
               </span>
               
               <div className="relative">
@@ -225,9 +349,11 @@ const SavedPage = () => {
       {selectedBoard && (
         <BoardView
           board={selectedBoard}
+          places={savedPlaces}
           onClose={() => setSelectedBoard(null)}
           onEdit={selectedBoard !== "all" ? () => handleEditBoard(selectedBoard) : undefined}
           onDelete={selectedBoard !== "all" ? () => handleDeleteBoard(selectedBoard) : undefined}
+          onPlaceClick={setSelectedPlace}
         />
       )}
 
@@ -239,6 +365,7 @@ const SavedPage = () => {
             setEditingBoard(null);
           }}
           editBoard={editingBoard}
+          availablePlaces={savedPlaces}
         />
       )}
 
