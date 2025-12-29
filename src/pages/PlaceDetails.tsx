@@ -1,8 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Navigation, DollarSign } from 'lucide-react';
+import { ArrowLeft, Star, Navigation, Clock, Users, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -11,6 +10,8 @@ import ReviewsList from '@/components/place-detail/ReviewsList';
 import TipsSection from '@/components/place-detail/TipsSection';
 import RelatedSpots from '@/components/place-detail/RelatedSpots';
 import ActionButtons from '@/components/place-detail/ActionButtons';
+import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
+import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
 
 interface PlaceDetails {
   place_id: string;
@@ -24,61 +25,60 @@ interface PlaceDetails {
   photo_name: string | null;
 }
 
-// Mock data generators
-const generateMockImages = (photoUrl: string | null, name: string): string[] => {
-  const category = name.toLowerCase().includes('cafe') ? 'cafe' : 'restaurant';
-  return [
-    photoUrl || `https://source.unsplash.com/800x600/?${category},interior`,
-    `https://source.unsplash.com/800x600/?${category},food`,
-    `https://source.unsplash.com/800x600/?${category},ambiance`,
-    `https://source.unsplash.com/800x600/?${category},drink`,
-  ];
-};
+// Dummy data
+const dummyImages = [
+  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800',
+  'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
+  'https://images.unsplash.com/photo-1559305616-3f99cd43e353?w=800',
+  'https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=800',
+  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800',
+];
 
 const mockReviews = [
-  { id: '1', name: 'Sarah M.', rating: 5, text: 'Absolutely loved the atmosphere! Perfect spot for a weekend brunch with friends.', date: '2 days ago' },
-  { id: '2', name: 'James K.', rating: 4, text: 'Great food and friendly staff. A bit crowded on weekends but worth the wait.', date: '1 week ago' },
-  { id: '3', name: 'Emily R.', rating: 5, text: 'Hidden gem! The natural lighting is perfect for photos.', date: '2 weeks ago' },
+  { id: '1', name: 'Sarah M.', rating: 5, text: 'Absolutely loved the atmosphere! Perfect spot for weekend brunch 🌿', date: '2 days ago' },
+  { id: '2', name: 'James K.', rating: 4, text: 'Great food and friendly staff. A bit crowded on weekends but worth it!', date: '1 week ago' },
+  { id: '3', name: 'Emily R.', rating: 5, text: 'Hidden gem! The natural lighting is *chef\'s kiss* for photos 📸', date: '2 weeks ago' },
+  { id: '4', name: 'Mike T.', rating: 4, text: 'Love their house blend coffee. Will definitely come back!', date: '3 weeks ago' },
 ];
 
 const mockTips = [
-  'Perfect for solo study sessions or catching up with friends',
-  'Arrive early on weekends to avoid the brunch rush',
-  'Try the signature house blend coffee — it\'s worth it!',
-  'Outdoor seating available — ask for a window spot',
+  '☕ Try the signature house blend — locals swear by it!',
+  '📸 Window seats have the best natural light for pics',
+  '🌅 Come during golden hour for magical vibes',
 ];
 
 const mockRelatedPlaces = [
-  { id: 'related-1', name: 'The Garden Cafe', image: 'https://source.unsplash.com/400x500/?cafe,garden', rating: 4.5, distance: 1.2 },
-  { id: 'related-2', name: 'Urban Bites', image: 'https://source.unsplash.com/400x500/?restaurant,modern', rating: 4.3, distance: 0.8 },
-  { id: 'related-3', name: 'Sunset Lounge', image: 'https://source.unsplash.com/400x500/?lounge,rooftop', rating: 4.7, distance: 2.1 },
-  { id: 'related-4', name: 'Cozy Corner', image: 'https://source.unsplash.com/400x500/?cafe,cozy', rating: 4.4, distance: 1.5 },
+  { id: 'related-1', name: 'The Garden Cafe', image: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=400', rating: 4.5, distance: 1.2 },
+  { id: 'related-2', name: 'Urban Bites', image: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=400', rating: 4.3, distance: 0.8 },
+  { id: 'related-3', name: 'Sunset Lounge', image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400', rating: 4.7, distance: 2.1 },
+  { id: 'related-4', name: 'Cozy Corner', image: 'https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=400', rating: 4.4, distance: 1.5 },
 ];
 
-const getPhotoUrl = (photoName: string | null): string | null => {
-  if (!photoName) return null;
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=800`;
-};
+const mockOpeningHours = [
+  { day: 'Monday', hours: '7:00 AM - 6:00 PM', isToday: false },
+  { day: 'Tuesday', hours: '7:00 AM - 6:00 PM', isToday: false },
+  { day: 'Wednesday', hours: '7:00 AM - 6:00 PM', isToday: false },
+  { day: 'Thursday', hours: '7:00 AM - 9:00 PM', isToday: false },
+  { day: 'Friday', hours: '7:00 AM - 10:00 PM', isToday: false },
+  { day: 'Saturday', hours: '8:00 AM - 10:00 PM', isToday: true },
+  { day: 'Sunday', hours: '8:00 AM - 5:00 PM', isToday: false },
+];
 
-const getPriceRange = (categories: string[] | null): string => {
-  if (!categories) return '$$';
-  const hasExpensive = categories.some(c => c.toLowerCase().includes('fine') || c.toLowerCase().includes('luxury'));
-  const hasCheap = categories.some(c => c.toLowerCase().includes('fast') || c.toLowerCase().includes('casual'));
-  if (hasExpensive) return '$$$';
-  if (hasCheap) return '$';
-  return '$$';
-};
-
-const getWhyVisit = (name: string, categories: string[] | null): string => {
-  const category = categories?.[0]?.replace(/_/g, ' ').toLowerCase() || 'spot';
-  return `A charming ${category} known for its welcoming atmosphere and quality offerings. Perfect for those seeking a memorable experience with great vibes and excellent service.`;
-};
+const mockTrafficHours = [
+  { time: '8am', level: 2 },
+  { time: '10am', level: 4 },
+  { time: '12pm', level: 5 },
+  { time: '2pm', level: 3 },
+  { time: '4pm', level: 4 },
+  { time: '6pm', level: 5 },
+  { time: '8pm', level: 3 },
+];
 
 const PlaceDetailsPage = () => {
   const { placeId } = useParams<{ placeId: string }>();
   const navigate = useNavigate();
-  const { isSaved, toggleSave, logInteraction } = useSavedPlaces();
+  const { isSaved, toggleSave } = useSavedPlaces();
+  const [isLoading] = useState(false);
   
   // Dummy place data for UI development
   const dummyPlace: PlaceDetails = {
@@ -87,20 +87,13 @@ const PlaceDetailsPage = () => {
     address: '123 Garden Lane, Melbourne VIC 3000',
     lat: -37.8136,
     lng: 144.9631,
-    categories: ['cafe', 'brunch', 'garden'],
+    categories: ['cafe', 'brunch', 'garden', 'instagrammable'],
     rating: 4.6,
     ratings_total: 284,
     photo_name: null,
   };
 
   const place = dummyPlace;
-  const photoUrl = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
-  const isLoading = false;
-
-  const images = useMemo(() => {
-    if (!place) return [];
-    return generateMockImages(photoUrl, place.name);
-  }, [place, photoUrl]);
 
   const openInMaps = () => {
     if (place?.lat && place?.lng) {
@@ -146,81 +139,82 @@ const PlaceDetailsPage = () => {
   }
 
   const saved = placeId ? isSaved(placeId) : false;
-  const priceRange = getPriceRange(place.categories);
-  const whyVisit = getWhyVisit(place.name, place.categories);
-  const mockDistance = (Math.random() * 5 + 0.5).toFixed(1);
 
   return (
-    <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center justify-between p-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-lg font-semibold text-primary">Place Details</h1>
-          <div className="w-10" />
-        </div>
+    <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-28">
+      {/* Floating Back Button */}
+      <div className="absolute top-4 left-4 z-30">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => navigate(-1)}
+          className="bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background rounded-full w-10 h-10"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
       </div>
 
       {/* Hero Image Carousel */}
-      <ImageCarousel images={images} placeName={place.name} />
+      <ImageCarousel images={dummyImages} placeName={place.name} />
 
       {/* Content */}
-      <div className="px-4 py-4 space-y-5">
-        {/* Name & Quick Info */}
-        <div className="space-y-3">
-          <h2 className="text-2xl font-bold text-foreground">{place.name}</h2>
+      <div className="px-4 py-5 space-y-6">
+        {/* Name & Rating Badge */}
+        <div className="space-y-3 animate-fade-in">
+          <h1 className="text-2xl font-bold text-foreground leading-tight">
+            {place.name}
+          </h1>
           
-          <div className="flex items-center flex-wrap gap-3">
-            {/* Rating */}
-            {place.rating && (
-              <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full">
-                <Star className="w-4 h-4 text-primary fill-primary" />
-                <span className="text-sm font-semibold text-primary">
-                  {place.rating} / 5
-                </span>
-                {place.ratings_total && (
-                  <span className="text-xs text-primary/70">
-                    ({place.ratings_total})
-                  </span>
-                )}
-              </div>
+          {/* Address */}
+          <div className="flex items-start gap-2 text-muted-foreground">
+            <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span className="text-sm">{place.address}</span>
+          </div>
+          
+          {/* Rating & Reviews Count */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-2 rounded-xl">
+              <Star className="w-5 h-5 text-primary fill-primary" />
+              <span className="text-lg font-bold text-primary">
+                {place.rating}
+              </span>
+              <span className="text-sm text-primary/70">/ 5</span>
+            </div>
+            {place.ratings_total && (
+              <span className="text-sm text-muted-foreground">
+                Based on {place.ratings_total} reviews
+              </span>
             )}
-
-            {/* Distance */}
-            <div className="flex items-center gap-1.5 bg-secondary px-3 py-1.5 rounded-full">
-              <Navigation className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{mockDistance} km</span>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-center gap-1 bg-secondary px-3 py-1.5 rounded-full">
-              <DollarSign className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">{priceRange}</span>
-            </div>
           </div>
         </div>
 
-        {/* Why Visit */}
-        <div className="space-y-2">
-          <h3 className="font-semibold text-foreground">Why Visit</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">{whyVisit}</p>
-        </div>
-
-        {/* Reviews */}
-        <ReviewsList reviews={mockReviews} />
-
-        {/* Tips */}
-        <TipsSection tips={mockTips} />
-
-        {/* Action Buttons */}
+        {/* Quick Action Buttons */}
         <ActionButtons
           isSaved={saved}
           onSave={() => placeId && toggleSave(placeId)}
           onViewMap={openInMaps}
           onShare={handleShare}
         />
+
+        {/* Quick Info Section */}
+        <QuickInfoSection 
+          distance={2.3}
+          priceRange="$$"
+          openingHours={mockOpeningHours}
+          trafficHours={mockTrafficHours}
+        />
+
+        {/* Why Visit */}
+        <WhyVisitSection 
+          description="A charming botanical cafe tucked away in the heart of the city. Known for its lush indoor plants, Instagram-worthy corners, and specialty coffee that'll make your taste buds dance. Perfect for remote work, catch-ups with friends, or solo soul-searching sessions."
+          vibes={['Instagrammable', 'Cozy', 'Plant Paradise', 'Brunch Spot']}
+        />
+
+        {/* Reviews */}
+        <ReviewsList reviews={mockReviews} />
+
+        {/* Tips */}
+        <TipsSection tips={mockTips} />
 
         {/* Related Spots */}
         <RelatedSpots places={mockRelatedPlaces} onPlaceClick={handleRelatedClick} />
