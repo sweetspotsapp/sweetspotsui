@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign, Heart } from "lucide-react";
 import { PlaceCategory } from "@/context/AppContext";
 import PlaceDetail from "../PlaceDetail";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -8,21 +8,17 @@ import { cn } from "@/lib/utils";
 interface BoardViewProps {
   board: PlaceCategory | "all";
   places: RankedPlace[];
+  placeImages?: Record<string, string[]>;
   onClose: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onPlaceClick?: (place: RankedPlace) => void;
 }
 
-const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
-  const category = categories?.[0] || "place";
-  return `https://source.unsplash.com/400x400/?${encodeURIComponent(`${category} ${name}`)}`;
-};
-
 type SortOption = "recent" | "name" | "rating" | "distance";
 type FilterOption = "all" | "$$" | "$$$" | "nearby";
 
-const BoardView = ({ board, places, onClose, onEdit, onDelete, onPlaceClick }: BoardViewProps) => {
+const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete, onPlaceClick }: BoardViewProps) => {
   const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
@@ -42,7 +38,6 @@ const BoardView = ({ board, places, onClose, onEdit, onDelete, onPlaceClick }: B
   const filteredPlaces = boardPlaces.filter(place => {
     if (filterBy === "all") return true;
     if (filterBy === "nearby") return (place.distance_meters || 0) < 2000;
-    // Dummy price logic based on rating for demo
     if (filterBy === "$$") return (place.rating || 0) < 4.6;
     if (filterBy === "$$$") return (place.rating || 0) >= 4.6;
     return true;
@@ -58,6 +53,10 @@ const BoardView = ({ board, places, onClose, onEdit, onDelete, onPlaceClick }: B
     }
   });
 
+  const getPlaceImage = (placeId: string): string => {
+    return placeImages[placeId]?.[0] || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400`;
+  };
+
   const handlePlaceClick = (place: RankedPlace) => {
     if (onPlaceClick) {
       onPlaceClick(place);
@@ -70,8 +69,8 @@ const BoardView = ({ board, places, onClose, onEdit, onDelete, onPlaceClick }: B
     <>
       <div className="fixed inset-0 z-50 bg-background animate-slide-in-bottom flex flex-col max-w-md mx-auto">
         {/* Header with gradient */}
-        <div className={cn("relative h-32 bg-gradient-to-br flex-shrink-0", colorClass)}>
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+        <div className={cn("relative h-36 bg-gradient-to-br flex-shrink-0", colorClass)}>
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
           
           {/* Top Bar */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3">
@@ -179,7 +178,7 @@ const BoardView = ({ board, places, onClose, onEdit, onDelete, onPlaceClick }: B
           </div>
         )}
 
-        {/* Grid of Places - Pinterest Masonry Style */}
+        {/* Grid of Places */}
         <div className="flex-1 overflow-y-auto p-4">
           {sortedPlaces.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -200,35 +199,43 @@ const BoardView = ({ board, places, onClose, onEdit, onDelete, onPlaceClick }: B
                   className={cn(
                     "bg-card rounded-xl overflow-hidden border border-border/50",
                     "cursor-pointer active:scale-[0.98] transition-all duration-200",
-                    "opacity-0 animate-fade-up hover:shadow-md hover:border-primary/30"
+                    "opacity-0 animate-fade-up hover:shadow-md hover:border-primary/30 group"
                   )}
                   style={{ 
                     animationDelay: `${index * 50}ms`, 
                     animationFillMode: 'forwards' 
                   }}
                 >
-                  <div className="aspect-[4/3] relative overflow-hidden">
+                  <div className="aspect-square relative overflow-hidden">
                     <img 
-                      src={getPlaceholderImage(place.name, place.categories)} 
+                      src={getPlaceImage(place.place_id)} 
                       alt={place.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    
+                    {/* Saved Indicator */}
+                    <button 
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Heart className="w-4 h-4 text-primary fill-primary" />
+                    </button>
                     
                     {/* Rating Badge */}
                     {place.rating && (
-                      <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-black/50 backdrop-blur-sm">
+                      <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
                         <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                        <span className="text-[10px] font-medium text-white">{place.rating.toFixed(1)}</span>
+                        <span className="text-[11px] font-medium text-white">{place.rating.toFixed(1)}</span>
                       </div>
                     )}
                     
                     {/* Distance Badge */}
                     {place.distance_meters && (
-                      <div className="absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-black/50 backdrop-blur-sm">
+                      <div className="absolute bottom-2 right-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
                         <MapPin className="w-3 h-3 text-white" />
-                        <span className="text-[10px] font-medium text-white">
-                          {(place.distance_meters / 1000).toFixed(1)} km
+                        <span className="text-[11px] font-medium text-white">
+                          {(place.distance_meters / 1000).toFixed(1)}km
                         </span>
                       </div>
                     )}

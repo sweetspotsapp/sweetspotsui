@@ -1,4 +1,4 @@
-import { FolderHeart, Heart, MoreHorizontal, ImageIcon } from "lucide-react";
+import { MoreHorizontal, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlaceCategory } from "@/context/AppContext";
 
@@ -6,7 +6,7 @@ interface BoardCardProps {
   board?: PlaceCategory;
   isAllSaved?: boolean;
   savedCount?: number;
-  coverImage?: string;
+  coverImages?: string[]; // Up to 3 images for collage
   onClick: () => void;
   onOptions?: () => void;
   animationDelay?: number;
@@ -16,53 +16,95 @@ const BoardCard = ({
   board, 
   isAllSaved = false, 
   savedCount = 0,
-  coverImage,
+  coverImages = [],
   onClick, 
   onOptions,
   animationDelay = 0 
 }: BoardCardProps) => {
   const name = isAllSaved ? "All Saved" : board?.name || "";
   const count = isAllSaved ? savedCount : board?.placeIds.length || 0;
-  const colorClass = isAllSaved 
-    ? "from-primary to-primary/80" 
-    : board?.color || "from-slate-500 to-slate-600";
+
+  // Pinterest-style collage layout based on image count
+  const renderCollage = () => {
+    if (coverImages.length === 0) {
+      // Gradient fallback with icon
+      return (
+        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+          <Heart className="w-10 h-10 text-primary/60" />
+        </div>
+      );
+    }
+
+    if (coverImages.length === 1) {
+      return (
+        <img 
+          src={coverImages[0]} 
+          alt={name}
+          className="w-full h-full object-cover"
+        />
+      );
+    }
+
+    if (coverImages.length === 2) {
+      return (
+        <div className="w-full h-full flex gap-0.5">
+          <img 
+            src={coverImages[0]} 
+            alt=""
+            className="w-1/2 h-full object-cover"
+          />
+          <img 
+            src={coverImages[1]} 
+            alt=""
+            className="w-1/2 h-full object-cover"
+          />
+        </div>
+      );
+    }
+
+    // 3+ images - Pinterest grid
+    return (
+      <div className="w-full h-full flex gap-0.5">
+        <img 
+          src={coverImages[0]} 
+          alt=""
+          className="w-1/2 h-full object-cover"
+        />
+        <div className="w-1/2 h-full flex flex-col gap-0.5">
+          <img 
+            src={coverImages[1]} 
+            alt=""
+            className="w-full h-1/2 object-cover"
+          />
+          <img 
+            src={coverImages[2]} 
+            alt=""
+            className="w-full h-1/2 object-cover"
+          />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        "relative w-full rounded-2xl overflow-hidden bg-card border border-border/50",
+        "relative w-full rounded-2xl overflow-hidden bg-card",
         "active:scale-[0.98] transition-all duration-200 group",
-        "opacity-0 animate-fade-up hover:shadow-lg hover:border-primary/30"
+        "opacity-0 animate-fade-up hover:shadow-lg"
       )}
       style={{ 
         animationDelay: `${animationDelay}ms`, 
         animationFillMode: 'forwards' 
       }}
     >
-      {/* Cover Image or Gradient */}
-      <div className="aspect-[4/3] relative overflow-hidden">
-        {coverImage ? (
-          <img 
-            src={coverImage} 
-            alt={name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className={cn(
-            "w-full h-full bg-gradient-to-br flex items-center justify-center",
-            colorClass
-          )}>
-            {isAllSaved ? (
-              <Heart className="w-10 h-10 text-white/80" />
-            ) : (
-              <ImageIcon className="w-10 h-10 text-white/60" />
-            )}
-          </div>
-        )}
+      {/* Cover Collage */}
+      <div className="aspect-[4/5] relative overflow-hidden bg-muted">
+        {renderCollage()}
         
-        {/* Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        {/* Subtle overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
         
         {/* Options Button */}
         {!isAllSaved && onOptions && (
@@ -75,16 +117,16 @@ const BoardCard = ({
           </button>
         )}
         
-        {/* Badge for All Saved */}
+        {/* All Saved Badge */}
         {isAllSaved && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
-            <span className="text-[10px] font-medium text-white">All Spots</span>
+          <div className="absolute top-2 left-2 p-1.5 rounded-full bg-primary">
+            <Heart className="w-3.5 h-3.5 text-primary-foreground fill-primary-foreground" />
           </div>
         )}
       </div>
 
       {/* Board Info */}
-      <div className="p-3 text-left">
+      <div className="p-3 text-left bg-card">
         <h3 className="font-semibold text-foreground text-sm line-clamp-1">
           {name}
         </h3>
