@@ -1,187 +1,252 @@
-import { Heart, MapPin, Plus, FolderHeart } from "lucide-react";
-import { useApp, PlaceCategory } from "@/context/AppContext";
-import PlaceDetail from "./PlaceDetail";
-import CategoryEditor from "./CategoryEditor";
-import CategoryDetail from "./CategoryDetail";
 import { useState } from "react";
-import type { RankedPlace } from "@/hooks/useSearch";
+import { Heart, Plus, Menu, User, SortAsc } from "lucide-react";
+import { useApp, PlaceCategory } from "@/context/AppContext";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import type { RankedPlace } from "@/hooks/useSearch";
 
-// Generate a placeholder image based on place name
+// Components
+import BoardCard from "./saved/BoardCard";
+import BoardView from "./saved/BoardView";
+import BoardEditor from "./saved/BoardEditor";
+import EmptyState from "./saved/EmptyState";
+import PlaceDetail from "./PlaceDetail";
+
 const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
   const category = categories?.[0] || "place";
-  const encoded = encodeURIComponent(`${category} ${name}`);
-  return `https://source.unsplash.com/100x100/?${encoded}`;
+  return `https://source.unsplash.com/400x400/?${encodeURIComponent(`${category} ${name}`)}`;
 };
 
+type SortOption = "recent" | "alphabetical" | "most-saved";
+
 const SavedPage = () => {
-  const { savedPlaceIds, categories, rankedPlaces } = useApp();
+  const navigate = useNavigate();
+  const { savedPlaceIds, categories, rankedPlaces, deleteCategory } = useApp();
+  
+  const [selectedBoard, setSelectedBoard] = useState<PlaceCategory | "all" | null>(null);
+  const [showBoardEditor, setShowBoardEditor] = useState(false);
+  const [editingBoard, setEditingBoard] = useState<PlaceCategory | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
-  const [showCategoryEditor, setShowCategoryEditor] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<PlaceCategory | null>(null);
-  const [editingCategory, setEditingCategory] = useState<PlaceCategory | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
-  // Get saved places from rankedPlaces
+  // Get saved places
   const savedPlaces = rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
-
-  const handleEditCategory = () => {
-    if (selectedCategory) {
-      setEditingCategory(selectedCategory);
-      setSelectedCategory(null);
-      setShowCategoryEditor(true);
-    }
+  
+  // Get cover image for a board (first place's image or default)
+  const getBoardCoverImage = (board: PlaceCategory): string | undefined => {
+    const firstPlaceId = board.placeIds[0];
+    const place = rankedPlaces.find(p => p.place_id === firstPlaceId);
+    return place ? getPlaceholderImage(place.name, place.categories) : undefined;
   };
+
+  // Sort boards
+  const sortedBoards = [...categories].sort((a, b) => {
+    switch (sortBy) {
+      case "alphabetical": return a.name.localeCompare(b.name);
+      case "most-saved": return b.placeIds.length - a.placeIds.length;
+      default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+  });
+
+  const handleEditBoard = (board: PlaceCategory) => {
+    setEditingBoard(board);
+    setSelectedBoard(null);
+    setShowBoardEditor(true);
+  };
+
+  const handleDeleteBoard = (board: PlaceCategory) => {
+    deleteCategory(board.id);
+    setSelectedBoard(null);
+  };
+
+  const hasBoards = categories.length > 0 || savedPlaces.length > 0;
 
   return (
     <>
       <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/40">
-          <div className="px-4 py-3">
-            <h1 className="text-lg font-bold text-foreground">Your Library</h1>
-            <p className="text-xs text-muted-foreground">Organize your favorite spots</p>
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button 
+              onClick={() => navigate('/')}
+              className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
+            >
+              <Menu className="w-5 h-5 text-foreground" />
+            </button>
+            
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                SweetSpots
+              </span>
+            </div>
+            
+            <button className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors">
+              <User className="w-5 h-5 text-foreground" />
+            </button>
           </div>
         </header>
 
-        <div className="p-4 space-y-6">
-          {/* Category Grid - Spotify Style */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Saved Places Category - Always First */}
-            <button
-              onClick={() => {}}
-              className="relative aspect-[1.8] rounded-xl overflow-hidden bg-gradient-to-br from-primary/80 to-primary group active:scale-[0.98] transition-transform"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-md bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <Heart className="w-4 h-4 text-white fill-white" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-white font-semibold text-sm leading-tight">Saved Spots</h3>
-                    <p className="text-white/70 text-[10px]">{savedPlaces.length} places</p>
-                  </div>
-                </div>
-              </div>
-            </button>
+        {/* Page Title */}
+        <div className="px-4 pt-5 pb-3">
+          <h1 className="text-2xl font-bold text-foreground">Saved Spots</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Organize your favorite spots your way
+          </p>
+        </div>
 
-            {/* Custom Categories */}
-            {categories.map((category, index) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category)}
-                className={cn(
-                  "relative aspect-[1.8] rounded-xl overflow-hidden bg-gradient-to-br group active:scale-[0.98] transition-transform opacity-0 animate-fade-up",
-                  category.color
-                )}
-                style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'forwards' }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-md bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <FolderHeart className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-white font-semibold text-sm leading-tight line-clamp-1">{category.name}</h3>
-                      <p className="text-white/70 text-[10px]">{category.placeIds.length} places</p>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            ))}
-
-            {/* Add Category Button */}
-            <button
-              onClick={() => {
-                setEditingCategory(null);
-                setShowCategoryEditor(true);
-              }}
-              className="aspect-[1.8] rounded-xl border-2 border-dashed border-border/60 flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors active:scale-[0.98]"
-            >
-              <Plus className="w-6 h-6" />
-              <span className="text-xs font-medium">Add Category</span>
-            </button>
-          </div>
-
-          {/* Recent Saves Section */}
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground">Recent Saves</h2>
-            
-            {savedPlaces.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
-                  <Heart className="w-6 h-6 text-muted-foreground" />
-                </div>
-                <h3 className="text-base font-semibold text-foreground mb-1">No saved spots yet</h3>
-                <p className="text-xs text-muted-foreground max-w-[220px]">
-                  Tap the heart on any place to save it here
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {savedPlaces.slice(0, 5).map((place, index) => (
-                  <div 
-                    key={place.place_id}
-                    className="flex gap-3 p-2.5 bg-card rounded-xl border border-border/50 cursor-pointer active:scale-[0.98] transition-transform opacity-0 animate-fade-up"
-                    style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
-                    onClick={() => setSelectedPlace(place)}
-                  >
-                    <img 
-                      src={getPlaceholderImage(place.name, place.categories)} 
-                      alt={place.name}
-                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-muted"
-                    />
-                    <div className="flex-1 min-w-0 flex items-center">
-                      <div>
-                        <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
-                        <p className="text-[11px] text-muted-foreground capitalize">
-                          {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <MapPin className="w-4 h-4 text-muted-foreground/60" />
-                    </div>
-                  </div>
-                ))}
+        {!hasBoards ? (
+          <EmptyState type="boards" />
+        ) : (
+          <>
+            {/* Sort & Filter Bar */}
+            <div className="flex items-center justify-between px-4 py-2">
+              <span className="text-xs text-muted-foreground">
+                {categories.length + 1} {categories.length === 0 ? 'board' : 'boards'}
+              </span>
+              
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                >
+                  <SortAsc className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs text-foreground capitalize">{sortBy.replace('-', ' ')}</span>
+                </button>
                 
-                {savedPlaces.length > 5 && (
-                  <p className="text-xs text-muted-foreground text-center pt-2">
-                    +{savedPlaces.length - 5} more saved
-                  </p>
+                {showSortMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-20 bg-card rounded-xl shadow-lg border border-border overflow-hidden min-w-[150px]">
+                      {(["recent", "alphabetical", "most-saved"] as SortOption[]).map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => { setSortBy(option); setShowSortMenu(false); }}
+                          className={cn(
+                            "w-full px-4 py-2.5 text-left text-sm capitalize transition-colors",
+                            sortBy === option 
+                              ? "bg-primary/10 text-primary font-medium" 
+                              : "text-foreground hover:bg-muted"
+                          )}
+                        >
+                          {option.replace('-', ' ')}
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 )}
+              </div>
+            </div>
+
+            {/* Pinterest-Style Grid */}
+            <div className="px-4 pb-6">
+              <div className="grid grid-cols-2 gap-3">
+                {/* All Saved Board - Always First */}
+                <BoardCard
+                  isAllSaved
+                  savedCount={savedPlaces.length}
+                  coverImage={savedPlaces[0] ? getPlaceholderImage(savedPlaces[0].name, savedPlaces[0].categories) : undefined}
+                  onClick={() => setSelectedBoard("all")}
+                  animationDelay={0}
+                />
+
+                {/* Custom Boards */}
+                {sortedBoards.map((board, index) => (
+                  <BoardCard
+                    key={board.id}
+                    board={board}
+                    coverImage={getBoardCoverImage(board)}
+                    onClick={() => setSelectedBoard(board)}
+                    onOptions={() => handleEditBoard(board)}
+                    animationDelay={(index + 1) * 50}
+                  />
+                ))}
+
+                {/* Add New Board Button */}
+                <button
+                  onClick={() => {
+                    setEditingBoard(null);
+                    setShowBoardEditor(true);
+                  }}
+                  className="aspect-[4/3] rounded-2xl border-2 border-dashed border-border/60 
+                             flex flex-col items-center justify-center gap-2 text-muted-foreground 
+                             hover:border-primary/50 hover:text-primary hover:bg-primary/5 
+                             transition-all active:scale-[0.98]"
+                >
+                  <Plus className="w-8 h-8" />
+                  <span className="text-sm font-medium">New Board</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Recent Saves Preview */}
+            {savedPlaces.length > 0 && (
+              <div className="px-4 pb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-foreground">Recently Saved</h2>
+                  <button 
+                    onClick={() => setSelectedBoard("all")}
+                    className="text-xs text-primary font-medium"
+                  >
+                    See all
+                  </button>
+                </div>
+                
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                  {savedPlaces.slice(0, 6).map((place, index) => (
+                    <div
+                      key={place.place_id}
+                      onClick={() => setSelectedPlace(place)}
+                      className="flex-shrink-0 w-[120px] cursor-pointer active:scale-[0.98] transition-transform 
+                                 opacity-0 animate-fade-up"
+                      style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
+                    >
+                      <div className="aspect-square rounded-xl overflow-hidden mb-1.5">
+                        <img 
+                          src={getPlaceholderImage(place.name, place.categories)} 
+                          alt={place.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <h3 className="text-xs font-medium text-foreground line-clamp-1">{place.name}</h3>
+                      <p className="text-[10px] text-muted-foreground capitalize line-clamp-1">
+                        {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
-      {/* Place Detail Modal */}
+      {/* Board View Modal */}
+      {selectedBoard && (
+        <BoardView
+          board={selectedBoard}
+          onClose={() => setSelectedBoard(null)}
+          onEdit={selectedBoard !== "all" ? () => handleEditBoard(selectedBoard) : undefined}
+          onDelete={selectedBoard !== "all" ? () => handleDeleteBoard(selectedBoard) : undefined}
+        />
+      )}
+
+      {/* Board Editor */}
+      {showBoardEditor && (
+        <BoardEditor
+          onClose={() => {
+            setShowBoardEditor(false);
+            setEditingBoard(null);
+          }}
+          editBoard={editingBoard}
+        />
+      )}
+
+      {/* Place Detail */}
       {selectedPlace && (
         <PlaceDetail 
           place={selectedPlace} 
           onClose={() => setSelectedPlace(null)}
-        />
-      )}
-
-      {/* Category Editor */}
-      {showCategoryEditor && (
-        <CategoryEditor 
-          onClose={() => {
-            setShowCategoryEditor(false);
-            setEditingCategory(null);
-          }}
-          editCategory={editingCategory}
-        />
-      )}
-
-      {/* Category Detail View */}
-      {selectedCategory && (
-        <CategoryDetail 
-          category={selectedCategory}
-          onClose={() => setSelectedCategory(null)}
-          onEdit={handleEditCategory}
         />
       )}
     </>
