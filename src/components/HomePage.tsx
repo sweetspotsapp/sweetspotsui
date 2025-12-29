@@ -1,8 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, X } from "lucide-react";
+import { Menu, Search, ChevronRight, X, User } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
@@ -127,6 +126,24 @@ const SECTIONS = [
   { title: "Great for friend groups", places: DUMMY_PLACES.slice(6, 10), featured: false },
 ];
 
+// Filter label mapping
+const FILTER_LABELS: Record<string, string> = {
+  under_50: "Under $50",
+  "50_100": "$50–$100",
+  "100_plus": "$100+",
+  friends: "With Friends",
+  romantic: "Romantic Date",
+  family: "Family-Friendly",
+  solo: "Solo",
+  chill: "Chill & Quiet",
+  lively: "Fun & Lively",
+  hidden: "Hidden Gems",
+  scenic: "Scenic / Nice View",
+  pet: "Pet-Friendly",
+  late_night: "Late Night",
+  outdoor: "Outdoor Seating",
+};
+
 interface SectionRowProps {
   title: string;
   places: MockPlace[];
@@ -155,7 +172,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
     </div>
 
     <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
-      {places.map(place => (
+      {places.map((place) => (
         <PlaceCardCompact
           key={place.id}
           place={place}
@@ -171,17 +188,17 @@ const SectionRow: React.FC<SectionRowProps> = ({
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { userMood, setUserMood, sections: contextSections } = useApp();
+  const { userMood, setUserMood } = useApp();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchValue, setSearchValue] = useState(userMood || "");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
 
   // Local save toggle for dummy data
   const toggleSave = useCallback((placeId: string) => {
-    setLocalSavedIds(prev => {
+    setLocalSavedIds((prev) => {
       const next = new Set(prev);
       if (next.has(placeId)) {
         next.delete(placeId);
@@ -192,21 +209,19 @@ const HomePage = () => {
     });
   }, []);
 
-  const isSaved = useCallback((placeId: string) => localSavedIds.has(placeId), [localSavedIds]);
+  const isSaved = useCallback(
+    (placeId: string) => localSavedIds.has(placeId),
+    [localSavedIds]
+  );
 
   const handlePlaceClick = (place: MockPlace) => {
     navigate(`/place/${place.id}`);
-  };
-
-  const handleFilterSelect = (filter: string) => {
-    setActiveFilter(filter === activeFilter ? null : filter || null);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchValue.trim()) {
       setUserMood(searchValue.trim());
-      // In real implementation, this would refresh results
       console.log("Searching for:", searchValue);
     }
   };
@@ -216,31 +231,58 @@ const HomePage = () => {
     setUserMood("");
   };
 
+  const removeFilter = (filterId: string) => {
+    const newFilters = new Set(activeFilters);
+    newFilters.delete(filterId);
+    setActiveFilters(newFilters);
+  };
+
   // Dynamic section titles based on search
-  const displaySections = searchValue 
+  const displaySections = searchValue
     ? [
-        { ...SECTIONS[0], title: `Top picks for "${searchValue.split(',')[0].trim()}"` },
-        ...SECTIONS.slice(1)
+        {
+          ...SECTIONS[0],
+          title: `Top picks for "${searchValue.split(",")[0].trim()}"`,
+        },
+        ...SECTIONS.slice(1),
       ]
     : SECTIONS;
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
-      {/* Header with Search Bar */}
+      {/* Nav Bar */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <button 
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* Left: Hamburger */}
+          <button
             onClick={() => setIsMenuOpen(true)}
-            className="p-2 -ml-2 text-foreground hover:text-primary transition-colors flex-shrink-0"
+            className="p-2 -ml-2 text-foreground hover:text-primary transition-colors"
           >
             <Menu className="w-6 h-6" />
           </button>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-            <div className={`relative flex items-center transition-all duration-200 ${
-              isSearchFocused ? 'ring-2 ring-primary/50' : ''
-            }`}>
+          {/* Center: Logo */}
+          <h1 className="text-xl font-bold text-foreground tracking-tight">
+            SweetSpots
+          </h1>
+
+          {/* Right: Profile */}
+          <button
+            onClick={() => navigate("/profile")}
+            className="p-2 -mr-2 text-foreground hover:text-primary transition-colors"
+          >
+            <User className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-4 pb-3">
+          <form onSubmit={handleSearchSubmit} className="relative">
+            <div
+              className={`relative flex items-center transition-all duration-200 ${
+                isSearchFocused ? "ring-2 ring-primary/50 rounded-full" : ""
+              }`}
+            >
               <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="text"
@@ -263,14 +305,30 @@ const HomePage = () => {
             </div>
           </form>
         </div>
+
+        {/* Active Filter Chips */}
+        {activeFilters.size > 0 && (
+          <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+            {Array.from(activeFilters).map((filterId) => (
+              <button
+                key={filterId}
+                onClick={() => removeFilter(filterId)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors"
+              >
+                {FILTER_LABELS[filterId] || filterId}
+                <X className="w-3 h-3" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Slide-out Menu */}
-      <SlideOutMenu 
-        isOpen={isMenuOpen} 
+      <SlideOutMenu
+        isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
-        onFilterSelect={handleFilterSelect}
-        activeFilter={activeFilter}
+        activeFilters={activeFilters}
+        onFiltersChange={setActiveFilters}
       />
 
       {/* Main Content */}
