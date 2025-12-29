@@ -80,54 +80,22 @@ const PlaceDetailsPage = () => {
   const navigate = useNavigate();
   const { isSaved, toggleSave, logInteraction } = useSavedPlaces();
   
-  const [place, setPlace] = useState<PlaceDetails | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Dummy place data for UI development
+  const dummyPlace: PlaceDetails = {
+    place_id: placeId || '1',
+    name: 'The Botanical Garden Cafe',
+    address: '123 Garden Lane, Melbourne VIC 3000',
+    lat: -37.8136,
+    lng: 144.9631,
+    categories: ['cafe', 'brunch', 'garden'],
+    rating: 4.6,
+    ratings_total: 284,
+    photo_name: null,
+  };
 
-  // Log click interaction
-  useEffect(() => {
-    if (placeId) {
-      logInteraction(placeId, 'click', 1);
-    }
-  }, [placeId, logInteraction]);
-
-  // Fetch place details
-  useEffect(() => {
-    const fetchPlace = async () => {
-      if (!placeId) return;
-      
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const { data, error: fetchError } = await supabase
-          .from('places')
-          .select('*')
-          .eq('place_id', placeId)
-          .maybeSingle();
-
-        if (fetchError) throw fetchError;
-        
-        if (!data) {
-          setError('Place not found');
-          return;
-        }
-
-        setPlace(data);
-        if (data.photo_name) {
-          setPhotoUrl(getPhotoUrl(data.photo_name));
-        }
-      } catch (err) {
-        console.error('Error fetching place:', err);
-        setError('Failed to load place details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPlace();
-  }, [placeId]);
+  const place = dummyPlace;
+  const photoUrl = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
+  const isLoading = false;
 
   const images = useMemo(() => {
     if (!place) return [];
@@ -173,15 +141,6 @@ const PlaceDetailsPage = () => {
           <Skeleton className="h-4 w-2/3" />
           <Skeleton className="h-24 w-full" />
         </div>
-      </div>
-    );
-  }
-
-  if (error || !place) {
-    return (
-      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex flex-col items-center justify-center p-4">
-        <p className="text-muted-foreground mb-4">{error || 'Place not found'}</p>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
       </div>
     );
   }
