@@ -1,42 +1,35 @@
-import { useState } from "react";
-import { Star, Heart, Clock, MapPin } from "lucide-react";
-import { DiscoveredPlace } from "@/hooks/useDiscoverySection";
+import { useState, useRef } from "react";
+import { Star, Heart, Navigation } from "lucide-react";
+
+// Dummy place type for mock data
+export interface MockPlace {
+  id: string;
+  name: string;
+  image: string;
+  rating: number;
+  distance_km: number;
+  vibeTag?: string;
+  categories?: string[];
+}
 
 interface PlaceCardCompactProps {
-  place: DiscoveredPlace;
+  place: MockPlace;
   onSave: (placeId: string) => void;
   isSaved: boolean;
   onClick: () => void;
   featured?: boolean;
+  savedTabRef?: React.RefObject<HTMLElement>;
 }
 
-// Format ETA
-const formatEta = (seconds: number | null): string => {
-  if (seconds === null) return '';
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-};
-
 // Get vibe tag from categories
-const getVibeTag = (categories: string[] | null): string | null => {
-  if (!categories || categories.length === 0) return null;
-  const vibeKeywords = ['Hidden Gem', 'Chill', 'Group-friendly', 'Romantic', 'Family', 'Trendy'];
-  const category = categories[0];
-  // Simple mapping
+const getVibeTag = (place: MockPlace): string | null => {
+  if (place.vibeTag) return place.vibeTag;
+  if (!place.categories || place.categories.length === 0) return null;
+  const category = place.categories[0];
   if (category.toLowerCase().includes('bar') || category.toLowerCase().includes('club')) return 'Nightlife';
   if (category.toLowerCase().includes('cafe') || category.toLowerCase().includes('coffee')) return 'Chill';
   if (category.toLowerCase().includes('restaurant')) return 'Group-friendly';
   return null;
-};
-
-// Get price display
-const getPriceDisplay = (place: DiscoveredPlace): string => {
-  // Use rating as proxy for price level if not available
-  const priceLevel = Math.min(4, Math.max(1, Math.round((place.rating || 4) / 1.5)));
-  return '$'.repeat(priceLevel);
 };
 
 const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({ 
@@ -44,25 +37,88 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
   onSave, 
   isSaved, 
   onClick, 
-  featured = false 
+  featured = false,
+  savedTabRef
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animationStyle, setAnimationStyle] = useState<React.CSSProperties>({});
+  const cardRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
 
   const getPlaceholderImage = () => {
-    const category = place.categories?.[0]?.toLowerCase() || 'restaurant';
-    return `https://source.unsplash.com/400x300/?${category},food&${place.name.slice(0, 3)}`;
+    return `https://source.unsplash.com/400x300/?restaurant,food&${place.name.slice(0, 3)}`;
   };
 
-  const imageUrl = place.photo_url || getPlaceholderImage();
-  const vibeTag = getVibeTag(place.categories);
+  const imageUrl = place.image || getPlaceholderImage();
+  const vibeTag = getVibeTag(place);
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // If unsaving, just toggle without animation
+    if (isSaved) {
+      onSave(place.id);
+      return;
+    }
+
+    // Get positions for the fly animation
+    const imageRect = imageRef.current?.getBoundingClientRect();
+    const savedTab = document.querySelector('[data-saved-tab]');
+    const savedTabRect = savedTab?.getBoundingClientRect();
+
+    if (imageRect && savedTabRect) {
+      // Calculate the translation needed
+      const translateX = savedTabRect.left + savedTabRect.width / 2 - (imageRect.left + imageRect.width / 2);
+      const translateY = savedTabRect.top + savedTabRect.height / 2 - (imageRect.top + imageRect.height / 2);
+
+      setAnimationStyle({
+        '--fly-x': `${translateX}px`,
+        '--fly-y': `${translateY}px`,
+      } as React.CSSProperties);
+
+      setIsAnimating(true);
+
+      // Trigger the save after animation starts
+      setTimeout(() => {
+        onSave(place.id);
+      }, 150);
+
+      // Reset animation state
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 500);
+    } else {
+      // Fallback if we can't get positions
+      onSave(place.id);
+    }
+  };
 
   return (
     <div 
+      ref={cardRef}
       className={`flex-shrink-0 cursor-pointer group ${featured ? 'w-[200px]' : 'w-[160px]'}`}
       onClick={onClick}
     >
       {/* Image Container */}
-      <div className={`relative rounded-2xl overflow-hidden bg-muted ${featured ? 'aspect-[4/3]' : 'aspect-[3/4]'}`}>
+      <div 
+        ref={imageRef}
+        className={`relative rounded-2xl overflow-hidden bg-muted ${featured ? 'aspect-[4/3]' : 'aspect-[3/4]'}`}
+      >
+        {/* Animated clone for fly effect */}
+        {isAnimating && (
+          <div 
+            className="absolute inset-0 z-50 rounded-2xl overflow-hidden pointer-events-none animate-fly-to-saved"
+            style={animationStyle}
+          >
+            <img
+              src={imageError ? getPlaceholderImage() : imageUrl}
+              alt={place.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
         <img
           src={imageError ? getPlaceholderImage() : imageUrl}
           alt={place.name}
@@ -72,13 +128,16 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
 
         {/* Save button */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onSave(place.place_id);
-          }}
-          className="absolute top-2 right-2 p-2 bg-card/90 backdrop-blur-sm rounded-full shadow-soft transition-transform hover:scale-110"
+          onClick={handleSave}
+          className={`absolute top-2 right-2 p-2 bg-card/90 backdrop-blur-sm rounded-full shadow-soft transition-all duration-200 hover:scale-110 ${
+            isSaved ? 'animate-pulse-once' : ''
+          }`}
         >
-          <Heart className={`w-4 h-4 ${isSaved ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+          <Heart 
+            className={`w-4 h-4 transition-all duration-200 ${
+              isSaved ? 'fill-primary text-primary scale-110' : 'text-muted-foreground'
+            }`} 
+          />
         </button>
 
         {/* Vibe tag */}
@@ -99,20 +158,15 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
           {/* Rating */}
           <div className="flex items-center gap-0.5">
             <Star className="w-3.5 h-3.5 text-primary fill-primary" />
-            <span className="font-medium text-foreground">{place.rating?.toFixed(1) || '4.5'}</span>
+            <span className="font-medium text-foreground">{place.rating.toFixed(1)}</span>
           </div>
 
           <span className="text-border">•</span>
 
-          {/* Price */}
-          <span className="text-primary font-medium">{getPriceDisplay(place)}</span>
-
-          <span className="text-border">•</span>
-
-          {/* Distance/Time */}
+          {/* Distance in km */}
           <div className="flex items-center gap-0.5">
-            <Clock className="w-3 h-3" />
-            <span>{place.eta_seconds ? formatEta(place.eta_seconds) : '10 min'}</span>
+            <Navigation className="w-3 h-3" />
+            <span>{place.distance_km.toFixed(1)} km</span>
           </div>
         </div>
       </div>
