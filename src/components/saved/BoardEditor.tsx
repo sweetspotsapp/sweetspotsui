@@ -2,10 +2,12 @@ import { useState } from "react";
 import { ArrowLeft, Check, Image } from "lucide-react";
 import { useApp, PlaceCategory } from "@/context/AppContext";
 import { cn } from "@/lib/utils";
+import type { RankedPlace } from "@/hooks/useSearch";
 
 interface BoardEditorProps {
   onClose: () => void;
   editBoard?: PlaceCategory | null;
+  availablePlaces?: RankedPlace[];
 }
 
 const categoryColors = [
@@ -24,13 +26,15 @@ const getPlaceholderImage = (name: string, categories?: string[] | null): string
   return `https://source.unsplash.com/100x100/?${encodeURIComponent(`${category} ${name}`)}`;
 };
 
-const BoardEditor = ({ onClose, editBoard }: BoardEditorProps) => {
+const BoardEditor = ({ onClose, editBoard, availablePlaces }: BoardEditorProps) => {
   const { savedPlaceIds, rankedPlaces, createCategory, updateCategory } = useApp();
   const [name, setName] = useState(editBoard?.name || "");
   const [selectedPlaces, setSelectedPlaces] = useState<string[]>(editBoard?.placeIds || []);
   const [selectedColor, setSelectedColor] = useState(editBoard?.color || categoryColors[0].value);
 
-  const savedPlaces = rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
+  // Use provided places or fallback to context
+  const savedPlaces = availablePlaces || rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
+  const allPlaces = availablePlaces || rankedPlaces;
 
   const togglePlace = (placeId: string) => {
     setSelectedPlaces(prev => 
@@ -88,7 +92,7 @@ const BoardEditor = ({ onClose, editBoard }: BoardEditorProps) => {
               {selectedPlaces.length > 0 ? (
                 <div className="grid grid-cols-2 gap-0.5 w-full h-full p-1">
                   {selectedPlaces.slice(0, 4).map((placeId) => {
-                    const place = rankedPlaces.find(p => p.place_id === placeId);
+                    const place = allPlaces.find(p => p.place_id === placeId);
                     return place ? (
                       <img
                         key={placeId}

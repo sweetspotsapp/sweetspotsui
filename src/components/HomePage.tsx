@@ -5,6 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
+import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 
 // ============= DUMMY DATA =============
 const DUMMY_PLACES: MockPlace[] = [
@@ -195,19 +196,40 @@ const HomePage = () => {
   const [searchValue, setSearchValue] = useState(userMood || "");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
+  
+  // Save to board dialog state
+  const [saveToBoardPlace, setSaveToBoardPlace] = useState<MockPlace | null>(null);
 
-  // Local save toggle for dummy data
-  const toggleSave = useCallback((placeId: string) => {
-    setLocalSavedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(placeId)) {
-        next.delete(placeId);
-      } else {
-        next.add(placeId);
-      }
-      return next;
-    });
+  // Get place name helper for dialog
+  const getPlaceById = useCallback((placeId: string) => {
+    return DUMMY_PLACES.find(p => p.id === placeId);
   }, []);
+
+  // Handle save - opens board dialog for new saves, toggles off for unsave
+  const handleSaveClick = useCallback((placeId: string) => {
+    if (localSavedIds.has(placeId)) {
+      // Unsave - just remove from local state
+      setLocalSavedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(placeId);
+        return next;
+      });
+    } else {
+      // Open the save-to-board dialog
+      const place = getPlaceById(placeId);
+      if (place) {
+        setSaveToBoardPlace(place);
+      }
+    }
+  }, [localSavedIds, getPlaceById]);
+
+  // Called when save to board is confirmed
+  const handleBoardSaveConfirmed = useCallback(() => {
+    if (saveToBoardPlace) {
+      setLocalSavedIds((prev) => new Set(prev).add(saveToBoardPlace.id));
+    }
+    setSaveToBoardPlace(null);
+  }, [saveToBoardPlace]);
 
   const isSaved = useCallback(
     (placeId: string) => localSavedIds.has(placeId),
@@ -339,12 +361,22 @@ const HomePage = () => {
             title={section.title}
             places={section.places}
             onPlaceClick={handlePlaceClick}
-            toggleSave={toggleSave}
+            toggleSave={handleSaveClick}
             isSaved={isSaved}
             featured={section.featured}
           />
         ))}
       </main>
+
+      {/* Save to Board Dialog */}
+      {saveToBoardPlace && (
+        <SaveToBoardDialog
+          placeId={saveToBoardPlace.id}
+          placeName={saveToBoardPlace.name}
+          onClose={() => setSaveToBoardPlace(null)}
+          onSaved={handleBoardSaveConfirmed}
+        />
+      )}
     </div>
   );
 };
