@@ -160,8 +160,15 @@ const PlaceDetailsPage = () => {
 
   const openInMaps = () => {
     if (place?.lat && place?.lng) {
-      const url = `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}&query_place_id=${place.place_id}`;
-      window.open(url, '_blank');
+      // Open in Google Maps with place name for better results
+      const query = encodeURIComponent(place.name);
+      const url = `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${place.place_id}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else if (place?.address) {
+      // Fallback to address search
+      const query = encodeURIComponent(`${place.name} ${place.address}`);
+      const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
