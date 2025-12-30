@@ -188,17 +188,41 @@ const PlaceDetailsPage = () => {
         };
         setPlace(placeData);
 
-        // Fetch related places based on categories
+        // Fetch related places based on meaningful categories (exclude generic ones)
         if (data.categories && data.categories.length > 0) {
+          const genericCategories = ['point_of_interest', 'establishment', 'store', 'food'];
+          const meaningfulCategories = data.categories.filter(
+            (cat: string) => !genericCategories.includes(cat)
+          );
+          
+          // Use meaningful categories if available, otherwise fall back to all
+          const categoriesToMatch = meaningfulCategories.length > 0 
+            ? meaningfulCategories 
+            : data.categories;
+
           const { data: related, error: relatedError } = await supabase
             .from('places')
-            .select('place_id, name, photo_name, rating, lat, lng')
+            .select('place_id, name, photo_name, rating, lat, lng, categories')
             .neq('place_id', placeId)
-            .overlaps('categories', data.categories)
-            .limit(6);
+            .overlaps('categories', categoriesToMatch)
+            .limit(20); // Fetch more to filter and sort
 
           if (!relatedError && related) {
-            const formattedRelated: RelatedPlace[] = related.map(p => ({
+            // Score places by how many meaningful categories they share
+            const scoredPlaces = related.map(p => {
+              const placeCategories = p.categories || [];
+              const meaningfulMatches = placeCategories.filter(
+                (cat: string) => meaningfulCategories.includes(cat)
+              ).length;
+              return { ...p, score: meaningfulMatches };
+            });
+
+            // Sort by score (most category matches first) and take top 6
+            const topRelated = scoredPlaces
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 6);
+
+            const formattedRelated: RelatedPlace[] = topRelated.map(p => ({
               id: p.place_id,
               name: p.name,
               image: p.photo_name 
