@@ -143,6 +143,46 @@ const PlaceDetailsPage = () => {
     }
   }, [userLocation, place]);
 
+  // Pre-fetch and enrich related places in background
+  const prefetchRelatedPlacesData = async (placeIds: string[]) => {
+    if (placeIds.length === 0) return;
+    
+    try {
+      // Check which places need enrichment
+      const { data: placesData } = await supabase
+        .from('places')
+        .select('place_id, photos, reviews')
+        .in('place_id', placeIds);
+      
+      const placesNeedingEnrichment = placesData?.filter(
+        p => !p.photos || p.photos.length === 0 || !p.reviews
+      ).map(p => p.place_id) || [];
+      
+      if (placesNeedingEnrichment.length > 0) {
+        // Enrich places in background (fire and forget)
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enrich-places`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ places: placesNeedingEnrichment.map(id => ({ place_id: id })) }),
+        }).catch(err => console.log('Background enrichment failed:', err));
+      }
+      
+      // Pre-load thumbnail images for faster display
+      placeIds.forEach(id => {
+        const { data: placeData } = placesData?.find(p => p.place_id === id) 
+          ? { data: placesData.find(p => p.place_id === id) }
+          : { data: null };
+        
+        if (placeData?.photos?.[0]) {
+          const img = new Image();
+          img.src = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(placeData.photos[0])}`;
+        }
+      });
+    } catch (err) {
+      console.log('Prefetch error:', err);
+    }
+  };
+
   // Helper function to fetch related places
   const fetchRelatedPlaces = async (data: any) => {
     if (!data.categories || data.categories.length === 0 || !data.lat || !data.lng) {
@@ -200,6 +240,9 @@ const PlaceDetailsPage = () => {
           : Math.round(p.distanceFromPlace * 10) / 10,
       }));
       setRelatedPlaces(formattedRelated);
+      
+      // Pre-fetch data for related places in background
+      prefetchRelatedPlacesData(topRelated.map(p => p.place_id));
     }
   };
 
