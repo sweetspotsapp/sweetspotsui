@@ -12,7 +12,6 @@ import RelatedSpots from '@/components/place-detail/RelatedSpots';
 import ActionButtons from '@/components/place-detail/ActionButtons';
 import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
 import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
-import MapPreview from '@/components/place-detail/MapPreview';
 
 interface OpeningHoursData {
   open_now: boolean;
@@ -350,9 +349,17 @@ const PlaceDetailsPage = () => {
       <div className="px-4 py-5 space-y-6">
         {/* 2. Place Name & Info */}
         <div className="space-y-3 animate-fade-in">
-          <h1 className="text-2xl font-bold text-foreground leading-tight">
-            {place.name}
-          </h1>
+          <div className="space-y-1.5">
+            <h1 className="text-2xl font-bold text-foreground leading-tight">
+              {place.name}
+            </h1>
+            {place.address && (
+              <p className="text-sm text-muted-foreground flex items-start gap-1.5">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary/60" />
+                <span className="leading-relaxed">{place.address}</span>
+              </p>
+            )}
+          </div>
           
           {/* Rating */}
           <div className="flex items-center gap-3 flex-wrap">
@@ -419,15 +426,6 @@ const PlaceDetailsPage = () => {
           aiReason={aiReason}
         />
 
-        {/* 5. Map Preview */}
-        {place.lat && place.lng && (
-          <MapPreview 
-            lat={place.lat}
-            lng={place.lng}
-            placeName={place.name}
-            address={place.address}
-          />
-        )}
 
         {/* 6. Reviews Section - Now with real Google reviews */}
         {formattedReviews.length > 0 ? (
