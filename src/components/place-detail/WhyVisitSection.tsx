@@ -19,13 +19,15 @@ const generateHighlights = (
 ): string[] => {
   const highlights: string[] = [];
   
-  // Rating-based highlight
+  // Rating-based highlight (always show if rating exists)
   if (rating && rating >= 4.5) {
     highlights.push(`Highly rated at ${rating.toFixed(1)} stars by locals`);
   } else if (rating && rating >= 4.0) {
     highlights.push(`Well-reviewed with ${rating.toFixed(1)} star rating`);
-  } else if (rating) {
+  } else if (rating && rating >= 3.0) {
     highlights.push(`Rated ${rating.toFixed(1)} stars by visitors`);
+  } else if (rating) {
+    highlights.push(`Community rating: ${rating.toFixed(1)} stars`);
   }
   
   // Category-based highlights
@@ -46,6 +48,18 @@ const generateHighlights = (
   if (cats.includes('bakery') || cats.includes('dessert')) {
     highlights.push('Known for delicious treats and sweets');
   }
+  if (cats.includes('spa') || cats.includes('beauty_salon') || cats.includes('health')) {
+    highlights.push('Relaxing wellness and self-care experience');
+  }
+  if (cats.includes('hotel') || cats.includes('lodging')) {
+    highlights.push('Comfortable accommodations for travelers');
+  }
+  if (cats.includes('shopping') || cats.includes('store')) {
+    highlights.push('Great shopping options to explore');
+  }
+  if (cats.includes('tourist_attraction') || cats.includes('museum') || cats.includes('park')) {
+    highlights.push('Popular attraction worth visiting');
+  }
   
   // Price-based highlight
   if (priceLevel === 1) {
@@ -61,12 +75,19 @@ const generateHighlights = (
     highlights.push(`Popular spot with ${reviewCount.toLocaleString()}+ reviews`);
   } else if (reviewCount && reviewCount > 100) {
     highlights.push('Trusted by the local community');
+  } else if (reviewCount && reviewCount > 20) {
+    highlights.push('Growing in popularity');
   }
   
-  // Fallback if no highlights generated
-  if (highlights.length === 0) {
+  // Enhanced fallback if not enough highlights generated
+  if (highlights.length < 2) {
+    if (!rating) {
+      highlights.push('Discover this local spot');
+    }
+    if (categories.length === 0) {
+      highlights.push('Unique atmosphere and experience');
+    }
     highlights.push('A local favorite worth exploring');
-    highlights.push('Unique atmosphere and experience');
   }
   
   return highlights.slice(0, 4); // Max 4 bullet points
