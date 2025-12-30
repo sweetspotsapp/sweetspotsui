@@ -329,12 +329,12 @@ const PlaceDetailsPage = () => {
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-28">
       {/* Floating Back Button */}
-      <div className="absolute top-4 left-4 z-30">
+      <div className="fixed top-4 left-4 z-50">
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={() => navigate(-1)}
-          className="bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background rounded-full w-10 h-10"
+          className="bg-background/90 backdrop-blur-md shadow-lg hover:bg-background rounded-full w-10 h-10"
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
