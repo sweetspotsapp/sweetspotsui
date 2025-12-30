@@ -183,9 +183,14 @@ const HomePage = () => {
     }
   }, [searchResults]);
 
-  // Load initial places on mount
+  // Load initial places on mount - skip if we already have cached results
   useEffect(() => {
+    // Skip if already loaded or if we have cached results
     if (hasLoadedInitial.current) return;
+    if (searchResults.length > 0) {
+      hasLoadedInitial.current = true;
+      return;
+    }
     hasLoadedInitial.current = true;
 
     const loadInitialPlaces = async () => {
@@ -208,7 +213,7 @@ const HomePage = () => {
     };
 
     loadInitialPlaces();
-  }, [search]);
+  }, [search, searchResults.length]);
 
   // Show search errors as toast
   useEffect(() => {
