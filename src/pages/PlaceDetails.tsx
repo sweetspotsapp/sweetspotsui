@@ -143,6 +143,66 @@ const PlaceDetailsPage = () => {
     }
   }, [userLocation, place]);
 
+  // Helper function to fetch related places
+  const fetchRelatedPlaces = async (data: any) => {
+    if (!data.categories || data.categories.length === 0 || !data.lat || !data.lng) {
+      return;
+    }
+    
+    const genericCategories = ['point_of_interest', 'establishment', 'store', 'food'];
+    const meaningfulCategories = data.categories.filter(
+      (cat: string) => !genericCategories.includes(cat)
+    );
+    
+    const categoriesToMatch = meaningfulCategories.length > 0 
+      ? meaningfulCategories 
+      : data.categories;
+
+    const { data: related, error: relatedError } = await supabase
+      .from('places')
+      .select('place_id, name, photo_name, rating, lat, lng, categories')
+      .neq('place_id', data.place_id)
+      .overlaps('categories', categoriesToMatch)
+      .limit(50);
+
+    if (!relatedError && related) {
+      const placeLat = data.lat;
+      const placeLng = data.lng;
+      
+      const nearbyPlaces = related
+        .filter(p => {
+          if (!p.lat || !p.lng) return false;
+          const dist = calculateDistance(placeLat, placeLng, p.lat, p.lng);
+          return dist <= 20;
+        })
+        .map(p => {
+          const placeCategories = p.categories || [];
+          const meaningfulMatches = placeCategories.filter(
+            (cat: string) => meaningfulCategories.includes(cat)
+          ).length;
+          const dist = calculateDistance(placeLat, placeLng, p.lat!, p.lng!);
+          return { ...p, score: meaningfulMatches, distanceFromPlace: dist };
+        });
+
+      const topRelated = nearbyPlaces
+        .sort((a, b) => b.score - a.score || a.distanceFromPlace - b.distanceFromPlace)
+        .slice(0, 6);
+
+      const formattedRelated: RelatedPlace[] = topRelated.map(p => ({
+        id: p.place_id,
+        name: p.name,
+        image: p.photo_name 
+          ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}`
+          : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+        rating: p.rating || 4.0,
+        distance: userLocation && p.lat && p.lng 
+          ? Math.round(calculateDistance(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10
+          : Math.round(p.distanceFromPlace * 10) / 10,
+      }));
+      setRelatedPlaces(formattedRelated);
+    }
+  };
+
   useEffect(() => {
     const fetchPlace = async () => {
       if (!placeId) {
@@ -172,6 +232,57 @@ const PlaceDetailsPage = () => {
           return;
         }
 
+        // Check if place needs enrichment (missing photos, reviews, etc.)
+        const needsEnrichment = !data.photos || data.photos.length === 0 || !data.reviews;
+        
+        if (needsEnrichment) {
+          console.log('Place needs enrichment, fetching additional data...');
+          try {
+            const enrichResponse = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enrich-places`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ placeIds: [placeId] }),
+              }
+            );
+            
+            if (enrichResponse.ok) {
+              // Re-fetch the place data after enrichment
+              const { data: enrichedData } = await supabase
+                .from('places')
+                .select('*')
+                .eq('place_id', placeId)
+                .maybeSingle();
+              
+              if (enrichedData) {
+                const enrichedPlaceData: PlaceDetails = {
+                  place_id: enrichedData.place_id,
+                  name: enrichedData.name,
+                  address: enrichedData.address,
+                  lat: enrichedData.lat,
+                  lng: enrichedData.lng,
+                  categories: enrichedData.categories,
+                  rating: enrichedData.rating,
+                  ratings_total: enrichedData.ratings_total,
+                  photo_name: enrichedData.photo_name,
+                  photos: (enrichedData as any).photos || null,
+                  price_level: (enrichedData as any).price_level ?? null,
+                  opening_hours: (enrichedData as any).opening_hours as OpeningHoursData | null,
+                  reviews: (enrichedData as any).reviews as ReviewData[] | null,
+                  is_open_now: (enrichedData as any).is_open_now ?? null,
+                  ai_reason: (enrichedData as any).ai_reason ?? null,
+                };
+                setPlace(enrichedPlaceData);
+                await fetchRelatedPlaces(enrichedData);
+                return;
+              }
+            }
+          } catch (enrichError) {
+            console.error('Failed to enrich place:', enrichError);
+          }
+        }
+
         // Type assertion for the data
         const placeData: PlaceDetails = {
           place_id: data.place_id,
@@ -191,65 +302,7 @@ const PlaceDetailsPage = () => {
           ai_reason: (data as any).ai_reason ?? null,
         };
         setPlace(placeData);
-
-        // Fetch related places based on meaningful categories (exclude generic ones)
-        if (data.categories && data.categories.length > 0 && data.lat && data.lng) {
-          const genericCategories = ['point_of_interest', 'establishment', 'store', 'food'];
-          const meaningfulCategories = data.categories.filter(
-            (cat: string) => !genericCategories.includes(cat)
-          );
-          
-          // Use meaningful categories if available, otherwise fall back to all
-          const categoriesToMatch = meaningfulCategories.length > 0 
-            ? meaningfulCategories 
-            : data.categories;
-
-          const { data: related, error: relatedError } = await supabase
-            .from('places')
-            .select('place_id, name, photo_name, rating, lat, lng, categories')
-            .neq('place_id', placeId)
-            .overlaps('categories', categoriesToMatch)
-            .limit(50); // Fetch more to filter by distance
-
-          if (!relatedError && related) {
-            const placeLat = data.lat;
-            const placeLng = data.lng;
-            
-            // Filter places within 20km radius and score by category matches
-            const nearbyPlaces = related
-              .filter(p => {
-                if (!p.lat || !p.lng) return false;
-                const dist = calculateDistance(placeLat, placeLng, p.lat, p.lng);
-                return dist <= 20; // Only places within 20km
-              })
-              .map(p => {
-                const placeCategories = p.categories || [];
-                const meaningfulMatches = placeCategories.filter(
-                  (cat: string) => meaningfulCategories.includes(cat)
-                ).length;
-                const dist = calculateDistance(placeLat, placeLng, p.lat!, p.lng!);
-                return { ...p, score: meaningfulMatches, distanceFromPlace: dist };
-              });
-
-            // Sort by score (most category matches first) and take top 6
-            const topRelated = nearbyPlaces
-              .sort((a, b) => b.score - a.score || a.distanceFromPlace - b.distanceFromPlace)
-              .slice(0, 6);
-
-            const formattedRelated: RelatedPlace[] = topRelated.map(p => ({
-              id: p.place_id,
-              name: p.name,
-              image: p.photo_name 
-                ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}`
-                : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
-              rating: p.rating || 4.0,
-              distance: userLocation && p.lat && p.lng 
-                ? Math.round(calculateDistance(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10
-                : Math.round(p.distanceFromPlace * 10) / 10,
-            }));
-            setRelatedPlaces(formattedRelated);
-          }
-        }
+        await fetchRelatedPlaces(data);
       } catch (err) {
         console.error('Unexpected error:', err);
         setError('Something went wrong');
