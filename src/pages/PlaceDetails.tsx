@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Star, MapPin, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -103,6 +103,8 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
 const PlaceDetailsPage = () => {
   const { placeId } = useParams<{ placeId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const aiReason = (location.state as { ai_reason?: string })?.ai_reason;
   const { isSaved, toggleSave } = useSavedPlaces();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
   const [relatedPlaces, setRelatedPlaces] = useState<RelatedPlace[]>([]);
@@ -413,6 +415,7 @@ const PlaceDetailsPage = () => {
           rating={place.rating}
           priceLevel={place.price_level}
           reviewCount={place.ratings_total}
+          aiReason={aiReason}
         />
 
         {/* 5. Reviews Section - Now with real Google reviews */}

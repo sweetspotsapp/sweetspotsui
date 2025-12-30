@@ -241,7 +241,7 @@ const HomePage = () => {
   );
 
   const handlePlaceClick = (place: MockPlace) => {
-    navigate(`/place/${place.id}`);
+    navigate(`/place/${place.id}`, { state: { ai_reason: place.ai_reason } });
   };
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
