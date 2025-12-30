@@ -159,17 +159,28 @@ const PlaceDetailsPage = () => {
   }, [placeId]);
 
   const openInMaps = () => {
+    let url: string;
+    
     if (place?.lat && place?.lng) {
-      // Open in Google Maps with place name for better results
+      // Use Google Maps with place name for better results
       const query = encodeURIComponent(place.name);
-      const url = `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${place.place_id}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
+      url = `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${place.place_id}`;
     } else if (place?.address) {
       // Fallback to address search
       const query = encodeURIComponent(`${place.name} ${place.address}`);
-      const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
+      url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+    } else {
+      return;
     }
+
+    // Use anchor tag click to reliably open in new tab (avoids iframe blocking)
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleShare = () => {
