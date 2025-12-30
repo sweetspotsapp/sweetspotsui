@@ -52,6 +52,7 @@ export type Database = {
       places: {
         Row: {
           address: string | null
+          ai_reason: string | null
           categories: string[] | null
           is_open_now: boolean | null
           last_enriched_at: string | null
@@ -71,6 +72,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_reason?: string | null
           categories?: string[] | null
           is_open_now?: boolean | null
           last_enriched_at?: string | null
@@ -90,6 +92,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_reason?: string | null
           categories?: string[] | null
           is_open_now?: boolean | null
           last_enriched_at?: string | null

@@ -40,6 +40,7 @@ interface PlaceDetails {
   opening_hours: OpeningHoursData | null;
   reviews: ReviewData[] | null;
   is_open_now: boolean | null;
+  ai_reason: string | null;
 }
 
 interface RelatedPlace {
@@ -183,6 +184,7 @@ const PlaceDetailsPage = () => {
           opening_hours: (data as any).opening_hours as OpeningHoursData | null,
           reviews: (data as any).reviews as ReviewData[] | null,
           is_open_now: (data as any).is_open_now ?? null,
+          ai_reason: (data as any).ai_reason ?? null,
         };
         setPlace(placeData);
 
@@ -423,7 +425,7 @@ const PlaceDetailsPage = () => {
           rating={place.rating}
           priceLevel={place.price_level}
           reviewCount={place.ratings_total}
-          aiReason={aiReason}
+          aiReason={aiReason || place.ai_reason || undefined}
         />
 
 
