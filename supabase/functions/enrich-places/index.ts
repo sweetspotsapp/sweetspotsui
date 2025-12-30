@@ -251,6 +251,7 @@ serve(async (req) => {
         opening_hours: place.opening_hours,
         reviews: place.reviews,
         is_open_now: place.is_open_now,
+        ai_reason: place.ai_reason,
         last_enriched_at: new Date().toISOString(),
       }));
 
