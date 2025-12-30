@@ -1,13 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Navigation, Clock, Users, MapPin } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import ImageCarousel from '@/components/place-detail/ImageCarousel';
 import ReviewsList from '@/components/place-detail/ReviewsList';
-import TipsSection from '@/components/place-detail/TipsSection';
 import RelatedSpots from '@/components/place-detail/RelatedSpots';
 import ActionButtons from '@/components/place-detail/ActionButtons';
 import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
@@ -23,9 +22,11 @@ interface PlaceDetails {
   rating: number | null;
   ratings_total: number | null;
   photo_name: string | null;
+  distance_km?: number;
+  price_range?: string;
 }
 
-// Dummy data
+// Dummy data for images
 const dummyImages = [
   'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800',
   'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
@@ -39,12 +40,6 @@ const mockReviews = [
   { id: '2', name: 'James K.', rating: 4, text: 'Great food and friendly staff. A bit crowded on weekends but worth it!', date: '1 week ago' },
   { id: '3', name: 'Emily R.', rating: 5, text: 'Hidden gem! The natural lighting is *chef\'s kiss* for photos 📸', date: '2 weeks ago' },
   { id: '4', name: 'Mike T.', rating: 4, text: 'Love their house blend coffee. Will definitely come back!', date: '3 weeks ago' },
-];
-
-const mockTips = [
-  '☕ Try the signature house blend — locals swear by it!',
-  '📸 Window seats have the best natural light for pics',
-  '🌅 Come during golden hour for magical vibes',
 ];
 
 const mockRelatedPlaces = [
@@ -65,13 +60,13 @@ const mockOpeningHours = [
 ];
 
 const mockTrafficHours = [
-  { time: '8am', level: 2 },
-  { time: '10am', level: 4 },
-  { time: '12pm', level: 5 },
-  { time: '2pm', level: 3 },
-  { time: '4pm', level: 4 },
-  { time: '6pm', level: 5 },
-  { time: '8pm', level: 3 },
+  { time: '8am', level: 2 as const },
+  { time: '10am', level: 4 as const },
+  { time: '12pm', level: 5 as const },
+  { time: '2pm', level: 3 as const },
+  { time: '4pm', level: 4 as const },
+  { time: '6pm', level: 5 as const },
+  { time: '8pm', level: 3 as const },
 ];
 
 const PlaceDetailsPage = () => {
@@ -91,6 +86,8 @@ const PlaceDetailsPage = () => {
     rating: 4.6,
     ratings_total: 284,
     photo_name: null,
+    distance_km: 2.3,
+    price_range: '$$',
   };
 
   const place = dummyPlace;
@@ -117,6 +114,14 @@ const PlaceDetailsPage = () => {
 
   const handleRelatedClick = (id: string) => {
     navigate(`/place/${id}`);
+  };
+
+  const handleSave = () => {
+    if (placeId) {
+      toggleSave(placeId);
+      const wasSaved = isSaved(placeId);
+      toast.success(wasSaved ? 'Removed from saved' : 'Saved to your spots!');
+    }
   };
 
   if (isLoading) {
@@ -154,69 +159,82 @@ const PlaceDetailsPage = () => {
         </Button>
       </div>
 
-      {/* Hero Image Carousel */}
+      {/* 1. Hero Image Carousel */}
       <ImageCarousel images={dummyImages} placeName={place.name} />
 
       {/* Content */}
       <div className="px-4 py-5 space-y-6">
-        {/* Name & Rating Badge */}
+        {/* 2. Place Name & Info */}
         <div className="space-y-3 animate-fade-in">
           <h1 className="text-2xl font-bold text-foreground leading-tight">
             {place.name}
           </h1>
           
-          {/* Address */}
-          <div className="flex items-start gap-2 text-muted-foreground">
-            <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{place.address}</span>
-          </div>
-          
-          {/* Rating & Reviews Count */}
-          <div className="flex items-center gap-3">
+          {/* Rating, Distance, Price Row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Rating */}
             <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-2 rounded-xl">
-              <Star className="w-5 h-5 text-primary fill-primary" />
-              <span className="text-lg font-bold text-primary">
+              <Star className="w-4 h-4 text-primary fill-primary" />
+              <span className="text-sm font-bold text-primary">
                 {place.rating}
               </span>
-              <span className="text-sm text-primary/70">/ 5</span>
+              <span className="text-xs text-primary/70">/ 5</span>
             </div>
-            {place.ratings_total && (
-              <span className="text-sm text-muted-foreground">
-                Based on {place.ratings_total} reviews
-              </span>
+            
+            {/* Distance */}
+            {place.distance_km && (
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">
+                  {place.distance_km} km
+                </span>
+              </div>
+            )}
+            
+            {/* Price Range */}
+            {place.price_range && (
+              <div className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">
+                  {place.price_range}
+                </span>
+              </div>
             )}
           </div>
+          
+          {place.ratings_total && (
+            <span className="text-sm text-muted-foreground">
+              Based on {place.ratings_total} reviews
+            </span>
+          )}
         </div>
 
-        {/* Quick Action Buttons */}
+        {/* 2b. Action Buttons - Save, Map, Share */}
         <ActionButtons
           isSaved={saved}
-          onSave={() => placeId && toggleSave(placeId)}
+          onSave={handleSave}
           onViewMap={openInMaps}
           onShare={handleShare}
         />
 
-        {/* Quick Info Section */}
+        {/* 3. Opening Hours & Busy Times */}
         <QuickInfoSection 
-          distance={2.3}
-          priceRange="$$"
+          distance={place.distance_km || 2.3}
+          priceRange={place.price_range || "$$"}
           openingHours={mockOpeningHours}
           trafficHours={mockTrafficHours}
         />
 
-        {/* Why Visit */}
+        {/* 4. Why You Should Visit */}
         <WhyVisitSection 
-          description="A charming botanical cafe tucked away in the heart of the city. Known for its lush indoor plants, Instagram-worthy corners, and specialty coffee that'll make your taste buds dance. Perfect for remote work, catch-ups with friends, or solo soul-searching sessions."
+          description="A cozy hidden wine bar with city views, perfect for relaxed evenings and intimate conversations. Known for its lush indoor plants, Instagram-worthy corners, and specialty coffee that'll make your taste buds dance."
           vibes={['Instagrammable', 'Cozy', 'Plant Paradise', 'Brunch Spot']}
         />
 
-        {/* Reviews */}
+        {/* 5. Reviews Section */}
         <ReviewsList reviews={mockReviews} />
 
-        {/* Tips */}
-        <TipsSection tips={mockTips} />
-
-        {/* Related Spots */}
+        {/* 6. Similar Places - "You might also like" */}
         <RelatedSpots places={mockRelatedPlaces} onPlaceClick={handleRelatedClick} />
       </div>
     </div>
