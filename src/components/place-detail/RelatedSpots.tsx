@@ -18,7 +18,7 @@ const RelatedSpots = ({ places, onPlaceClick }: RelatedSpotsProps) => {
     <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.3s' }}>
       <div className="flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-primary" />
-        <h3 className="font-semibold text-foreground">Similar Vibes Nearby</h3>
+        <h3 className="font-semibold text-foreground">Similar vibes you'll love</h3>
       </div>
       
       {/* Horizontal Scroll */}

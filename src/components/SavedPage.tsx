@@ -10,7 +10,6 @@ import BoardCard from "./saved/BoardCard";
 import BoardView from "./saved/BoardView";
 import BoardEditor from "./saved/BoardEditor";
 import EmptyState from "./saved/EmptyState";
-import PlaceDetail from "./PlaceDetail";
 
 // ============= DUMMY IMAGES FOR CONTEXT =============
 const PLACE_IMAGES: Record<string, string[]> = {
@@ -225,7 +224,6 @@ const SavedPage = () => {
   const [selectedBoard, setSelectedBoard] = useState<PlaceCategory | "all" | null>(null);
   const [showBoardEditor, setShowBoardEditor] = useState(false);
   const [editingBoard, setEditingBoard] = useState<PlaceCategory | null>(null);
-  const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [showSortMenu, setShowSortMenu] = useState(false);
   
@@ -396,7 +394,7 @@ const SavedPage = () => {
           onClose={() => setSelectedBoard(null)}
           onEdit={selectedBoard !== "all" ? () => handleEditBoard(selectedBoard) : undefined}
           onDelete={selectedBoard !== "all" ? () => handleDeleteBoard(selectedBoard) : undefined}
-          onPlaceClick={setSelectedPlace}
+          onPlaceClick={(place) => navigate(`/place/${place.place_id}`)}
         />
       )}
 
@@ -409,14 +407,6 @@ const SavedPage = () => {
           }}
           editBoard={editingBoard}
           availablePlaces={savedPlaces}
-        />
-      )}
-
-      {/* Place Detail */}
-      {selectedPlace && (
-        <PlaceDetail 
-          place={selectedPlace} 
-          onClose={() => setSelectedPlace(null)}
         />
       )}
     </>

@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign, Heart } from "lucide-react";
 import { PlaceCategory } from "@/context/AppContext";
-import PlaceDetail from "../PlaceDetail";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ type SortOption = "recent" | "name" | "rating" | "distance";
 type FilterOption = "all" | "$$" | "$$$" | "nearby";
 
 const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete, onPlaceClick }: BoardViewProps) => {
-  const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
+  const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
@@ -61,7 +61,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     if (onPlaceClick) {
       onPlaceClick(place);
     } else {
-      setSelectedPlace(place);
+      navigate(`/place/${place.place_id}`);
     }
   };
 
@@ -253,11 +253,6 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           )}
         </div>
       </div>
-
-      {/* Place Detail Modal */}
-      {selectedPlace && (
-        <PlaceDetail place={selectedPlace} onClose={() => setSelectedPlace(null)} />
-      )}
     </>
   );
 };
