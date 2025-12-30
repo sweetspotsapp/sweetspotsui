@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Star, Heart, Navigation } from "lucide-react";
+import { Star, Heart, Navigation, Sparkles } from "lucide-react";
 
 // Dummy place type for mock data
 export interface MockPlace {
@@ -11,6 +11,8 @@ export interface MockPlace {
   distance_km: number;
   vibeTag?: string;
   categories?: string[];
+  ai_reason?: string;
+  ai_category?: string;
 }
 
 interface PlaceCardCompactProps {
@@ -22,15 +24,19 @@ interface PlaceCardCompactProps {
   savedTabRef?: React.RefObject<HTMLElement>;
 }
 
-// Get vibe tag from categories
+// Get vibe tag from categories or AI category
 const getVibeTag = (place: MockPlace): string | null => {
+  // Prefer AI category
+  if (place.ai_category) {
+    return place.ai_category.charAt(0).toUpperCase() + place.ai_category.slice(1);
+  }
   if (place.vibeTag) return place.vibeTag;
   if (!place.categories || place.categories.length === 0) return null;
   const category = place.categories[0];
   if (category.toLowerCase().includes('bar') || category.toLowerCase().includes('club')) return 'Nightlife';
   if (category.toLowerCase().includes('cafe') || category.toLowerCase().includes('coffee')) return 'Chill';
-  if (category.toLowerCase().includes('restaurant')) return 'Group-friendly';
-  return null;
+  if (category.toLowerCase().includes('restaurant')) return 'Restaurant';
+  return category.replace(/_/g, ' ').split(' ')[0];
 };
 
 const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({ 
@@ -180,6 +186,16 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
             <span>{place.distance_km.toFixed(1)} km</span>
           </div>
         </div>
+
+        {/* AI Reason */}
+        {place.ai_reason && (
+          <div className="flex items-start gap-1 mt-1">
+            <Sparkles className="w-3 h-3 text-primary flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-tight">
+              {place.ai_reason}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

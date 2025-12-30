@@ -1,12 +1,11 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, X, User, Loader2, MapPin } from "lucide-react";
+import { Menu, Search, ChevronRight, X, User, Loader2, MapPin, Sparkles } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
-import { usePromptDecomposition } from "@/hooks/usePromptDecomposition";
 import { useSearch, RankedPlace } from "@/hooks/useSearch";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
@@ -21,45 +20,9 @@ const rankedToMockPlace = (place: RankedPlace): MockPlace => ({
   rating: place.rating || 4.0,
   distance_km: place.distance_meters ? Math.round(place.distance_meters / 100) / 10 : 1.0,
   categories: place.categories || [],
+  ai_reason: place.ai_reason,
+  ai_category: place.ai_category,
 });
-
-// Helper to get non-overlapping places based on section type
-// With 60 places, distribute 15 per section with no overlap
-const getPlacesForSection = (
-  type: "exact" | "core" | "secondary" | "similar",
-  allPlaces: MockPlace[]
-): MockPlace[] => {
-  if (allPlaces.length === 0) return [];
-  
-  const total = allPlaces.length;
-  const perSection = Math.max(5, Math.floor(total / 4)); // At least 5 per section
-  
-  switch (type) {
-    case "exact":
-      // Top picks: Best overall matches (ranks 1-15)
-      return allPlaces.slice(0, Math.min(perSection, total));
-    case "core":
-      // Core intent: Next best matches (ranks 16-30)
-      return allPlaces.slice(perSection, Math.min(perSection * 2, total));
-    case "secondary":
-      // Secondary: Places with highest ratings from remaining (ranks 31-45)
-      // Sort by rating to highlight "best atmosphere"
-      const secondaryStart = perSection * 2;
-      const secondaryEnd = Math.min(perSection * 3, total);
-      const remaining = allPlaces.slice(secondaryStart, secondaryEnd);
-      return [...remaining].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    case "similar":
-      // Similar: Last batch for discovery (ranks 46-60)
-      const similarStart = perSection * 3;
-      if (similarStart < total) {
-        return allPlaces.slice(similarStart, Math.min(perSection * 4, total));
-      }
-      // Fallback: show last available places
-      return allPlaces.slice(Math.max(0, total - perSection));
-    default:
-      return allPlaces.slice(0, Math.min(perSection, total));
-  }
-};
 
 // Filter label mapping
 const FILTER_LABELS: Record<string, string> = {
@@ -135,6 +98,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
 
 // Session storage key for caching results
 const CACHE_KEY = 'sweetspots_search_cache';
+const SUMMARY_CACHE_KEY = 'sweetspots_summary_cache';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -147,8 +111,14 @@ const HomePage = () => {
   const [searchValue, setSearchValue] = useState(userMood || "");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
+  const [aiSummary, setAiSummary] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem(SUMMARY_CACHE_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [searchResults, setSearchResults] = useState<MockPlace[]>(() => {
-    // Restore from session storage on mount
     try {
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -160,7 +130,6 @@ const HomePage = () => {
     return [];
   });
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
-    // Only show loading if no cached results
     try {
       return !sessionStorage.getItem(CACHE_KEY);
     } catch {
@@ -183,9 +152,19 @@ const HomePage = () => {
     }
   }, [searchResults]);
 
-  // Load initial places on mount - skip if we already have cached results
+  // Cache AI summary
   useEffect(() => {
-    // Skip if already loaded or if we have cached results
+    if (aiSummary) {
+      try {
+        sessionStorage.setItem(SUMMARY_CACHE_KEY, aiSummary);
+      } catch (e) {
+        console.error('Failed to cache summary:', e);
+      }
+    }
+  }, [aiSummary]);
+
+  // Load initial places on mount
+  useEffect(() => {
     if (hasLoadedInitial.current) return;
     if (searchResults.length > 0) {
       hasLoadedInitial.current = true;
@@ -196,14 +175,13 @@ const HomePage = () => {
     const loadInitialPlaces = async () => {
       setIsInitialLoading(true);
       try {
-        // Search for popular nearby spots
-        const result = await search("restaurants cafes bars");
+        const result = await search("popular restaurants and cafes nearby");
         if (result && result.places.length > 0) {
           setSearchResults(result.places.map(rankedToMockPlace));
+          setAiSummary(result.summary || null);
         }
       } catch (err) {
         console.error("Failed to load initial places:", err);
-        // Check if it's a location permission error
         if (err instanceof Error && err.message.includes("location")) {
           setNeedsLocationPermission(true);
         }
@@ -230,7 +208,7 @@ const HomePage = () => {
     return searchResults.find(p => p.id === placeId);
   }, [searchResults]);
 
-  // Handle save - opens board dialog for new saves, toggles off for unsave
+  // Handle save
   const handleSaveClick = useCallback((placeId: string) => {
     if (localSavedIds.has(placeId)) {
       setLocalSavedIds((prev) => {
@@ -246,7 +224,6 @@ const HomePage = () => {
     }
   }, [localSavedIds, getPlaceById]);
 
-  // Called when save to board is confirmed
   const handleBoardSaveConfirmed = useCallback(() => {
     if (saveToBoardPlace) {
       setLocalSavedIds((prev) => new Set(prev).add(saveToBoardPlace.id));
@@ -273,10 +250,12 @@ const HomePage = () => {
     const result = await search(searchValue.trim());
     if (result && result.places.length > 0) {
       setSearchResults(result.places.map(rankedToMockPlace));
-      toast.success(`Found ${result.places.length} places near you!`);
+      setAiSummary(result.summary || null);
+      toast.success(`Found ${result.places.length} spots for you!`);
     } else if (result && result.places.length === 0) {
       toast.info("No places found. Try a different search.");
       setSearchResults([]);
+      setAiSummary(result.summary || null);
     }
   };
 
@@ -284,9 +263,10 @@ const HomePage = () => {
     setNeedsLocationPermission(false);
     setIsInitialLoading(true);
     try {
-      const result = await search("restaurants cafes bars");
+      const result = await search("popular restaurants and cafes nearby");
       if (result && result.places.length > 0) {
         setSearchResults(result.places.map(rankedToMockPlace));
+        setAiSummary(result.summary || null);
       }
     } catch (err) {
       console.error("Retry failed:", err);
@@ -306,27 +286,80 @@ const HomePage = () => {
     setActiveFilters(newFilters);
   };
 
-  // Use prompt decomposition for dynamic sections
-  const { sections: decomposedSections, isLoading: isHeadingsLoading } = usePromptDecomposition(searchValue || "Discover nearby");
-  
-  // Build display sections with real places only
+  // Group places by AI category for display
   const displaySections = useMemo(() => {
     if (searchResults.length === 0) return [];
-    return decomposedSections.map((section, index) => ({
-      title: section.title,
-      places: getPlacesForSection(section.type, searchResults),
-      featured: index === 0,
-      type: section.type,
-      description: section.description,
-    }));
-  }, [decomposedSections, searchResults]);
+    
+    // Group by AI category
+    const categoryGroups: Record<string, MockPlace[]> = {};
+    const uncategorized: MockPlace[] = [];
+    
+    searchResults.forEach(place => {
+      const category = place.ai_category?.toLowerCase() || 'other';
+      if (category && category !== 'other') {
+        if (!categoryGroups[category]) {
+          categoryGroups[category] = [];
+        }
+        categoryGroups[category].push(place);
+      } else {
+        uncategorized.push(place);
+      }
+    });
+
+    const sections: { title: string; places: MockPlace[]; featured: boolean }[] = [];
+    
+    // First section: Top Picks (first 5 places)
+    if (searchResults.length > 0) {
+      sections.push({
+        title: "✨ Top Picks for You",
+        places: searchResults.slice(0, Math.min(5, searchResults.length)),
+        featured: true,
+      });
+    }
+
+    // Add category sections
+    const categoryLabels: Record<string, string> = {
+      restaurant: "🍽️ Restaurants",
+      bar: "🍸 Bars & Nightlife",
+      cafe: "☕ Cafes",
+      rooftop: "🌆 Rooftop Spots",
+      club: "🎉 Clubs & Dancing",
+      landmark: "📍 Landmarks",
+      park: "🌳 Parks & Outdoors",
+      bakery: "🥐 Bakeries",
+      lounge: "🛋️ Lounges",
+    };
+
+    Object.entries(categoryGroups).forEach(([category, places]) => {
+      if (places.length >= 2) {
+        sections.push({
+          title: categoryLabels[category] || `${category.charAt(0).toUpperCase() + category.slice(1)}s`,
+          places: places.slice(0, 10),
+          featured: false,
+        });
+      }
+    });
+
+    // Add remaining places
+    if (uncategorized.length > 0 || searchResults.length > 5) {
+      const moreToExplore = searchResults.slice(5);
+      if (moreToExplore.length > 0) {
+        sections.push({
+          title: "🗺️ More to Explore",
+          places: moreToExplore,
+          featured: false,
+        });
+      }
+    }
+
+    return sections;
+  }, [searchResults]);
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
       {/* Nav Bar */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Left: Hamburger */}
           <button
             onClick={() => setIsMenuOpen(true)}
             className="p-2 -ml-2 text-foreground hover:text-primary transition-colors"
@@ -334,12 +367,10 @@ const HomePage = () => {
             <Menu className="w-6 h-6" />
           </button>
 
-          {/* Center: Logo */}
           <h1 className="text-xl font-bold text-foreground tracking-tight">
             SweetSpots
           </h1>
 
-          {/* Right: Profile */}
           <button
             onClick={() => navigate("/profile")}
             className="p-2 -mr-2 text-foreground hover:text-primary transition-colors"
@@ -359,7 +390,7 @@ const HomePage = () => {
               {isSearching ? (
                 <Loader2 className="absolute left-3 w-4 h-4 text-primary animate-spin pointer-events-none" />
               ) : (
-                <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Sparkles className="absolute left-3 w-4 h-4 text-primary pointer-events-none" />
               )}
               <Input
                 type="text"
@@ -367,7 +398,7 @@ const HomePage = () => {
                 onChange={(e) => setSearchValue(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
-                placeholder="Try: cheap eats, nice view, chill vibe"
+                placeholder="Ask anything: rooftop bars, date spots, hidden gems..."
                 className="pl-9 pr-9 h-10 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
                 disabled={isSearching}
               />
@@ -413,8 +444,12 @@ const HomePage = () => {
       <main className="pt-4">
         {isSearching || isInitialLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-            <p className="text-muted-foreground text-sm">Finding great spots near you...</p>
+            <div className="relative">
+              <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+              <div className="absolute inset-0 w-8 h-8 border-2 border-primary/30 rounded-full animate-ping" />
+            </div>
+            <p className="text-foreground font-medium mt-4">AI is finding the best spots...</p>
+            <p className="text-muted-foreground text-sm mt-1">Analyzing your request</p>
           </div>
         ) : needsLocationPermission ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -430,21 +465,37 @@ const HomePage = () => {
           </div>
         ) : displaySections.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <Search className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Search for places to discover nearby spots!</p>
+            <Sparkles className="w-12 h-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Ask me anything to discover amazing places!</p>
           </div>
         ) : (
-          displaySections.map((section, index) => (
-            <SectionRow
-              key={index}
-              title={section.title}
-              places={section.places}
-              onPlaceClick={handlePlaceClick}
-              toggleSave={handleSaveClick}
-              isSaved={isSaved}
-              featured={section.featured}
-            />
-          ))
+          <>
+            {/* AI Summary Card */}
+            {aiSummary && (
+              <div className="mx-4 mb-6 p-4 rounded-2xl bg-primary/5 border border-primary/20">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground leading-relaxed">{aiSummary}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {displaySections.map((section, index) => (
+              <SectionRow
+                key={index}
+                title={section.title}
+                places={section.places}
+                onPlaceClick={handlePlaceClick}
+                toggleSave={handleSaveClick}
+                isSaved={isSaved}
+                featured={section.featured}
+              />
+            ))}
+          </>
         )}
       </main>
 

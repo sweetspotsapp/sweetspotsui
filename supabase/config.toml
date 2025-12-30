@@ -17,3 +17,9 @@ verify_jwt = true
 
 [functions.summarize-prompt]
 verify_jwt = false
+
+[functions.ai-discover]
+verify_jwt = false
+
+[functions.enrich-places]
+verify_jwt = false
