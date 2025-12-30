@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, Search, ChevronRight, X, User } from "lucide-react";
 import { useApp } from "@/context/AppContext";
@@ -6,6 +6,7 @@ import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
+import { usePromptDecomposition } from "@/hooks/usePromptDecomposition";
 
 // ============= DUMMY DATA =============
 const DUMMY_PLACES: MockPlace[] = [
@@ -119,13 +120,26 @@ const DUMMY_PLACES: MockPlace[] = [
   },
 ];
 
-// Section configurations
-const SECTIONS = [
-  { title: "Top picks for you", places: DUMMY_PLACES.slice(0, 4), featured: true },
-  { title: "Hidden gems under $50", places: DUMMY_PLACES.slice(4, 8), featured: false },
-  { title: "Chill spots nearby", places: DUMMY_PLACES.slice(2, 6), featured: false },
-  { title: "Great for friend groups", places: DUMMY_PLACES.slice(6, 10), featured: false },
-];
+// Helper to get shuffled/filtered places based on section type
+const getPlacesForSection = (
+  type: "exact" | "core" | "secondary" | "similar",
+  allPlaces: MockPlace[]
+): MockPlace[] => {
+  // In a real app, this would use the query to filter/rank places
+  // For now, we simulate different results by slicing differently
+  switch (type) {
+    case "exact":
+      return allPlaces.slice(0, 4);
+    case "core":
+      return allPlaces.slice(2, 6);
+    case "secondary":
+      return allPlaces.slice(4, 8);
+    case "similar":
+      return [...allPlaces].sort(() => Math.random() - 0.5).slice(0, 4);
+    default:
+      return allPlaces.slice(0, 4);
+  }
+};
 
 // Filter label mapping
 const FILTER_LABELS: Record<string, string> = {
@@ -259,16 +273,19 @@ const HomePage = () => {
     setActiveFilters(newFilters);
   };
 
-  // Dynamic section titles based on search
-  const displaySections = searchValue
-    ? [
-        {
-          ...SECTIONS[0],
-          title: `Top picks for "${searchValue.split(",")[0].trim()}"`,
-        },
-        ...SECTIONS.slice(1),
-      ]
-    : SECTIONS;
+  // Use prompt decomposition for dynamic sections
+  const decomposedSections = usePromptDecomposition(searchValue);
+  
+  // Build display sections with places
+  const displaySections = useMemo(() => {
+    return decomposedSections.map((section, index) => ({
+      title: section.title,
+      places: getPlacesForSection(section.type, DUMMY_PLACES),
+      featured: index === 0, // First section is featured
+      type: section.type,
+      description: section.description,
+    }));
+  }, [decomposedSections]);
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
