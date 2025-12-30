@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, DollarSign, Wand2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +12,7 @@ import RelatedSpots from '@/components/place-detail/RelatedSpots';
 import ActionButtons from '@/components/place-detail/ActionButtons';
 import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
 import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
+import BottomNav from '@/components/BottomNav';
 
 interface OpeningHoursData {
   open_now: boolean;
@@ -520,6 +521,16 @@ const PlaceDetailsPage = () => {
           <RelatedSpots places={relatedPlaces} onPlaceClick={handleRelatedClick} />
         )}
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNav 
+        activeTab="home" 
+        onTabChange={(tab) => {
+          if (tab === 'home') navigate('/');
+          else if (tab === 'saved') navigate('/saved');
+          else if (tab === 'profile') navigate('/profile');
+        }} 
+      />
     </div>
   );
 };
