@@ -86,36 +86,48 @@ async function getAIRelevanceScores(
 ): Promise<Map<string, number>> {
   const relevanceMap = new Map<string, number>();
   
-  // Prepare places data for AI
-  const placesInfo = places.map(p => ({
-    id: p.place_id,
+  // For very generic queries, skip AI filtering and return all places
+  const genericQueries = ['places to eat', 'restaurants', 'food', 'cafes', 'coffee', 'bars', 'restaurants cafes bars'];
+  if (genericQueries.some(q => prompt.toLowerCase().includes(q) || q.includes(prompt.toLowerCase()))) {
+    console.log('Generic query detected, skipping strict AI filtering');
+    places.forEach(p => {
+      // Give restaurant/cafe/food places higher scores
+      const categories = (p.categories || []).join(' ').toLowerCase();
+      const isFood = categories.includes('restaurant') || categories.includes('cafe') || 
+                     categories.includes('food') || categories.includes('bar') ||
+                     categories.includes('bakery') || categories.includes('coffee');
+      relevanceMap.set(p.place_id, isFood ? 80 : 40);
+    });
+    return relevanceMap;
+  }
+
+  // Prepare places data for AI - use indices for reliable parsing
+  const placesInfo = places.map((p, i) => ({
+    index: i,
     name: p.name,
     categories: (p.categories || []).slice(0, 5).join(', '),
   }));
 
-  const systemPrompt = `You are a place relevance evaluator. Given a user's search query and a list of places, rate each place's relevance to the query on a scale of 0-100.
+  const systemPrompt = `You are a place relevance evaluator. Given a user's search query and a list of places, rate each place's relevance on a scale of 0-100.
 
-IMPORTANT RULES:
-- 90-100: Perfect match (e.g., "new year celebration" → nightclub, rooftop bar, party venue)
-- 70-89: Good match (e.g., "new year celebration" → restaurant with live music, hotel with event space)
-- 50-69: Moderate match (e.g., "new year celebration" → nice restaurant, cafe with ambiance)
-- 30-49: Weak match (e.g., "new year celebration" → regular restaurant, basic cafe)
-- 0-29: Not relevant (e.g., "new year celebration" → car wash, hardware store, sports field)
+SCORING GUIDE:
+- 80-100: Excellent match for the search intent
+- 60-79: Good match, likely useful
+- 40-59: Moderate match, possibly relevant
+- 20-39: Weak match, probably not what user wants
+- 0-19: Not relevant at all
 
-Focus on SEMANTIC meaning, not just keywords. Consider:
-- The user's likely INTENT behind the search
-- What type of experience they're looking for
-- Whether the place can actually fulfill that need
+Be GENEROUS for places that could reasonably satisfy the user's intent. Consider the EXPERIENCE the user is looking for.
 
-Be STRICT - only highly relevant places should score above 70.`;
+RESPOND ONLY with a JSON array of [index, score] pairs for places scoring 40 or above.
+Example: [[0, 85], [2, 72], [5, 60]]`;
 
-  const userPrompt = `Search query: "${prompt}"
+  const userPrompt = `Query: "${prompt}"
 
-Places to evaluate:
-${placesInfo.map((p, i) => `${i + 1}. "${p.name}" - Categories: ${p.categories || 'Unknown'}`).join('\n')}
+Places:
+${placesInfo.map((p, i) => `${i}. ${p.name} (${p.categories || 'Unknown'})`).join('\n')}
 
-Return a JSON object with place IDs as keys and relevance scores (0-100) as values. Only include places with score > 30.
-Example format: {"place_id_1": 85, "place_id_2": 72}`;
+Return JSON array of [index, score] pairs for relevant places (score >= 40):`;
 
   try {
     console.log('Calling Lovable AI for semantic relevance...');
@@ -132,12 +144,12 @@ Example format: {"place_id_1": 85, "place_id_2": 72}`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.3,
       }),
     });
 
     if (!response.ok) {
-      console.error('Lovable AI error:', response.status);
+      const errorText = await response.text();
+      console.error('Lovable AI error:', response.status, errorText);
       // Fallback: give all places a neutral score
       places.forEach(p => relevanceMap.set(p.place_id, 50));
       return relevanceMap;
@@ -146,30 +158,55 @@ Example format: {"place_id_1": 85, "place_id_2": 72}`;
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
     
-    console.log('AI response received, parsing...');
+    console.log('AI response:', content.substring(0, 200));
     
-    // Extract JSON from response (handle markdown code blocks)
+    // Extract JSON array from response
     let jsonStr = content;
+    
+    // Handle markdown code blocks
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
       jsonStr = jsonMatch[1];
     }
     
-    // Try to parse as JSON
+    // Find array in response
+    const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
+    if (arrayMatch) {
+      jsonStr = arrayMatch[0];
+    }
+    
     try {
       const scores = JSON.parse(jsonStr.trim());
       
-      // Map scores to place IDs
-      for (const place of places) {
-        const score = scores[place.place_id];
-        if (typeof score === 'number' && score > 30) {
-          relevanceMap.set(place.place_id, score);
+      if (Array.isArray(scores)) {
+        for (const item of scores) {
+          // Handle both [index, score] and {index, score} formats
+          let idx: number, score: number;
+          
+          if (Array.isArray(item)) {
+            [idx, score] = item;
+          } else if (typeof item === 'object') {
+            idx = item.index ?? item.idx ?? item.i;
+            score = item.score ?? item.relevance ?? item.s;
+          } else {
+            continue;
+          }
+          
+          if (typeof idx === 'number' && typeof score === 'number' && idx >= 0 && idx < places.length) {
+            relevanceMap.set(places[idx].place_id, score);
+          }
         }
       }
       
       console.log(`AI relevance: ${relevanceMap.size}/${places.length} places passed filter`);
+      
+      // If AI returned nothing, fallback to all places with neutral score
+      if (relevanceMap.size === 0) {
+        console.log('AI returned no results, using fallback');
+        places.forEach(p => relevanceMap.set(p.place_id, 50));
+      }
     } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
+      console.error('Failed to parse AI response:', parseError, 'Content:', jsonStr.substring(0, 100));
       // Fallback: give all places a neutral score
       places.forEach(p => relevanceMap.set(p.place_id, 50));
     }
