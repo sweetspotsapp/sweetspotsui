@@ -1,11 +1,12 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, X, User, Loader2, MapPin, Sparkles } from "lucide-react";
+import { Menu, Search, ChevronRight, X, User, Loader2, MapPin, Sparkles, SlidersHorizontal } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
+import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
 import { useSearch, RankedPlace } from "@/hooks/useSearch";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
@@ -162,6 +163,10 @@ const HomePage = () => {
   
   // Save to board dialog state
   const [saveToBoardPlace, setSaveToBoardPlace] = useState<MockPlace | null>(null);
+  
+  // Filter modal state
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<FilterState>({ budget: null, vibes: [] });
 
   // Cache results to session storage
   useEffect(() => {
@@ -269,6 +274,26 @@ const HomePage = () => {
     navigate(`/place/${place.id}`, { state: { ai_reason: place.ai_reason } });
   };
 
+  // Build search prompt with filters
+  const buildSearchPrompt = (basePrompt: string, filters: FilterState): string => {
+    let prompt = basePrompt;
+    
+    if (filters.budget) {
+      const budgetLabels: Record<string, string> = {
+        under_50: "budget-friendly under $50",
+        "50_100": "mid-range $50-$100",
+        "100_plus": "upscale $100+"
+      };
+      prompt += `, ${budgetLabels[filters.budget]}`;
+    }
+    
+    if (filters.vibes.length > 0) {
+      prompt += `, ${filters.vibes.join(", ")}`;
+    }
+    
+    return prompt;
+  };
+
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
@@ -285,7 +310,11 @@ const HomePage = () => {
       console.error('Failed to clear cache:', e);
     }
     
-    const result = await search(searchValue.trim());
+    // Build prompt with filters
+    const searchPrompt = buildSearchPrompt(searchValue.trim(), appliedFilters);
+    console.log("Search with filters:", searchPrompt);
+    
+    const result = await search(searchPrompt);
     if (result && result.places.length > 0) {
       setSearchResults(result.places.map(rankedToMockPlace));
       setAiSummary(result.summary || null);
@@ -294,6 +323,49 @@ const HomePage = () => {
       toast.info("No places found. Try a different search.");
       setSearchResults([]);
       setAiSummary(result.summary || null);
+    }
+  };
+
+  const handleFilterConfirm = async (filters: FilterState) => {
+    setAppliedFilters(filters);
+    
+    // Update active filters display
+    const newActiveFilters = new Set<string>();
+    if (filters.budget) newActiveFilters.add(filters.budget);
+    filters.vibes.forEach(v => {
+      // Map vibes to filter IDs
+      const vibeMap: Record<string, string> = {
+        "Chill & relaxation": "chill",
+        "Fun With Friends": "friends",
+        "Family Time": "family",
+        "Hidden gems": "hidden",
+        "Nights Life": "late_night",
+        "Adventure & outdoors": "outdoor",
+      };
+      const filterId = vibeMap[v] || v.toLowerCase().replace(/\s+/g, '_');
+      newActiveFilters.add(filterId);
+    });
+    setActiveFilters(newActiveFilters);
+    
+    // Re-run search with new filters if we have a search term
+    if (searchValue.trim() || userMood) {
+      const basePrompt = searchValue.trim() || userMood || "popular restaurants and cafes nearby";
+      const searchPrompt = buildSearchPrompt(basePrompt, filters);
+      
+      setAiSummary(null);
+      try {
+        sessionStorage.removeItem(CACHE_KEY);
+        sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+      } catch (e) {
+        console.error('Failed to clear cache:', e);
+      }
+      
+      const result = await search(searchPrompt);
+      if (result && result.places.length > 0) {
+        setSearchResults(result.places.map(rankedToMockPlace));
+        setAiSummary(result.summary || null);
+        toast.success(`Found ${result.places.length} spots matching your filters!`);
+      }
     }
   };
 
@@ -444,9 +516,9 @@ const HomePage = () => {
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="px-4 pb-3">
-          <form onSubmit={handleSearchSubmit} className="relative">
+        {/* Search Bar with Filter Button */}
+        <div className="px-4 pb-3 flex gap-2">
+          <form onSubmit={handleSearchSubmit} className="relative flex-1">
             <div
               className={`relative flex items-center transition-all duration-200 ${
                 isSearchFocused ? "ring-2 ring-primary/50 rounded-full" : ""
@@ -463,7 +535,7 @@ const HomePage = () => {
                 onChange={(e) => setSearchValue(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
-                placeholder="Ask anything: rooftop bars, date spots, hidden gems..."
+                placeholder="Ask anything: rooftop bars, date spots..."
                 className="pl-9 pr-9 h-10 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
                 disabled={isSearching}
               />
@@ -478,6 +550,23 @@ const HomePage = () => {
               )}
             </div>
           </form>
+          
+          {/* Filter Button */}
+          <button
+            onClick={() => setIsFilterModalOpen(true)}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
+              activeFilters.size > 0 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-muted/50 text-foreground hover:bg-muted"
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            {activeFilters.size > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">
+                {activeFilters.size}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Active Filter Chips */}
@@ -573,6 +662,14 @@ const HomePage = () => {
           onSaved={handleBoardSaveConfirmed}
         />
       )}
+      
+      {/* Filter Modal */}
+      <TravelPersonalityFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        onConfirm={handleFilterConfirm}
+        initialFilters={appliedFilters}
+      />
     </div>
   );
 };
