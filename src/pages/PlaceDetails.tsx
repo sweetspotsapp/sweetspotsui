@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, DollarSign } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, DollarSign, Wand2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,6 +109,9 @@ const PlaceDetailsPage = () => {
   const { isSaved, toggleSave } = useSavedPlaces();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
   const [relatedPlaces, setRelatedPlaces] = useState<RelatedPlace[]>([]);
+  const [aiSimilarPlaces, setAiSimilarPlaces] = useState<RelatedPlace[]>([]);
+  const [isLoadingAiSimilar, setIsLoadingAiSimilar] = useState(false);
+  const [hasLoadedAiSimilar, setHasLoadedAiSimilar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -287,6 +290,56 @@ const PlaceDetailsPage = () => {
     }
   };
 
+  const handleFindSimilarVibes = async () => {
+    if (!placeId || isLoadingAiSimilar) return;
+    
+    setIsLoadingAiSimilar(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-similar-vibes`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ placeId }),
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          toast.error('Too many requests. Please try again later.');
+          return;
+        }
+        throw new Error('Failed to find similar places');
+      }
+
+      const data = await response.json();
+      
+      if (data.similarPlaces && data.similarPlaces.length > 0) {
+        const formatted: RelatedPlace[] = data.similarPlaces.map((p: any) => ({
+          id: p.place_id,
+          name: p.name,
+          image: p.photo_name 
+            ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}`
+            : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+          rating: p.rating || 4.0,
+          distance: userLocation && p.lat && p.lng 
+            ? Math.round(calculateDistance(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10
+            : Math.round((Math.random() * 3 + 0.5) * 10) / 10,
+        }));
+        setAiSimilarPlaces(formatted);
+        setHasLoadedAiSimilar(true);
+        toast.success('Found places with similar vibes!');
+      } else {
+        toast.info('No similar places found');
+      }
+    } catch (error) {
+      console.error('Error finding similar vibes:', error);
+      toast.error('Failed to find similar places');
+    } finally {
+      setIsLoadingAiSimilar(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background max-w-[420px] mx-auto">
@@ -462,10 +515,75 @@ const PlaceDetailsPage = () => {
           </div>
         )}
 
-        {/* 6. Similar Places - "You might also like" */}
+        {/* 7. Similar Places - "You might also like" */}
         {relatedPlaces.length > 0 && (
           <RelatedSpots places={relatedPlaces} onPlaceClick={handleRelatedClick} />
         )}
+
+        {/* 8. AI-Powered Similar Vibes */}
+        <div className="space-y-3 animate-fade-in pt-2">
+          {!hasLoadedAiSimilar ? (
+            <Button
+              onClick={handleFindSimilarVibes}
+              disabled={isLoadingAiSimilar}
+              variant="outline"
+              className="w-full gap-2 py-6 border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-all"
+            >
+              {isLoadingAiSimilar ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Finding similar vibes...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4" />
+                  Find more like this with AI
+                </>
+              )}
+            </Button>
+          ) : aiSimilarPlaces.length > 0 ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Wand2 className="w-4 h-4" />
+                <h3 className="font-semibold text-foreground">AI picks with similar vibes</h3>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                {aiSimilarPlaces.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleRelatedClick(p.id)}
+                    className="flex-shrink-0 w-36 group transition-all duration-300 hover:scale-[1.02]"
+                  >
+                    <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden mb-2">
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg">
+                        <Star className="w-3 h-3 text-primary fill-primary" />
+                        <span className="text-xs font-semibold text-foreground">{p.rating}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <p className="text-sm font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                        {p.name}
+                      </p>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <MapPin className="w-3 h-3" />
+                        <span className="text-xs">{p.distance} km</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );

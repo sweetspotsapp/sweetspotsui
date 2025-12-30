@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.enrich-places]
 verify_jwt = false
+
+[functions.find-similar-vibes]
+verify_jwt = false
