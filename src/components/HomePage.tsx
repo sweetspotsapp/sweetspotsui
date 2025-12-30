@@ -136,6 +136,13 @@ const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchValue, setSearchValue] = useState(userMood || "");
+  
+  // Sync searchValue when userMood changes (from EntryScreen)
+  useEffect(() => {
+    if (userMood && !searchValue) {
+      setSearchValue(userMood);
+    }
+  }, [userMood]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
   const [aiSummary, setAiSummary] = useState<string | null>(() => {
@@ -178,7 +185,7 @@ const HomePage = () => {
     }
   }, [aiSummary]);
 
-  // Load initial places on mount
+  // Load initial places on mount - use userMood from EntryScreen if available
   useEffect(() => {
     if (hasLoadedInitial.current) return;
     if (searchResults.length > 0) {
@@ -190,7 +197,14 @@ const HomePage = () => {
     const loadInitialPlaces = async () => {
       setIsInitialLoading(true);
       try {
-        const result = await search("popular restaurants and cafes nearby");
+        // Use the mood from EntryScreen if available, otherwise use default
+        const searchPrompt = userMood && userMood.trim() 
+          ? userMood.trim() 
+          : "popular restaurants and cafes nearby";
+        
+        console.log("Initial search with prompt:", searchPrompt);
+        
+        const result = await search(searchPrompt);
         if (result && result.places.length > 0) {
           setSearchResults(result.places.map(rankedToMockPlace));
           setAiSummary(result.summary || null);
@@ -206,7 +220,7 @@ const HomePage = () => {
     };
 
     loadInitialPlaces();
-  }, [search, searchResults.length]);
+  }, [search, searchResults.length, userMood]);
 
   // Show search errors as toast
   useEffect(() => {
