@@ -23,24 +23,41 @@ const rankedToMockPlace = (place: RankedPlace): MockPlace => ({
   categories: place.categories || [],
 });
 
-// Helper to get shuffled/filtered places based on section type
+// Helper to get non-overlapping places based on section type
+// With 60 places, distribute 15 per section with no overlap
 const getPlacesForSection = (
   type: "exact" | "core" | "secondary" | "similar",
   allPlaces: MockPlace[]
 ): MockPlace[] => {
   if (allPlaces.length === 0) return [];
   
+  const total = allPlaces.length;
+  const perSection = Math.max(5, Math.floor(total / 4)); // At least 5 per section
+  
   switch (type) {
     case "exact":
-      return allPlaces.slice(0, Math.min(10, allPlaces.length));
+      // Top picks: Best overall matches (ranks 1-15)
+      return allPlaces.slice(0, Math.min(perSection, total));
     case "core":
-      return allPlaces.slice(0, Math.min(8, allPlaces.length));
+      // Core intent: Next best matches (ranks 16-30)
+      return allPlaces.slice(perSection, Math.min(perSection * 2, total));
     case "secondary":
-      return allPlaces.length > 6 ? allPlaces.slice(6, Math.min(12, allPlaces.length)) : allPlaces.slice(0, Math.min(6, allPlaces.length));
+      // Secondary: Places with highest ratings from remaining (ranks 31-45)
+      // Sort by rating to highlight "best atmosphere"
+      const secondaryStart = perSection * 2;
+      const secondaryEnd = Math.min(perSection * 3, total);
+      const remaining = allPlaces.slice(secondaryStart, secondaryEnd);
+      return [...remaining].sort((a, b) => (b.rating || 0) - (a.rating || 0));
     case "similar":
-      return [...allPlaces].sort(() => Math.random() - 0.5).slice(0, Math.min(6, allPlaces.length));
+      // Similar: Last batch for discovery (ranks 46-60)
+      const similarStart = perSection * 3;
+      if (similarStart < total) {
+        return allPlaces.slice(similarStart, Math.min(perSection * 4, total));
+      }
+      // Fallback: show last available places
+      return allPlaces.slice(Math.max(0, total - perSection));
     default:
-      return allPlaces.slice(0, Math.min(6, allPlaces.length));
+      return allPlaces.slice(0, Math.min(perSection, total));
   }
 };
 
