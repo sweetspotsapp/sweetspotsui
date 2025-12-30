@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Star, Heart, Navigation } from "lucide-react";
 
 // Dummy place type for mock data
@@ -42,7 +43,11 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [animationStyle, setAnimationStyle] = useState<React.CSSProperties>({});
+  const [flyingClone, setFlyingClone] = useState<{
+    src: string;
+    startRect: DOMRect;
+    endRect: DOMRect;
+  } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
@@ -68,15 +73,12 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
     const savedTabRect = savedTab?.getBoundingClientRect();
 
     if (imageRect && savedTabRect) {
-      // Calculate the translation needed
-      const translateX = savedTabRect.left + savedTabRect.width / 2 - (imageRect.left + imageRect.width / 2);
-      const translateY = savedTabRect.top + savedTabRect.height / 2 - (imageRect.top + imageRect.height / 2);
-
-      setAnimationStyle({
-        '--fly-x': `${translateX}px`,
-        '--fly-y': `${translateY}px`,
-      } as React.CSSProperties);
-
+      // Store the clone data for portal rendering
+      setFlyingClone({
+        src: imageError ? getPlaceholderImage() : imageUrl,
+        startRect: imageRect,
+        endRect: savedTabRect,
+      });
       setIsAnimating(true);
 
       // Trigger the save after animation starts
@@ -84,9 +86,10 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
         onSave(place.id);
       }, 150);
 
-      // Reset animation state
+      // Reset animation state and remove clone
       setTimeout(() => {
         setIsAnimating(false);
+        setFlyingClone(null);
       }, 500);
     } else {
       // Fallback if we can't get positions
@@ -100,25 +103,33 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
       className={`flex-shrink-0 cursor-pointer group ${featured ? 'w-[200px]' : 'w-[160px]'}`}
       onClick={onClick}
     >
+      {/* Flying clone portal - renders at body level for visibility */}
+      {isAnimating && flyingClone && createPortal(
+        <div 
+          className="fixed z-[9999] rounded-2xl overflow-hidden pointer-events-none animate-fly-to-saved-portal"
+          style={{
+            top: flyingClone.startRect.top,
+            left: flyingClone.startRect.left,
+            width: flyingClone.startRect.width,
+            height: flyingClone.startRect.height,
+            '--fly-end-x': `${flyingClone.endRect.left + flyingClone.endRect.width / 2 - flyingClone.startRect.left - flyingClone.startRect.width / 2}px`,
+            '--fly-end-y': `${flyingClone.endRect.top + flyingClone.endRect.height / 2 - flyingClone.startRect.top - flyingClone.startRect.height / 2}px`,
+          } as React.CSSProperties}
+        >
+          <img
+            src={flyingClone.src}
+            alt={place.name}
+            className="w-full h-full object-cover"
+          />
+        </div>,
+        document.body
+      )}
+
       {/* Image Container */}
       <div 
         ref={imageRef}
         className={`relative rounded-2xl overflow-hidden bg-muted ${featured ? 'aspect-[4/3]' : 'aspect-[3/4]'}`}
       >
-        {/* Animated clone for fly effect */}
-        {isAnimating && (
-          <div 
-            className="absolute inset-0 z-50 rounded-2xl overflow-hidden pointer-events-none animate-fly-to-saved"
-            style={animationStyle}
-          >
-            <img
-              src={imageError ? getPlaceholderImage() : imageUrl}
-              alt={place.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-
         <img
           src={imageError ? getPlaceholderImage() : imageUrl}
           alt={place.name}
