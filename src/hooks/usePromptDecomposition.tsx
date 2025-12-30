@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface DecomposedSection {
   id: string;
@@ -8,101 +9,102 @@ export interface DecomposedSection {
   description?: string;
 }
 
-// Common activity keywords
-const ACTIVITY_KEYWORDS = [
-  "wine", "coffee", "brunch", "dinner", "lunch", "breakfast",
-  "drinks", "cocktails", "beer", "food", "dessert", "pizza",
-  "sushi", "ramen", "tacos", "burgers", "seafood", "steak",
-  "vegan", "vegetarian", "healthy", "comfort food", "street food"
-];
+interface AIHeadings {
+  topPicks: string;
+  coreIntent: string;
+  secondary: string;
+  similar: string;
+}
 
-// Common setting/context keywords
-const SETTING_KEYWORDS = [
-  "city view", "rooftop", "outdoor", "garden", "beach", "waterfront",
-  "cozy", "romantic", "quiet", "lively", "aesthetic", "trendy",
-  "hidden gem", "scenic", "sunset", "sunrise", "night", "late night"
-];
+// Simple hash for caching
+const hashPrompt = (prompt: string): string => {
+  let hash = 0;
+  for (let i = 0; i < prompt.length; i++) {
+    const char = prompt.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString();
+};
 
-// Vibe keywords for similarity matching
-const VIBE_KEYWORDS = [
-  "chill", "vibrant", "intimate", "social", "fancy", "casual",
-  "upscale", "budget", "cheap", "expensive", "affordable",
-  "modern", "classic", "vintage", "artsy", "hipster"
-];
+// Cache for AI headings
+const headingsCache = new Map<string, AIHeadings>();
 
-function extractKeywords(prompt: string): {
-  activities: string[];
-  settings: string[];
-  vibes: string[];
-  other: string[];
+export function usePromptDecomposition(prompt: string): {
+  sections: DecomposedSection[];
+  isLoading: boolean;
 } {
-  const lowerPrompt = prompt.toLowerCase();
-  
-  const activities = ACTIVITY_KEYWORDS.filter(kw => lowerPrompt.includes(kw));
-  const settings = SETTING_KEYWORDS.filter(kw => lowerPrompt.includes(kw));
-  const vibes = VIBE_KEYWORDS.filter(kw => lowerPrompt.includes(kw));
-  
-  // Extract remaining words as "other"
-  let remaining = lowerPrompt;
-  [...activities, ...settings, ...vibes].forEach(kw => {
-    remaining = remaining.replace(kw, "");
-  });
-  
-  const other = remaining
-    .split(/[\s,]+/)
-    .filter(word => word.length > 2)
-    .slice(0, 3);
-  
-  return { activities, settings, vibes, other };
-}
+  const [aiHeadings, setAiHeadings] = useState<AIHeadings | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-function generateCoreTitle(activities: string[], other: string[]): string {
-  if (activities.length > 0) {
-    const main = activities[0];
-    // Capitalize first letter
-    const formatted = main.charAt(0).toUpperCase() + main.slice(1);
-    return `Great ${formatted.toLowerCase()} spots`;
-  }
-  if (other.length > 0) {
-    const main = other[0];
-    return `Best ${main} places`;
-  }
-  return "Popular spots nearby";
-}
-
-function generateSecondaryTitle(settings: string[], vibes: string[]): string {
-  if (settings.length > 0) {
-    const main = settings[0];
-    // Format for display
-    if (main.includes("view")) {
-      return `Spots with ${main}s`;
+  useEffect(() => {
+    const trimmedPrompt = prompt?.trim() || "";
+    
+    if (!trimmedPrompt || trimmedPrompt === "Discover nearby") {
+      setAiHeadings(null);
+      setIsLoading(false);
+      return;
     }
-    if (main.includes("rooftop")) {
-      return "Rooftop spots";
-    }
-    if (main.includes("outdoor") || main.includes("garden")) {
-      return "Great outdoor spots";
-    }
-    return `${main.charAt(0).toUpperCase() + main.slice(1)} places`;
-  }
-  if (vibes.length > 0) {
-    const main = vibes[0];
-    return `${main.charAt(0).toUpperCase() + main.slice(1)} vibes`;
-  }
-  return "Spots with great atmosphere";
-}
 
-function generateSimilarTitle(vibes: string[]): string {
-  if (vibes.length > 0) {
-    return "Similar spots you might like";
-  }
-  return "You might also enjoy";
-}
+    const cacheKey = hashPrompt(trimmedPrompt);
+    
+    // Check cache first
+    if (headingsCache.has(cacheKey)) {
+      setAiHeadings(headingsCache.get(cacheKey)!);
+      setIsLoading(false);
+      return;
+    }
 
-export function usePromptDecomposition(prompt: string): DecomposedSection[] {
-  return useMemo(() => {
-    if (!prompt || prompt.trim().length === 0) {
-      // Default sections when no prompt
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const fetchHeadings = async () => {
+      setIsLoading(true);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('summarize-prompt', {
+          body: { prompt: trimmedPrompt }
+        });
+
+        if (controller.signal.aborted) return;
+
+        if (error) {
+          console.error('Error fetching AI headings:', error);
+          setAiHeadings(null);
+        } else if (data?.headings) {
+          headingsCache.set(cacheKey, data.headings);
+          setAiHeadings(data.headings);
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to fetch AI headings:', err);
+        setAiHeadings(null);
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Small debounce to avoid rapid API calls
+    const timeoutId = setTimeout(fetchHeadings, 300);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [prompt]);
+
+  const sections = useMemo(() => {
+    const trimmedPrompt = prompt?.trim() || "";
+    
+    if (!trimmedPrompt || trimmedPrompt === "Discover nearby") {
       return [
         {
           id: "default-top",
@@ -135,51 +137,47 @@ export function usePromptDecomposition(prompt: string): DecomposedSection[] {
       ];
     }
 
-    const trimmedPrompt = prompt.trim();
-    const { activities, settings, vibes, other } = extractKeywords(trimmedPrompt);
-    
-    const sections: DecomposedSection[] = [];
-    
-    // 1. Exact Match Section - top picks for the full query
-    sections.push({
-      id: "exact",
-      title: `Top picks for "${trimmedPrompt}"`,
-      type: "exact",
-      query: trimmedPrompt,
-      description: "Best matches for your search"
-    });
-    
-    // 2. Core Intent Section - main activity/interest
-    const coreQuery = [...activities, ...other.slice(0, 1)].join(" ");
-    sections.push({
-      id: "core",
-      title: generateCoreTitle(activities, other),
-      type: "core",
-      query: coreQuery || trimmedPrompt,
-      description: "Focus on the main activity"
-    });
-    
-    // 3. Secondary Intent Section - setting/context
-    const secondaryQuery = [...settings, ...vibes.slice(0, 1)].join(" ");
-    sections.push({
-      id: "secondary",
-      title: generateSecondaryTitle(settings, vibes),
-      type: "secondary",
-      query: secondaryQuery || "nice atmosphere",
-      description: "Focus on the ambiance"
-    });
-    
-    // 4. Similar Spots Section - algorithmic similarity
-    sections.push({
-      id: "similar",
-      title: generateSimilarTitle(vibes),
-      type: "similar",
-      query: vibes.length > 0 ? vibes.join(" ") : trimmedPrompt,
-      description: "Based on vibe and atmosphere"
-    });
-    
-    return sections;
-  }, [prompt]);
+    // Use AI headings if available, otherwise use prompt
+    const headings = aiHeadings || {
+      topPicks: `Top picks`,
+      coreIntent: "Best matches",
+      secondary: "Great atmosphere",
+      similar: "You might like"
+    };
+
+    return [
+      {
+        id: "exact",
+        title: headings.topPicks,
+        type: "exact" as const,
+        query: trimmedPrompt,
+        description: "Best matches for your search"
+      },
+      {
+        id: "core",
+        title: headings.coreIntent,
+        type: "core" as const,
+        query: trimmedPrompt,
+        description: "Focus on the main activity"
+      },
+      {
+        id: "secondary",
+        title: headings.secondary,
+        type: "secondary" as const,
+        query: trimmedPrompt,
+        description: "Focus on the ambiance"
+      },
+      {
+        id: "similar",
+        title: headings.similar,
+        type: "similar" as const,
+        query: trimmedPrompt,
+        description: "Based on vibe and atmosphere"
+      }
+    ];
+  }, [prompt, aiHeadings]);
+
+  return { sections, isLoading };
 }
 
 export default usePromptDecomposition;

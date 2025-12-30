@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.resolve_photos_for_places]
 verify_jwt = true
+
+[functions.summarize-prompt]
+verify_jwt = false
