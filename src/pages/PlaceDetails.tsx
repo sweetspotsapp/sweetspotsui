@@ -43,12 +43,13 @@ const mockReviews = [
   { id: '4', name: 'Mike T.', rating: 4, text: 'Love their house blend coffee. Will definitely come back!', date: '3 weeks ago' },
 ];
 
-const mockRelatedPlaces = [
-  { id: 'related-1', name: 'The Garden Cafe', image: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=400', rating: 4.5, distance: 1.2 },
-  { id: 'related-2', name: 'Urban Bites', image: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=400', rating: 4.3, distance: 0.8 },
-  { id: 'related-3', name: 'Sunset Lounge', image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400', rating: 4.7, distance: 2.1 },
-  { id: 'related-4', name: 'Cozy Corner', image: 'https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=400', rating: 4.4, distance: 1.5 },
-];
+interface RelatedPlace {
+  id: string;
+  name: string;
+  image: string;
+  rating: number;
+  distance: number;
+}
 
 const mockOpeningHours = [
   { day: 'Monday', hours: '7:00 AM - 6:00 PM', isToday: false },
@@ -84,6 +85,7 @@ const PlaceDetailsPage = () => {
   const navigate = useNavigate();
   const { isSaved, toggleSave } = useSavedPlaces();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
+  const [relatedPlaces, setRelatedPlaces] = useState<RelatedPlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -116,11 +118,35 @@ const PlaceDetailsPage = () => {
           return;
         }
 
-        setPlace({
+        const placeData: PlaceDetails = {
           ...data,
           distance_km: 2.3, // TODO: Calculate from user location
           price_range: getPriceRange(data.categories),
-        });
+        };
+        setPlace(placeData);
+
+        // Fetch related places based on categories
+        if (data.categories && data.categories.length > 0) {
+          const { data: related, error: relatedError } = await supabase
+            .from('places')
+            .select('place_id, name, photo_name, rating')
+            .neq('place_id', placeId)
+            .overlaps('categories', data.categories)
+            .limit(6);
+
+          if (!relatedError && related) {
+            const formattedRelated: RelatedPlace[] = related.map(p => ({
+              id: p.place_id,
+              name: p.name,
+              image: p.photo_name 
+                ? `https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}`
+                : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+              rating: p.rating || 4.0,
+              distance: Math.round((Math.random() * 3 + 0.5) * 10) / 10, // TODO: Calculate real distance
+            }));
+            setRelatedPlaces(formattedRelated);
+          }
+        }
       } catch (err) {
         console.error('Unexpected error:', err);
         setError('Something went wrong');
@@ -312,7 +338,9 @@ const PlaceDetailsPage = () => {
         <ReviewsList reviews={mockReviews} />
 
         {/* 6. Similar Places - "You might also like" */}
-        <RelatedSpots places={mockRelatedPlaces} onPlaceClick={handleRelatedClick} />
+        {relatedPlaces.length > 0 && (
+          <RelatedSpots places={relatedPlaces} onPlaceClick={handleRelatedClick} />
+        )}
       </div>
     </div>
   );
