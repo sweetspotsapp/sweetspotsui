@@ -52,16 +52,89 @@ interface RelatedPlace {
   distance: number;
 }
 
-// Convert price_level (0-4) to display string
-const getPriceRangeFromLevel = (level: number | null): string => {
-  if (level === null) return '$$';
+// Convert price_level (0-4) to display string with estimated IDR range
+interface PriceInfo {
+  symbol: string;
+  estimate: string;
+}
+
+const getPriceRangeFromLevel = (level: number | null, categories: string[] | null): PriceInfo => {
+  const cats = categories?.map(c => c.toLowerCase()) || [];
+  
+  // Determine category type for price estimation
+  const isBarOrNightlife = cats.some(c => 
+    c.includes('bar') || c.includes('night_club') || c.includes('nightlife')
+  );
+  const isCafeOrBakery = cats.some(c => 
+    c.includes('cafe') || c.includes('bakery') || c.includes('coffee')
+  );
+  const isSpaOrWellness = cats.some(c => 
+    c.includes('spa') || c.includes('beauty') || c.includes('health')
+  );
+  const isAttraction = cats.some(c => 
+    c.includes('tourist') || c.includes('museum') || c.includes('park') || c.includes('zoo')
+  );
+  
+  // Handle null price level
+  if (level === null) {
+    if (isAttraction) return { symbol: '$$', estimate: 'IDR 50k-200k/entry' };
+    if (isSpaOrWellness) return { symbol: '$$$', estimate: 'IDR 200k-500k' };
+    return { symbol: '$$', estimate: 'Check for prices' };
+  }
+  
+  // Price estimates based on category and level
+  if (isBarOrNightlife) {
+    switch (level) {
+      case 0: return { symbol: 'Free', estimate: 'No cover charge' };
+      case 1: return { symbol: '$', estimate: 'IDR 50k-100k/drink' };
+      case 2: return { symbol: '$$', estimate: 'IDR 100k-200k/drink' };
+      case 3: return { symbol: '$$$', estimate: 'IDR 200k-400k/drink' };
+      case 4: return { symbol: '$$$$', estimate: 'IDR 400k+/drink' };
+      default: return { symbol: '$$', estimate: 'IDR 100k-200k/drink' };
+    }
+  }
+  
+  if (isCafeOrBakery) {
+    switch (level) {
+      case 0: return { symbol: 'Free', estimate: 'Free samples/promos' };
+      case 1: return { symbol: '$', estimate: 'IDR 20k-50k/person' };
+      case 2: return { symbol: '$$', estimate: 'IDR 50k-100k/person' };
+      case 3: return { symbol: '$$$', estimate: 'IDR 100k-200k/person' };
+      case 4: return { symbol: '$$$$', estimate: 'IDR 200k+/person' };
+      default: return { symbol: '$$', estimate: 'IDR 50k-100k/person' };
+    }
+  }
+  
+  if (isSpaOrWellness) {
+    switch (level) {
+      case 0: return { symbol: 'Free', estimate: 'Complimentary services' };
+      case 1: return { symbol: '$', estimate: 'IDR 100k-200k/session' };
+      case 2: return { symbol: '$$', estimate: 'IDR 200k-400k/session' };
+      case 3: return { symbol: '$$$', estimate: 'IDR 400k-800k/session' };
+      case 4: return { symbol: '$$$$', estimate: 'IDR 800k+/session' };
+      default: return { symbol: '$$', estimate: 'IDR 200k-400k/session' };
+    }
+  }
+  
+  if (isAttraction) {
+    switch (level) {
+      case 0: return { symbol: 'Free', estimate: 'Free entry' };
+      case 1: return { symbol: '$', estimate: 'IDR 25k-75k/entry' };
+      case 2: return { symbol: '$$', estimate: 'IDR 75k-150k/entry' };
+      case 3: return { symbol: '$$$', estimate: 'IDR 150k-300k/entry' };
+      case 4: return { symbol: '$$$$', estimate: 'IDR 300k+/entry' };
+      default: return { symbol: '$$', estimate: 'IDR 75k-150k/entry' };
+    }
+  }
+  
+  // Default: Restaurants and general dining
   switch (level) {
-    case 0: return 'Free';
-    case 1: return '$';
-    case 2: return '$$';
-    case 3: return '$$$';
-    case 4: return '$$$$';
-    default: return '$$';
+    case 0: return { symbol: 'Free', estimate: 'Free tastings/promos' };
+    case 1: return { symbol: '$', estimate: 'IDR 25k-75k/person' };
+    case 2: return { symbol: '$$', estimate: 'IDR 75k-150k/person' };
+    case 3: return { symbol: '$$$', estimate: 'IDR 150k-400k/person' };
+    case 4: return { symbol: '$$$$', estimate: 'IDR 400k+/person' };
+    default: return { symbol: '$$', estimate: 'IDR 75k-150k/person' };
   }
 };
 
@@ -501,7 +574,7 @@ const PlaceDetailsPage = () => {
   }
 
   const saved = placeId ? isSaved(placeId) : false;
-  const priceRange = getPriceRangeFromLevel(place.price_level);
+  const priceRange = getPriceRangeFromLevel(place.price_level, place.categories);
   
   // Generate image URLs from photos array (real Google photos)
   const basePhotoUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=`;
@@ -583,7 +656,7 @@ const PlaceDetailsPage = () => {
             <div className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted">
               <DollarSign className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium text-foreground">
-                {priceRange}
+                {priceRange.symbol}
               </span>
             </div>
           </div>
