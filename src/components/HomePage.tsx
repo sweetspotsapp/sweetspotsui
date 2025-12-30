@@ -78,31 +78,46 @@ const SectionRow: React.FC<SectionRowProps> = ({
   toggleSave,
   isSaved,
   featured = false,
-}) => (
-  <div className="mb-8">
-    {/* Section Header */}
-    <div className="flex items-center justify-between px-4 mb-3">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <button className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
-        See all
-        <ChevronRight className="w-4 h-4" />
-      </button>
-    </div>
+}) => {
+  const handleSeeAll = () => {
+    toast.info(`"See all" for "${title}" coming soon!`);
+  };
 
-    <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
-      {places.map((place) => (
-        <PlaceCardCompact
-          key={place.id}
-          place={place}
-          onSave={toggleSave}
-          isSaved={isSaved(place.id)}
-          onClick={() => onPlaceClick(place)}
-          featured={featured}
-        />
-      ))}
+  return (
+    <div className="mb-8">
+      {/* Section Header */}
+      <div className="flex items-center justify-between px-4 mb-3">
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+        <button 
+          onClick={handleSeeAll}
+          className="flex items-center gap-1 text-sm text-primary font-medium hover:underline cursor-pointer"
+        >
+          See all
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div 
+        className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide touch-pan-x"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        {places.map((place) => (
+          <PlaceCardCompact
+            key={place.id}
+            place={place}
+            onSave={toggleSave}
+            isSaved={isSaved(place.id)}
+            onClick={() => onPlaceClick(place)}
+            featured={featured}
+          />
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
+// Session storage key for caching results
+const CACHE_KEY = 'sweetspots_search_cache';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -115,12 +130,41 @@ const HomePage = () => {
   const [searchValue, setSearchValue] = useState(userMood || "");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
-  const [searchResults, setSearchResults] = useState<MockPlace[]>([]);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [searchResults, setSearchResults] = useState<MockPlace[]>(() => {
+    // Restore from session storage on mount
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.error('Failed to restore cache:', e);
+    }
+    return [];
+  });
+  const [isInitialLoading, setIsInitialLoading] = useState(() => {
+    // Only show loading if no cached results
+    try {
+      return !sessionStorage.getItem(CACHE_KEY);
+    } catch {
+      return true;
+    }
+  });
   const [needsLocationPermission, setNeedsLocationPermission] = useState(false);
   
   // Save to board dialog state
   const [saveToBoardPlace, setSaveToBoardPlace] = useState<MockPlace | null>(null);
+
+  // Cache results to session storage
+  useEffect(() => {
+    if (searchResults.length > 0) {
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(searchResults));
+      } catch (e) {
+        console.error('Failed to cache results:', e);
+      }
+    }
+  }, [searchResults]);
 
   // Load initial places on mount
   useEffect(() => {
