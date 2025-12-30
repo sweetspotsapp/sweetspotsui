@@ -211,6 +211,21 @@
   }
 }
 
+@keyframes fly-to-saved-portal {
+  0% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+  40% {
+    opacity: 0.9;
+    transform: scale(0.5) translate(calc(var(--fly-end-x) * 0.4), calc(var(--fly-end-y) * 0.3 - 30px));
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.15) translate(var(--fly-end-x), var(--fly-end-y));
+  }
+}
+
 @keyframes pulse-once {
   0% {
     transform: scale(1);
@@ -252,6 +267,10 @@
 
 .animate-fly-to-saved {
   animation: fly-to-saved 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-fly-to-saved-portal {
+  animation: fly-to-saved-portal 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
 .animate-pulse-once {
