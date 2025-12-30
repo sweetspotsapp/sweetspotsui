@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, MapPin, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import ImageCarousel from '@/components/place-detail/ImageCarousel';
 import ReviewsList from '@/components/place-detail/ReviewsList';
 import RelatedSpots from '@/components/place-detail/RelatedSpots';
@@ -26,7 +27,7 @@ interface PlaceDetails {
   price_range?: string;
 }
 
-// Dummy data for images
+// Dummy data for images (will use place photo when available)
 const dummyImages = [
   'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800',
   'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
@@ -69,28 +70,67 @@ const mockTrafficHours = [
   { time: '8pm', level: 3 as const },
 ];
 
+// Helper to estimate price range from categories
+const getPriceRange = (categories: string[] | null): string => {
+  if (!categories) return '$$';
+  const cats = categories.map(c => c.toLowerCase());
+  if (cats.some(c => c.includes('fine dining') || c.includes('luxury'))) return '$$$';
+  if (cats.some(c => c.includes('fast food') || c.includes('takeaway'))) return '$';
+  return '$$';
+};
+
 const PlaceDetailsPage = () => {
   const { placeId } = useParams<{ placeId: string }>();
   const navigate = useNavigate();
   const { isSaved, toggleSave } = useSavedPlaces();
-  const [isLoading] = useState(false);
-  
-  // Dummy place data for UI development
-  const dummyPlace: PlaceDetails = {
-    place_id: placeId || '1',
-    name: 'The Botanical Garden Cafe',
-    address: '123 Garden Lane, Melbourne VIC 3000',
-    lat: -37.8136,
-    lng: 144.9631,
-    categories: ['cafe', 'brunch', 'garden', 'instagrammable'],
-    rating: 4.6,
-    ratings_total: 284,
-    photo_name: null,
-    distance_km: 2.3,
-    price_range: '$$',
-  };
+  const [place, setPlace] = useState<PlaceDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const place = dummyPlace;
+  useEffect(() => {
+    const fetchPlace = async () => {
+      if (!placeId) {
+        setError('No place ID provided');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const { data, error: fetchError } = await supabase
+          .from('places')
+          .select('*')
+          .eq('place_id', placeId)
+          .maybeSingle();
+
+        if (fetchError) {
+          console.error('Error fetching place:', fetchError);
+          setError('Failed to load place details');
+          return;
+        }
+
+        if (!data) {
+          setError('Place not found');
+          return;
+        }
+
+        setPlace({
+          ...data,
+          distance_km: 2.3, // TODO: Calculate from user location
+          price_range: getPriceRange(data.categories),
+        });
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setError('Something went wrong');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPlace();
+  }, [placeId]);
 
   const openInMaps = () => {
     if (place?.lat && place?.lng) {
@@ -127,8 +167,13 @@ const PlaceDetailsPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background max-w-[420px] mx-auto">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <div className="absolute top-4 left-4 z-30">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate(-1)}
+            className="bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background rounded-full w-10 h-10"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </div>
@@ -143,7 +188,37 @@ const PlaceDetailsPage = () => {
     );
   }
 
+  if (error || !place) {
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex flex-col items-center justify-center p-6">
+        <div className="text-center space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">
+            {error || 'Place not found'}
+          </h2>
+          <p className="text-muted-foreground">
+            We couldn't find the place you're looking for.
+          </p>
+          <Button onClick={() => navigate(-1)} variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const saved = placeId ? isSaved(placeId) : false;
+  
+  // Generate image URLs - use place photo if available, otherwise fallback to dummy
+  const placeImages = place.photo_name 
+    ? [`https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}`, ...dummyImages.slice(1)]
+    : dummyImages;
+
+  // Generate description from categories
+  const generateDescription = () => {
+    const cats = place.categories?.slice(0, 3).join(', ') || 'local spot';
+    return `A ${place.price_range === '$' ? 'budget-friendly' : place.price_range === '$$$' ? 'premium' : 'charming'} ${cats} in ${place.address?.split(',')[1]?.trim() || 'the area'}. Perfect for those seeking quality experiences with a memorable atmosphere.`;
+  };
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-28">
@@ -160,7 +235,7 @@ const PlaceDetailsPage = () => {
       </div>
 
       {/* 1. Hero Image Carousel */}
-      <ImageCarousel images={dummyImages} placeName={place.name} />
+      <ImageCarousel images={placeImages} placeName={place.name} />
 
       {/* Content */}
       <div className="px-4 py-5 space-y-6">
@@ -170,16 +245,17 @@ const PlaceDetailsPage = () => {
             {place.name}
           </h1>
           
-          {/* Rating, Distance, Price Row */}
+          {/* Rating */}
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Rating */}
-            <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-2 rounded-xl">
-              <Star className="w-4 h-4 text-primary fill-primary" />
-              <span className="text-sm font-bold text-primary">
-                {place.rating}
-              </span>
-              <span className="text-xs text-primary/70">/ 5</span>
-            </div>
+            {place.rating && (
+              <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-2 rounded-xl">
+                <Star className="w-4 h-4 text-primary fill-primary" />
+                <span className="text-sm font-bold text-primary">
+                  {place.rating.toFixed(1)}
+                </span>
+                <span className="text-xs text-primary/70">/ 5</span>
+              </div>
+            )}
             
             {/* Distance */}
             {place.distance_km && (
@@ -215,7 +291,7 @@ const PlaceDetailsPage = () => {
           onSave={handleSave}
           onViewMap={openInMaps}
           onShare={handleShare}
-          flyImageSrc={dummyImages[0]}
+          flyImageSrc={placeImages[0]}
         />
 
         {/* 3. Opening Hours & Busy Times */}
@@ -228,8 +304,8 @@ const PlaceDetailsPage = () => {
 
         {/* 4. Why You Should Visit */}
         <WhyVisitSection 
-          description="A cozy hidden wine bar with city views, perfect for relaxed evenings and intimate conversations. Known for its lush indoor plants, Instagram-worthy corners, and specialty coffee that'll make your taste buds dance."
-          vibes={['Instagrammable', 'Cozy', 'Plant Paradise', 'Brunch Spot']}
+          description={generateDescription()}
+          vibes={place.categories?.slice(0, 4).map(c => c.charAt(0).toUpperCase() + c.slice(1)) || ['Great Spot']}
         />
 
         {/* 5. Reviews Section */}
