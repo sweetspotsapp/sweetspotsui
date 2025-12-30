@@ -16,6 +16,7 @@ interface RequestBody {
   origin: Origin;
   place_ids: string[];
   mode: 'drive' | 'walk' | 'bike';
+  limit?: number; // Optional: max places to return (default 60)
 }
 
 interface Place {
@@ -474,9 +475,10 @@ serve(async (req) => {
       };
     });
 
-    // Sort by score descending and take top 20
+    // Sort by score descending and apply limit
     rankedPlaces.sort((a, b) => b.score - a.score);
-    const topPlaces = rankedPlaces.slice(0, 20);
+    const limit = body.limit || 60; // Default to 60 places
+    const topPlaces = rankedPlaces.slice(0, limit);
 
     console.log('Returning', topPlaces.length, 'ranked places');
     return new Response(

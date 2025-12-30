@@ -11,6 +11,7 @@ interface RequestBody {
   lat: number;
   lng: number;
   radius_m: number;
+  max_results?: number; // Optional: max places to fetch (default 60, max 60)
 }
 
 interface PlaceCandidate {
@@ -78,7 +79,7 @@ serve(async (req) => {
 
     // Parse request body
     const body: RequestBody = await req.json();
-    const { prompt, lat, lng, radius_m } = body;
+    const { prompt, lat, lng, radius_m, max_results = 60 } = body;
 
     if (!prompt || lat === undefined || lng === undefined || radius_m === undefined) {
       return new Response(
@@ -87,52 +88,86 @@ serve(async (req) => {
       );
     }
 
-    console.log('Search request:', { prompt, lat, lng, radius_m });
+    // Cap max_results at 60 (Google's practical limit with pagination)
+    const targetResults = Math.min(max_results, 60);
+    const maxPages = Math.ceil(targetResults / 20); // Up to 3 pages
 
-    // Use Places API (New) - Text Search
+    console.log('Search request:', { prompt, lat, lng, radius_m, targetResults, maxPages });
+
+    // Use Places API (New) - Text Search with pagination
     const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
     
-    const requestBody = {
-      textQuery: prompt,
-      locationBias: {
-        circle: {
-          center: {
-            latitude: lat,
-            longitude: lng
-          },
-          radius: radius_m
+    let allPlaces: any[] = [];
+    let nextPageToken: string | null = null;
+
+    for (let page = 0; page < maxPages; page++) {
+      const requestBody: any = {
+        textQuery: prompt,
+        locationBias: {
+          circle: {
+            center: {
+              latitude: lat,
+              longitude: lng
+            },
+            radius: radius_m
+          }
+        },
+        pageSize: 20,
+        languageCode: "en"
+      };
+
+      // Add page token for subsequent requests
+      if (nextPageToken) {
+        requestBody.pageToken = nextPageToken;
+      }
+
+      console.log(`Calling Places API (New) - Page ${page + 1}/${maxPages}...`);
+      const response = await fetch(searchUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': googleMapsApiKey,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos,nextPageToken'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Places API error:', data);
+        // If first page fails, return error; otherwise continue with what we have
+        if (page === 0) {
+          return new Response(
+            JSON.stringify({ error: 'Places API error', details: data.error?.message || 'Unknown error' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
-      },
-      maxResultCount: 20,
-      languageCode: "en"
-    };
+        break;
+      }
 
-    console.log('Calling Places API (New)...');
-    const response = await fetch(searchUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': googleMapsApiKey,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos'
-      },
-      body: JSON.stringify(requestBody)
-    });
+      const places = data.places || [];
+      allPlaces = allPlaces.concat(places);
+      console.log(`Page ${page + 1}: Fetched ${places.length} places (total: ${allPlaces.length})`);
 
-    const data = await response.json();
+      // Get next page token
+      nextPageToken = data.nextPageToken || null;
 
-    if (!response.ok) {
-      console.error('Places API error:', data);
-      return new Response(
-        JSON.stringify({ error: 'Places API error', details: data.error?.message || 'Unknown error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Stop if no more pages or we have enough results
+      if (!nextPageToken || allPlaces.length >= targetResults) {
+        break;
+      }
+
+      // Small delay between pagination requests (Google recommends this)
+      if (nextPageToken) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
     }
 
-    const places = data.places || [];
-    console.log(`Fetched ${places.length} places`);
+    console.log(`Total fetched: ${allPlaces.length} places`);
 
     // Extract and transform place data - include first photo name
-    const candidates: PlaceCandidate[] = places.map((place: any) => {
+    const candidates: PlaceCandidate[] = allPlaces.map((place: any) => {
       const firstPhoto = place.photos?.[0];
       return {
         place_id: place.id,
@@ -148,7 +183,7 @@ serve(async (req) => {
     });
 
     // Upsert places into database using service role (bypasses RLS)
-    const placesToUpsert = places.map((place: any) => {
+    const placesToUpsert = allPlaces.map((place: any) => {
       const firstPhoto = place.photos?.[0];
       return {
         place_id: place.id,

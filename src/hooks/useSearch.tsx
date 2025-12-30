@@ -97,7 +97,7 @@ export const useSearch = (): UseSearchReturn => {
         const location = await getLocation();
         console.log("User location:", location);
 
-        // Step 2: Call discover_candidates
+        // Step 2: Call discover_candidates (fetch up to 60 places)
         console.log("Calling discover_candidates...");
         const { data: discoverData, error: discoverError } = await supabase.functions.invoke(
           "discover_candidates",
@@ -107,6 +107,7 @@ export const useSearch = (): UseSearchReturn => {
               lat: location.lat,
               lng: location.lng,
               radius_m: DEFAULT_RADIUS_M,
+              max_results: 60,
             },
           }
         );
@@ -123,7 +124,7 @@ export const useSearch = (): UseSearchReturn => {
 
         console.log(`Found ${discoverData.place_ids.length} candidates`);
 
-        // Step 3: Call rank_with_travel_time
+        // Step 3: Call rank_with_travel_time (return up to 60 places)
         console.log("Calling rank_with_travel_time...");
         const { data: rankData, error: rankError } = await supabase.functions.invoke(
           "rank_with_travel_time",
@@ -133,6 +134,7 @@ export const useSearch = (): UseSearchReturn => {
               origin: location,
               place_ids: discoverData.place_ids,
               mode,
+              limit: 60,
             },
           }
         );
