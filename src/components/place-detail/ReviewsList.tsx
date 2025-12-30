@@ -27,7 +27,7 @@ const ReviewsList = ({ reviews }: ReviewsListProps) => {
         <span className="text-xs text-muted-foreground">{reviews.length} reviews</span>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-80 overflow-y-auto pr-1 scrollbar-thin">
         {displayedReviews.map((review, index) => (
           <div 
             key={review.id} 
@@ -63,7 +63,7 @@ const ReviewsList = ({ reviews }: ReviewsListProps) => {
               </div>
             </div>
             
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
               {review.text}
             </p>
           </div>
