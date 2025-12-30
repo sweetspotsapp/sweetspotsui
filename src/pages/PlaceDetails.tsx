@@ -193,7 +193,7 @@ const PlaceDetailsPage = () => {
         setPlace(placeData);
 
         // Fetch related places based on meaningful categories (exclude generic ones)
-        if (data.categories && data.categories.length > 0) {
+        if (data.categories && data.categories.length > 0 && data.lat && data.lng) {
           const genericCategories = ['point_of_interest', 'establishment', 'store', 'food'];
           const meaningfulCategories = data.categories.filter(
             (cat: string) => !genericCategories.includes(cat)
@@ -209,21 +209,31 @@ const PlaceDetailsPage = () => {
             .select('place_id, name, photo_name, rating, lat, lng, categories')
             .neq('place_id', placeId)
             .overlaps('categories', categoriesToMatch)
-            .limit(20); // Fetch more to filter and sort
+            .limit(50); // Fetch more to filter by distance
 
           if (!relatedError && related) {
-            // Score places by how many meaningful categories they share
-            const scoredPlaces = related.map(p => {
-              const placeCategories = p.categories || [];
-              const meaningfulMatches = placeCategories.filter(
-                (cat: string) => meaningfulCategories.includes(cat)
-              ).length;
-              return { ...p, score: meaningfulMatches };
-            });
+            const placeLat = data.lat;
+            const placeLng = data.lng;
+            
+            // Filter places within 20km radius and score by category matches
+            const nearbyPlaces = related
+              .filter(p => {
+                if (!p.lat || !p.lng) return false;
+                const dist = calculateDistance(placeLat, placeLng, p.lat, p.lng);
+                return dist <= 20; // Only places within 20km
+              })
+              .map(p => {
+                const placeCategories = p.categories || [];
+                const meaningfulMatches = placeCategories.filter(
+                  (cat: string) => meaningfulCategories.includes(cat)
+                ).length;
+                const dist = calculateDistance(placeLat, placeLng, p.lat!, p.lng!);
+                return { ...p, score: meaningfulMatches, distanceFromPlace: dist };
+              });
 
             // Sort by score (most category matches first) and take top 6
-            const topRelated = scoredPlaces
-              .sort((a, b) => b.score - a.score)
+            const topRelated = nearbyPlaces
+              .sort((a, b) => b.score - a.score || a.distanceFromPlace - b.distanceFromPlace)
               .slice(0, 6);
 
             const formattedRelated: RelatedPlace[] = topRelated.map(p => ({
@@ -235,7 +245,7 @@ const PlaceDetailsPage = () => {
               rating: p.rating || 4.0,
               distance: userLocation && p.lat && p.lng 
                 ? Math.round(calculateDistance(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10
-                : Math.round((Math.random() * 3 + 0.5) * 10) / 10,
+                : Math.round(p.distanceFromPlace * 10) / 10,
             }));
             setRelatedPlaces(formattedRelated);
           }
