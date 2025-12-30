@@ -251,6 +251,15 @@ const HomePage = () => {
     setUserMood(searchValue.trim());
     setNeedsLocationPermission(false);
     
+    // Clear old cache before new search to prevent stale data
+    setAiSummary(null);
+    try {
+      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+    } catch (e) {
+      console.error('Failed to clear cache:', e);
+    }
+    
     const result = await search(searchValue.trim());
     if (result && result.places.length > 0) {
       setSearchResults(result.places.map(rankedToMockPlace));
