@@ -53,6 +53,8 @@ CRITICAL RULES:
 4. Recommend 8-15 places maximum
 5. Each place must be a SPECIFIC business or location name, not a generic description
 6. Prioritize places that genuinely match the query - quality over quantity
+7. **IMPORTANT**: If the user's query mentions a specific city or location (e.g., "bars in Jakarta", "cafes in Singapore"), ALWAYS prioritize that mentioned location over their current GPS location. The query location takes precedence!
+8. Your summary MUST reference the query topic AND the correct location from the query, NOT the user's GPS location if different.
 
 For each place, provide:
 - The exact business/location name as it would appear on Google Maps
@@ -61,7 +63,7 @@ For each place, provide:
 
 Return your response as valid JSON in this exact format:
 {
-  "summary": "A helpful 2-3 sentence explanation of your recommendations and what the user might enjoy",
+  "summary": "A helpful 2-3 sentence explanation referencing the specific query (e.g., 'best bars in Jakarta') and what the user might enjoy",
   "places": [
     {
       "name": "Exact Place Name",
@@ -72,9 +74,11 @@ Return your response as valid JSON in this exact format:
 }`;
 
     const userMessage = `User query: "${prompt}"
-Location context: Near ${locationContext}
+User's current GPS location (for reference only): Near ${locationContext}
 
-Recommend real, specific places that match this query. Focus on quality and relevance.`;
+IMPORTANT: If the user's query mentions a specific city or area (like "Jakarta", "Singapore", "Bali"), recommend places in THAT location, NOT their current GPS location. Only use their GPS location if they say "nearby", "near me", or don't specify a location.
+
+Recommend real, specific places that match this query. Focus on quality and relevance to the query.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
