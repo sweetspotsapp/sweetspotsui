@@ -6,6 +6,7 @@ interface WhyVisitSectionProps {
   rating: number | null;
   priceLevel: number | null;
   reviewCount: number | null;
+  aiReason?: string;
 }
 
 // Generate contextual bullet points based on place data
@@ -82,7 +83,7 @@ const formatCategories = (categories: string[]): string[] => {
     ).join(' '));
 };
 
-const WhyVisitSection = ({ placeName, categories, rating, priceLevel, reviewCount }: WhyVisitSectionProps) => {
+const WhyVisitSection = ({ placeName, categories, rating, priceLevel, reviewCount, aiReason }: WhyVisitSectionProps) => {
   const highlights = generateHighlights(placeName, categories, rating, priceLevel, reviewCount);
   const tags = formatCategories(categories);
   
@@ -94,6 +95,13 @@ const WhyVisitSection = ({ placeName, categories, rating, priceLevel, reviewCoun
       </div>
       
       <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-4 space-y-4">
+        {/* AI Reason - shown first if available */}
+        {aiReason && (
+          <p className="text-sm text-foreground leading-relaxed">
+            ✨ {aiReason}
+          </p>
+        )}
+        
         {/* Bullet Points */}
         <ul className="space-y-2.5">
           {highlights.map((highlight, i) => (
