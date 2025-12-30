@@ -78,8 +78,12 @@ const SectionRow: React.FC<SectionRowProps> = ({
       </div>
 
       <div 
-        className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide touch-pan-x"
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide"
+        style={{ 
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehaviorX: 'contain',
+          scrollSnapType: 'x proximity'
+        }}
       >
         {places.map((place) => (
           <PlaceCardCompact
