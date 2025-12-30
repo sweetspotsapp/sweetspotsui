@@ -148,34 +148,39 @@ const PlaceDetailsPage = () => {
     if (placeIds.length === 0) return;
     
     try {
-      // Check which places need enrichment
+      // Check which places need enrichment - include name for enrichment call
       const { data: placesData } = await supabase
         .from('places')
-        .select('place_id, photos, reviews')
+        .select('place_id, name, photos, reviews')
         .in('place_id', placeIds);
       
       const placesNeedingEnrichment = placesData?.filter(
-        p => !p.photos || p.photos.length === 0 || !p.reviews
-      ).map(p => p.place_id) || [];
+        p => !p.photos || (p.photos as string[])?.length === 0 || !p.reviews
+      ) || [];
       
       if (placesNeedingEnrichment.length > 0) {
-        // Enrich places in background (fire and forget)
+        // Enrich places in background (fire and forget) - use correct format with name
         fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enrich-places`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ places: placesNeedingEnrichment.map(id => ({ place_id: id })) }),
+          body: JSON.stringify({ 
+            places: placesNeedingEnrichment.map(p => ({ 
+              name: p.name, 
+              reason: '', 
+              category: '' 
+            })) 
+          }),
         }).catch(err => console.log('Background enrichment failed:', err));
       }
       
       // Pre-load thumbnail images for faster display
       placeIds.forEach(id => {
-        const { data: placeData } = placesData?.find(p => p.place_id === id) 
-          ? { data: placesData.find(p => p.place_id === id) }
-          : { data: null };
+        const placeData = placesData?.find(p => p.place_id === id);
+        const photos = placeData?.photos as string[] | null;
         
-        if (placeData?.photos?.[0]) {
+        if (photos?.[0]) {
           const img = new Image();
-          img.src = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(placeData.photos[0])}`;
+          img.src = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(photos[0])}`;
         }
       });
     } catch (err) {
@@ -281,12 +286,17 @@ const PlaceDetailsPage = () => {
         if (needsEnrichment) {
           console.log('Place needs enrichment, fetching additional data...');
           try {
+            // Call enrich-places with correct format (name, not placeId)
             const enrichResponse = await fetch(
               `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enrich-places`,
               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ placeIds: [placeId] }),
+                body: JSON.stringify({ 
+                  places: [{ name: data.name, reason: '', category: '' }],
+                  lat: data.lat,
+                  lng: data.lng
+                }),
               }
             );
             
