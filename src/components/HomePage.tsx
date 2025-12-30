@@ -403,9 +403,11 @@ const HomePage = () => {
     const usedPlaceIds = new Set<string>();
     const sections: { title: string; places: MockPlace[]; featured: boolean }[] = [];
     
-    // Section 1: Top Picks - Most relevant (first 4-5 places based on AI ranking)
+    // Section 1: Top Picks - Nearest places first (sorted by distance)
     const topPicksCount = Math.min(5, Math.ceil(searchResults.length * 0.3));
-    const topPicks = searchResults.slice(0, topPicksCount);
+    const topPicks = [...searchResults]
+      .sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999))
+      .slice(0, topPicksCount);
     topPicks.forEach(p => usedPlaceIds.add(p.id));
     
     if (topPicks.length > 0) {
