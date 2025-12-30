@@ -52,7 +52,7 @@ interface RelatedPlace {
   distance: number;
 }
 
-// Convert price_level (0-4) to display string with estimated IDR range
+// Convert price_level (0-4) to display string with estimated USD range
 interface PriceInfo {
   symbol: string;
   estimate: string;
@@ -77,64 +77,64 @@ const getPriceRangeFromLevel = (level: number | null, categories: string[] | nul
   
   // Handle null price level
   if (level === null) {
-    if (isAttraction) return { symbol: '$$', estimate: 'IDR 50k-200k/entry' };
-    if (isSpaOrWellness) return { symbol: '$$$', estimate: 'IDR 200k-500k' };
+    if (isAttraction) return { symbol: '$$', estimate: '$5-15/entry' };
+    if (isSpaOrWellness) return { symbol: '$$$', estimate: '$15-35' };
     return { symbol: '$$', estimate: 'Check for prices' };
   }
   
-  // Price estimates based on category and level
+  // Price estimates based on category and level (USD)
   if (isBarOrNightlife) {
     switch (level) {
       case 0: return { symbol: 'Free', estimate: 'No cover charge' };
-      case 1: return { symbol: '$', estimate: 'IDR 50k-100k/drink' };
-      case 2: return { symbol: '$$', estimate: 'IDR 100k-200k/drink' };
-      case 3: return { symbol: '$$$', estimate: 'IDR 200k-400k/drink' };
-      case 4: return { symbol: '$$$$', estimate: 'IDR 400k+/drink' };
-      default: return { symbol: '$$', estimate: 'IDR 100k-200k/drink' };
+      case 1: return { symbol: '$', estimate: '$3-7/drink' };
+      case 2: return { symbol: '$$', estimate: '$7-15/drink' };
+      case 3: return { symbol: '$$$', estimate: '$15-30/drink' };
+      case 4: return { symbol: '$$$$', estimate: '$30+/drink' };
+      default: return { symbol: '$$', estimate: '$7-15/drink' };
     }
   }
   
   if (isCafeOrBakery) {
     switch (level) {
       case 0: return { symbol: 'Free', estimate: 'Free samples/promos' };
-      case 1: return { symbol: '$', estimate: 'IDR 20k-50k/person' };
-      case 2: return { symbol: '$$', estimate: 'IDR 50k-100k/person' };
-      case 3: return { symbol: '$$$', estimate: 'IDR 100k-200k/person' };
-      case 4: return { symbol: '$$$$', estimate: 'IDR 200k+/person' };
-      default: return { symbol: '$$', estimate: 'IDR 50k-100k/person' };
+      case 1: return { symbol: '$', estimate: '$2-5/person' };
+      case 2: return { symbol: '$$', estimate: '$5-10/person' };
+      case 3: return { symbol: '$$$', estimate: '$10-20/person' };
+      case 4: return { symbol: '$$$$', estimate: '$20+/person' };
+      default: return { symbol: '$$', estimate: '$5-10/person' };
     }
   }
   
   if (isSpaOrWellness) {
     switch (level) {
       case 0: return { symbol: 'Free', estimate: 'Complimentary services' };
-      case 1: return { symbol: '$', estimate: 'IDR 100k-200k/session' };
-      case 2: return { symbol: '$$', estimate: 'IDR 200k-400k/session' };
-      case 3: return { symbol: '$$$', estimate: 'IDR 400k-800k/session' };
-      case 4: return { symbol: '$$$$', estimate: 'IDR 800k+/session' };
-      default: return { symbol: '$$', estimate: 'IDR 200k-400k/session' };
+      case 1: return { symbol: '$', estimate: '$10-25/session' };
+      case 2: return { symbol: '$$', estimate: '$25-50/session' };
+      case 3: return { symbol: '$$$', estimate: '$50-100/session' };
+      case 4: return { symbol: '$$$$', estimate: '$100+/session' };
+      default: return { symbol: '$$', estimate: '$25-50/session' };
     }
   }
   
   if (isAttraction) {
     switch (level) {
       case 0: return { symbol: 'Free', estimate: 'Free entry' };
-      case 1: return { symbol: '$', estimate: 'IDR 25k-75k/entry' };
-      case 2: return { symbol: '$$', estimate: 'IDR 75k-150k/entry' };
-      case 3: return { symbol: '$$$', estimate: 'IDR 150k-300k/entry' };
-      case 4: return { symbol: '$$$$', estimate: 'IDR 300k+/entry' };
-      default: return { symbol: '$$', estimate: 'IDR 75k-150k/entry' };
+      case 1: return { symbol: '$', estimate: '$2-5/entry' };
+      case 2: return { symbol: '$$', estimate: '$5-10/entry' };
+      case 3: return { symbol: '$$$', estimate: '$10-20/entry' };
+      case 4: return { symbol: '$$$$', estimate: '$20+/entry' };
+      default: return { symbol: '$$', estimate: '$5-10/entry' };
     }
   }
   
   // Default: Restaurants and general dining
   switch (level) {
     case 0: return { symbol: 'Free', estimate: 'Free tastings/promos' };
-    case 1: return { symbol: '$', estimate: 'IDR 25k-75k/person' };
-    case 2: return { symbol: '$$', estimate: 'IDR 75k-150k/person' };
-    case 3: return { symbol: '$$$', estimate: 'IDR 150k-400k/person' };
-    case 4: return { symbol: '$$$$', estimate: 'IDR 400k+/person' };
-    default: return { symbol: '$$', estimate: 'IDR 75k-150k/person' };
+    case 1: return { symbol: '$', estimate: '$5-15/person' };
+    case 2: return { symbol: '$$', estimate: '$15-30/person' };
+    case 3: return { symbol: '$$$', estimate: '$30-75/person' };
+    case 4: return { symbol: '$$$$', estimate: '$75+/person' };
+    default: return { symbol: '$$', estimate: '$15-30/person' };
   }
 };
 
