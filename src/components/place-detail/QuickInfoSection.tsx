@@ -17,13 +17,15 @@ interface QuickInfoSectionProps {
   priceRange: string;
   openingHours: OpeningHour[];
   trafficHours: TrafficHour[];
+  isOpen?: boolean | null;
 }
 
-const QuickInfoSection = ({ distance, priceRange, openingHours, trafficHours }: QuickInfoSectionProps) => {
+const QuickInfoSection = ({ distance, priceRange, openingHours, trafficHours, isOpen }: QuickInfoSectionProps) => {
   const [showAllHours, setShowAllHours] = useState(false);
   
   const todayHours = openingHours.find(h => h.isToday);
-  const isOpen = true; // Mock - would calculate based on current time
+  // Use real isOpen data if available, otherwise default to true
+  const isOpenNow = isOpen ?? true;
 
   return (
     <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
@@ -42,10 +44,10 @@ const QuickInfoSection = ({ distance, priceRange, openingHours, trafficHours }: 
         </div>
 
         {/* Open Status */}
-        <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl ${isOpen ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-          <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-          <span className={`text-sm font-medium ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
-            {isOpen ? 'Open Now' : 'Closed'}
+        <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl ${isOpenNow ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+          <div className={`w-2 h-2 rounded-full ${isOpenNow ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+          <span className={`text-sm font-medium ${isOpenNow ? 'text-green-600' : 'text-red-600'}`}>
+            {isOpenNow ? 'Open Now' : 'Closed'}
           </span>
         </div>
       </div>
