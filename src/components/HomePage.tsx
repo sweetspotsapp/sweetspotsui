@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, X, User, Loader2 } from "lucide-react";
+import { Menu, Search, ChevronRight, X, User, Loader2, MapPin } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
@@ -9,6 +9,7 @@ import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import { usePromptDecomposition } from "@/hooks/usePromptDecomposition";
 import { useSearch, RankedPlace } from "@/hooks/useSearch";
 import { toast } from "sonner";
+import { Button } from "./ui/button";
 
 // Helper to convert RankedPlace to MockPlace format
 const rankedToMockPlace = (place: RankedPlace): MockPlace => ({
@@ -16,51 +17,11 @@ const rankedToMockPlace = (place: RankedPlace): MockPlace => ({
   name: place.name,
   image: place.photo_name 
     ? `https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}`
-    : `https://source.unsplash.com/400x300/?restaurant,food&${place.name.slice(0, 3)}`,
+    : `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`,
   rating: place.rating || 4.0,
   distance_km: place.distance_meters ? Math.round(place.distance_meters / 100) / 10 : 1.0,
   categories: place.categories || [],
 });
-
-// Fallback dummy data for when no search is active
-const FALLBACK_PLACES: MockPlace[] = [
-  {
-    id: "1",
-    name: "The Velvet Corner",
-    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop",
-    rating: 4.7,
-    distance_km: 1.2,
-    vibeTag: "Chill",
-    categories: ["café"],
-  },
-  {
-    id: "2",
-    name: "Bloom Garden Café",
-    image: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=400&h=300&fit=crop",
-    rating: 4.5,
-    distance_km: 1.8,
-    vibeTag: "Aesthetic",
-    categories: ["café"],
-  },
-  {
-    id: "3",
-    name: "Midnight Ramen",
-    image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop",
-    rating: 4.8,
-    distance_km: 0.8,
-    vibeTag: "Cozy",
-    categories: ["restaurant"],
-  },
-  {
-    id: "4",
-    name: "The Quiet Library Bar",
-    image: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&h=300&fit=crop",
-    rating: 4.6,
-    distance_km: 2.3,
-    vibeTag: "Intimate",
-    categories: ["bar"],
-  },
-];
 
 // Helper to get shuffled/filtered places based on section type
 const getPlacesForSection = (
@@ -69,19 +30,17 @@ const getPlacesForSection = (
 ): MockPlace[] => {
   if (allPlaces.length === 0) return [];
   
-  // When we have real search results, show all of them in the exact match section
-  // and subsets for other sections
   switch (type) {
     case "exact":
-      return allPlaces.slice(0, Math.min(8, allPlaces.length));
+      return allPlaces.slice(0, Math.min(10, allPlaces.length));
     case "core":
-      return allPlaces.slice(0, Math.min(6, allPlaces.length));
+      return allPlaces.slice(0, Math.min(8, allPlaces.length));
     case "secondary":
-      return allPlaces.length > 4 ? allPlaces.slice(4, Math.min(8, allPlaces.length)) : allPlaces.slice(0, Math.min(4, allPlaces.length));
+      return allPlaces.length > 6 ? allPlaces.slice(6, Math.min(12, allPlaces.length)) : allPlaces.slice(0, Math.min(6, allPlaces.length));
     case "similar":
-      return [...allPlaces].sort(() => Math.random() - 0.5).slice(0, Math.min(4, allPlaces.length));
+      return [...allPlaces].sort(() => Math.random() - 0.5).slice(0, Math.min(6, allPlaces.length));
     default:
-      return allPlaces.slice(0, Math.min(4, allPlaces.length));
+      return allPlaces.slice(0, Math.min(6, allPlaces.length));
   }
 };
 
@@ -149,6 +108,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { userMood, setUserMood } = useApp();
   const { search, isSearching, error: searchError, clearError } = useSearch();
+  const hasLoadedInitial = useRef(false);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
@@ -156,40 +116,63 @@ const HomePage = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
   const [searchResults, setSearchResults] = useState<MockPlace[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [needsLocationPermission, setNeedsLocationPermission] = useState(false);
   
   // Save to board dialog state
   const [saveToBoardPlace, setSaveToBoardPlace] = useState<MockPlace | null>(null);
 
+  // Load initial places on mount
+  useEffect(() => {
+    if (hasLoadedInitial.current) return;
+    hasLoadedInitial.current = true;
+
+    const loadInitialPlaces = async () => {
+      setIsInitialLoading(true);
+      try {
+        // Search for popular nearby spots
+        const result = await search("restaurants cafes bars");
+        if (result && result.places.length > 0) {
+          setSearchResults(result.places.map(rankedToMockPlace));
+        }
+      } catch (err) {
+        console.error("Failed to load initial places:", err);
+        // Check if it's a location permission error
+        if (err instanceof Error && err.message.includes("location")) {
+          setNeedsLocationPermission(true);
+        }
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    loadInitialPlaces();
+  }, [search]);
+
   // Show search errors as toast
   useEffect(() => {
     if (searchError) {
+      if (searchError.includes("location")) {
+        setNeedsLocationPermission(true);
+      }
       toast.error(searchError);
       clearError();
     }
   }, [searchError, clearError]);
 
-  // Get place name helper for dialog - use either search results or fallback
-  const allPlaces = useMemo(() => 
-    searchResults.length > 0 ? searchResults : FALLBACK_PLACES,
-    [searchResults]
-  );
-
   const getPlaceById = useCallback((placeId: string) => {
-    return allPlaces.find(p => p.id === placeId);
-  }, [allPlaces]);
+    return searchResults.find(p => p.id === placeId);
+  }, [searchResults]);
 
   // Handle save - opens board dialog for new saves, toggles off for unsave
   const handleSaveClick = useCallback((placeId: string) => {
     if (localSavedIds.has(placeId)) {
-      // Unsave - just remove from local state
       setLocalSavedIds((prev) => {
         const next = new Set(prev);
         next.delete(placeId);
         return next;
       });
     } else {
-      // Open the save-to-board dialog
       const place = getPlaceById(placeId);
       if (place) {
         setSaveToBoardPlace(place);
@@ -219,7 +202,7 @@ const HomePage = () => {
     if (!searchValue.trim()) return;
     
     setUserMood(searchValue.trim());
-    setHasSearched(true);
+    setNeedsLocationPermission(false);
     
     const result = await search(searchValue.trim());
     if (result && result.places.length > 0) {
@@ -231,11 +214,24 @@ const HomePage = () => {
     }
   };
 
+  const handleRetryWithLocation = async () => {
+    setNeedsLocationPermission(false);
+    setIsInitialLoading(true);
+    try {
+      const result = await search("restaurants cafes bars");
+      if (result && result.places.length > 0) {
+        setSearchResults(result.places.map(rankedToMockPlace));
+      }
+    } catch (err) {
+      console.error("Retry failed:", err);
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
   const handleClearSearch = () => {
     setSearchValue("");
     setUserMood("");
-    setSearchResults([]);
-    setHasSearched(false);
   };
 
   const removeFilter = (filterId: string) => {
@@ -245,15 +241,15 @@ const HomePage = () => {
   };
 
   // Use prompt decomposition for dynamic sections
-  const decomposedSections = usePromptDecomposition(searchValue);
+  const decomposedSections = usePromptDecomposition(searchValue || "Discover nearby");
   
-  // Build display sections with places
+  // Build display sections with real places only
   const displaySections = useMemo(() => {
-    const placesToUse = searchResults.length > 0 ? searchResults : FALLBACK_PLACES;
+    if (searchResults.length === 0) return [];
     return decomposedSections.map((section, index) => ({
       title: section.title,
-      places: getPlacesForSection(section.type, placesToUse),
-      featured: index === 0, // First section is featured
+      places: getPlacesForSection(section.type, searchResults),
+      featured: index === 0,
       type: section.type,
       description: section.description,
     }));
@@ -349,14 +345,27 @@ const HomePage = () => {
 
       {/* Main Content */}
       <main className="pt-4">
-        {isSearching ? (
+        {isSearching || isInitialLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
             <p className="text-muted-foreground text-sm">Finding great spots near you...</p>
           </div>
-        ) : displaySections.length === 0 || (hasSearched && searchResults.length === 0) ? (
+        ) : needsLocationPermission ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <p className="text-muted-foreground">No places found. Try a different search!</p>
+            <MapPin className="w-12 h-12 text-muted-foreground mb-4" />
+            <h3 className="font-semibold text-foreground mb-2">Enable Location Access</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              We need your location to find great spots nearby.
+            </p>
+            <Button onClick={handleRetryWithLocation} className="rounded-full">
+              <MapPin className="w-4 h-4 mr-2" />
+              Enable Location
+            </Button>
+          </div>
+        ) : displaySections.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <Search className="w-12 h-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Search for places to discover nearby spots!</p>
           </div>
         ) : (
           displaySections.map((section, index) => (
