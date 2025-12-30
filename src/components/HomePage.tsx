@@ -241,7 +241,7 @@ const HomePage = () => {
   };
 
   // Use prompt decomposition for dynamic sections
-  const decomposedSections = usePromptDecomposition(searchValue || "Discover nearby");
+  const { sections: decomposedSections, isLoading: isHeadingsLoading } = usePromptDecomposition(searchValue || "Discover nearby");
   
   // Build display sections with real places only
   const displaySections = useMemo(() => {
