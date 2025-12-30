@@ -215,6 +215,7 @@ const PlaceDetailsPage = () => {
           onSave={handleSave}
           onViewMap={openInMaps}
           onShare={handleShare}
+          flyImageSrc={dummyImages[0]}
         />
 
         {/* 3. Opening Hours & Busy Times */}
