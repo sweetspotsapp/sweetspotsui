@@ -13,6 +13,18 @@ import ActionButtons from '@/components/place-detail/ActionButtons';
 import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
 import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
 
+interface OpeningHoursData {
+  open_now: boolean;
+  weekday_text: string[];
+}
+
+interface ReviewData {
+  author_name: string;
+  rating: number;
+  text: string;
+  relative_time: string;
+}
+
 interface PlaceDetails {
   place_id: string;
   name: string;
@@ -23,25 +35,12 @@ interface PlaceDetails {
   rating: number | null;
   ratings_total: number | null;
   photo_name: string | null;
-  distance_km?: number;
-  price_range?: string;
+  photos: string[] | null;
+  price_level: number | null;
+  opening_hours: OpeningHoursData | null;
+  reviews: ReviewData[] | null;
+  is_open_now: boolean | null;
 }
-
-// Dummy data for images (will use place photo when available)
-const dummyImages = [
-  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800',
-  'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
-  'https://images.unsplash.com/photo-1559305616-3f99cd43e353?w=800',
-  'https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=800',
-  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800',
-];
-
-const mockReviews = [
-  { id: '1', name: 'Sarah M.', rating: 5, text: 'Absolutely loved the atmosphere! Perfect spot for weekend brunch 🌿', date: '2 days ago' },
-  { id: '2', name: 'James K.', rating: 4, text: 'Great food and friendly staff. A bit crowded on weekends but worth it!', date: '1 week ago' },
-  { id: '3', name: 'Emily R.', rating: 5, text: 'Hidden gem! The natural lighting is *chef\'s kiss* for photos 📸', date: '2 weeks ago' },
-  { id: '4', name: 'Mike T.', rating: 4, text: 'Love their house blend coffee. Will definitely come back!', date: '3 weeks ago' },
-];
 
 interface RelatedPlace {
   id: string;
@@ -51,19 +50,47 @@ interface RelatedPlace {
   distance: number;
 }
 
-const mockOpeningHours = [
-  { day: 'Monday', hours: '7:00 AM - 6:00 PM', isToday: false },
-  { day: 'Tuesday', hours: '7:00 AM - 6:00 PM', isToday: false },
-  { day: 'Wednesday', hours: '7:00 AM - 6:00 PM', isToday: false },
-  { day: 'Thursday', hours: '7:00 AM - 9:00 PM', isToday: false },
-  { day: 'Friday', hours: '7:00 AM - 10:00 PM', isToday: false },
-  { day: 'Saturday', hours: '8:00 AM - 10:00 PM', isToday: true },
-  { day: 'Sunday', hours: '8:00 AM - 5:00 PM', isToday: false },
-];
+// Convert price_level (0-4) to display string
+const getPriceRangeFromLevel = (level: number | null): string => {
+  if (level === null) return '$$';
+  switch (level) {
+    case 0: return 'Free';
+    case 1: return '$';
+    case 2: return '$$';
+    case 3: return '$$$';
+    case 4: return '$$$$';
+    default: return '$$';
+  }
+};
 
-const mockTrafficHours = [
+// Parse weekday_text to structured opening hours
+const parseOpeningHours = (openingHours: OpeningHoursData | null) => {
+  if (!openingHours?.weekday_text?.length) {
+    return null;
+  }
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const today = new Date().getDay(); // 0 = Sunday
+  const todayIndex = today === 0 ? 6 : today - 1; // Convert to Monday = 0
+
+  return openingHours.weekday_text.map((text, index) => {
+    // Text format: "Monday: 9:00 AM – 10:00 PM" or "Monday: Closed"
+    const parts = text.split(': ');
+    const dayName = parts[0] || days[index];
+    const hours = parts[1] || 'Hours not available';
+    
+    return {
+      day: dayName,
+      hours: hours,
+      isToday: index === todayIndex,
+    };
+  });
+};
+
+// Generate mock traffic hours (not available from Google)
+const generateTrafficHours = () => [
   { time: '8am', level: 2 as const },
-  { time: '10am', level: 4 as const },
+  { time: '10am', level: 3 as const },
   { time: '12pm', level: 5 as const },
   { time: '2pm', level: 3 as const },
   { time: '4pm', level: 4 as const },
@@ -71,13 +98,16 @@ const mockTrafficHours = [
   { time: '8pm', level: 3 as const },
 ];
 
-// Helper to estimate price range from categories
-const getPriceRange = (categories: string[] | null): string => {
-  if (!categories) return '$$';
-  const cats = categories.map(c => c.toLowerCase());
-  if (cats.some(c => c.includes('fine dining') || c.includes('luxury'))) return '$$$';
-  if (cats.some(c => c.includes('fast food') || c.includes('takeaway'))) return '$';
-  return '$$';
+// Calculate distance using Haversine formula
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 };
 
 const PlaceDetailsPage = () => {
@@ -88,6 +118,33 @@ const PlaceDetailsPage = () => {
   const [relatedPlaces, setRelatedPlaces] = useState<RelatedPlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+
+  // Get user location on mount
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      () => {
+        // Silently fail - distance will show as N/A
+        console.log('Could not get user location for distance calculation');
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  }, []);
+
+  // Calculate distance when we have both user location and place
+  useEffect(() => {
+    if (userLocation && place?.lat && place?.lng) {
+      const dist = calculateDistance(userLocation.lat, userLocation.lng, place.lat, place.lng);
+      setDistanceKm(Math.round(dist * 10) / 10);
+    }
+  }, [userLocation, place]);
 
   useEffect(() => {
     const fetchPlace = async () => {
@@ -118,10 +175,22 @@ const PlaceDetailsPage = () => {
           return;
         }
 
+        // Type assertion for the data
         const placeData: PlaceDetails = {
-          ...data,
-          distance_km: 2.3, // TODO: Calculate from user location
-          price_range: getPriceRange(data.categories),
+          place_id: data.place_id,
+          name: data.name,
+          address: data.address,
+          lat: data.lat,
+          lng: data.lng,
+          categories: data.categories,
+          rating: data.rating,
+          ratings_total: data.ratings_total,
+          photo_name: data.photo_name,
+          photos: (data as any).photos || null,
+          price_level: (data as any).price_level ?? null,
+          opening_hours: (data as any).opening_hours as OpeningHoursData | null,
+          reviews: (data as any).reviews as ReviewData[] | null,
+          is_open_now: (data as any).is_open_now ?? null,
         };
         setPlace(placeData);
 
@@ -129,7 +198,7 @@ const PlaceDetailsPage = () => {
         if (data.categories && data.categories.length > 0) {
           const { data: related, error: relatedError } = await supabase
             .from('places')
-            .select('place_id, name, photo_name, rating')
+            .select('place_id, name, photo_name, rating, lat, lng')
             .neq('place_id', placeId)
             .overlaps('categories', data.categories)
             .limit(6);
@@ -139,10 +208,12 @@ const PlaceDetailsPage = () => {
               id: p.place_id,
               name: p.name,
               image: p.photo_name 
-                ? `https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}`
+                ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}`
                 : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
               rating: p.rating || 4.0,
-              distance: Math.round((Math.random() * 3 + 0.5) * 10) / 10, // TODO: Calculate real distance
+              distance: userLocation && p.lat && p.lng 
+                ? Math.round(calculateDistance(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10
+                : Math.round((Math.random() * 3 + 0.5) * 10) / 10,
             }));
             setRelatedPlaces(formattedRelated);
           }
@@ -156,16 +227,14 @@ const PlaceDetailsPage = () => {
     };
 
     fetchPlace();
-  }, [placeId]);
+  }, [placeId, userLocation]);
 
   const openInMaps = () => {
     let url: string;
     
     if (place?.lat && place?.lng) {
-      // Use maps.google.com with coordinates (avoids some CSP blocks)
       url = `https://maps.google.com/?q=${place.lat},${place.lng}`;
     } else if (place?.address) {
-      // Fallback to address search
       const query = encodeURIComponent(`${place.name} ${place.address}`);
       url = `https://maps.google.com/?q=${query}`;
     } else {
@@ -244,16 +313,32 @@ const PlaceDetailsPage = () => {
   }
 
   const saved = placeId ? isSaved(placeId) : false;
+  const priceRange = getPriceRangeFromLevel(place.price_level);
   
-  // Generate image URLs - use place photo if available, otherwise fallback to dummy
-  const placeImages = place.photo_name 
-    ? [`https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}`, ...dummyImages.slice(1)]
-    : dummyImages;
+  // Generate image URLs from photos array (real Google photos)
+  const basePhotoUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=`;
+  const placeImages = place.photos && place.photos.length > 0
+    ? place.photos.map(photoName => `${basePhotoUrl}${encodeURIComponent(photoName)}`)
+    : place.photo_name 
+      ? [`${basePhotoUrl}${encodeURIComponent(place.photo_name)}`]
+      : ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
+
+  // Parse opening hours for display
+  const openingHoursDisplay = parseOpeningHours(place.opening_hours);
+  
+  // Format reviews for ReviewsList component
+  const formattedReviews = place.reviews?.map((review, index) => ({
+    id: `review-${index}`,
+    name: review.author_name,
+    rating: review.rating,
+    text: review.text,
+    date: review.relative_time,
+  })) || [];
 
   // Generate description from categories
   const generateDescription = () => {
     const cats = place.categories?.slice(0, 3).join(', ') || 'local spot';
-    return `A ${place.price_range === '$' ? 'budget-friendly' : place.price_range === '$$$' ? 'premium' : 'charming'} ${cats} in ${place.address?.split(',')[1]?.trim() || 'the area'}. Perfect for those seeking quality experiences with a memorable atmosphere.`;
+    return `A ${priceRange === '$' || priceRange === 'Free' ? 'budget-friendly' : priceRange === '$$$' || priceRange === '$$$$' ? 'premium' : 'charming'} ${cats} in ${place.address?.split(',')[1]?.trim() || 'the area'}. Perfect for those seeking quality experiences with a memorable atmosphere.`;
   };
 
   return (
@@ -270,7 +355,7 @@ const PlaceDetailsPage = () => {
         </Button>
       </div>
 
-      {/* 1. Hero Image Carousel */}
+      {/* 1. Hero Image Carousel - Now with real photos */}
       <ImageCarousel images={placeImages} placeName={place.name} />
 
       {/* Content */}
@@ -293,30 +378,28 @@ const PlaceDetailsPage = () => {
               </div>
             )}
             
-            {/* Distance */}
-            {place.distance_km && (
+            {/* Real Distance */}
+            {distanceKm !== null && (
               <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-foreground">
-                  {place.distance_km} km
+                  {distanceKm} km
                 </span>
               </div>
             )}
             
-            {/* Price Range */}
-            {place.price_range && (
-              <div className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted">
-                <DollarSign className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">
-                  {place.price_range}
-                </span>
-              </div>
-            )}
+            {/* Real Price Range */}
+            <div className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted">
+              <DollarSign className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">
+                {priceRange}
+              </span>
+            </div>
           </div>
           
           {place.ratings_total && (
             <span className="text-sm text-muted-foreground">
-              Based on {place.ratings_total} reviews
+              Based on {place.ratings_total.toLocaleString()} reviews
             </span>
           )}
         </div>
@@ -330,22 +413,29 @@ const PlaceDetailsPage = () => {
           flyImageSrc={placeImages[0]}
         />
 
-        {/* 3. Opening Hours & Busy Times */}
+        {/* 3. Opening Hours & Busy Times - Now with real data */}
         <QuickInfoSection 
-          distance={place.distance_km || 2.3}
-          priceRange={place.price_range || "$$"}
-          openingHours={mockOpeningHours}
-          trafficHours={mockTrafficHours}
+          distance={distanceKm ?? 0}
+          priceRange={priceRange}
+          openingHours={openingHoursDisplay || [{ day: 'Hours', hours: 'Not available', isToday: true }]}
+          trafficHours={generateTrafficHours()}
+          isOpen={place.is_open_now}
         />
 
         {/* 4. Why You Should Visit */}
         <WhyVisitSection 
           description={generateDescription()}
-          vibes={place.categories?.slice(0, 4).map(c => c.charAt(0).toUpperCase() + c.slice(1)) || ['Great Spot']}
+          vibes={place.categories?.slice(0, 4).map(c => c.replace(/_/g, ' ').charAt(0).toUpperCase() + c.replace(/_/g, ' ').slice(1)) || ['Great Spot']}
         />
 
-        {/* 5. Reviews Section */}
-        <ReviewsList reviews={mockReviews} />
+        {/* 5. Reviews Section - Now with real Google reviews */}
+        {formattedReviews.length > 0 ? (
+          <ReviewsList reviews={formattedReviews} />
+        ) : (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            No reviews available yet
+          </div>
+        )}
 
         {/* 6. Similar Places - "You might also like" */}
         {relatedPlaces.length > 0 && (

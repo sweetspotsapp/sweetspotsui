@@ -53,44 +53,59 @@ export type Database = {
         Row: {
           address: string | null
           categories: string[] | null
+          is_open_now: boolean | null
           last_enriched_at: string | null
           lat: number | null
           lng: number | null
           name: string
+          opening_hours: Json | null
           photo_name: string | null
+          photos: string[] | null
           place_id: string
+          price_level: number | null
           provider: string | null
           rating: number | null
           ratings_total: number | null
           raw: Json | null
+          reviews: Json | null
         }
         Insert: {
           address?: string | null
           categories?: string[] | null
+          is_open_now?: boolean | null
           last_enriched_at?: string | null
           lat?: number | null
           lng?: number | null
           name: string
+          opening_hours?: Json | null
           photo_name?: string | null
+          photos?: string[] | null
           place_id: string
+          price_level?: number | null
           provider?: string | null
           rating?: number | null
           ratings_total?: number | null
           raw?: Json | null
+          reviews?: Json | null
         }
         Update: {
           address?: string | null
           categories?: string[] | null
+          is_open_now?: boolean | null
           last_enriched_at?: string | null
           lat?: number | null
           lng?: number | null
           name?: string
+          opening_hours?: Json | null
           photo_name?: string | null
+          photos?: string[] | null
           place_id?: string
+          price_level?: number | null
           provider?: string | null
           rating?: number | null
           ratings_total?: number | null
           raw?: Json | null
+          reviews?: Json | null
         }
         Relationships: []
       }
