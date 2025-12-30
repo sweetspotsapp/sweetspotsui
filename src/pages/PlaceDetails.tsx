@@ -87,16 +87,6 @@ const parseOpeningHours = (openingHours: OpeningHoursData | null) => {
   });
 };
 
-// Generate mock traffic hours (not available from Google)
-const generateTrafficHours = () => [
-  { time: '8am', level: 2 as const },
-  { time: '10am', level: 3 as const },
-  { time: '12pm', level: 5 as const },
-  { time: '2pm', level: 3 as const },
-  { time: '4pm', level: 4 as const },
-  { time: '6pm', level: 5 as const },
-  { time: '8pm', level: 3 as const },
-];
 
 // Calculate distance using Haversine formula
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -408,12 +398,11 @@ const PlaceDetailsPage = () => {
           flyImageSrc={placeImages[0]}
         />
 
-        {/* 3. Opening Hours & Busy Times - Now with real data */}
+        {/* 3. Opening Hours */}
         <QuickInfoSection 
           distance={distanceKm ?? 0}
           priceRange={priceRange}
           openingHours={openingHoursDisplay || [{ day: 'Hours', hours: 'Not available', isToday: true }]}
-          trafficHours={generateTrafficHours()}
           isOpen={place.is_open_now}
         />
 
