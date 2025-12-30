@@ -1,15 +1,29 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, X, User } from "lucide-react";
+import { Menu, Search, ChevronRight, X, User, Loader2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import { usePromptDecomposition } from "@/hooks/usePromptDecomposition";
+import { useSearch, RankedPlace } from "@/hooks/useSearch";
+import { toast } from "sonner";
 
-// ============= DUMMY DATA =============
-const DUMMY_PLACES: MockPlace[] = [
+// Helper to convert RankedPlace to MockPlace format
+const rankedToMockPlace = (place: RankedPlace): MockPlace => ({
+  id: place.place_id,
+  name: place.name,
+  image: place.photo_name 
+    ? `https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}`
+    : `https://source.unsplash.com/400x300/?restaurant,food&${place.name.slice(0, 3)}`,
+  rating: place.rating || 4.0,
+  distance_km: place.distance_meters ? Math.round(place.distance_meters / 100) / 10 : 1.0,
+  categories: place.categories || [],
+});
+
+// Fallback dummy data for when no search is active
+const FALLBACK_PLACES: MockPlace[] = [
   {
     id: "1",
     name: "The Velvet Corner",
@@ -46,78 +60,6 @@ const DUMMY_PLACES: MockPlace[] = [
     vibeTag: "Intimate",
     categories: ["bar"],
   },
-  {
-    id: "5",
-    name: "Sunrise Bakery",
-    image: "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=400&h=300&fit=crop",
-    rating: 4.4,
-    distance_km: 0.5,
-    vibeTag: "Friendly",
-    categories: ["bakery"],
-  },
-  {
-    id: "6",
-    name: "The Green Room",
-    image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop",
-    rating: 4.3,
-    distance_km: 1.4,
-    vibeTag: "Trendy",
-    categories: ["café"],
-  },
-  {
-    id: "7",
-    name: "Starlight Terrace",
-    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
-    rating: 4.9,
-    distance_km: 3.2,
-    vibeTag: "Social",
-    categories: ["restaurant"],
-  },
-  {
-    id: "8",
-    name: "Neon Nights Lounge",
-    image: "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=400&h=300&fit=crop",
-    rating: 4.2,
-    distance_km: 1.7,
-    vibeTag: "Vibrant",
-    categories: ["bar"],
-  },
-  {
-    id: "9",
-    name: "Sunny Side Up",
-    image: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&h=300&fit=crop",
-    rating: 4.6,
-    distance_km: 0.9,
-    vibeTag: "Cheerful",
-    categories: ["restaurant"],
-  },
-  {
-    id: "10",
-    name: "Avocado Toast Co",
-    image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
-    rating: 4.4,
-    distance_km: 1.5,
-    vibeTag: "Modern",
-    categories: ["café"],
-  },
-  {
-    id: "11",
-    name: "24/7 Diner",
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
-    rating: 4.1,
-    distance_km: 1.1,
-    vibeTag: "Classic",
-    categories: ["restaurant"],
-  },
-  {
-    id: "12",
-    name: "The Jazz Cellar",
-    image: "https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=400&h=300&fit=crop",
-    rating: 4.7,
-    distance_km: 2.8,
-    vibeTag: "Sophisticated",
-    categories: ["bar"],
-  },
 ];
 
 // Helper to get shuffled/filtered places based on section type
@@ -125,19 +67,21 @@ const getPlacesForSection = (
   type: "exact" | "core" | "secondary" | "similar",
   allPlaces: MockPlace[]
 ): MockPlace[] => {
-  // In a real app, this would use the query to filter/rank places
-  // For now, we simulate different results by slicing differently
+  if (allPlaces.length === 0) return [];
+  
+  // When we have real search results, show all of them in the exact match section
+  // and subsets for other sections
   switch (type) {
     case "exact":
-      return allPlaces.slice(0, 4);
+      return allPlaces.slice(0, Math.min(8, allPlaces.length));
     case "core":
-      return allPlaces.slice(2, 6);
+      return allPlaces.slice(0, Math.min(6, allPlaces.length));
     case "secondary":
-      return allPlaces.slice(4, 8);
+      return allPlaces.length > 4 ? allPlaces.slice(4, Math.min(8, allPlaces.length)) : allPlaces.slice(0, Math.min(4, allPlaces.length));
     case "similar":
-      return [...allPlaces].sort(() => Math.random() - 0.5).slice(0, 4);
+      return [...allPlaces].sort(() => Math.random() - 0.5).slice(0, Math.min(4, allPlaces.length));
     default:
-      return allPlaces.slice(0, 4);
+      return allPlaces.slice(0, Math.min(4, allPlaces.length));
   }
 };
 
@@ -204,20 +148,36 @@ const SectionRow: React.FC<SectionRowProps> = ({
 const HomePage = () => {
   const navigate = useNavigate();
   const { userMood, setUserMood } = useApp();
+  const { search, isSearching, error: searchError, clearError } = useSearch();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchValue, setSearchValue] = useState(userMood || "");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
+  const [searchResults, setSearchResults] = useState<MockPlace[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   
   // Save to board dialog state
   const [saveToBoardPlace, setSaveToBoardPlace] = useState<MockPlace | null>(null);
 
-  // Get place name helper for dialog
+  // Show search errors as toast
+  useEffect(() => {
+    if (searchError) {
+      toast.error(searchError);
+      clearError();
+    }
+  }, [searchError, clearError]);
+
+  // Get place name helper for dialog - use either search results or fallback
+  const allPlaces = useMemo(() => 
+    searchResults.length > 0 ? searchResults : FALLBACK_PLACES,
+    [searchResults]
+  );
+
   const getPlaceById = useCallback((placeId: string) => {
-    return DUMMY_PLACES.find(p => p.id === placeId);
-  }, []);
+    return allPlaces.find(p => p.id === placeId);
+  }, [allPlaces]);
 
   // Handle save - opens board dialog for new saves, toggles off for unsave
   const handleSaveClick = useCallback((placeId: string) => {
@@ -254,17 +214,28 @@ const HomePage = () => {
     navigate(`/place/${place.id}`);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchValue.trim()) {
-      setUserMood(searchValue.trim());
-      console.log("Searching for:", searchValue);
+    if (!searchValue.trim()) return;
+    
+    setUserMood(searchValue.trim());
+    setHasSearched(true);
+    
+    const result = await search(searchValue.trim());
+    if (result && result.places.length > 0) {
+      setSearchResults(result.places.map(rankedToMockPlace));
+      toast.success(`Found ${result.places.length} places near you!`);
+    } else if (result && result.places.length === 0) {
+      toast.info("No places found. Try a different search.");
+      setSearchResults([]);
     }
   };
 
   const handleClearSearch = () => {
     setSearchValue("");
     setUserMood("");
+    setSearchResults([]);
+    setHasSearched(false);
   };
 
   const removeFilter = (filterId: string) => {
@@ -278,14 +249,15 @@ const HomePage = () => {
   
   // Build display sections with places
   const displaySections = useMemo(() => {
+    const placesToUse = searchResults.length > 0 ? searchResults : FALLBACK_PLACES;
     return decomposedSections.map((section, index) => ({
       title: section.title,
-      places: getPlacesForSection(section.type, DUMMY_PLACES),
+      places: getPlacesForSection(section.type, placesToUse),
       featured: index === 0, // First section is featured
       type: section.type,
       description: section.description,
     }));
-  }, [decomposedSections]);
+  }, [decomposedSections, searchResults]);
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
@@ -322,7 +294,11 @@ const HomePage = () => {
                 isSearchFocused ? "ring-2 ring-primary/50 rounded-full" : ""
               }`}
             >
-              <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+              {isSearching ? (
+                <Loader2 className="absolute left-3 w-4 h-4 text-primary animate-spin pointer-events-none" />
+              ) : (
+                <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+              )}
               <Input
                 type="text"
                 value={searchValue}
@@ -331,8 +307,9 @@ const HomePage = () => {
                 onBlur={() => setIsSearchFocused(false)}
                 placeholder="Try: cheap eats, nice view, chill vibe"
                 className="pl-9 pr-9 h-10 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
+                disabled={isSearching}
               />
-              {searchValue && (
+              {searchValue && !isSearching && (
                 <button
                   type="button"
                   onClick={handleClearSearch}
@@ -372,17 +349,28 @@ const HomePage = () => {
 
       {/* Main Content */}
       <main className="pt-4">
-        {displaySections.map((section, index) => (
-          <SectionRow
-            key={index}
-            title={section.title}
-            places={section.places}
-            onPlaceClick={handlePlaceClick}
-            toggleSave={handleSaveClick}
-            isSaved={isSaved}
-            featured={section.featured}
-          />
-        ))}
+        {isSearching ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground text-sm">Finding great spots near you...</p>
+          </div>
+        ) : displaySections.length === 0 || (hasSearched && searchResults.length === 0) ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <p className="text-muted-foreground">No places found. Try a different search!</p>
+          </div>
+        ) : (
+          displaySections.map((section, index) => (
+            <SectionRow
+              key={index}
+              title={section.title}
+              places={section.places}
+              onPlaceClick={handlePlaceClick}
+              toggleSave={handleSaveClick}
+              isSaved={isSaved}
+              featured={section.featured}
+            />
+          ))
+        )}
       </main>
 
       {/* Save to Board Dialog */}
