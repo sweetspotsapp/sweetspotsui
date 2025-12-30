@@ -162,18 +162,17 @@ const PlaceDetailsPage = () => {
     let url: string;
     
     if (place?.lat && place?.lng) {
-      // Use Google Maps with place name for better results
-      const query = encodeURIComponent(place.name);
-      url = `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${place.place_id}`;
+      // Use direct Google Maps coordinates URL (more reliable)
+      url = `https://www.google.com/maps/place/${place.lat},${place.lng}/@${place.lat},${place.lng},17z`;
     } else if (place?.address) {
       // Fallback to address search
       const query = encodeURIComponent(`${place.name} ${place.address}`);
-      url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+      url = `https://www.google.com/maps/search/${query}`;
     } else {
       return;
     }
 
-    // Use anchor tag click to reliably open in new tab (avoids iframe blocking)
+    // Use anchor tag click to reliably open in new tab
     const a = document.createElement('a');
     a.href = url;
     a.target = '_blank';
