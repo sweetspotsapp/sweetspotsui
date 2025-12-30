@@ -12,6 +12,7 @@ import RelatedSpots from '@/components/place-detail/RelatedSpots';
 import ActionButtons from '@/components/place-detail/ActionButtons';
 import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
 import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
+import MapPreview from '@/components/place-detail/MapPreview';
 
 interface OpeningHoursData {
   open_now: boolean;
@@ -418,7 +419,17 @@ const PlaceDetailsPage = () => {
           aiReason={aiReason}
         />
 
-        {/* 5. Reviews Section - Now with real Google reviews */}
+        {/* 5. Map Preview */}
+        {place.lat && place.lng && (
+          <MapPreview 
+            lat={place.lat}
+            lng={place.lng}
+            placeName={place.name}
+            address={place.address}
+          />
+        )}
+
+        {/* 6. Reviews Section - Now with real Google reviews */}
         {formattedReviews.length > 0 ? (
           <ReviewsList reviews={formattedReviews} />
         ) : (
