@@ -299,38 +299,39 @@ const HomePage = () => {
     setActiveFilters(newFilters);
   };
 
-  // Group places by AI category for display
+  // Group places by AI category for display - ensuring NO duplicates across sections
   const displaySections = useMemo(() => {
     if (searchResults.length === 0) return [];
     
-    // Group by AI category
-    const categoryGroups: Record<string, MockPlace[]> = {};
-    const uncategorized: MockPlace[] = [];
-    
-    searchResults.forEach(place => {
-      const category = place.ai_category?.toLowerCase() || 'other';
-      if (category && category !== 'other') {
-        if (!categoryGroups[category]) {
-          categoryGroups[category] = [];
-        }
-        categoryGroups[category].push(place);
-      } else {
-        uncategorized.push(place);
-      }
-    });
-
+    const usedPlaceIds = new Set<string>();
     const sections: { title: string; places: MockPlace[]; featured: boolean }[] = [];
     
-    // First section: Top Picks (first 5 places)
-    if (searchResults.length > 0) {
+    // Section 1: Top Picks - Most relevant (first 4-5 places based on AI ranking)
+    const topPicksCount = Math.min(5, Math.ceil(searchResults.length * 0.3));
+    const topPicks = searchResults.slice(0, topPicksCount);
+    topPicks.forEach(p => usedPlaceIds.add(p.id));
+    
+    if (topPicks.length > 0) {
       sections.push({
         title: "✨ Top Picks for You",
-        places: searchResults.slice(0, Math.min(5, searchResults.length)),
+        places: topPicks,
         featured: true,
       });
     }
 
-    // Add category sections
+    // Group remaining places by category (excluding already used)
+    const remainingPlaces = searchResults.filter(p => !usedPlaceIds.has(p.id));
+    const categoryGroups: Record<string, MockPlace[]> = {};
+    
+    remainingPlaces.forEach(place => {
+      const category = place.ai_category?.toLowerCase() || 'other';
+      if (!categoryGroups[category]) {
+        categoryGroups[category] = [];
+      }
+      categoryGroups[category].push(place);
+    });
+
+    // Category labels mapping
     const categoryLabels: Record<string, string> = {
       restaurant: "🍽️ Restaurants",
       bar: "🍸 Bars & Nightlife",
@@ -341,28 +342,54 @@ const HomePage = () => {
       park: "🌳 Parks & Outdoors",
       bakery: "🥐 Bakeries",
       lounge: "🛋️ Lounges",
+      "street food": "🍜 Street Food",
+      warung: "🍛 Warungs",
+      food_stall: "🥡 Food Stalls",
+      fast_food: "🍔 Fast Food",
+      market: "🏪 Markets",
     };
 
-    Object.entries(categoryGroups).forEach(([category, places]) => {
-      if (places.length >= 2) {
+    // Sort categories by number of places (most populated first)
+    const sortedCategories = Object.entries(categoryGroups)
+      .filter(([_, places]) => places.length >= 1)
+      .sort((a, b) => b[1].length - a[1].length);
+
+    // Section 2: Primary category (most places, directly related)
+    if (sortedCategories.length > 0) {
+      const [category, places] = sortedCategories[0];
+      const sectionPlaces = places.slice(0, 6);
+      sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
+      
+      sections.push({
+        title: categoryLabels[category] || `${category.charAt(0).toUpperCase() + category.slice(1)}s`,
+        places: sectionPlaces,
+        featured: false,
+      });
+    }
+
+    // Section 3: Secondary category (related but different)
+    if (sortedCategories.length > 1) {
+      const [category, places] = sortedCategories[1];
+      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 6);
+      sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
+      
+      if (sectionPlaces.length > 0) {
         sections.push({
           title: categoryLabels[category] || `${category.charAt(0).toUpperCase() + category.slice(1)}s`,
-          places: places.slice(0, 10),
+          places: sectionPlaces,
           featured: false,
         });
       }
-    });
+    }
 
-    // Add remaining places
-    if (uncategorized.length > 0 || searchResults.length > 5) {
-      const moreToExplore = searchResults.slice(5);
-      if (moreToExplore.length > 0) {
-        sections.push({
-          title: "🗺️ More to Explore",
-          places: moreToExplore,
-          featured: false,
-        });
-      }
+    // Section 4: "More to Explore" - remaining unused places
+    const moreToExplore = searchResults.filter(p => !usedPlaceIds.has(p.id));
+    if (moreToExplore.length > 0) {
+      sections.push({
+        title: "🗺️ More to Explore",
+        places: moreToExplore.slice(0, 10),
+        featured: false,
+      });
     }
 
     return sections;
