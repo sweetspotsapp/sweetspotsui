@@ -335,11 +335,6 @@ const PlaceDetailsPage = () => {
     date: review.relative_time,
   })) || [];
 
-  // Generate description from categories
-  const generateDescription = () => {
-    const cats = place.categories?.slice(0, 3).join(', ') || 'local spot';
-    return `A ${priceRange === '$' || priceRange === 'Free' ? 'budget-friendly' : priceRange === '$$$' || priceRange === '$$$$' ? 'premium' : 'charming'} ${cats} in ${place.address?.split(',')[1]?.trim() || 'the area'}. Perfect for those seeking quality experiences with a memorable atmosphere.`;
-  };
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-28">
@@ -424,8 +419,11 @@ const PlaceDetailsPage = () => {
 
         {/* 4. Why You Should Visit */}
         <WhyVisitSection 
-          description={generateDescription()}
-          vibes={place.categories?.slice(0, 4).map(c => c.replace(/_/g, ' ').charAt(0).toUpperCase() + c.replace(/_/g, ' ').slice(1)) || ['Great Spot']}
+          placeName={place.name}
+          categories={place.categories || []}
+          rating={place.rating}
+          priceLevel={place.price_level}
+          reviewCount={place.ratings_total}
         />
 
         {/* 5. Reviews Section - Now with real Google reviews */}
