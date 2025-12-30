@@ -162,24 +162,17 @@ const PlaceDetailsPage = () => {
     let url: string;
     
     if (place?.lat && place?.lng) {
-      // Use direct Google Maps coordinates URL (more reliable)
-      url = `https://www.google.com/maps/place/${place.lat},${place.lng}/@${place.lat},${place.lng},17z`;
+      // Use maps.google.com with coordinates (avoids some CSP blocks)
+      url = `https://maps.google.com/?q=${place.lat},${place.lng}`;
     } else if (place?.address) {
       // Fallback to address search
       const query = encodeURIComponent(`${place.name} ${place.address}`);
-      url = `https://www.google.com/maps/search/${query}`;
+      url = `https://maps.google.com/?q=${query}`;
     } else {
       return;
     }
 
-    // Use anchor tag click to reliably open in new tab
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleShare = () => {
