@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigation, DollarSign, Clock, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Navigation, DollarSign, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface OpeningHour {
   day: string;
@@ -7,20 +7,14 @@ interface OpeningHour {
   isToday: boolean;
 }
 
-interface TrafficHour {
-  time: string;
-  level: number; // 1-5
-}
-
 interface QuickInfoSectionProps {
   distance: number;
   priceRange: string;
   openingHours: OpeningHour[];
-  trafficHours: TrafficHour[];
   isOpen?: boolean | null;
 }
 
-const QuickInfoSection = ({ distance, priceRange, openingHours, trafficHours, isOpen }: QuickInfoSectionProps) => {
+const QuickInfoSection = ({ distance, priceRange, openingHours, isOpen }: QuickInfoSectionProps) => {
   const [showAllHours, setShowAllHours] = useState(false);
   
   const todayHours = openingHours.find(h => h.isToday);
@@ -88,41 +82,6 @@ const QuickInfoSection = ({ distance, priceRange, openingHours, trafficHours, is
             ))}
           </div>
         )}
-      </div>
-
-      {/* Traffic / Busy Hours */}
-      <div className="bg-secondary/50 rounded-2xl p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-primary" />
-          <span className="text-sm font-semibold text-foreground">Busy Hours Today</span>
-        </div>
-        
-        <div className="flex items-end gap-1.5 h-16">
-          {trafficHours.map((hour, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div 
-                className="w-full rounded-t-lg transition-all duration-300"
-                style={{ 
-                  height: `${(hour.level / 5) * 100}%`,
-                  backgroundColor: hour.level >= 4 
-                    ? 'hsl(var(--primary))' 
-                    : hour.level >= 3 
-                      ? 'hsl(var(--primary) / 0.6)' 
-                      : 'hsl(var(--primary) / 0.3)',
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between px-1">
-          {trafficHours.map((hour, i) => (
-            <span key={i} className="text-[10px] text-muted-foreground">{hour.time}</span>
-          ))}
-        </div>
-        
-        <p className="text-xs text-muted-foreground text-center pt-1">
-          🔥 Peak hours: 12pm & 6pm — plan accordingly!
-        </p>
       </div>
     </div>
   );
