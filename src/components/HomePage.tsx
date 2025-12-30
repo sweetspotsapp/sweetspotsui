@@ -103,6 +103,8 @@ const SectionRow: React.FC<SectionRowProps> = ({
 // Session storage key for caching results
 const CACHE_KEY = 'sweetspots_search_cache';
 const SUMMARY_CACHE_KEY = 'sweetspots_summary_cache';
+const CACHE_VERSION_KEY = 'sweetspots_cache_version';
+const CURRENT_CACHE_VERSION = '2'; // Increment to bust cache
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -110,20 +112,17 @@ const HomePage = () => {
   const { search, isSearching, error: searchError, clearError } = useSearch();
   const hasLoadedInitial = useRef(false);
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
-  const [searchValue, setSearchValue] = useState(userMood || "");
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
-  const [aiSummary, setAiSummary] = useState<string | null>(() => {
+  // Check cache version and clear if outdated
+  const getCachedResults = (): MockPlace[] => {
     try {
-      return sessionStorage.getItem(SUMMARY_CACHE_KEY);
-    } catch {
-      return null;
-    }
-  });
-  const [searchResults, setSearchResults] = useState<MockPlace[]>(() => {
-    try {
+      const version = sessionStorage.getItem(CACHE_VERSION_KEY);
+      if (version !== CURRENT_CACHE_VERSION) {
+        // Cache is outdated, clear it
+        sessionStorage.removeItem(CACHE_KEY);
+        sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+        sessionStorage.setItem(CACHE_VERSION_KEY, CURRENT_CACHE_VERSION);
+        return [];
+      }
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
         return JSON.parse(cached);
@@ -132,13 +131,25 @@ const HomePage = () => {
       console.error('Failed to restore cache:', e);
     }
     return [];
-  });
-  const [isInitialLoading, setIsInitialLoading] = useState(() => {
+  };
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+  const [searchValue, setSearchValue] = useState(userMood || "");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
+  const [aiSummary, setAiSummary] = useState<string | null>(() => {
     try {
-      return !sessionStorage.getItem(CACHE_KEY);
+      const version = sessionStorage.getItem(CACHE_VERSION_KEY);
+      if (version !== CURRENT_CACHE_VERSION) return null;
+      return sessionStorage.getItem(SUMMARY_CACHE_KEY);
     } catch {
-      return true;
+      return null;
     }
+  });
+  const [searchResults, setSearchResults] = useState<MockPlace[]>(getCachedResults);
+  const [isInitialLoading, setIsInitialLoading] = useState(() => {
+    return getCachedResults().length === 0;
   });
   const [needsLocationPermission, setNeedsLocationPermission] = useState(false);
   
