@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,6 +46,11 @@ serve(async (req) => {
     if (!GOOGLE_API_KEY) {
       throw new Error('GOOGLE_MAPS_API_KEY not configured');
     }
+
+    // Initialize Supabase client for saving places
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log(`Enriching ${places.length} AI-recommended places`);
 
@@ -138,6 +144,34 @@ serve(async (req) => {
     }
 
     console.log(`Successfully enriched ${enrichedPlaces.length}/${places.length} places`);
+
+    // Save enriched places to database (upsert to avoid duplicates)
+    if (enrichedPlaces.length > 0) {
+      const placesToInsert = enrichedPlaces.map(place => ({
+        place_id: place.place_id,
+        name: place.name,
+        address: place.address,
+        lat: place.lat,
+        lng: place.lng,
+        categories: place.categories,
+        rating: place.rating,
+        ratings_total: place.ratings_total,
+        photo_name: place.photo_name,
+        provider: place.provider,
+        last_enriched_at: new Date().toISOString(),
+      }));
+
+      const { error: upsertError } = await supabase
+        .from('places')
+        .upsert(placesToInsert, { onConflict: 'place_id' });
+
+      if (upsertError) {
+        console.error('Error saving places to database:', upsertError);
+        // Continue anyway - places will still be returned to the client
+      } else {
+        console.log(`Saved ${placesToInsert.length} places to database`);
+      }
+    }
 
     return new Response(JSON.stringify({ 
       places: enrichedPlaces,
