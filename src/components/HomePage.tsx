@@ -644,7 +644,7 @@ const HomePage = () => {
                     <Sparkles className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-foreground leading-relaxed line-clamp-2">{aiSummary}</p>
+                    <p className="text-sm text-foreground leading-relaxed">{aiSummary}</p>
                   </div>
                 </div>
               </div>
