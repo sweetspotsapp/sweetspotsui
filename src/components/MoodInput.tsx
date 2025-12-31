@@ -7,6 +7,17 @@ interface MoodInputProps {
   onSkip?: () => void;
 }
 
+const suggestions = [
+  "chill vibes",
+  "outdoor",
+  "nature",
+  "coffee",
+  "date night",
+  "family friendly",
+  "late night",
+  "live music",
+];
+
 const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
   const [value, setValue] = useState("");
 
@@ -15,6 +26,10 @@ const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
     if (value.trim()) {
       onSubmit(value.trim());
     }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setValue(suggestion);
   };
 
   return (
@@ -32,6 +47,20 @@ const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
             transition-all duration-300
           "
         />
+      </div>
+
+      {/* Suggestion chips */}
+      <div className="flex flex-wrap gap-2">
+        {suggestions.map((suggestion) => (
+          <button
+            key={suggestion}
+            type="button"
+            onClick={() => handleSuggestionClick(suggestion)}
+            className="px-3 py-1.5 text-sm rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+          >
+            {suggestion}
+          </button>
+        ))}
       </div>
 
       <Button
