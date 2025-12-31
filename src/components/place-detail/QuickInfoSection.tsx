@@ -36,12 +36,6 @@ const QuickInfoSection = ({ distance, priceRange, openingHours, isOpen }: QuickI
     <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
       {/* Quick Info Pills */}
       <div className="flex flex-wrap gap-2">
-        {/* Distance */}
-        <div className="flex items-center gap-2 bg-secondary/80 px-4 py-2.5 rounded-2xl">
-          <Navigation className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">{distance} km away</span>
-        </div>
-
         {/* Price Range */}
         <TooltipProvider>
           <Tooltip>
