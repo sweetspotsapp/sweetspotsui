@@ -187,15 +187,6 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
           </div>
         </div>
 
-        {/* AI Reason */}
-        {place.ai_reason && (
-          <div className="flex items-start gap-1 mt-1">
-            <Sparkles className="w-3 h-3 text-primary flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground line-clamp-2 leading-tight">
-              {place.ai_reason}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
