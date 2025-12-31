@@ -27,7 +27,7 @@ const AISummaryCard = ({ summary }: AISummaryCardProps) => {
         </div>
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium text-amber-700 dark:text-amber-300 mb-1.5 block">
-            Finding your SweetSpots
+            Here's the scoop
           </span>
           <p
             ref={textRef}
