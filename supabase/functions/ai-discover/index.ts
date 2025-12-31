@@ -61,9 +61,26 @@ For each place, provide:
 - A short reason (1 sentence) why it matches the query
 - A category (restaurant, bar, cafe, landmark, park, club, rooftop, etc.)
 
+SUMMARY GUIDELINES - This is critical:
+- Write 1-2 sentences of LOCAL INSIGHT that adds NEW information the user wouldn't know
+- Share genuinely useful tips like: which neighborhood/area these places cluster in, best time to visit, a local tip or cultural context, what makes this area special for this type of experience
+- DO NOT just rephrase the user's query - that's useless
+
+BAD summaries (never write these):
+- "Looking for X? Here are some great options..."
+- "Here are some highly-rated places for..."
+- "Based on your search for X, here are some recommendations..."
+- "Since you're looking for X, I've curated a list..."
+
+GOOD summaries (write like these):
+- "The Senopati area is Jakarta's cocktail bar hub - most spots here stay lively until 2am"
+- "For authentic Padang food, these Tanah Abang spots use traditional spices - try visiting before noon for the freshest dishes"
+- "BSD and Bintaro have Jakarta's best Indonesian-style reflexology spots. Weekday mornings are quieter and often discounted."
+- "Kemang is where expats and locals mix - expect creative fusion menus and rooftop vibes after 8pm"
+
 Return your response as valid JSON in this exact format:
 {
-  "summary": "A helpful 2-3 sentence explanation referencing the specific query (e.g., 'best bars in Jakarta') and what the user might enjoy",
+  "summary": "1-2 sentences of LOCAL INSIGHT - neighborhood info, timing tips, or cultural context. Never rephrase the query.",
   "places": [
     {
       "name": "Exact Place Name",
