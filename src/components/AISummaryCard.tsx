@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MapPin, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { IceCreamCone, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 
 interface AISummaryCardProps {
   summary: string;
@@ -22,7 +22,7 @@ const AISummaryCard = ({ summary }: AISummaryCardProps) => {
     <div className="mx-4 mb-6 p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/50 dark:border-amber-800/30">
       <div className="flex items-start gap-3">
         <div className="relative p-2 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 shrink-0">
-          <MapPin className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <IceCreamCone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
           <Sparkles className="w-2.5 h-2.5 text-amber-500 dark:text-amber-300 absolute -top-0.5 -right-0.5" />
         </div>
         <div className="flex-1 min-w-0">
