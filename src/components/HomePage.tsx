@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, X, User, Loader2, MapPin, Sparkles, SlidersHorizontal } from "lucide-react";
+import { Menu, Search, ChevronRight, X, User, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
@@ -612,11 +612,17 @@ const HomePage = () => {
         {isSearching || isInitialLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="relative">
-              <Sparkles className="w-8 h-8 text-primary animate-pulse" />
-              <div className="absolute inset-0 w-8 h-8 border-2 border-primary/30 rounded-full animate-ping" />
+              {/* Ice cream cone with bounce animation */}
+              <div className="animate-[bounce_1.5s_ease-in-out_infinite]">
+                <IceCreamCone className="w-10 h-10 text-primary drop-shadow-md" strokeWidth={1.5} />
+              </div>
+              <div className="absolute inset-0 w-10 h-10 border-2 border-primary/20 rounded-full animate-ping" />
+              {/* Sprinkle sparkles */}
+              <Sparkles className="absolute -top-1 -right-2 w-4 h-4 text-amber-400 animate-pulse" />
+              <Sparkles className="absolute -bottom-1 -left-2 w-3 h-3 text-pink-400 animate-pulse delay-200" />
             </div>
-            <p className="text-foreground font-medium mt-4">AI is finding the best spots...</p>
-            <p className="text-muted-foreground text-sm mt-1">Analyzing your request</p>
+            <p className="text-foreground font-medium mt-4">Finding your SweetSpots...</p>
+            <p className="text-muted-foreground text-sm mt-1">Scooping up the best places</p>
           </div>
         ) : needsLocationPermission ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
