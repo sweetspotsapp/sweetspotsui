@@ -105,6 +105,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
 const CACHE_KEY = 'sweetspots_search_cache';
 const SUMMARY_CACHE_KEY = 'sweetspots_summary_cache';
 const CACHE_VERSION_KEY = 'sweetspots_cache_version';
+const CACHED_MOOD_KEY = 'sweetspots_cached_mood';
 const CURRENT_CACHE_VERSION = '2'; // Increment to bust cache
 
 const HomePage = () => {
@@ -192,8 +193,14 @@ const HomePage = () => {
 
   // Load initial places on mount - use userMood from EntryScreen if available
   useEffect(() => {
-    if (hasLoadedInitial.current) return;
-    if (searchResults.length > 0) {
+    // Check if the mood has changed since last cache
+    const cachedMood = sessionStorage.getItem(CACHED_MOOD_KEY) || "";
+    const currentMood = userMood?.trim() || "";
+    const moodChanged = currentMood && currentMood !== cachedMood;
+    
+    // Skip if already loaded and mood hasn't changed
+    if (hasLoadedInitial.current && !moodChanged) return;
+    if (searchResults.length > 0 && !moodChanged) {
       hasLoadedInitial.current = true;
       return;
     }
@@ -203,11 +210,14 @@ const HomePage = () => {
       setIsInitialLoading(true);
       try {
         // Use the mood from EntryScreen if available, otherwise use default
-        const searchPrompt = userMood && userMood.trim() 
-          ? userMood.trim() 
-          : "popular restaurants and cafes nearby";
+        const searchPrompt = currentMood || "popular restaurants and cafes nearby";
         
         console.log("Initial search with prompt:", searchPrompt);
+        
+        // Store the current mood in cache
+        if (currentMood) {
+          sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
+        }
         
         const result = await search(searchPrompt);
         if (result && result.places.length > 0) {
