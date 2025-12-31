@@ -33,7 +33,7 @@ const LoadingTransition = () => {
         {/* Text content - centered and symmetrical */}
         <div className="flex flex-col items-center gap-3 max-w-xs">
           <h2 className="text-xl font-semibold text-foreground tracking-tight">
-            Finding your perfect spots
+            Finding your SweetSpots
           </h2>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
