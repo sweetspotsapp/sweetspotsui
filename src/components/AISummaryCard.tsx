@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 
 interface AISummaryCardProps {
   summary: string;
@@ -12,7 +12,6 @@ const AISummaryCard = ({ summary }: AISummaryCardProps) => {
 
   useEffect(() => {
     if (textRef.current) {
-      // Check if text overflows 2 lines (approximately 48px at text-sm with leading-relaxed)
       const lineHeight = parseFloat(getComputedStyle(textRef.current).lineHeight);
       const maxHeight = lineHeight * 2;
       setNeedsTruncation(textRef.current.scrollHeight > maxHeight + 4);
@@ -20,15 +19,19 @@ const AISummaryCard = ({ summary }: AISummaryCardProps) => {
   }, [summary]);
 
   return (
-    <div className="mx-4 mb-6 p-4 rounded-2xl bg-primary/5 border border-primary/20">
+    <div className="mx-4 mb-6 p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/50 dark:border-amber-800/30">
       <div className="flex items-start gap-3">
-        <div className="p-2 rounded-full bg-primary/10 shrink-0">
-          <Sparkles className="w-4 h-4 text-primary" />
+        <div className="relative p-2 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 shrink-0">
+          <MapPin className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <Sparkles className="w-2.5 h-2.5 text-amber-500 dark:text-amber-300 absolute -top-0.5 -right-0.5" />
         </div>
         <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium text-amber-700 dark:text-amber-300 mb-1.5 block">
+            Finding your SweetSpots
+          </span>
           <p
             ref={textRef}
-            className={`text-sm text-foreground leading-relaxed ${
+            className={`text-sm text-foreground/80 leading-relaxed ${
               !isExpanded && needsTruncation ? "line-clamp-2" : ""
             }`}
           >
@@ -37,15 +40,15 @@ const AISummaryCard = ({ summary }: AISummaryCardProps) => {
           {needsTruncation && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="mt-2 flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+              className="mt-2 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors font-medium"
             >
               {isExpanded ? (
                 <>
-                  Show less <ChevronUp className="w-3 h-3" />
+                  Less <ChevronUp className="w-3 h-3" />
                 </>
               ) : (
                 <>
-                  Show more <ChevronDown className="w-3 h-3" />
+                  More details <ChevronDown className="w-3 h-3" />
                 </>
               )}
             </button>
