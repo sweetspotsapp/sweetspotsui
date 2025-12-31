@@ -7,6 +7,7 @@ import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
+import AISummaryCard from "./AISummaryCard";
 import { useSearch, RankedPlace } from "@/hooks/useSearch";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
@@ -638,16 +639,7 @@ const HomePage = () => {
           <>
             {/* AI Summary Card */}
             {aiSummary && (
-              <div className="mx-4 mb-6 p-4 rounded-2xl bg-primary/5 border border-primary/20">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-foreground leading-relaxed">{aiSummary}</p>
-                  </div>
-                </div>
-              </div>
+              <AISummaryCard summary={aiSummary} />
             )}
 
             {displaySections.map((section, index) => (
