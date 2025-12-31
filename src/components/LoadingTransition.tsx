@@ -1,4 +1,5 @@
-import { MapPin, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { IceCreamCone } from "lucide-react";
 
 const LoadingTransition = () => {
   return (
@@ -10,27 +11,27 @@ const LoadingTransition = () => {
       </div>
       
       <div className="relative flex flex-col items-center text-center px-8">
-        {/* Main loader icon */}
+        {/* Main loader - Ice cream animation */}
         <div className="relative mb-8">
-          {/* Outer ring pulse */}
-          <div className="absolute inset-0 w-24 h-24 rounded-full border-2 border-primary/20 animate-ping" />
+          {/* Drip animation circles */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full border-2 border-primary/20 animate-ping" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-primary/30 animate-[spin_4s_linear_infinite]" />
           
-          {/* Middle ring */}
-          <div className="absolute inset-0 w-24 h-24 rounded-full border border-primary/30 animate-[spin_3s_linear_infinite]" />
-          
-          {/* Inner circle with icon */}
-          <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center backdrop-blur-sm">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <MapPin className="w-8 h-8 text-primary animate-bounce" />
+          {/* Ice cream cone container */}
+          <div className="relative w-28 h-28 flex items-center justify-center">
+            {/* Wobble animation for ice cream */}
+            <div className="animate-[bounce_1.5s_ease-in-out_infinite]">
+              <IceCreamCone className="w-14 h-14 text-primary drop-shadow-lg" strokeWidth={1.5} />
             </div>
           </div>
           
-          {/* Floating sparkles */}
-          <Sparkles className="absolute -top-2 -right-2 w-5 h-5 text-primary/60 animate-pulse" />
-          <Sparkles className="absolute -bottom-1 -left-3 w-4 h-4 text-primary/40 animate-pulse delay-300" />
+          {/* Floating sparkles - like sprinkles */}
+          <Sparkles className="absolute -top-1 right-0 w-5 h-5 text-amber-400 animate-pulse" />
+          <Sparkles className="absolute top-1/4 -left-2 w-4 h-4 text-pink-400 animate-pulse delay-200" />
+          <Sparkles className="absolute bottom-1/4 -right-3 w-3 h-3 text-cyan-400 animate-pulse delay-500" />
         </div>
         
-        {/* Text content - centered and symmetrical */}
+        {/* Text content */}
         <div className="flex flex-col items-center gap-3 max-w-xs">
           <h2 className="text-xl font-semibold text-foreground tracking-tight">
             Finding your SweetSpots
