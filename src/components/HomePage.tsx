@@ -107,7 +107,25 @@ const CACHE_KEY = 'sweetspots_search_cache';
 const SUMMARY_CACHE_KEY = 'sweetspots_summary_cache';
 const CACHE_VERSION_KEY = 'sweetspots_cache_version';
 const CACHED_MOOD_KEY = 'sweetspots_cached_mood';
+const SKIP_MODE_KEY = 'sweetspots_skip_mode';
 const CURRENT_CACHE_VERSION = '2'; // Increment to bust cache
+
+// Get time-based search prompt for "Skip to Home" mode
+const getTimeBasedPrompt = (): string => {
+  const hour = new Date().getHours();
+  
+  if (hour >= 6 && hour < 11) {
+    return "trending breakfast spots and coffee shops open now";
+  } else if (hour >= 11 && hour < 14) {
+    return "popular lunch spots and quick eats nearby";
+  } else if (hour >= 14 && hour < 17) {
+    return "cozy cafes and afternoon hangouts";
+  } else if (hour >= 17 && hour < 21) {
+    return "best dinner spots and evening restaurants";
+  } else {
+    return "late night eats, bars, and dessert spots open now";
+  }
+};
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -210,14 +228,30 @@ const HomePage = () => {
     const loadInitialPlaces = async () => {
       setIsInitialLoading(true);
       try {
-        // Use the mood from EntryScreen if available, otherwise use default
-        const searchPrompt = currentMood || "popular restaurants and cafes nearby";
+        // Check if this is a "Skip to Home" mode
+        const isSkipMode = sessionStorage.getItem(SKIP_MODE_KEY) === 'true';
         
-        console.log("Initial search with prompt:", searchPrompt);
+        let searchPrompt: string;
         
-        // Store the current mood in cache
-        if (currentMood) {
-          sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
+        if (isSkipMode) {
+          // Clear all cached data for fresh results
+          sessionStorage.removeItem(CACHE_KEY);
+          sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+          sessionStorage.removeItem(CACHED_MOOD_KEY);
+          sessionStorage.removeItem(SKIP_MODE_KEY);
+          
+          // Use time-based prompt for skip mode
+          searchPrompt = getTimeBasedPrompt();
+          console.log("Skip mode - using time-based prompt:", searchPrompt);
+        } else {
+          // Use the mood from EntryScreen if available, otherwise use default
+          searchPrompt = currentMood || "popular restaurants and cafes nearby";
+          console.log("Initial search with prompt:", searchPrompt);
+          
+          // Store the current mood in cache
+          if (currentMood) {
+            sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
+          }
         }
         
         const result = await search(searchPrompt);

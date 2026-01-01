@@ -1,7 +1,16 @@
 import { Sparkles } from "lucide-react";
 import { IceCreamCone } from "lucide-react";
 
-const LoadingTransition = () => {
+interface LoadingTransitionProps {
+  isSkipMode?: boolean;
+}
+
+const LoadingTransition = ({ isSkipMode = false }: LoadingTransitionProps) => {
+  const title = isSkipMode ? "No worries!" : "Finding your SweetSpots";
+  const subtitle = isSkipMode 
+    ? "Here's what's trending right now" 
+    : "Curating places based on your vibe";
+
   return (
     <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
       {/* Background decorative elements */}
@@ -34,7 +43,7 @@ const LoadingTransition = () => {
         {/* Text content */}
         <div className="flex flex-col items-center gap-3 max-w-xs">
           <h2 className="text-xl font-semibold text-foreground tracking-tight">
-            Finding your SweetSpots
+            {title}
           </h2>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -42,7 +51,7 @@ const LoadingTransition = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
           <p className="text-sm text-muted-foreground">
-            Curating places based on your vibe
+            {subtitle}
           </p>
         </div>
       </div>
