@@ -408,9 +408,7 @@ const HomePage = () => {
   };
 
   // Handle applying filters from SlideOutMenu and trigger search
-  const handleApplySlideOutFilters = async (filters: Set<string>) => {
-    if (filters.size === 0 && activeFilters.size === 0) return;
-    
+  const handleApplySlideOutFilters = async (filters: Set<string>, distance: number) => {
     // Build filter terms from the selected filter IDs
     const filterTerms: string[] = [];
     
@@ -438,13 +436,18 @@ const HomePage = () => {
       }
     });
     
+    // Add distance filter to search terms
+    if (distance < 25) {
+      filterTerms.push(`within ${distance} km`);
+    }
+    
     // Build the search prompt
     const basePrompt = searchValue.trim() || userMood || "restaurants and cafes nearby";
     const searchPrompt = filterTerms.length > 0 
       ? `${basePrompt}, ${filterTerms.join(", ")}`
       : basePrompt;
     
-    console.log("Search with slide-out filters:", searchPrompt);
+    console.log("Search with slide-out filters:", searchPrompt, "Distance:", distance);
     
     // Clear cache and run search
     setAiSummary(null);
@@ -457,9 +460,23 @@ const HomePage = () => {
     
     const result = await search(searchPrompt);
     if (result && result.places.length > 0) {
-      setSearchResults(result.places.map(rankedToMockPlace));
-      setAiSummary(result.summary || null);
-      toast.success(`Found ${result.places.length} spots matching your filters!`);
+      // Filter results by distance if specified
+      let filteredPlaces = result.places;
+      if (distance < 25) {
+        filteredPlaces = result.places.filter(place => {
+          const placeDistanceKm = place.distance_meters ? place.distance_meters / 1000 : 0;
+          return placeDistanceKm <= distance;
+        });
+      }
+      
+      if (filteredPlaces.length > 0) {
+        setSearchResults(filteredPlaces.map(rankedToMockPlace));
+        setAiSummary(result.summary || null);
+        toast.success(`Found ${filteredPlaces.length} spots within ${distance} km!`);
+      } else {
+        setSearchResults([]);
+        toast.info(`No places found within ${distance} km. Try increasing the distance.`);
+      }
     } else if (result && result.places.length === 0) {
       toast.info("No places found with these filters. Try different options.");
     }
