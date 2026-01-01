@@ -568,7 +568,7 @@ const HomePage = () => {
     
     if (topPicks.length > 0) {
       sections.push({
-        title: "✨ Top Picks for You",
+        title: "Top Picks for You",
         places: topPicks,
         featured: true,
       });
@@ -586,22 +586,22 @@ const HomePage = () => {
       categoryGroups[category].push(place);
     });
 
-    // Category labels mapping
+    // Category labels mapping (no emojis)
     const categoryLabels: Record<string, string> = {
-      restaurant: "🍽️ Restaurants",
-      bar: "🍸 Bars & Nightlife",
-      cafe: "☕ Cafes",
-      rooftop: "🌆 Rooftop Spots",
-      club: "🎉 Clubs & Dancing",
-      landmark: "📍 Landmarks",
-      park: "🌳 Parks & Outdoors",
-      bakery: "🥐 Bakeries",
-      lounge: "🛋️ Lounges",
-      "street food": "🍜 Street Food",
-      warung: "🍛 Warungs",
-      food_stall: "🥡 Food Stalls",
-      fast_food: "🍔 Fast Food",
-      market: "🏪 Markets",
+      restaurant: "Restaurants",
+      bar: "Bars & Nightlife",
+      cafe: "Cafes",
+      rooftop: "Rooftop Spots",
+      club: "Clubs & Dancing",
+      landmark: "Landmarks",
+      park: "Parks & Outdoors",
+      bakery: "Bakeries",
+      lounge: "Lounges",
+      "street food": "Street Food",
+      warung: "Warungs",
+      food_stall: "Food Stalls",
+      fast_food: "Fast Food",
+      market: "Markets",
     };
 
     // Sort categories by number of places (most populated first)
