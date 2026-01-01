@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import PlaceDetails from "./pages/PlaceDetails";
 import CategorySeeAll from "./pages/CategorySeeAll";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/place/:placeId" element={<PlaceDetails />} />
                 <Route path="/see-all" element={<CategorySeeAll />} />
+                <Route path="/settings" element={<Settings />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

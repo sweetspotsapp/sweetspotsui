@@ -38,12 +38,17 @@ const ProfileSlideMenu = ({ isOpen, onClose }: ProfileSlideMenuProps) => {
     // Navigate to profile page or show profile content
   };
 
+  const handleNavigateToSettings = () => {
+    onClose();
+    navigate("/settings");
+  };
+
   const menuItems = [
     {
       id: "settings",
       label: "Settings",
       icon: Settings,
-      onClick: () => {},
+      onClick: handleNavigateToSettings,
       trailing: <ChevronRight className="w-4 h-4 text-muted-foreground" />,
     },
     {
