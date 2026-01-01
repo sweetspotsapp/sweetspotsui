@@ -536,11 +536,10 @@ const HomePage = () => {
     const usedPlaceIds = new Set<string>();
     const sections: { title: string; places: MockPlace[]; featured: boolean }[] = [];
     
-    // Section 1: Top Picks - Nearest places first (sorted by distance)
-    const topPicksCount = Math.min(5, Math.ceil(searchResults.length * 0.3));
+    // Section 1: Top Picks - Nearest places first (only 2)
     const topPicks = [...searchResults]
       .sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999))
-      .slice(0, topPicksCount);
+      .slice(0, 2);
     topPicks.forEach(p => usedPlaceIds.add(p.id));
     
     if (topPicks.length > 0) {
@@ -586,10 +585,10 @@ const HomePage = () => {
       .filter(([_, places]) => places.length >= 1)
       .sort((a, b) => b[1].length - a[1].length);
 
-    // Section 2: Primary category (most places, directly related)
+    // Section 2: Primary category (5 places max)
     if (sortedCategories.length > 0) {
       const [category, places] = sortedCategories[0];
-      const sectionPlaces = places.slice(0, 6);
+      const sectionPlaces = places.slice(0, 5);
       sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
       
       sections.push({
@@ -599,10 +598,10 @@ const HomePage = () => {
       });
     }
 
-    // Section 3: Secondary category (related but different)
+    // Section 3: Secondary category (5 places max)
     if (sortedCategories.length > 1) {
       const [category, places] = sortedCategories[1];
-      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 6);
+      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 5);
       sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
       
       if (sectionPlaces.length > 0) {
