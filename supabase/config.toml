@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.find-similar-vibes]
 verify_jwt = false
+
+[functions.get-maps-key]
+verify_jwt = false
