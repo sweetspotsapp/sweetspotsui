@@ -19,6 +19,8 @@ export interface RankedPlace {
   photo_name: string | null;
   ai_reason?: string;
   ai_category?: string;
+  filter_tags?: string[];
+  price_level?: number;
 }
 
 interface SearchResult {
@@ -188,6 +190,8 @@ export const useSearch = (): UseSearchReturn => {
           why: place.ai_reason || "",
           ai_reason: place.ai_reason,
           ai_category: place.ai_category,
+          filter_tags: place.filter_tags || [],
+          price_level: place.price_level,
         }));
 
         console.log(`Returning ${rankedPlaces.length} places with AI summary`);
