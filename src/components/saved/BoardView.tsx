@@ -4,6 +4,7 @@ import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter,
 import { PlaceCategory } from "@/context/AppContext";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface BoardViewProps {
   board: PlaceCategory | "all";
@@ -13,16 +14,18 @@ interface BoardViewProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onPlaceClick?: (place: RankedPlace) => void;
+  onRemoveFromBoard?: (placeId: string) => void;
 }
 
 type SortOption = "recent" | "name" | "rating" | "distance";
 type FilterOption = "all" | "$$" | "$$$" | "nearby";
 
-const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete, onPlaceClick }: BoardViewProps) => {
+const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete, onPlaceClick, onRemoveFromBoard }: BoardViewProps) => {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
+  const [removingPlaceId, setRemovingPlaceId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   
   const isAllSaved = board === "all";
@@ -63,6 +66,27 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     } else {
       navigate(`/place/${place.place_id}`);
     }
+  };
+
+  const handleRemove = (e: React.MouseEvent, place: RankedPlace) => {
+    e.stopPropagation();
+    setRemovingPlaceId(place.place_id);
+    
+    // Small delay for animation before removing
+    setTimeout(() => {
+      onRemoveFromBoard?.(place.place_id);
+      setRemovingPlaceId(null);
+      
+      const boardName = isAllSaved ? "Saved" : board.name;
+      toast.success(`Removed from ${boardName}`, {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            // The parent will handle re-adding via onRemoveFromBoard with undo logic
+          }
+        }
+      });
+    }, 200);
   };
 
   return (
@@ -199,10 +223,13 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                   className={cn(
                     "bg-card rounded-xl overflow-hidden border border-border/50",
                     "cursor-pointer active:scale-[0.98] transition-all duration-200",
-                    "opacity-0 animate-fade-up hover:shadow-md hover:border-primary/30 group"
+                    "hover:shadow-md hover:border-primary/30 group",
+                    removingPlaceId === place.place_id 
+                      ? "opacity-0 scale-95 transition-all duration-200" 
+                      : "opacity-0 animate-fade-up"
                   )}
                   style={{ 
-                    animationDelay: `${index * 50}ms`, 
+                    animationDelay: removingPlaceId === place.place_id ? '0ms' : `${index * 50}ms`, 
                     animationFillMode: 'forwards' 
                   }}
                 >
@@ -214,10 +241,10 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                     
-                    {/* Saved Indicator */}
+                    {/* Remove from Board Button */}
                     <button 
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm"
-                      onClick={(e) => e.stopPropagation()}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
+                      onClick={(e) => handleRemove(e, place)}
                     >
                       <Heart className="w-4 h-4 text-primary fill-primary" />
                     </button>

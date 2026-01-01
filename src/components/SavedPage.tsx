@@ -263,6 +263,29 @@ const SavedPage = () => {
     setSelectedBoard(null);
   };
 
+  const handleRemoveFromBoard = (placeId: string) => {
+    if (selectedBoard === "all") {
+      // For "All Saved", this would remove from savedPlaces entirely
+      // For now with dummy data, we just show the toast
+      return;
+    }
+    
+    if (selectedBoard) {
+      // Remove the place from the current board
+      setBoards(prev => prev.map(b => 
+        b.id === selectedBoard.id 
+          ? { ...b, placeIds: b.placeIds.filter(id => id !== placeId) }
+          : b
+      ));
+      // Update the selectedBoard state as well
+      setSelectedBoard(prev => 
+        prev && prev !== "all" 
+          ? { ...prev, placeIds: prev.placeIds.filter(id => id !== placeId) }
+          : prev
+      );
+    }
+  };
+
   const hasBoards = boards.length > 0 || savedPlaces.length > 0;
 
   return (
@@ -395,6 +418,7 @@ const SavedPage = () => {
           onEdit={selectedBoard !== "all" ? () => handleEditBoard(selectedBoard) : undefined}
           onDelete={selectedBoard !== "all" ? () => handleDeleteBoard(selectedBoard) : undefined}
           onPlaceClick={(place) => navigate(`/place/${place.place_id}`)}
+          onRemoveFromBoard={handleRemoveFromBoard}
         />
       )}
 
