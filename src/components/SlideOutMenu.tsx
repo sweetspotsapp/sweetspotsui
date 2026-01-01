@@ -1,13 +1,15 @@
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Checkbox } from "./ui/checkbox";
 import { Button } from "./ui/button";
+import { Slider } from "./ui/slider";
 
 interface SlideOutMenuProps {
   isOpen: boolean;
   onClose: () => void;
   activeFilters: Set<string>;
   onFiltersChange: (filters: Set<string>) => void;
-  onApplyFilters?: (filters: Set<string>) => void;
+  onApplyFilters?: (filters: Set<string>, distance: number) => void;
 }
 
 const FILTER_SECTIONS = [
@@ -47,6 +49,8 @@ const FILTER_SECTIONS = [
   },
 ];
 
+const DISTANCE_MAX = 25; // km
+
 const SlideOutMenu: React.FC<SlideOutMenuProps> = ({ 
   isOpen, 
   onClose, 
@@ -54,6 +58,8 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
   onFiltersChange,
   onApplyFilters 
 }) => {
+  const [distance, setDistance] = useState<number>(10); // Default 10km
+
   const toggleFilter = (filterId: string) => {
     const newFilters = new Set(activeFilters);
     if (newFilters.has(filterId)) {
@@ -66,12 +72,15 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
 
   const clearAll = () => {
     onFiltersChange(new Set());
+    setDistance(10);
   };
 
   const handleApply = () => {
-    onApplyFilters?.(activeFilters);
+    onApplyFilters?.(activeFilters, distance);
     onClose();
   };
+
+  const hasFilters = activeFilters.size > 0 || distance !== 10;
 
   return (
     <>
@@ -102,6 +111,35 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
 
         {/* Filter Sections */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Distance Slider */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Distance
+            </h3>
+            <div className="px-2">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm text-foreground font-medium">
+                  Within {distance} km
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Max {DISTANCE_MAX} km
+                </span>
+              </div>
+              <Slider
+                value={[distance]}
+                onValueChange={(values) => setDistance(values[0])}
+                min={1}
+                max={DISTANCE_MAX}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between mt-2">
+                <span className="text-xs text-muted-foreground">1 km</span>
+                <span className="text-xs text-muted-foreground">{DISTANCE_MAX} km</span>
+              </div>
+            </div>
+          </div>
+
           {FILTER_SECTIONS.map((section) => (
             <div key={section.title}>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -139,7 +177,7 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
               </span>
             )}
           </Button>
-          {activeFilters.size > 0 && (
+          {hasFilters && (
             <button
               onClick={clearAll}
               className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
