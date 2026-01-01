@@ -613,7 +613,22 @@ const HomePage = () => {
       }
     }
 
-    // Section 4: "More to Explore" - remaining unused places
+    // Section 4: Third category (5 places max)
+    if (sortedCategories.length > 2) {
+      const [category, places] = sortedCategories[2];
+      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 5);
+      sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
+      
+      if (sectionPlaces.length > 0) {
+        sections.push({
+          title: categoryLabels[category] || `${category.charAt(0).toUpperCase() + category.slice(1)}s`,
+          places: sectionPlaces,
+          featured: false,
+        });
+      }
+    }
+
+    // Section 5: "More to Explore" - remaining unused places
     const moreToExplore = searchResults.filter(p => !usedPlaceIds.has(p.id));
     if (moreToExplore.length > 0) {
       sections.push({
