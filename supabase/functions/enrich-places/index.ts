@@ -348,225 +348,341 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Enriching ${places.length} AI-recommended places with full details`);
+    console.log(`Enriching ${places.length} AI-recommended places with smart caching`);
 
-    const enrichedPlaces: EnrichedPlace[] = [];
+    // ========== SMART CACHING: Check database first ==========
+    const CACHE_FRESHNESS_DAYS = 7;
+    const freshnessThreshold = new Date();
+    freshnessThreshold.setDate(freshnessThreshold.getDate() - CACHE_FRESHNESS_DAYS);
 
-    // Process places in parallel with rate limiting
-    const batchSize = 5;
-    for (let i = 0; i < places.length; i += batchSize) {
-      const batch = places.slice(i, i + batchSize);
-      
-      const batchResults = await Promise.all(
-        batch.map(async (aiPlace: AIPlace) => {
-          try {
-            // Search for the place using Google Places Text Search
-            let searchUrl = `https://places.googleapis.com/v1/places:searchText`;
-            
-            const searchBody: any = {
-              textQuery: aiPlace.name,
-              maxResultCount: 1,
-            };
-            
-            // Add location bias if coordinates provided
-            if (lat && lng) {
-              searchBody.locationBias = {
-                circle: {
-                  center: { latitude: lat, longitude: lng },
-                  radius: 50000 // 50km radius
-                }
-              };
-            }
+    // Get all place names for lookup
+    const placeNames = places.map((p: AIPlace) => p.name);
+    
+    // Query database for existing places matching these names
+    console.log(`Checking cache for ${placeNames.length} places...`);
+    
+    const { data: cachedPlaces, error: cacheError } = await supabase
+      .from('places')
+      .select('*')
+      .or(placeNames.map(name => `name.ilike.%${name.replace(/'/g, "''")}%`).join(','));
 
-            // Request ALL available fields for complete data
-            const fieldMask = [
-              'places.id',
-              'places.displayName',
-              'places.formattedAddress',
-              'places.location',
-              'places.types',
-              'places.rating',
-              'places.userRatingCount',
-              'places.photos',
-              'places.priceLevel',
-              'places.regularOpeningHours',
-              'places.reviews'
-            ].join(',');
-
-            const searchResponse = await fetch(searchUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Goog-Api-Key': GOOGLE_API_KEY,
-                'X-Goog-FieldMask': fieldMask
-              },
-              body: JSON.stringify(searchBody)
-            });
-
-            if (!searchResponse.ok) {
-              console.error(`Google search failed for "${aiPlace.name}":`, await searchResponse.text());
-              return null;
-            }
-
-            const searchData = await searchResponse.json();
-            const googlePlace = searchData.places?.[0];
-
-            if (!googlePlace) {
-              console.log(`No Google result for: ${aiPlace.name}`);
-              return null;
-            }
-
-            // Extract all photo references (up to 10)
-            const photos: string[] = [];
-            let primaryPhotoName: string | null = null;
-            if (googlePlace.photos && googlePlace.photos.length > 0) {
-              primaryPhotoName = googlePlace.photos[0].name;
-              googlePlace.photos.slice(0, 10).forEach((photo: any) => {
-                if (photo.name) {
-                  photos.push(photo.name);
-                }
-              });
-            }
-
-            // Extract price level (convert from enum to number)
-            let priceLevel: number | null = null;
-            if (googlePlace.priceLevel) {
-              const priceLevelMap: Record<string, number> = {
-                'PRICE_LEVEL_FREE': 0,
-                'PRICE_LEVEL_INEXPENSIVE': 1,
-                'PRICE_LEVEL_MODERATE': 2,
-                'PRICE_LEVEL_EXPENSIVE': 3,
-                'PRICE_LEVEL_VERY_EXPENSIVE': 4,
-              };
-              priceLevel = priceLevelMap[googlePlace.priceLevel] ?? null;
-            }
-
-            // Extract opening hours
-            let openingHours: OpeningHours | null = null;
-            let isOpenNow: boolean | null = null;
-            if (googlePlace.regularOpeningHours) {
-              const regHours = googlePlace.regularOpeningHours;
-              isOpenNow = regHours.openNow ?? null;
-              openingHours = {
-                open_now: regHours.openNow ?? false,
-                weekday_text: regHours.weekdayDescriptions || [],
-                periods: regHours.periods?.map((p: any) => ({
-                  open: { day: p.open?.day, time: p.open?.hour?.toString().padStart(2, '0') + (p.open?.minute?.toString().padStart(2, '0') || '00') },
-                  close: p.close ? { day: p.close.day, time: p.close.hour?.toString().padStart(2, '0') + (p.close.minute?.toString().padStart(2, '0') || '00') } : undefined
-                }))
-              };
-            }
-
-            // Extract reviews (up to 5)
-            let reviews: Review[] | null = null;
-            if (googlePlace.reviews && googlePlace.reviews.length > 0) {
-              reviews = googlePlace.reviews.slice(0, 5).map((review: any) => ({
-                author_name: review.authorAttribution?.displayName || 'Anonymous',
-                rating: review.rating || 5,
-                text: review.text?.text || '',
-                relative_time: review.relativePublishTimeDescription || '',
-                time: review.publishTime ? new Date(review.publishTime).getTime() / 1000 : Date.now() / 1000
-              }));
-            }
-
-            return {
-              place_id: googlePlace.id,
-              name: googlePlace.displayName?.text || aiPlace.name,
-              address: googlePlace.formattedAddress || null,
-              lat: googlePlace.location?.latitude || null,
-              lng: googlePlace.location?.longitude || null,
-              categories: googlePlace.types || [aiPlace.category],
-              rating: googlePlace.rating || null,
-              ratings_total: googlePlace.userRatingCount || null,
-              photo_name: primaryPhotoName,
-              photos: photos.length > 0 ? photos : null,
-              provider: 'google',
-              ai_reason: aiPlace.reason,
-              ai_category: aiPlace.category,
-              price_level: priceLevel,
-              opening_hours: openingHours,
-              reviews: reviews,
-              is_open_now: isOpenNow,
-              filter_tags: null, // Will be populated later
-            } as EnrichedPlace;
-
-          } catch (error) {
-            console.error(`Error enriching "${aiPlace.name}":`, error);
-            return null;
-          }
-        })
-      );
-
-      // Add successful results
-      enrichedPlaces.push(...batchResults.filter((p): p is EnrichedPlace => p !== null));
-      
-      // Small delay between batches to respect rate limits
-      if (i + batchSize < places.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+    if (cacheError) {
+      console.error('Cache lookup error:', cacheError);
     }
 
-    console.log(`Successfully enriched ${enrichedPlaces.length}/${places.length} places with full data`);
-
-    // Generate filter tags for all enriched places in batches
-    if (enrichedPlaces.length > 0) {
-      const tagBatchSize = 10;
-      for (let i = 0; i < enrichedPlaces.length; i += tagBatchSize) {
-        const batch = enrichedPlaces.slice(i, i + tagBatchSize);
-        const filterTagsMap = await generateFilterTags(batch.map(p => ({
-          name: p.name,
-          categories: p.categories,
-          price_level: p.price_level,
-          opening_hours: p.opening_hours,
-          reviews: p.reviews,
-          ai_reason: p.ai_reason,
-        })));
+    // Build a map of cached places by normalized name for quick lookup
+    const cachedPlacesMap = new Map<string, any>();
+    const freshCachedPlaces: EnrichedPlace[] = [];
+    
+    if (cachedPlaces && cachedPlaces.length > 0) {
+      for (const cached of cachedPlaces) {
+        const normalizedName = cached.name.toLowerCase().trim();
+        const lastEnriched = cached.last_enriched_at ? new Date(cached.last_enriched_at) : null;
+        const isFresh = lastEnriched && lastEnriched > freshnessThreshold;
         
-        // Apply filter tags to places
-        batch.forEach(place => {
-          place.filter_tags = filterTagsMap.get(place.name) || null;
-        });
+        if (isFresh) {
+          cachedPlacesMap.set(normalizedName, cached);
+        }
+      }
+      console.log(`Found ${cachedPlacesMap.size} fresh cached places (< ${CACHE_FRESHNESS_DAYS} days old)`);
+    }
+
+    // Determine which places need fresh data from Google
+    const placesToFetch: AIPlace[] = [];
+    const placeNameToAIPlace = new Map<string, AIPlace>();
+    
+    for (const aiPlace of places as AIPlace[]) {
+      const normalizedName = aiPlace.name.toLowerCase().trim();
+      placeNameToAIPlace.set(normalizedName, aiPlace);
+      
+      // Check if we have a fresh cached version
+      let foundCached = false;
+      for (const [cachedName, cachedPlace] of cachedPlacesMap) {
+        // Fuzzy match: check if names are similar enough
+        if (cachedName.includes(normalizedName) || normalizedName.includes(cachedName) || 
+            cachedName === normalizedName) {
+          // Use cached data, but update ai_reason from current search
+          const enrichedFromCache: EnrichedPlace = {
+            place_id: cachedPlace.place_id,
+            name: cachedPlace.name,
+            address: cachedPlace.address,
+            lat: cachedPlace.lat,
+            lng: cachedPlace.lng,
+            categories: cachedPlace.categories,
+            rating: cachedPlace.rating,
+            ratings_total: cachedPlace.ratings_total,
+            photo_name: cachedPlace.photo_name,
+            photos: cachedPlace.photos,
+            provider: cachedPlace.provider || 'google',
+            ai_reason: aiPlace.reason, // Use fresh AI reason
+            ai_category: aiPlace.category,
+            price_level: cachedPlace.price_level,
+            opening_hours: cachedPlace.opening_hours,
+            reviews: cachedPlace.reviews,
+            is_open_now: cachedPlace.is_open_now,
+            filter_tags: cachedPlace.filter_tags,
+          };
+          freshCachedPlaces.push(enrichedFromCache);
+          foundCached = true;
+          console.log(`Cache HIT: "${aiPlace.name}"`);
+          break;
+        }
+      }
+      
+      if (!foundCached) {
+        placesToFetch.push(aiPlace);
+        console.log(`Cache MISS: "${aiPlace.name}" - will fetch from Google`);
       }
     }
 
-    // Save enriched places to database (upsert to avoid duplicates)
-    if (enrichedPlaces.length > 0) {
-      const placesToInsert = enrichedPlaces.map(place => ({
-        place_id: place.place_id,
-        name: place.name,
-        address: place.address,
-        lat: place.lat,
-        lng: place.lng,
-        categories: place.categories,
-        rating: place.rating,
-        ratings_total: place.ratings_total,
-        photo_name: place.photo_name,
-        photos: place.photos,
-        provider: place.provider,
-        price_level: place.price_level,
-        opening_hours: place.opening_hours,
-        reviews: place.reviews,
-        is_open_now: place.is_open_now,
-        ai_reason: place.ai_reason,
-        filter_tags: place.filter_tags,
-        last_enriched_at: new Date().toISOString(),
-      }));
+    console.log(`Cache summary: ${freshCachedPlaces.length} hits, ${placesToFetch.length} misses`);
 
-      const { error: upsertError } = await supabase
-        .from('places')
-        .upsert(placesToInsert, { onConflict: 'place_id' });
+    // ========== Fetch missing/stale places from Google ==========
+    const newlyEnrichedPlaces: EnrichedPlace[] = [];
 
-      if (upsertError) {
-        console.error('Error saving places to database:', upsertError);
-      } else {
-        console.log(`Saved ${placesToInsert.length} places to database with filter tags`);
+    if (placesToFetch.length > 0) {
+      console.log(`Fetching ${placesToFetch.length} places from Google API...`);
+      
+      // Process places in parallel with rate limiting
+      const batchSize = 5;
+      for (let i = 0; i < placesToFetch.length; i += batchSize) {
+        const batch = placesToFetch.slice(i, i + batchSize);
+        
+        const batchResults = await Promise.all(
+          batch.map(async (aiPlace: AIPlace) => {
+            try {
+              // Search for the place using Google Places Text Search
+              let searchUrl = `https://places.googleapis.com/v1/places:searchText`;
+              
+              const searchBody: any = {
+                textQuery: aiPlace.name,
+                maxResultCount: 1,
+              };
+              
+              // Add location bias if coordinates provided
+              if (lat && lng) {
+                searchBody.locationBias = {
+                  circle: {
+                    center: { latitude: lat, longitude: lng },
+                    radius: 50000 // 50km radius
+                  }
+                };
+              }
+
+              // Request ALL available fields for complete data
+              const fieldMask = [
+                'places.id',
+                'places.displayName',
+                'places.formattedAddress',
+                'places.location',
+                'places.types',
+                'places.rating',
+                'places.userRatingCount',
+                'places.photos',
+                'places.priceLevel',
+                'places.regularOpeningHours',
+                'places.reviews'
+              ].join(',');
+
+              const searchResponse = await fetch(searchUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Goog-Api-Key': GOOGLE_API_KEY,
+                  'X-Goog-FieldMask': fieldMask
+                },
+                body: JSON.stringify(searchBody)
+              });
+
+              if (!searchResponse.ok) {
+                console.error(`Google search failed for "${aiPlace.name}":`, await searchResponse.text());
+                return null;
+              }
+
+              const searchData = await searchResponse.json();
+              const googlePlace = searchData.places?.[0];
+
+              if (!googlePlace) {
+                console.log(`No Google result for: ${aiPlace.name}`);
+                return null;
+              }
+
+              // Extract all photo references (up to 10)
+              const photos: string[] = [];
+              let primaryPhotoName: string | null = null;
+              if (googlePlace.photos && googlePlace.photos.length > 0) {
+                primaryPhotoName = googlePlace.photos[0].name;
+                googlePlace.photos.slice(0, 10).forEach((photo: any) => {
+                  if (photo.name) {
+                    photos.push(photo.name);
+                  }
+                });
+              }
+
+              // Extract price level (convert from enum to number)
+              let priceLevel: number | null = null;
+              if (googlePlace.priceLevel) {
+                const priceLevelMap: Record<string, number> = {
+                  'PRICE_LEVEL_FREE': 0,
+                  'PRICE_LEVEL_INEXPENSIVE': 1,
+                  'PRICE_LEVEL_MODERATE': 2,
+                  'PRICE_LEVEL_EXPENSIVE': 3,
+                  'PRICE_LEVEL_VERY_EXPENSIVE': 4,
+                };
+                priceLevel = priceLevelMap[googlePlace.priceLevel] ?? null;
+              }
+
+              // Extract opening hours
+              let openingHours: OpeningHours | null = null;
+              let isOpenNow: boolean | null = null;
+              if (googlePlace.regularOpeningHours) {
+                const regHours = googlePlace.regularOpeningHours;
+                isOpenNow = regHours.openNow ?? null;
+                openingHours = {
+                  open_now: regHours.openNow ?? false,
+                  weekday_text: regHours.weekdayDescriptions || [],
+                  periods: regHours.periods?.map((p: any) => ({
+                    open: { day: p.open?.day, time: p.open?.hour?.toString().padStart(2, '0') + (p.open?.minute?.toString().padStart(2, '0') || '00') },
+                    close: p.close ? { day: p.close.day, time: p.close.hour?.toString().padStart(2, '0') + (p.close.minute?.toString().padStart(2, '0') || '00') } : undefined
+                  }))
+                };
+              }
+
+              // Extract reviews (up to 5)
+              let reviews: Review[] | null = null;
+              if (googlePlace.reviews && googlePlace.reviews.length > 0) {
+                reviews = googlePlace.reviews.slice(0, 5).map((review: any) => ({
+                  author_name: review.authorAttribution?.displayName || 'Anonymous',
+                  rating: review.rating || 5,
+                  text: review.text?.text || '',
+                  relative_time: review.relativePublishTimeDescription || '',
+                  time: review.publishTime ? new Date(review.publishTime).getTime() / 1000 : Date.now() / 1000
+                }));
+              }
+
+              return {
+                place_id: googlePlace.id,
+                name: googlePlace.displayName?.text || aiPlace.name,
+                address: googlePlace.formattedAddress || null,
+                lat: googlePlace.location?.latitude || null,
+                lng: googlePlace.location?.longitude || null,
+                categories: googlePlace.types || [aiPlace.category],
+                rating: googlePlace.rating || null,
+                ratings_total: googlePlace.userRatingCount || null,
+                photo_name: primaryPhotoName,
+                photos: photos.length > 0 ? photos : null,
+                provider: 'google',
+                ai_reason: aiPlace.reason,
+                ai_category: aiPlace.category,
+                price_level: priceLevel,
+                opening_hours: openingHours,
+                reviews: reviews,
+                is_open_now: isOpenNow,
+                filter_tags: null, // Will be populated later
+              } as EnrichedPlace;
+
+            } catch (error) {
+              console.error(`Error enriching "${aiPlace.name}":`, error);
+              return null;
+            }
+          })
+        );
+
+        // Add successful results
+        newlyEnrichedPlaces.push(...batchResults.filter((p): p is EnrichedPlace => p !== null));
+        
+        // Small delay between batches to respect rate limits
+        if (i + batchSize < placesToFetch.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+
+      console.log(`Successfully fetched ${newlyEnrichedPlaces.length}/${placesToFetch.length} places from Google`);
+
+      // Generate filter tags for newly enriched places
+      if (newlyEnrichedPlaces.length > 0) {
+        const tagBatchSize = 10;
+        for (let i = 0; i < newlyEnrichedPlaces.length; i += tagBatchSize) {
+          const batch = newlyEnrichedPlaces.slice(i, i + tagBatchSize);
+          const filterTagsMap = await generateFilterTags(batch.map(p => ({
+            name: p.name,
+            categories: p.categories,
+            price_level: p.price_level,
+            opening_hours: p.opening_hours,
+            reviews: p.reviews,
+            ai_reason: p.ai_reason,
+          })));
+          
+          // Apply filter tags to places
+          batch.forEach(place => {
+            place.filter_tags = filterTagsMap.get(place.name) || null;
+          });
+        }
+      }
+
+      // Save newly enriched places to database
+      if (newlyEnrichedPlaces.length > 0) {
+        const placesToInsert = newlyEnrichedPlaces.map(place => ({
+          place_id: place.place_id,
+          name: place.name,
+          address: place.address,
+          lat: place.lat,
+          lng: place.lng,
+          categories: place.categories,
+          rating: place.rating,
+          ratings_total: place.ratings_total,
+          photo_name: place.photo_name,
+          photos: place.photos,
+          provider: place.provider,
+          price_level: place.price_level,
+          opening_hours: place.opening_hours,
+          reviews: place.reviews,
+          is_open_now: place.is_open_now,
+          ai_reason: place.ai_reason,
+          filter_tags: place.filter_tags,
+          last_enriched_at: new Date().toISOString(),
+        }));
+
+        const { error: upsertError } = await supabase
+          .from('places')
+          .upsert(placesToInsert, { onConflict: 'place_id' });
+
+        if (upsertError) {
+          console.error('Error saving places to database:', upsertError);
+        } else {
+          console.log(`Saved ${placesToInsert.length} NEW places to database`);
+        }
+      }
+    }
+
+    // ========== Combine cached + newly fetched places ==========
+    const enrichedPlaces = [...freshCachedPlaces, ...newlyEnrichedPlaces];
+    console.log(`Total results: ${enrichedPlaces.length} (${freshCachedPlaces.length} cached + ${newlyEnrichedPlaces.length} fresh)`);
+
+    // Preserve original order from AI recommendations
+    const orderedPlaces: EnrichedPlace[] = [];
+    for (const aiPlace of places as AIPlace[]) {
+      const match = enrichedPlaces.find(p => 
+        p.name.toLowerCase().includes(aiPlace.name.toLowerCase()) ||
+        aiPlace.name.toLowerCase().includes(p.name.toLowerCase())
+      );
+      if (match && !orderedPlaces.includes(match)) {
+        orderedPlaces.push(match);
+      }
+    }
+    // Add any remaining places not matched by order
+    for (const place of enrichedPlaces) {
+      if (!orderedPlaces.includes(place)) {
+        orderedPlaces.push(place);
       }
     }
 
     return new Response(JSON.stringify({ 
-      places: enrichedPlaces,
-      found: enrichedPlaces.length,
-      total: places.length
+      places: orderedPlaces,
+      found: orderedPlaces.length,
+      total: places.length,
+      cached: freshCachedPlaces.length,
+      fresh: newlyEnrichedPlaces.length,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
