@@ -35,6 +35,21 @@ const CategorySeeAll = () => {
     return `https://source.unsplash.com/400x600/?restaurant,food&${name.slice(0, 3)}`;
   };
 
+  // Get vibe tag from place data
+  const getVibeTag = (place: MockPlace): string | null => {
+    if (place.ai_category) {
+      return place.ai_category.charAt(0).toUpperCase() + place.ai_category.slice(1);
+    }
+    if (place.categories && place.categories.length > 0) {
+      const category = place.categories[0];
+      if (category.toLowerCase().includes('bar') || category.toLowerCase().includes('club')) return 'Nightlife';
+      if (category.toLowerCase().includes('cafe') || category.toLowerCase().includes('coffee')) return 'Cafe';
+      if (category.toLowerCase().includes('restaurant')) return 'Restaurant';
+      return category.replace(/_/g, ' ').split(' ')[0];
+    }
+    return null;
+  };
+
   // Generate header text based on search query
   const getHeaderTitle = () => {
     if (searchQuery) {
@@ -93,6 +108,15 @@ const CategorySeeAll = () => {
 
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+
+                  {/* Vibe tag - always visible */}
+                  {getVibeTag(place) && (
+                    <div className="absolute top-3 left-3">
+                      <span className="px-2.5 py-1 bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground rounded-full shadow-sm">
+                        {getVibeTag(place)}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Save button - always visible */}
                   <button
