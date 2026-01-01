@@ -154,19 +154,35 @@ const HomePage = () => {
     return [];
   };
 
+  // Check if this is skip mode BEFORE initializing state
+  const isSkipModeOnMount = useRef(() => {
+    const skipMode = sessionStorage.getItem(SKIP_MODE_KEY) === 'true';
+    if (skipMode) {
+      // Clear all cached data immediately
+      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+      sessionStorage.removeItem(CACHED_MOOD_KEY);
+      sessionStorage.removeItem(SKIP_MODE_KEY);
+      return true;
+    }
+    return false;
+  });
+  const wasSkipMode = useRef(isSkipModeOnMount.current());
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
-  const [searchValue, setSearchValue] = useState(userMood || "");
+  const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : (userMood || ""));
   
   // Sync searchValue when userMood changes (from EntryScreen)
   useEffect(() => {
-    if (userMood && !searchValue) {
+    if (userMood && !searchValue && !wasSkipMode.current) {
       setSearchValue(userMood);
     }
   }, [userMood]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
   const [aiSummary, setAiSummary] = useState<string | null>(() => {
+    if (wasSkipMode.current) return null;
     try {
       const version = sessionStorage.getItem(CACHE_VERSION_KEY);
       if (version !== CURRENT_CACHE_VERSION) return null;
@@ -175,8 +191,12 @@ const HomePage = () => {
       return null;
     }
   });
-  const [searchResults, setSearchResults] = useState<MockPlace[]>(getCachedResults);
+  const [searchResults, setSearchResults] = useState<MockPlace[]>(() => {
+    if (wasSkipMode.current) return [];
+    return getCachedResults();
+  });
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
+    if (wasSkipMode.current) return true;
     return getCachedResults().length === 0;
   });
   const [needsLocationPermission, setNeedsLocationPermission] = useState(false);
@@ -217,9 +237,9 @@ const HomePage = () => {
     const currentMood = userMood?.trim() || "";
     const moodChanged = currentMood && currentMood !== cachedMood;
     
-    // Skip if already loaded and mood hasn't changed
-    if (hasLoadedInitial.current && !moodChanged) return;
-    if (searchResults.length > 0 && !moodChanged) {
+    // Skip if already loaded and mood hasn't changed (but not if we're in skip mode)
+    if (hasLoadedInitial.current && !moodChanged && !wasSkipMode.current) return;
+    if (searchResults.length > 0 && !moodChanged && !wasSkipMode.current) {
       hasLoadedInitial.current = true;
       return;
     }
@@ -228,21 +248,14 @@ const HomePage = () => {
     const loadInitialPlaces = async () => {
       setIsInitialLoading(true);
       try {
-        // Check if this is a "Skip to Home" mode
-        const isSkipMode = sessionStorage.getItem(SKIP_MODE_KEY) === 'true';
-        
         let searchPrompt: string;
         
-        if (isSkipMode) {
-          // Clear all cached data for fresh results
-          sessionStorage.removeItem(CACHE_KEY);
-          sessionStorage.removeItem(SUMMARY_CACHE_KEY);
-          sessionStorage.removeItem(CACHED_MOOD_KEY);
-          sessionStorage.removeItem(SKIP_MODE_KEY);
-          
+        if (wasSkipMode.current) {
           // Use time-based prompt for skip mode
           searchPrompt = getTimeBasedPrompt();
           console.log("Skip mode - using time-based prompt:", searchPrompt);
+          // Reset the ref so future navigations don't trigger skip mode
+          wasSkipMode.current = false;
         } else {
           // Use the mood from EntryScreen if available, otherwise use default
           searchPrompt = currentMood || "popular restaurants and cafes nearby";
