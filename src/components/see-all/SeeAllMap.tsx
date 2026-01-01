@@ -17,34 +17,19 @@ const containerStyle = {
 
 const defaultCenter = { lat: 14.5995, lng: 120.9842 }; // Manila default
 
-const SeeAllMap: React.FC<SeeAllMapProps> = ({
+// Inner component that renders the actual map (only mounted when API key is ready)
+const GoogleMapInner: React.FC<SeeAllMapProps & { apiKey: string }> = ({
   places,
   selectedId,
   onPinClick,
   userLocation,
+  apiKey,
 }) => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-
-  // Fetch API key from edge function
-  useEffect(() => {
-    const fetchApiKey = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-maps-key');
-        if (error) throw error;
-        if (data?.apiKey) {
-          setApiKey(data.apiKey);
-        }
-      } catch (err) {
-        console.error('Failed to fetch Maps API key:', err);
-      }
-    };
-    fetchApiKey();
-  }, []);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: apiKey || '',
+    googleMapsApiKey: apiKey,
   });
 
   const center = userLocation || defaultCenter;
@@ -79,14 +64,6 @@ const SeeAllMap: React.FC<SeeAllMapProps> = ({
       }
     }
   }, [map, selectedId, places]);
-
-  if (!apiKey) {
-    return (
-      <div className="w-full h-full bg-muted flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading map...</div>
-      </div>
-    );
-  }
 
   if (!isLoaded) {
     return (
@@ -162,6 +139,49 @@ const SeeAllMap: React.FC<SeeAllMapProps> = ({
       })}
     </GoogleMap>
   );
+};
+
+// Outer component that handles API key fetching
+const SeeAllMap: React.FC<SeeAllMapProps> = (props) => {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch API key from edge function
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-maps-key');
+        if (error) throw error;
+        if (data?.apiKey) {
+          setApiKey(data.apiKey);
+        } else {
+          setError('No API key received');
+        }
+      } catch (err) {
+        console.error('Failed to fetch Maps API key:', err);
+        setError('Failed to load map');
+      }
+    };
+    fetchApiKey();
+  }, []);
+
+  if (error) {
+    return (
+      <div className="w-full h-full bg-muted flex items-center justify-center">
+        <div className="text-muted-foreground">{error}</div>
+      </div>
+    );
+  }
+
+  if (!apiKey) {
+    return (
+      <div className="w-full h-full bg-muted flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading map...</div>
+      </div>
+    );
+  }
+
+  return <GoogleMapInner {...props} apiKey={apiKey} />;
 };
 
 export default SeeAllMap;
