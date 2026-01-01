@@ -50,7 +50,7 @@ CRITICAL RULES:
 1. ONLY recommend places that actually exist - use your knowledge of real businesses, restaurants, bars, landmarks, parks, etc.
 2. Include a mix of popular spots and hidden gems
 3. Consider the user's apparent intent (vibe, activity, occasion, time of day)
-4. Recommend 8-15 places maximum
+4. Recommend 20-25 places - aim for variety and comprehensive coverage
 5. Each place must be a SPECIFIC business or location name, not a generic description
 6. Prioritize places that genuinely match the query - quality over quantity
 7. **IMPORTANT**: If the user's query mentions a specific city or location (e.g., "bars in Jakarta", "cafes in Singapore"), ALWAYS prioritize that mentioned location over their current GPS location. The query location takes precedence!

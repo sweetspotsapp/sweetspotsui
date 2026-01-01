@@ -25,7 +25,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/place/:placeId" element={<PlaceDetails />} />
-              <Route path="/category/:categoryName" element={<CategorySeeAll />} />
+              <Route path="/see-all" element={<CategorySeeAll />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

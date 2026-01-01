@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Navigation, Heart } from "lucide-react";
 import { MockPlace } from "@/components/PlaceCardCompact";
 import { useSavedPlaces } from "@/hooks/useSavedPlaces";
@@ -10,7 +10,6 @@ interface LocationState {
 }
 
 const CategorySeeAll = () => {
-  const { categoryName } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { toggleSave, isSaved } = useSavedPlaces();
@@ -30,10 +29,6 @@ const CategorySeeAll = () => {
     navigate(`/place/${place.id}`, { state: { place } });
   };
 
-  const decodedCategoryName = categoryName
-    ? decodeURIComponent(categoryName)
-    : "Places";
-
   const getPlaceholderImage = (name: string) => {
     return `https://source.unsplash.com/400x600/?restaurant,food&${name.slice(0, 3)}`;
   };
@@ -49,8 +44,8 @@ const CategorySeeAll = () => {
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         <div>
-          <h1 className="font-semibold text-foreground">{decodedCategoryName}</h1>
-          <p className="text-xs text-muted-foreground">{places.length} places</p>
+          <h1 className="font-semibold text-foreground">All Places</h1>
+          <p className="text-xs text-muted-foreground">{places.length} places nearby</p>
         </div>
       </header>
 

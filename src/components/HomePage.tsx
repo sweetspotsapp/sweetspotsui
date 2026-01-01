@@ -56,17 +56,19 @@ const FILTER_LABELS: Record<string, string> = {
 interface SectionRowProps {
   title: string;
   places: MockPlaceWithCoords[];
+  allPlaces: MockPlaceWithCoords[];
   onPlaceClick: (place: MockPlace) => void;
   toggleSave: (placeId: string) => void;
   isSaved: (placeId: string) => boolean;
   featured?: boolean;
   userLocation?: { lat: number; lng: number } | null;
-  onSeeAll?: (title: string, places: MockPlaceWithCoords[]) => void;
+  onSeeAll?: (allPlaces: MockPlaceWithCoords[]) => void;
 }
 
 const SectionRow: React.FC<SectionRowProps> = ({
   title,
   places,
+  allPlaces,
   onPlaceClick,
   toggleSave,
   isSaved,
@@ -76,7 +78,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
 }) => {
   const handleSeeAll = () => {
     if (onSeeAll) {
-      onSeeAll(title, places);
+      onSeeAll(allPlaces);
     }
   };
 
@@ -348,9 +350,9 @@ const HomePage = () => {
     navigate(`/place/${place.id}`, { state: { ai_reason: place.ai_reason } });
   };
 
-  const handleSeeAll = (title: string, places: MockPlaceWithCoords[]) => {
-    navigate(`/category/${encodeURIComponent(title)}`, {
-      state: { places, userLocation },
+  const handleSeeAll = (allPlaces: MockPlaceWithCoords[]) => {
+    navigate(`/see-all`, {
+      state: { places: allPlaces, userLocation },
     });
   };
 
@@ -805,6 +807,7 @@ const HomePage = () => {
                 key={index}
                 title={section.title}
                 places={section.places}
+                allPlaces={searchResults}
                 onPlaceClick={handlePlaceClick}
                 toggleSave={handleSaveClick}
                 isSaved={isSaved}
