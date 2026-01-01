@@ -9,11 +9,18 @@ import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
 import AISummaryCard from "./AISummaryCard";
 import { useSearch, RankedPlace } from "@/hooks/useSearch";
+import { useLocation } from "@/hooks/useLocation";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 
-// Helper to convert RankedPlace to MockPlace format
-const rankedToMockPlace = (place: RankedPlace): MockPlace => ({
+// Extended MockPlace with lat/lng for map view
+interface MockPlaceWithCoords extends MockPlace {
+  lat?: number;
+  lng?: number;
+}
+
+// Helper to convert RankedPlace to MockPlace format with coords
+const rankedToMockPlace = (place: RankedPlace): MockPlaceWithCoords => ({
   id: place.place_id,
   name: place.name,
   image: place.photo_name 
@@ -24,6 +31,8 @@ const rankedToMockPlace = (place: RankedPlace): MockPlace => ({
   categories: place.categories || [],
   ai_reason: place.ai_reason,
   ai_category: place.ai_category,
+  lat: place.lat,
+  lng: place.lng,
 });
 
 // Filter label mapping
@@ -46,11 +55,13 @@ const FILTER_LABELS: Record<string, string> = {
 
 interface SectionRowProps {
   title: string;
-  places: MockPlace[];
+  places: MockPlaceWithCoords[];
   onPlaceClick: (place: MockPlace) => void;
   toggleSave: (placeId: string) => void;
   isSaved: (placeId: string) => boolean;
   featured?: boolean;
+  userLocation?: { lat: number; lng: number } | null;
+  onSeeAll?: (title: string, places: MockPlaceWithCoords[]) => void;
 }
 
 const SectionRow: React.FC<SectionRowProps> = ({
@@ -60,9 +71,13 @@ const SectionRow: React.FC<SectionRowProps> = ({
   toggleSave,
   isSaved,
   featured = false,
+  userLocation,
+  onSeeAll,
 }) => {
   const handleSeeAll = () => {
-    toast.info(`"See all" for "${title}" coming soon!`);
+    if (onSeeAll) {
+      onSeeAll(title, places);
+    }
   };
 
   return (
@@ -131,6 +146,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { userMood, setUserMood } = useApp();
   const { search, isSearching, error: searchError, clearError } = useSearch();
+  const { location: userLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
 
   // Check cache version and clear if outdated
@@ -330,6 +346,12 @@ const HomePage = () => {
 
   const handlePlaceClick = (place: MockPlace) => {
     navigate(`/place/${place.id}`, { state: { ai_reason: place.ai_reason } });
+  };
+
+  const handleSeeAll = (title: string, places: MockPlaceWithCoords[]) => {
+    navigate(`/category/${encodeURIComponent(title)}`, {
+      state: { places, userLocation },
+    });
   };
 
   // Build search prompt with filters
@@ -787,6 +809,8 @@ const HomePage = () => {
                 toggleSave={handleSaveClick}
                 isSaved={isSaved}
                 featured={section.featured}
+                userLocation={userLocation}
+                onSeeAll={handleSeeAll}
               />
             ))}
           </>
