@@ -22,7 +22,10 @@ const RelatedSpots = ({ places, onPlaceClick }: RelatedSpotsProps) => {
       </div>
       
       {/* Horizontal Scroll */}
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+      <div 
+        className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {places.map((place, i) => (
           <button
             key={place.id}
