@@ -13,7 +13,7 @@ import { useSearch, RankedPlace } from "@/hooks/useSearch";
 import { useLocation } from "@/hooks/useLocation";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
-
+import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 // Extended MockPlace with lat/lng for map view
 interface MockPlaceWithCoords extends MockPlace {
   lat?: number;
@@ -257,6 +257,7 @@ const HomePage = () => {
     return getCachedResults().length === 0;
   });
   const [needsLocationPermission, setNeedsLocationPermission] = useState(false);
+  const [maxDistance, setMaxDistance] = useState(25); // Default to max (no filter)
   
   // Save to board dialog state
   const [saveToBoardPlace, setSaveToBoardPlace] = useState<MockPlace | null>(null);
@@ -264,6 +265,12 @@ const HomePage = () => {
   // Filter modal state
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({ budget: null, vibes: [] });
+
+  // Client-side filtering - instant results
+  const filteredResults = useClientFilters(
+    searchResults as ExtendedMockPlace[],
+    { activeFilters, maxDistance }
+  );
 
   // Cache results to session storage
   useEffect(() => {
@@ -517,90 +524,16 @@ const HomePage = () => {
     setActiveFilters(newFilters);
   };
 
-  // Handle applying filters from SlideOutMenu and trigger search
-  const handleApplySlideOutFilters = async (filters: Set<string>, distance: number) => {
-    // Build filter terms from the selected filter IDs
-    const filterTerms: string[] = [];
-    
-    // Map filter IDs to search terms
-    const filterLabels: Record<string, string> = {
-      under_50: "budget-friendly under $50",
-      "50_100": "mid-range $50-$100",
-      "100_plus": "upscale $100+",
-      friends: "good for friends",
-      romantic: "romantic date spot",
-      family: "family-friendly",
-      solo: "good for solo",
-      chill: "chill and quiet",
-      lively: "fun and lively",
-      hidden: "hidden gem",
-      scenic: "scenic with nice view",
-      pet: "pet-friendly",
-      late_night: "late night",
-      outdoor: "outdoor seating",
-    };
-    
-    filters.forEach(filterId => {
-      if (filterLabels[filterId]) {
-        filterTerms.push(filterLabels[filterId]);
-      }
-    });
-    
-    // Add distance filter to search terms
-    if (distance < 25) {
-      filterTerms.push(`within ${distance} km`);
-    }
-    
-    // Build the search prompt
-    const basePrompt = searchValue.trim() || userMood || "restaurants and cafes nearby";
-    const searchPrompt = filterTerms.length > 0 
-      ? `${basePrompt}, ${filterTerms.join(", ")}`
-      : basePrompt;
-    
-    console.log("Search with slide-out filters:", searchPrompt, "Distance:", distance);
-    
-    // Clear cache and run search
-    setAiSummary(null);
-    try {
-      sessionStorage.removeItem(CACHE_KEY);
-      sessionStorage.removeItem(SUMMARY_CACHE_KEY);
-    } catch (e) {
-      console.error('Failed to clear cache:', e);
-    }
-    
-    const result = await search(searchPrompt);
-    if (result && result.places.length > 0) {
-      // Filter results by distance if specified
-      let filteredPlaces = result.places;
-      if (distance < 25) {
-        filteredPlaces = result.places.filter(place => {
-          const placeDistanceKm = place.distance_meters ? place.distance_meters / 1000 : 0;
-          return placeDistanceKm <= distance;
-        });
-      }
-      
-      if (filteredPlaces.length > 0) {
-        setSearchResults(filteredPlaces.map(rankedToMockPlace));
-        setAiSummary(result.summary || null);
-        toast.success(`Found ${filteredPlaces.length} spots within ${distance} km!`);
-      } else {
-        setSearchResults([]);
-        toast.info(`No places found within ${distance} km. Try increasing the distance.`);
-      }
-    } else if (result && result.places.length === 0) {
-      toast.info("No places found with these filters. Try different options.");
-    }
-  };
-
   // Group places by AI category for display - ensuring NO duplicates across sections
+  // Now uses filteredResults for instant client-side filtering
   const displaySections = useMemo(() => {
-    if (searchResults.length === 0) return [];
+    if (filteredResults.length === 0) return [];
     
     const usedPlaceIds = new Set<string>();
     const sections: { title: string; places: MockPlace[]; featured: boolean }[] = [];
     
     // Section 1: Top Picks - Nearest places first (only 2)
-    const topPicks = [...searchResults]
+    const topPicks = [...filteredResults]
       .sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999))
       .slice(0, 2);
     topPicks.forEach(p => usedPlaceIds.add(p.id));
@@ -614,7 +547,7 @@ const HomePage = () => {
     }
 
     // Group remaining places by category (excluding already used)
-    const remainingPlaces = searchResults.filter(p => !usedPlaceIds.has(p.id));
+    const remainingPlaces = filteredResults.filter(p => !usedPlaceIds.has(p.id));
     const categoryGroups: Record<string, MockPlace[]> = {};
     
     remainingPlaces.forEach(place => {
@@ -692,7 +625,7 @@ const HomePage = () => {
     }
 
     // Section 5: "More to Explore" - remaining unused places
-    const moreToExplore = searchResults.filter(p => !usedPlaceIds.has(p.id));
+    const moreToExplore = filteredResults.filter(p => !usedPlaceIds.has(p.id));
     if (moreToExplore.length > 0) {
       sections.push({
         title: "🗺️ More to Explore",
@@ -702,7 +635,7 @@ const HomePage = () => {
     }
 
     return sections;
-  }, [searchResults]);
+  }, [filteredResults]);
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
@@ -797,7 +730,10 @@ const HomePage = () => {
         onClose={() => setIsMenuOpen(false)}
         activeFilters={activeFilters}
         onFiltersChange={setActiveFilters}
-        onApplyFilters={handleApplySlideOutFilters}
+        maxDistance={maxDistance}
+        onDistanceChange={setMaxDistance}
+        totalPlaces={searchResults.length}
+        filteredCount={filteredResults.length}
       />
 
       {/* Main Content */}
@@ -827,6 +763,25 @@ const HomePage = () => {
             <Button onClick={handleRetryWithLocation} className="rounded-full">
               <MapPin className="w-4 h-4 mr-2" />
               Enable Location
+            </Button>
+          </div>
+        ) : displaySections.length === 0 && searchResults.length > 0 ? (
+          // Filters resulted in no matches
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <SlidersHorizontal className="w-12 h-12 text-muted-foreground mb-4" />
+            <p className="text-foreground font-medium mb-2">No places match your filters</p>
+            <p className="text-muted-foreground text-sm mb-4">
+              Try removing some filters or adjusting the distance
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setActiveFilters(new Set());
+                setMaxDistance(25);
+              }}
+              className="rounded-full"
+            >
+              Clear all filters
             </Button>
           </div>
         ) : displaySections.length === 0 ? (
