@@ -49,6 +49,8 @@ const Index = () => {
   };
 
   const handleSkip = () => {
+    // Set skip mode flag for HomePage to detect
+    sessionStorage.setItem('sweetspots_skip_mode', 'true');
     setAppState("loading");
     
     setTimeout(() => {
@@ -73,7 +75,8 @@ const Index = () => {
 
   // Show loading transition
   if (appState === "loading") {
-    return <LoadingTransition />;
+    const isSkipMode = sessionStorage.getItem('sweetspots_skip_mode') === 'true';
+    return <LoadingTransition isSkipMode={isSkipMode} />;
   }
 
   // Show main app
