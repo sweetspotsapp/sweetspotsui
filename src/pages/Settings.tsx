@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
+import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -18,39 +20,126 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 
+interface NotificationSettings {
+  pushEnabled: boolean;
+  emailDigest: boolean;
+  newPlaces: boolean;
+  recommendations: boolean;
+}
+
+interface PrivacySettings {
+  shareLocation: boolean;
+  personalizedAds: boolean;
+  analyticsEnabled: boolean;
+}
+
+const defaultNotifications: NotificationSettings = {
+  pushEnabled: true,
+  emailDigest: false,
+  newPlaces: true,
+  recommendations: true,
+};
+
+const defaultPrivacy: PrivacySettings = {
+  shareLocation: true,
+  personalizedAds: false,
+  analyticsEnabled: true,
+};
+
 const Settings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   
-  // Notification preferences (local state for now)
-  const [notifications, setNotifications] = useState({
-    pushEnabled: true,
-    emailDigest: false,
-    newPlaces: true,
-    recommendations: true,
-  });
+  const [notifications, setNotifications] = useState<NotificationSettings>(defaultNotifications);
+  const [privacy, setPrivacy] = useState<PrivacySettings>(defaultPrivacy);
 
-  // Privacy preferences
-  const [privacy, setPrivacy] = useState({
-    shareLocation: true,
-    personalizedAds: false,
-    analyticsEnabled: true,
-  });
+  // Load settings from database
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
 
-  const handleNotificationChange = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
-    toast({
-      title: "Preference updated",
-      description: "Your notification settings have been saved.",
-    });
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("notification_settings, privacy_settings")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error loading settings:", error);
+          return;
+        }
+
+        if (data) {
+          if (data.notification_settings) {
+            setNotifications(data.notification_settings as unknown as NotificationSettings);
+          }
+          if (data.privacy_settings) {
+            setPrivacy(data.privacy_settings as unknown as PrivacySettings);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [user?.id]);
+
+  const saveSettings = async (
+    notificationSettings: NotificationSettings,
+    privacySettings: PrivacySettings
+  ) => {
+    if (!user?.id) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          notification_settings: notificationSettings as unknown as Json,
+          privacy_settings: privacySettings as unknown as Json,
+        })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("Error saving settings:", error);
+        toast({
+          title: "Error saving",
+          description: "Failed to save your preferences. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Preference updated",
+        description: "Your settings have been saved.",
+      });
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handlePrivacyChange = (key: keyof typeof privacy) => {
-    setPrivacy(prev => ({ ...prev, [key]: !prev[key] }));
-    toast({
-      title: "Preference updated",
-      description: "Your privacy settings have been saved.",
-    });
+  const handleNotificationChange = (key: keyof NotificationSettings) => {
+    const updated = { ...notifications, [key]: !notifications[key] };
+    setNotifications(updated);
+    saveSettings(updated, privacy);
+  };
+
+  const handlePrivacyChange = (key: keyof PrivacySettings) => {
+    const updated = { ...privacy, [key]: !privacy[key] };
+    setPrivacy(updated);
+    saveSettings(notifications, updated);
   };
 
   const handleDeleteAccount = () => {
@@ -60,6 +149,14 @@ const Settings = () => {
       variant: "destructive",
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,6 +170,9 @@ const Settings = () => {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <h1 className="text-lg font-semibold text-foreground">Settings</h1>
+          {isSaving && (
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground ml-auto" />
+          )}
         </div>
       </header>
 
@@ -141,6 +241,7 @@ const Settings = () => {
               <Switch
                 checked={notifications.pushEnabled}
                 onCheckedChange={() => handleNotificationChange("pushEnabled")}
+                disabled={isSaving}
               />
             </div>
 
@@ -157,6 +258,7 @@ const Settings = () => {
               <Switch
                 checked={notifications.emailDigest}
                 onCheckedChange={() => handleNotificationChange("emailDigest")}
+                disabled={isSaving}
               />
             </div>
 
@@ -171,6 +273,7 @@ const Settings = () => {
               <Switch
                 checked={notifications.newPlaces}
                 onCheckedChange={() => handleNotificationChange("newPlaces")}
+                disabled={isSaving}
               />
             </div>
 
@@ -185,6 +288,7 @@ const Settings = () => {
               <Switch
                 checked={notifications.recommendations}
                 onCheckedChange={() => handleNotificationChange("recommendations")}
+                disabled={isSaving}
               />
             </div>
           </div>
@@ -207,6 +311,7 @@ const Settings = () => {
               <Switch
                 checked={privacy.shareLocation}
                 onCheckedChange={() => handlePrivacyChange("shareLocation")}
+                disabled={isSaving}
               />
             </div>
 
@@ -221,6 +326,7 @@ const Settings = () => {
               <Switch
                 checked={privacy.personalizedAds}
                 onCheckedChange={() => handlePrivacyChange("personalizedAds")}
+                disabled={isSaving}
               />
             </div>
 
@@ -235,6 +341,7 @@ const Settings = () => {
               <Switch
                 checked={privacy.analyticsEnabled}
                 onCheckedChange={() => handlePrivacyChange("analyticsEnabled")}
+                disabled={isSaving}
               />
             </div>
           </div>

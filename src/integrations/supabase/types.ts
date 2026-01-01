@@ -119,6 +119,8 @@ export type Database = {
           dietary: Json | null
           id: string
           mobility: Json | null
+          notification_settings: Json | null
+          privacy_settings: Json | null
           vibe: Json | null
         }
         Insert: {
@@ -127,6 +129,8 @@ export type Database = {
           dietary?: Json | null
           id: string
           mobility?: Json | null
+          notification_settings?: Json | null
+          privacy_settings?: Json | null
           vibe?: Json | null
         }
         Update: {
@@ -135,6 +139,8 @@ export type Database = {
           dietary?: Json | null
           id?: string
           mobility?: Json | null
+          notification_settings?: Json | null
+          privacy_settings?: Json | null
           vibe?: Json | null
         }
         Relationships: []
