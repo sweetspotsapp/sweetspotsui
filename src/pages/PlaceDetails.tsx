@@ -733,7 +733,7 @@ const PlaceDetailsPage = () => {
             </h1>
             {place.address && <p className="text-sm text-muted-foreground flex items-start gap-1.5">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary/60" />
-                <span className="leading-relaxed text-sidebar-accent text-[sidebar-primary-foreground]">{place.address}</span>
+                <span className="leading-relaxed text-[sidebar-primary-foreground] text-muted-foreground">{place.address}</span>
               </p>}
           </div>
           
