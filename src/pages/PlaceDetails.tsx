@@ -737,7 +737,7 @@ const PlaceDetailsPage = () => {
               </p>}
           </div>
           
-          {/* Rating */}
+          {/* Rating & Distance */}
           <div className="flex items-center gap-3 flex-wrap">
             {place.rating && <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-2 rounded-xl">
                 <Star className="w-4 h-4 text-primary fill-primary" />
@@ -746,6 +746,15 @@ const PlaceDetailsPage = () => {
                 </span>
                 <span className="text-xs text-primary/70">/ 5</span>
               </div>}
+            {distanceKm !== null && (
+              <div className="flex items-center gap-1.5 bg-muted px-3 py-2 rounded-xl">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">
+                  {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm}km`}
+                </span>
+                <span className="text-xs text-muted-foreground">away</span>
+              </div>
+            )}
           </div>
           
           {place.ratings_total && <span className="text-sm text-muted-foreground">
