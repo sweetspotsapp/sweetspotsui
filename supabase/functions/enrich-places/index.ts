@@ -47,6 +47,127 @@ interface EnrichedPlace {
   opening_hours: OpeningHours | null;
   reviews: Review[] | null;
   is_open_now: boolean | null;
+  filter_tags: string[] | null;
+}
+
+// Valid filter tags that can be generated
+const VALID_FILTER_TAGS = [
+  'good-for-friends',
+  'romantic',
+  'family-friendly',
+  'good-for-solo',
+  'chill-vibe',
+  'lively-vibe',
+  'hidden-gem',
+  'scenic-view',
+  'pet-friendly',
+  'late-night',
+  'outdoor-seating',
+];
+
+/**
+ * Generate filter tags for a batch of places using Lovable AI
+ */
+async function generateFilterTags(
+  places: Array<{
+    name: string;
+    categories: string[] | null;
+    price_level: number | null;
+    opening_hours: OpeningHours | null;
+    reviews: Review[] | null;
+    ai_reason: string;
+  }>
+): Promise<Map<string, string[]>> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) {
+    console.error('LOVABLE_API_KEY not configured, skipping filter tag generation');
+    return new Map();
+  }
+
+  const results = new Map<string, string[]>();
+
+  try {
+    // Build prompt for batch processing
+    const placesInfo = places.map((p, idx) => {
+      const reviewSnippets = (p.reviews || [])
+        .slice(0, 2)
+        .map(r => r.text.slice(0, 100))
+        .join(' | ');
+      
+      const hoursText = p.opening_hours?.weekday_text?.join(', ') || 'Unknown hours';
+      
+      return `[${idx}] "${p.name}"
+Categories: ${(p.categories || []).join(', ') || 'None'}
+Price Level: ${p.price_level ?? 'Unknown'}
+Hours: ${hoursText}
+Reviews: ${reviewSnippets || 'None'}
+AI Description: ${p.ai_reason || 'None'}`;
+    }).join('\n\n');
+
+    const systemPrompt = `You are a place categorization expert. Analyze each place and determine which filter tags apply based on the provided information. Be conservative - only include tags that clearly match the place.
+
+Valid tags and their meanings:
+- good-for-friends: Groups, social gatherings, fun atmosphere, shareable food
+- romantic: Intimate setting, date-worthy, couples, candlelit, quiet corners
+- family-friendly: Kids welcome, family activities, highchairs, kid menus
+- good-for-solo: Work-friendly, quiet, comfortable alone, counter seating, wifi
+- chill-vibe: Relaxed, calm, peaceful, cozy, laid-back atmosphere
+- lively-vibe: Energetic, loud, vibrant, buzzing, party atmosphere
+- hidden-gem: Local secret, underrated, off-the-beaten-path, not touristy
+- scenic-view: Rooftop, beach view, sunset views, panoramic, waterfront
+- pet-friendly: Dogs allowed, pet-welcoming, outdoor pet area
+- late-night: Open after 10pm, 24 hours, midnight operations
+- outdoor-seating: Terrace, patio, garden seating, alfresco dining
+
+Respond with a JSON object where keys are the place indices (0, 1, 2...) and values are arrays of applicable tags.
+Example: {"0": ["good-for-friends", "lively-vibe"], "1": ["romantic", "chill-vibe"], "2": []}`;
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Analyze these places and return filter tags:\n\n${placesInfo}` }
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('AI filter tag generation failed:', response.status, await response.text());
+      return results;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    // Parse JSON from response (handle markdown code blocks)
+    let jsonStr = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1].trim();
+    }
+    
+    const parsed = JSON.parse(jsonStr);
+    
+    // Map indices back to place names and validate tags
+    places.forEach((place, idx) => {
+      const tags = parsed[String(idx)] || [];
+      const validTags = tags.filter((t: string) => VALID_FILTER_TAGS.includes(t));
+      results.set(place.name, validTags);
+    });
+
+    console.log(`Generated filter tags for ${results.size} places`);
+  } catch (error) {
+    console.error('Error generating filter tags:', error);
+  }
+
+  return results;
 }
 
 serve(async (req) => {
@@ -161,7 +282,19 @@ serve(async (req) => {
           opening_hours: openingHours,
           reviews: reviews,
           is_open_now: isOpenNow,
+          filter_tags: null,
         };
+
+        // Generate filter tags for this single place
+        const filterTagsMap = await generateFilterTags([{
+          name: enrichedPlace.name,
+          categories: enrichedPlace.categories,
+          price_level: enrichedPlace.price_level,
+          opening_hours: enrichedPlace.opening_hours,
+          reviews: enrichedPlace.reviews,
+          ai_reason: enrichedPlace.ai_reason,
+        }]);
+        enrichedPlace.filter_tags = filterTagsMap.get(enrichedPlace.name) || null;
 
         // Save to database
         const { error: upsertError } = await supabase
@@ -182,13 +315,14 @@ serve(async (req) => {
             opening_hours: enrichedPlace.opening_hours,
             reviews: enrichedPlace.reviews,
             is_open_now: enrichedPlace.is_open_now,
+            filter_tags: enrichedPlace.filter_tags,
             last_enriched_at: new Date().toISOString(),
           }, { onConflict: 'place_id' });
 
         if (upsertError) {
           console.error('Error saving place to database:', upsertError);
         } else {
-          console.log(`Saved place ${enrichedPlace.name} to database`);
+          console.log(`Saved place ${enrichedPlace.name} to database with filter_tags:`, enrichedPlace.filter_tags);
         }
 
         return new Response(JSON.stringify({ 
@@ -353,6 +487,7 @@ serve(async (req) => {
               opening_hours: openingHours,
               reviews: reviews,
               is_open_now: isOpenNow,
+              filter_tags: null, // Will be populated later
             } as EnrichedPlace;
 
           } catch (error) {
@@ -373,6 +508,27 @@ serve(async (req) => {
 
     console.log(`Successfully enriched ${enrichedPlaces.length}/${places.length} places with full data`);
 
+    // Generate filter tags for all enriched places in batches
+    if (enrichedPlaces.length > 0) {
+      const tagBatchSize = 10;
+      for (let i = 0; i < enrichedPlaces.length; i += tagBatchSize) {
+        const batch = enrichedPlaces.slice(i, i + tagBatchSize);
+        const filterTagsMap = await generateFilterTags(batch.map(p => ({
+          name: p.name,
+          categories: p.categories,
+          price_level: p.price_level,
+          opening_hours: p.opening_hours,
+          reviews: p.reviews,
+          ai_reason: p.ai_reason,
+        })));
+        
+        // Apply filter tags to places
+        batch.forEach(place => {
+          place.filter_tags = filterTagsMap.get(place.name) || null;
+        });
+      }
+    }
+
     // Save enriched places to database (upsert to avoid duplicates)
     if (enrichedPlaces.length > 0) {
       const placesToInsert = enrichedPlaces.map(place => ({
@@ -392,6 +548,7 @@ serve(async (req) => {
         reviews: place.reviews,
         is_open_now: place.is_open_now,
         ai_reason: place.ai_reason,
+        filter_tags: place.filter_tags,
         last_enriched_at: new Date().toISOString(),
       }));
 
@@ -402,7 +559,7 @@ serve(async (req) => {
       if (upsertError) {
         console.error('Error saving places to database:', upsertError);
       } else {
-        console.log(`Saved ${placesToInsert.length} places to database with full data`);
+        console.log(`Saved ${placesToInsert.length} places to database with filter tags`);
       }
     }
 

@@ -54,6 +54,7 @@ export type Database = {
           address: string | null
           ai_reason: string | null
           categories: string[] | null
+          filter_tags: string[] | null
           is_open_now: boolean | null
           last_enriched_at: string | null
           lat: number | null
@@ -74,6 +75,7 @@ export type Database = {
           address?: string | null
           ai_reason?: string | null
           categories?: string[] | null
+          filter_tags?: string[] | null
           is_open_now?: boolean | null
           last_enriched_at?: string | null
           lat?: number | null
@@ -94,6 +96,7 @@ export type Database = {
           address?: string | null
           ai_reason?: string | null
           categories?: string[] | null
+          filter_tags?: string[] | null
           is_open_now?: boolean | null
           last_enriched_at?: string | null
           lat?: number | null
