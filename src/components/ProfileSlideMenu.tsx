@@ -78,7 +78,10 @@ const ProfileSlideMenu = ({ isOpen, onClose }: ProfileSlideMenuProps) => {
       id: "help",
       label: "Help & Support",
       icon: HelpCircle,
-      onClick: () => {},
+      onClick: () => {
+        onClose();
+        navigate("/help-support");
+      },
       trailing: <ChevronRight className="w-4 h-4 text-muted-foreground" />,
     },
   ];
