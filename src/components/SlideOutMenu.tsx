@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Checkbox } from "./ui/checkbox";
 import { Button } from "./ui/button";
@@ -9,7 +8,10 @@ interface SlideOutMenuProps {
   onClose: () => void;
   activeFilters: Set<string>;
   onFiltersChange: (filters: Set<string>) => void;
-  onApplyFilters?: (filters: Set<string>, distance: number) => void;
+  maxDistance: number;
+  onDistanceChange: (distance: number) => void;
+  totalPlaces: number;
+  filteredCount: number;
 }
 
 const FILTER_SECTIONS = [
@@ -56,10 +58,11 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
   onClose, 
   activeFilters, 
   onFiltersChange,
-  onApplyFilters 
+  maxDistance,
+  onDistanceChange,
+  totalPlaces,
+  filteredCount
 }) => {
-  const [distance, setDistance] = useState<number>(10); // Default 10km
-
   const toggleFilter = (filterId: string) => {
     const newFilters = new Set(activeFilters);
     if (newFilters.has(filterId)) {
@@ -72,15 +75,10 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
 
   const clearAll = () => {
     onFiltersChange(new Set());
-    setDistance(10);
+    onDistanceChange(25);
   };
 
-  const handleApply = () => {
-    onApplyFilters?.(activeFilters, distance);
-    onClose();
-  };
-
-  const hasFilters = activeFilters.size > 0 || distance !== 10;
+  const hasFilters = activeFilters.size > 0 || maxDistance < 25;
 
   return (
     <>
@@ -119,15 +117,15 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
             <div className="px-2">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-sm text-foreground font-medium">
-                  Within {distance} km
+                  Within {maxDistance} km
                 </span>
                 <span className="text-xs text-muted-foreground">
                   Max {DISTANCE_MAX} km
                 </span>
               </div>
               <Slider
-                value={[distance]}
-                onValueChange={(values) => setDistance(values[0])}
+                value={[maxDistance]}
+                onValueChange={(values) => onDistanceChange(values[0])}
                 min={1}
                 max={DISTANCE_MAX}
                 step={1}
@@ -166,11 +164,16 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-border flex-shrink-0 space-y-2">
+          {/* Live filter count */}
+          <div className="text-center text-sm text-muted-foreground mb-2">
+            Showing {filteredCount} of {totalPlaces} places
+          </div>
+          
           <Button 
-            onClick={handleApply}
+            onClick={onClose}
             className="w-full"
           >
-            Apply Filters
+            Done
             {activeFilters.size > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-primary-foreground/20 rounded-full text-xs">
                 {activeFilters.size}
