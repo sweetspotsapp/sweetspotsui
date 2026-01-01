@@ -7,6 +7,7 @@ import { useSavedPlaces } from "@/hooks/useSavedPlaces";
 interface LocationState {
   places: MockPlace[];
   userLocation: { lat: number; lng: number } | null;
+  searchQuery?: string;
 }
 
 const CategorySeeAll = () => {
@@ -17,6 +18,7 @@ const CategorySeeAll = () => {
   // Get data from navigation state
   const state = location.state as LocationState | null;
   const places = state?.places || [];
+  const searchQuery = state?.searchQuery || "";
 
   // Redirect if no places data
   useEffect(() => {
@@ -33,6 +35,16 @@ const CategorySeeAll = () => {
     return `https://source.unsplash.com/400x600/?restaurant,food&${name.slice(0, 3)}`;
   };
 
+  // Generate header text based on search query
+  const getHeaderTitle = () => {
+    if (searchQuery) {
+      // Capitalize first letter and truncate if too long
+      const formatted = searchQuery.charAt(0).toUpperCase() + searchQuery.slice(1);
+      return formatted.length > 30 ? formatted.substring(0, 30) + "..." : formatted;
+    }
+    return "All Places";
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky Header */}
@@ -43,9 +55,9 @@ const CategorySeeAll = () => {
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
-        <div>
-          <h1 className="font-semibold text-foreground">All Places</h1>
-          <p className="text-xs text-muted-foreground">{places.length} places nearby</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-semibold text-foreground truncate">{getHeaderTitle()}</h1>
+          <p className="text-xs text-muted-foreground">{places.length} places found</p>
         </div>
       </header>
 

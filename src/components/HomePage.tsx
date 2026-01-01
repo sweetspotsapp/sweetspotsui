@@ -350,7 +350,7 @@ const HomePage = () => {
 
   const handleSeeAll = (allPlaces: MockPlaceWithCoords[]) => {
     navigate(`/see-all`, {
-      state: { places: allPlaces, userLocation },
+      state: { places: allPlaces, userLocation, searchQuery: searchValue || userMood },
     });
   };
 
