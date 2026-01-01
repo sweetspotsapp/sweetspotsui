@@ -7,6 +7,7 @@ interface SlideOutMenuProps {
   onClose: () => void;
   activeFilters: Set<string>;
   onFiltersChange: (filters: Set<string>) => void;
+  onApplyFilters?: (filters: Set<string>) => void;
 }
 
 const FILTER_SECTIONS = [
@@ -50,7 +51,8 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
   isOpen, 
   onClose, 
   activeFilters, 
-  onFiltersChange 
+  onFiltersChange,
+  onApplyFilters 
 }) => {
   const toggleFilter = (filterId: string) => {
     const newFilters = new Set(activeFilters);
@@ -67,6 +69,7 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
   };
 
   const handleApply = () => {
+    onApplyFilters?.(activeFilters);
     onClose();
   };
 
