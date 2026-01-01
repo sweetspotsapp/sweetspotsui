@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, X, User, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone } from "lucide-react";
+import { Menu, Search, ChevronRight, ChevronLeft, X, User, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
@@ -82,8 +82,25 @@ const SectionRow: React.FC<SectionRowProps> = ({
     }
   };
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+    setShowLeftArrow(scrollLeft > 10);
+    setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  const scrollBy = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return;
+    const scrollAmount = direction === 'left' ? -200 : 200;
+    scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
+
   return (
-    <div className="mb-8">
+    <div className="mb-8 group/section">
       {/* Section Header */}
       <div className="flex items-center justify-between px-4 mb-3">
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
@@ -96,22 +113,44 @@ const SectionRow: React.FC<SectionRowProps> = ({
         </button>
       </div>
 
-      <div 
-        className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide"
-        style={{ 
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
-        {places.map((place) => (
-          <PlaceCardCompact
-            key={place.id}
-            place={place}
-            onSave={toggleSave}
-            isSaved={isSaved(place.id)}
-            onClick={() => onPlaceClick(place)}
-            featured={featured}
-          />
-        ))}
+      <div className="relative">
+        {/* Left Arrow */}
+        {showLeftArrow && (
+          <button
+            onClick={() => scrollBy('left')}
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 bg-card/95 backdrop-blur-sm rounded-full shadow-lg border border-border opacity-0 group-hover/section:opacity-100 transition-opacity duration-200 hover:bg-card"
+          >
+            <ChevronLeft className="w-4 h-4 text-foreground" />
+          </button>
+        )}
+
+        {/* Right Arrow */}
+        {showRightArrow && (
+          <button
+            onClick={() => scrollBy('right')}
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 bg-card/95 backdrop-blur-sm rounded-full shadow-lg border border-border opacity-0 group-hover/section:opacity-100 transition-opacity duration-200 hover:bg-card"
+          >
+            <ChevronRight className="w-4 h-4 text-foreground" />
+          </button>
+        )}
+
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {places.map((place) => (
+            <PlaceCardCompact
+              key={place.id}
+              place={place}
+              onSave={toggleSave}
+              isSaved={isSaved(place.id)}
+              onClick={() => onPlaceClick(place)}
+              featured={featured}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
