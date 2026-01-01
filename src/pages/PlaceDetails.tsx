@@ -351,6 +351,60 @@ const PlaceDetailsPage = () => {
         }
 
         if (!data) {
+          // Place doesn't exist in our database - try to fetch from Google using place_id
+          console.log('Place not in database, attempting to fetch from Google...');
+          try {
+            const enrichResponse = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enrich-places`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  placeId: placeId, // Pass the place_id directly for lookup
+                  lat: userLocation?.lat,
+                  lng: userLocation?.lng
+                }),
+              }
+            );
+            
+            if (enrichResponse.ok) {
+              const enrichResult = await enrichResponse.json();
+              if (enrichResult.places && enrichResult.places.length > 0) {
+                // Re-fetch from database after enrichment
+                const { data: newData } = await supabase
+                  .from('places')
+                  .select('*')
+                  .eq('place_id', placeId)
+                  .maybeSingle();
+                
+                if (newData) {
+                  const placeData: PlaceDetails = {
+                    place_id: newData.place_id,
+                    name: newData.name,
+                    address: newData.address,
+                    lat: newData.lat,
+                    lng: newData.lng,
+                    categories: newData.categories,
+                    rating: newData.rating,
+                    ratings_total: newData.ratings_total,
+                    photo_name: newData.photo_name,
+                    photos: (newData as any).photos || null,
+                    price_level: (newData as any).price_level ?? null,
+                    opening_hours: (newData as any).opening_hours as OpeningHoursData | null,
+                    reviews: (newData as any).reviews as ReviewData[] | null,
+                    is_open_now: (newData as any).is_open_now ?? null,
+                    ai_reason: (newData as any).ai_reason ?? null,
+                  };
+                  setPlace(placeData);
+                  await fetchRelatedPlaces(newData);
+                  return;
+                }
+              }
+            }
+          } catch (enrichError) {
+            console.error('Failed to fetch place from Google:', enrichError);
+          }
+          
           setError('Place not found');
           return;
         }
