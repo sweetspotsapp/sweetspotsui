@@ -407,6 +407,64 @@ const HomePage = () => {
     setActiveFilters(newFilters);
   };
 
+  // Handle applying filters from SlideOutMenu and trigger search
+  const handleApplySlideOutFilters = async (filters: Set<string>) => {
+    if (filters.size === 0 && activeFilters.size === 0) return;
+    
+    // Build filter terms from the selected filter IDs
+    const filterTerms: string[] = [];
+    
+    // Map filter IDs to search terms
+    const filterLabels: Record<string, string> = {
+      under_50: "budget-friendly under $50",
+      "50_100": "mid-range $50-$100",
+      "100_plus": "upscale $100+",
+      friends: "good for friends",
+      romantic: "romantic date spot",
+      family: "family-friendly",
+      solo: "good for solo",
+      chill: "chill and quiet",
+      lively: "fun and lively",
+      hidden: "hidden gem",
+      scenic: "scenic with nice view",
+      pet: "pet-friendly",
+      late_night: "late night",
+      outdoor: "outdoor seating",
+    };
+    
+    filters.forEach(filterId => {
+      if (filterLabels[filterId]) {
+        filterTerms.push(filterLabels[filterId]);
+      }
+    });
+    
+    // Build the search prompt
+    const basePrompt = searchValue.trim() || userMood || "restaurants and cafes nearby";
+    const searchPrompt = filterTerms.length > 0 
+      ? `${basePrompt}, ${filterTerms.join(", ")}`
+      : basePrompt;
+    
+    console.log("Search with slide-out filters:", searchPrompt);
+    
+    // Clear cache and run search
+    setAiSummary(null);
+    try {
+      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+    } catch (e) {
+      console.error('Failed to clear cache:', e);
+    }
+    
+    const result = await search(searchPrompt);
+    if (result && result.places.length > 0) {
+      setSearchResults(result.places.map(rankedToMockPlace));
+      setAiSummary(result.summary || null);
+      toast.success(`Found ${result.places.length} spots matching your filters!`);
+    } else if (result && result.places.length === 0) {
+      toast.info("No places found with these filters. Try different options.");
+    }
+  };
+
   // Group places by AI category for display - ensuring NO duplicates across sections
   const displaySections = useMemo(() => {
     if (searchResults.length === 0) return [];
@@ -512,7 +570,7 @@ const HomePage = () => {
         <div className="flex items-center justify-between px-4 py-3">
           {/* Filter Button - Top Left */}
           <button
-            onClick={() => setIsFilterModalOpen(true)}
+            onClick={() => setIsMenuOpen(true)}
             className={`relative p-2 -ml-2 transition-colors ${
               activeFilters.size > 0 
                 ? "text-primary" 
@@ -598,6 +656,7 @@ const HomePage = () => {
         onClose={() => setIsMenuOpen(false)}
         activeFilters={activeFilters}
         onFiltersChange={setActiveFilters}
+        onApplyFilters={handleApplySlideOutFilters}
       />
 
       {/* Main Content */}
