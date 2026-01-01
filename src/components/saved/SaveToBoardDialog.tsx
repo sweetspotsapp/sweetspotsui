@@ -18,6 +18,8 @@ const categoryColors = [
   { name: "Amber", value: "from-amber-500 to-orange-600" },
 ];
 
+const boardSuggestions = ["Chill", "Party", "Date", "Family", "Solo", "Work"];
+
 const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoardDialogProps) => {
   const { categories, createCategory, updateCategory } = useApp();
   const [selectedBoards, setSelectedBoards] = useState<string[]>(() => {
@@ -146,6 +148,24 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
                            placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 autoFocus
               />
+              
+              {/* Quick suggestions */}
+              <div className="flex flex-wrap gap-2">
+                {boardSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => setNewBoardName(suggestion)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                      newBoardName === suggestion
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
               
               <div className="flex gap-2">
                 {categoryColors.map((color) => (
