@@ -4,10 +4,9 @@ import { cn } from "@/lib/utils";
 interface BottomNavProps {
   activeTab: "home" | "saved" | "profile";
   onTabChange: (tab: "home" | "saved" | "profile") => void;
-  isProfileMenuOpen?: boolean;
 }
 
-const BottomNav = ({ activeTab, onTabChange, isProfileMenuOpen }: BottomNavProps) => {
+const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "saved" as const, label: "Saved", icon: Heart },
@@ -19,7 +18,7 @@ const BottomNav = ({ activeTab, onTabChange, isProfileMenuOpen }: BottomNavProps
       <div className="max-w-md mx-auto flex items-center justify-around py-2 px-4">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = tab.id === "profile" ? isProfileMenuOpen : activeTab === tab.id;
+          const isActive = activeTab === tab.id;
           
           return (
             <button

@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, ChevronLeft, X, User, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone } from "lucide-react";
+import { Menu, Search, ChevronRight, ChevronLeft, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone } from "lucide-react";
+import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
@@ -225,6 +226,7 @@ const HomePage = () => {
   const wasSkipMode = useRef(isSkipModeOnMount.current());
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : (userMood || ""));
   
@@ -729,10 +731,10 @@ const HomePage = () => {
           </h1>
 
           <button
-            onClick={() => navigate("/profile")}
+            onClick={() => setIsProfileMenuOpen(true)}
             className="p-2 -mr-2 text-foreground hover:text-primary transition-colors"
           >
-            <User className="w-6 h-6" />
+            <Settings className="w-6 h-6" />
           </button>
         </div>
 
@@ -873,6 +875,12 @@ const HomePage = () => {
         onClose={() => setIsFilterModalOpen(false)}
         onConfirm={handleFilterConfirm}
         initialFilters={appliedFilters}
+      />
+
+      {/* Profile Slide Menu */}
+      <ProfileSlideMenu 
+        isOpen={isProfileMenuOpen} 
+        onClose={() => setIsProfileMenuOpen(false)} 
       />
     </div>
   );
