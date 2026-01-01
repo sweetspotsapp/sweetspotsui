@@ -6,6 +6,7 @@ import SavedPage from "@/components/SavedPage";
 import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
+import ProfileSlideMenu from "@/components/ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -20,6 +21,7 @@ const Index = () => {
   const [appState, setAppState] = useState<AppState>(
     hasCompletedOnboarding ? "main" : "onboarding"
   );
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   // Sync appState when onboarding status changes
   useEffect(() => {
@@ -59,6 +61,14 @@ const Index = () => {
     }, 800);
   };
 
+  const handleTabChange = (tab: "home" | "saved" | "profile") => {
+    if (tab === "profile") {
+      setIsProfileMenuOpen(true);
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
   // Show loading while checking auth
   if (authLoading) {
     return (
@@ -84,9 +94,17 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {activeTab === "home" && <HomePage />}
       {activeTab === "saved" && <SavedPage />}
-      {activeTab === "profile" && <ProfilePage />}
       
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav 
+        activeTab={activeTab} 
+        onTabChange={handleTabChange}
+        isProfileMenuOpen={isProfileMenuOpen}
+      />
+      
+      <ProfileSlideMenu 
+        isOpen={isProfileMenuOpen} 
+        onClose={() => setIsProfileMenuOpen(false)} 
+      />
     </div>
   );
 };
