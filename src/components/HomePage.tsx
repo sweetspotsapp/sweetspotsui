@@ -18,6 +18,8 @@ import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 interface MockPlaceWithCoords extends MockPlace {
   lat?: number;
   lng?: number;
+  filter_tags?: string[];
+  price_level?: number;
 }
 
 // Helper to convert RankedPlace to MockPlace format with coords
@@ -34,6 +36,8 @@ const rankedToMockPlace = (place: RankedPlace): MockPlaceWithCoords => ({
   ai_category: place.ai_category,
   lat: place.lat,
   lng: place.lng,
+  filter_tags: place.filter_tags || [],
+  price_level: place.price_level,
 });
 
 // Filter label mapping
