@@ -510,11 +510,21 @@ const HomePage = () => {
       {/* Nav Bar */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between px-4 py-3">
+          {/* Filter Button - Top Left */}
           <button
-            onClick={() => setIsMenuOpen(true)}
-            className="p-2 -ml-2 text-foreground hover:text-primary transition-colors"
+            onClick={() => setIsFilterModalOpen(true)}
+            className={`relative p-2 -ml-2 transition-colors ${
+              activeFilters.size > 0 
+                ? "text-primary" 
+                : "text-foreground hover:text-primary"
+            }`}
           >
-            <Menu className="w-6 h-6" />
+            <SlidersHorizontal className="w-6 h-6" />
+            {activeFilters.size > 0 && (
+              <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
+                {activeFilters.size}
+              </span>
+            )}
           </button>
 
           <h1 className="text-xl font-bold text-foreground tracking-tight">
@@ -529,7 +539,7 @@ const HomePage = () => {
           </button>
         </div>
 
-        {/* Search Bar with Filter Button */}
+        {/* Search Bar */}
         <div className="px-4 pb-3">
           <form onSubmit={handleSearchSubmit} className="relative">
             <div
@@ -537,28 +547,10 @@ const HomePage = () => {
                 isSearchFocused ? "ring-2 ring-primary/50 rounded-full" : ""
               }`}
             >
-              {/* Filter Button on the left */}
-              <button
-                type="button"
-                onClick={() => setIsFilterModalOpen(true)}
-                className={`absolute left-2 flex items-center justify-center w-7 h-7 rounded-full transition-colors z-10 ${
-                  activeFilters.size > 0 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-muted text-foreground hover:bg-muted/80"
-                }`}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                {activeFilters.size > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-accent text-accent-foreground text-[10px] rounded-full flex items-center justify-center">
-                    {activeFilters.size}
-                  </span>
-                )}
-              </button>
-              
               {isSearching ? (
-                <Loader2 className="absolute left-11 w-4 h-4 text-primary animate-spin pointer-events-none" />
+                <Loader2 className="absolute left-3 w-4 h-4 text-primary animate-spin pointer-events-none" />
               ) : (
-                <Sparkles className="absolute left-11 w-4 h-4 text-primary pointer-events-none" />
+                <Sparkles className="absolute left-3 w-4 h-4 text-primary pointer-events-none" />
               )}
               <Input
                 type="text"
@@ -567,7 +559,7 @@ const HomePage = () => {
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 placeholder="Ask anything: rooftop bars, date spots..."
-                className="pl-16 pr-9 h-10 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
+                className="pl-9 pr-9 h-10 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
                 disabled={isSearching}
               />
               {searchValue && !isSearching && (
