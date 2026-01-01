@@ -13,28 +13,29 @@ const PRICE_FILTER_MAP: Record<string, (priceLevel: number | undefined) => boole
   "100_plus": (pl) => pl !== undefined && pl >= 4,
 };
 
-// Keywords to search in categories and ai_reason for each filter
-const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  friends: ["group", "friends", "social", "party", "fun"],
-  romantic: ["romantic", "date", "intimate", "cozy", "couples"],
-  family: ["family", "kid", "child", "children", "family-friendly"],
-  solo: ["solo", "quiet", "work", "laptop", "study"],
-  chill: ["chill", "quiet", "relaxed", "calm", "peaceful", "cozy"],
-  lively: ["lively", "fun", "energetic", "vibrant", "buzzing", "party"],
-  hidden: ["hidden", "gem", "secret", "local", "underrated", "off-beat"],
-  scenic: ["scenic", "view", "rooftop", "beach", "sunset", "panoramic"],
-  pet: ["pet", "dog", "pet-friendly", "dog-friendly"],
-  late_night: ["late", "night", "24", "midnight", "late-night"],
-  outdoor: ["outdoor", "terrace", "patio", "garden", "alfresco", "outside"],
+// Map UI filter IDs to stored filter_tags
+const FILTER_TAG_MAP: Record<string, string> = {
+  friends: 'good-for-friends',
+  romantic: 'romantic',
+  family: 'family-friendly',
+  solo: 'good-for-solo',
+  chill: 'chill-vibe',
+  lively: 'lively-vibe',
+  hidden: 'hidden-gem',
+  scenic: 'scenic-view',
+  pet: 'pet-friendly',
+  late_night: 'late-night',
+  outdoor: 'outdoor-seating',
 };
 
 export interface ExtendedMockPlace extends MockPlace {
   price_level?: number;
   opening_hours?: unknown;
+  filter_tags?: string[];
 }
 
 /**
- * Checks if a place matches a specific filter
+ * Checks if a place matches a specific filter using filter_tags
  */
 const matchesFilter = (place: ExtendedMockPlace, filterId: string): boolean => {
   // Handle price filters
@@ -42,18 +43,13 @@ const matchesFilter = (place: ExtendedMockPlace, filterId: string): boolean => {
     return PRICE_FILTER_MAP[filterId](place.price_level);
   }
 
-  // Handle category/vibe filters
-  const keywords = CATEGORY_KEYWORDS[filterId];
-  if (!keywords) return true; // Unknown filter, don't exclude
+  // Handle category/vibe filters using filter_tags
+  const expectedTag = FILTER_TAG_MAP[filterId];
+  if (!expectedTag) return true; // Unknown filter, don't exclude
 
-  // Search in categories array
-  const categoriesText = (place.categories || []).join(" ").toLowerCase();
-  // Search in ai_reason
-  const aiReasonText = (place.ai_reason || "").toLowerCase();
-  // Combined text to search
-  const searchText = `${categoriesText} ${aiReasonText}`;
-
-  return keywords.some((keyword) => searchText.includes(keyword));
+  // Check if place has the expected tag
+  const tags = place.filter_tags || [];
+  return tags.includes(expectedTag);
 };
 
 /**
@@ -81,7 +77,7 @@ export const useClientFilters = (
         (f) => f in PRICE_FILTER_MAP
       );
       const categoryFilters = Array.from(activeFilters).filter(
-        (f) => f in CATEGORY_KEYWORDS
+        (f) => f in FILTER_TAG_MAP
       );
 
       // Price: if any price filter is selected, place must match at least one
