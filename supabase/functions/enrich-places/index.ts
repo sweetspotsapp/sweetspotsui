@@ -55,14 +55,7 @@ serve(async (req) => {
   }
 
   try {
-    const { places, lat, lng } = await req.json();
-
-    if (!places || !Array.isArray(places) || places.length === 0) {
-      return new Response(JSON.stringify({ error: 'Places array is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const { places, lat, lng, placeId } = await req.json();
 
     const GOOGLE_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
     if (!GOOGLE_API_KEY) {
@@ -73,6 +66,153 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Handle direct placeId lookup (for places not in our database yet)
+    if (placeId) {
+      console.log(`Fetching place details directly for placeId: ${placeId}`);
+      
+      try {
+        const fieldMask = [
+          'id', 'displayName', 'formattedAddress', 'location', 'types',
+          'rating', 'userRatingCount', 'photos', 'priceLevel',
+          'regularOpeningHours', 'reviews'
+        ].join(',');
+
+        const detailsResponse = await fetch(
+          `https://places.googleapis.com/v1/places/${placeId}?languageCode=en`,
+          {
+            method: 'GET',
+            headers: {
+              'X-Goog-Api-Key': GOOGLE_API_KEY,
+              'X-Goog-FieldMask': fieldMask
+            }
+          }
+        );
+
+        if (!detailsResponse.ok) {
+          console.error('Google place details failed:', await detailsResponse.text());
+          return new Response(JSON.stringify({ places: [], found: 0, total: 1 }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const googlePlace = await detailsResponse.json();
+        
+        // Extract photos
+        const photos: string[] = [];
+        let primaryPhotoName: string | null = null;
+        if (googlePlace.photos && googlePlace.photos.length > 0) {
+          primaryPhotoName = googlePlace.photos[0].name;
+          googlePlace.photos.slice(0, 10).forEach((photo: any) => {
+            if (photo.name) photos.push(photo.name);
+          });
+        }
+
+        // Extract price level
+        let priceLevel: number | null = null;
+        if (googlePlace.priceLevel) {
+          const priceLevelMap: Record<string, number> = {
+            'PRICE_LEVEL_FREE': 0, 'PRICE_LEVEL_INEXPENSIVE': 1,
+            'PRICE_LEVEL_MODERATE': 2, 'PRICE_LEVEL_EXPENSIVE': 3,
+            'PRICE_LEVEL_VERY_EXPENSIVE': 4,
+          };
+          priceLevel = priceLevelMap[googlePlace.priceLevel] ?? null;
+        }
+
+        // Extract opening hours
+        let openingHours: OpeningHours | null = null;
+        let isOpenNow: boolean | null = null;
+        if (googlePlace.regularOpeningHours) {
+          const regHours = googlePlace.regularOpeningHours;
+          isOpenNow = regHours.openNow ?? null;
+          openingHours = {
+            open_now: regHours.openNow ?? false,
+            weekday_text: regHours.weekdayDescriptions || [],
+          };
+        }
+
+        // Extract reviews
+        let reviews: Review[] | null = null;
+        if (googlePlace.reviews && googlePlace.reviews.length > 0) {
+          reviews = googlePlace.reviews.slice(0, 5).map((review: any) => ({
+            author_name: review.authorAttribution?.displayName || 'Anonymous',
+            rating: review.rating || 5,
+            text: review.text?.text || '',
+            relative_time: review.relativePublishTimeDescription || '',
+            time: review.publishTime ? new Date(review.publishTime).getTime() / 1000 : Date.now() / 1000
+          }));
+        }
+
+        const enrichedPlace: EnrichedPlace = {
+          place_id: googlePlace.id || placeId,
+          name: googlePlace.displayName?.text || 'Unknown Place',
+          address: googlePlace.formattedAddress || null,
+          lat: googlePlace.location?.latitude || null,
+          lng: googlePlace.location?.longitude || null,
+          categories: googlePlace.types || null,
+          rating: googlePlace.rating || null,
+          ratings_total: googlePlace.userRatingCount || null,
+          photo_name: primaryPhotoName,
+          photos: photos.length > 0 ? photos : null,
+          provider: 'google',
+          ai_reason: '',
+          ai_category: '',
+          price_level: priceLevel,
+          opening_hours: openingHours,
+          reviews: reviews,
+          is_open_now: isOpenNow,
+        };
+
+        // Save to database
+        const { error: upsertError } = await supabase
+          .from('places')
+          .upsert({
+            place_id: enrichedPlace.place_id,
+            name: enrichedPlace.name,
+            address: enrichedPlace.address,
+            lat: enrichedPlace.lat,
+            lng: enrichedPlace.lng,
+            categories: enrichedPlace.categories,
+            rating: enrichedPlace.rating,
+            ratings_total: enrichedPlace.ratings_total,
+            photo_name: enrichedPlace.photo_name,
+            photos: enrichedPlace.photos,
+            provider: enrichedPlace.provider,
+            price_level: enrichedPlace.price_level,
+            opening_hours: enrichedPlace.opening_hours,
+            reviews: enrichedPlace.reviews,
+            is_open_now: enrichedPlace.is_open_now,
+            last_enriched_at: new Date().toISOString(),
+          }, { onConflict: 'place_id' });
+
+        if (upsertError) {
+          console.error('Error saving place to database:', upsertError);
+        } else {
+          console.log(`Saved place ${enrichedPlace.name} to database`);
+        }
+
+        return new Response(JSON.stringify({ 
+          places: [enrichedPlace],
+          found: 1,
+          total: 1
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+      } catch (error) {
+        console.error('Error fetching place by ID:', error);
+        return new Response(JSON.stringify({ places: [], found: 0, total: 1 }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    if (!places || !Array.isArray(places) || places.length === 0) {
+      return new Response(JSON.stringify({ error: 'Places array or placeId is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     console.log(`Enriching ${places.length} AI-recommended places with full details`);
 
