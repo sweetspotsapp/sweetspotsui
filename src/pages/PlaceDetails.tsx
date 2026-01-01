@@ -13,6 +13,7 @@ import ActionButtons from '@/components/place-detail/ActionButtons';
 import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
 import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
 import BottomNav from '@/components/BottomNav';
+import SaveToBoardDialog from '@/components/saved/SaveToBoardDialog';
 
 interface OpeningHoursData {
   open_now: boolean;
@@ -190,6 +191,7 @@ const PlaceDetailsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [showSaveToBoardDialog, setShowSaveToBoardDialog] = useState(false);
 
   // Get user location on mount
   useEffect(() => {
@@ -473,11 +475,24 @@ const PlaceDetailsPage = () => {
   };
 
   const handleSave = () => {
-    if (placeId) {
+    if (!placeId) return;
+    
+    const wasSaved = isSaved(placeId);
+    if (wasSaved) {
+      // If already saved, just unsave
       toggleSave(placeId);
-      const wasSaved = isSaved(placeId);
-      toast.success(wasSaved ? 'Removed from saved' : 'Saved to your spots!');
+      toast.success('Removed from saved');
+    } else {
+      // Show the save to board dialog
+      setShowSaveToBoardDialog(true);
     }
+  };
+
+  const handleSavedToBoard = () => {
+    if (placeId && !isSaved(placeId)) {
+      toggleSave(placeId);
+    }
+    toast.success('Saved to your spots!');
   };
 
   const handleFindSimilarVibes = async () => {
@@ -702,6 +717,16 @@ const PlaceDetailsPage = () => {
           else if (tab === 'profile') navigate('/profile');
         }} 
       />
+
+      {/* Save to Board Dialog */}
+      {showSaveToBoardDialog && place && (
+        <SaveToBoardDialog
+          placeId={place.place_id}
+          placeName={place.name}
+          onClose={() => setShowSaveToBoardDialog(false)}
+          onSaved={handleSavedToBoard}
+        />
+      )}
     </div>
   );
 };
