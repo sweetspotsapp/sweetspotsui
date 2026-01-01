@@ -100,8 +100,6 @@ const SectionRow: React.FC<SectionRowProps> = ({
         className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide"
         style={{ 
           WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorX: 'contain',
-          scrollSnapType: 'x proximity'
         }}
       >
         {places.map((place) => (
