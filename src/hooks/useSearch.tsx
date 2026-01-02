@@ -17,6 +17,7 @@ export interface RankedPlace {
   score: number;
   why: string;
   photo_name: string | null;
+  photos?: string[];
   ai_reason?: string;
   ai_category?: string;
   filter_tags?: string[];
