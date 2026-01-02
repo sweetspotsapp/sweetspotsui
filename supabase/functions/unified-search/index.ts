@@ -161,6 +161,80 @@ function generateWhyString(
   return topFactors.map(f => f.description).join(' • ');
 }
 
+// Translate natural language prompts to Google-searchable keywords
+async function translatePromptToKeywords(
+  prompt: string,
+  lovableApiKey: string
+): Promise<{ keywords: string; intent: string }> {
+  // Check if prompt is already keyword-like (short, no question/conversational words)
+  const conversationalWords = /\b(where|what|how|can|should|want|wanna|need|looking|find|get|take|go|somewhere|place|spot)\b/i;
+  const isAlreadyKeywords = prompt.split(' ').length <= 5 && !conversationalWords.test(prompt);
+  
+  if (isAlreadyKeywords) {
+    console.log('Prompt is already keyword-like, skipping translation');
+    return { keywords: prompt, intent: prompt };
+  }
+
+  try {
+    console.log('Translating natural language to keywords...');
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash-lite',
+        messages: [
+          {
+            role: 'system',
+            content: `Extract Google Places search keywords from natural language queries.
+Return 2-5 search terms Google Places will understand.
+
+Examples:
+- "I wanna date someone, where should I take here" → "romantic restaurant date night"
+- "chill spot to hangout with friends" → "cafe lounge bar casual"
+- "where can I work on my laptop" → "coffee shop wifi coworking"
+- "something quick for lunch" → "fast food lunch restaurant"
+- "fancy dinner for anniversary" → "fine dining romantic upscale"
+- "fun things to do with kids" → "family entertainment kids activities"
+
+Return ONLY a JSON object: { "keywords": "search terms", "intent": "what user wants" }`
+          },
+          { role: 'user', content: prompt }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Translation failed, using original prompt');
+      return { keywords: prompt, intent: prompt };
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    // Extract JSON
+    let jsonStr = content;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
+    
+    const parsed = JSON.parse(jsonStr.trim());
+    const keywords = parsed.keywords || prompt;
+    const intent = parsed.intent || prompt;
+    
+    console.log(`Translated: "${prompt}" → "${keywords}"`);
+    return { keywords, intent };
+    
+  } catch (error) {
+    console.error('Translation error:', error);
+    return { keywords: prompt, intent: prompt };
+  }
+}
+
 // AI-powered semantic relevance check using Lovable AI
 async function getAIRelevanceAndSummary(
   prompt: string,
@@ -395,6 +469,9 @@ serve(async (req) => {
 
     console.log('Search:', { prompt, lat: lat.toFixed(4), lng: lng.toFixed(4), radius_m, mode });
 
+    // ============ STEP 0: Translate natural language to keywords ============
+    const { keywords, intent } = await translatePromptToKeywords(prompt, lovableApiKey);
+
     // ============ STEP 1: Google Places Text Search (fetch up to 60 places) ============
     const googleStartTime = Date.now();
     const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
@@ -405,7 +482,7 @@ serve(async (req) => {
 
     for (let page = 0; page < maxPages; page++) {
       const requestBody: any = {
-        textQuery: prompt,
+        textQuery: keywords,  // Use translated keywords instead of raw prompt
         locationBias: {
           circle: {
             center: { latitude: lat, longitude: lng },
@@ -532,8 +609,8 @@ serve(async (req) => {
         return travelData;
       })(),
 
-      // 2b: AI relevance scoring + summary
-      getAIRelevanceAndSummary(prompt, validCandidates, lovableApiKey),
+      // 2b: AI relevance scoring + summary (use intent for better context)
+      getAIRelevanceAndSummary(intent || prompt, validCandidates, lovableApiKey),
 
       // 2c: User profile
       supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle(),
