@@ -330,7 +330,7 @@ const SavedPage = () => {
             refetchBoards();
           }}
           editBoard={editingBoard}
-          availablePlaces={savedPlaces}
+          savedPlaces={savedPlaces}
         />
       )}
     </>
