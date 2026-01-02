@@ -13,6 +13,7 @@ import CategorySeeAll from "./pages/CategorySeeAll";
 import Settings from "./pages/Settings";
 import HelpSupport from "./pages/HelpSupport";
 import NotFound from "./pages/NotFound";
+import SavedPage from "./components/SavedPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/saved" element={<SavedPage />} />
                 <Route path="/place/:placeId" element={<PlaceDetails />} />
                 <Route path="/see-all" element={<CategorySeeAll />} />
                 <Route path="/settings" element={<Settings />} />
