@@ -227,6 +227,19 @@ export const useBoards = (): UseBoardsReturn => {
     if (!user) return;
 
     try {
+      // Also save to saved_places so it appears in "All Saved"
+      const { error: savedError } = await supabase
+        .from('saved_places')
+        .insert({
+          user_id: user.id,
+          place_id: placeId,
+        });
+
+      // Ignore duplicate error for saved_places
+      if (savedError && savedError.code !== '23505') {
+        console.error('Error saving place:', savedError);
+      }
+
       const { error } = await supabase
         .from('board_places')
         .insert({
