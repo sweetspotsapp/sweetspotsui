@@ -9,7 +9,7 @@ import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
 import AISummaryCard from "./AISummaryCard";
-import { useSearch, RankedPlace } from "@/hooks/useSearch";
+import { useUnifiedSearch, UnifiedPlace } from "@/hooks/useUnifiedSearch";
 import { useLocation } from "@/hooks/useLocation";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
@@ -23,17 +23,15 @@ interface MockPlaceWithCoords extends MockPlace {
 }
 
 // Helper to convert RankedPlace to MockPlace format with coords
-const rankedToMockPlace = (place: RankedPlace): MockPlaceWithCoords => ({
+const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   id: place.place_id,
   name: place.name,
-  image: place.photo_name 
-    ? `https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}`
-    : `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`,
+  image: place.photo_url || `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`,
   rating: place.rating || 4.0,
   distance_km: place.distance_meters ? Math.round(place.distance_meters / 100) / 10 : 1.0,
   categories: place.categories || [],
-  ai_reason: place.ai_reason,
-  ai_category: place.ai_category,
+  ai_reason: place.why,
+  ai_category: place.categories?.[0] || undefined,
   lat: place.lat,
   lng: place.lng,
   filter_tags: place.filter_tags || [],
@@ -189,7 +187,7 @@ const getTimeBasedPrompt = (): string => {
 const HomePage = () => {
   const navigate = useNavigate();
   const { userMood, setUserMood } = useApp();
-  const { search, isSearching, error: searchError, clearError } = useSearch();
+  const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
 
@@ -337,7 +335,7 @@ const HomePage = () => {
         
         const result = await search(searchPrompt);
         if (result && result.places.length > 0) {
-          setSearchResults(result.places.map(rankedToMockPlace));
+          setSearchResults(result.places.map(unifiedToMockPlace));
           setAiSummary(result.summary || null);
         }
       } catch (err) {
@@ -448,7 +446,7 @@ const HomePage = () => {
     
     const result = await search(searchPrompt);
     if (result && result.places.length > 0) {
-      setSearchResults(result.places.map(rankedToMockPlace));
+      setSearchResults(result.places.map(unifiedToMockPlace));
       setAiSummary(result.summary || null);
       toast.success(`Found ${result.places.length} spots for you!`);
     } else if (result && result.places.length === 0) {
@@ -494,7 +492,7 @@ const HomePage = () => {
       
       const result = await search(searchPrompt);
       if (result && result.places.length > 0) {
-        setSearchResults(result.places.map(rankedToMockPlace));
+        setSearchResults(result.places.map(unifiedToMockPlace));
         setAiSummary(result.summary || null);
         toast.success(`Found ${result.places.length} spots matching your filters!`);
       }
@@ -507,7 +505,7 @@ const HomePage = () => {
     try {
       const result = await search("popular restaurants and cafes nearby");
       if (result && result.places.length > 0) {
-        setSearchResults(result.places.map(rankedToMockPlace));
+        setSearchResults(result.places.map(unifiedToMockPlace));
         setAiSummary(result.summary || null);
       }
     } catch (err) {
