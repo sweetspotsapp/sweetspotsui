@@ -107,6 +107,17 @@ export const useSavedPlaces = (): UseSavedPlacesReturn => {
 
         if (error) throw error;
 
+        // Also remove from all boards
+        const { error: boardError } = await supabase
+          .from('board_places')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('place_id', placeId);
+
+        if (boardError) {
+          console.error('Error removing from boards:', boardError);
+        }
+
         // Log unsave interaction
         await logInteraction(placeId, 'unsave', -2);
       } else {
