@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.backfill-filter-tags]
 verify_jwt = false
+
+[functions.suggest-places]
+verify_jwt = false
