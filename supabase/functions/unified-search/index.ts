@@ -166,9 +166,20 @@ async function translatePromptToKeywords(
   prompt: string,
   lovableApiKey: string
 ): Promise<{ keywords: string; intent: string }> {
-  // Check if prompt is already keyword-like (short, no question/conversational words)
-  const conversationalWords = /\b(where|what|how|can|should|want|wanna|need|looking|find|get|take|go|somewhere|place|spot)\b/i;
-  const isAlreadyKeywords = prompt.split(' ').length <= 5 && !conversationalWords.test(prompt);
+  // Comprehensive check for conversational/natural language
+  const conversationalPatterns = /\b(where|what|how|can|should|want|wanna|need|looking|find|get|take|go|somewhere|place|spot|feel|feeling|i'm|im|i am|tonight|today|right now|mood|vibe|craving|bored|hungry|tired)\b/i;
+  
+  // Personal pronouns indicate natural language
+  const personalPronouns = /\b(i|me|my|we|us|our)\b/i;
+  
+  // Only skip translation if:
+  // 1. Very short (3 words or less)
+  // 2. No conversational patterns
+  // 3. No personal pronouns
+  const isAlreadyKeywords = 
+    prompt.split(' ').length <= 3 && 
+    !conversationalPatterns.test(prompt) &&
+    !personalPronouns.test(prompt);
   
   if (isAlreadyKeywords) {
     console.log('Prompt is already keyword-like, skipping translation');
