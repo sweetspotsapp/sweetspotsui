@@ -129,7 +129,8 @@ export const useSavedPlaces = (): UseSavedPlacesReturn => {
             place_id: placeId,
           });
 
-        if (error) throw error;
+        // Ignore duplicate error - place is already saved
+        if (error && error.code !== '23505') throw error;
 
         // Log save interaction
         await logInteraction(placeId, 'save', 3);
