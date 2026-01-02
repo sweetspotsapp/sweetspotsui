@@ -113,9 +113,25 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   });
 
   const getPlaceImage = (place: RankedPlace): string => {
-    // Try placeImages first
+    // Try placeImages first (already resolved URLs)
     if (placeImages[place.place_id]?.[0]) {
       return placeImages[place.place_id][0];
+    }
+    // Try place's own photos array (already resolved URLs from suggest-places or saved places)
+    if (place.photos?.[0]) {
+      // Check if it's already a URL or needs to be converted
+      const photo = place.photos[0];
+      if (photo.startsWith('http')) {
+        return photo;
+      }
+      // Convert photo path to edge function URL
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photo)}&maxWidthPx=400`;
+    }
+    // Try photo_name
+    if (place.photo_name) {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`;
     }
     // Fallback
     return `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400`;

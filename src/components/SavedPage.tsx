@@ -54,6 +54,7 @@ const SavedPage = () => {
           console.error('Error fetching saved places:', error);
           return;
         }
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
         // Convert to RankedPlace format
         const places: RankedPlace[] = (data || []).map(place => ({
@@ -71,68 +72,30 @@ const SavedPage = () => {
           score: 0,
           why: place.ai_reason || '',
           photo_name: place.photo_name,
+          photos: place.photos?.slice(0, 3).map((photoPath: string) => 
+            `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`
+          ) || (place.photo_name ? [`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`] : undefined),
           filter_tags: place.filter_tags,
           price_level: place.price_level,
         }));
 
         setSavedPlaces(places);
 
-        // Build photo map - use photos array from DB if available, otherwise fetch from photo_name
+        // Build photo map - convert photo paths to URLs using the place-photo edge function
         const photoMap: Record<string, string[]> = {};
-        const placesNeedingPhotoFetch: typeof data = [];
         
         for (const place of data || []) {
+          // Check for photos array first (contains paths like "places/ChIJ.../photos/...")
           if (place.photos && place.photos.length > 0) {
-            // Photos are stored as paths, need to get signed URLs
-            photoMap[place.place_id] = place.photos.slice(0, 3);
+            // Convert paths to edge function URLs
+            const photoUrls = place.photos.slice(0, 3).map((photoPath: string) => 
+              `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`
+            );
+            photoMap[place.place_id] = photoUrls;
           } else if (place.photo_name) {
-            placesNeedingPhotoFetch.push(place);
-          }
-        }
-        
-        // Fetch photos for places that don't have them cached
-        await Promise.all(
-          placesNeedingPhotoFetch.map(async (place) => {
-            try {
-              const { data: photoData } = await supabase.functions.invoke('get_place_photo_url', {
-                body: { photoName: place.photo_name }
-              });
-              if (photoData?.url) {
-                photoMap[place.place_id] = [photoData.url];
-              }
-            } catch {
-              // Silently fail for individual photos
-            }
-          })
-        );
-        
-        // For photos stored as paths, get signed URLs
-        const pathsToResolve: { placeId: string; paths: string[] }[] = [];
-        for (const [placeId, photos] of Object.entries(photoMap)) {
-          if (photos[0]?.startsWith('places/')) {
-            pathsToResolve.push({ placeId, paths: photos as string[] });
-          }
-        }
-        
-        if (pathsToResolve.length > 0) {
-          try {
-            const { data: resolvedData } = await supabase.functions.invoke('resolve_photos_for_places', {
-              body: { 
-                places: pathsToResolve.map(p => ({ 
-                  place_id: p.placeId, 
-                  photos: p.paths 
-                }))
-              }
-            });
-            if (resolvedData?.places) {
-              for (const resolved of resolvedData.places) {
-                if (resolved.photos?.length > 0) {
-                  photoMap[resolved.place_id] = resolved.photos.slice(0, 3);
-                }
-              }
-            }
-          } catch {
-            // Fall back to showing paths as-is
+            // Use photo_name if no photos array
+            const photoUrl = `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`;
+            photoMap[place.place_id] = [photoUrl];
           }
         }
         
