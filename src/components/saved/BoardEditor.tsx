@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { ArrowLeft, Check, Image } from "lucide-react";
-import { useApp, PlaceCategory } from "@/context/AppContext";
+import { useBoards, Board } from "@/hooks/useBoards";
+import { useSavedPlaces } from "@/hooks/useSavedPlaces";
 import { cn } from "@/lib/utils";
-import type { RankedPlace } from "@/hooks/useSearch";
 
 interface BoardEditorProps {
   onClose: () => void;
-  editBoard?: PlaceCategory | null;
-  availablePlaces?: RankedPlace[];
+  editBoard?: Board | null;
+  savedPlaces?: Array<{
+    place_id: string;
+    name: string;
+    categories?: string[] | null;
+    photos?: string[] | null;
+  }>;
 }
 
 const categoryColors = [
@@ -26,15 +31,12 @@ const getPlaceholderImage = (name: string, categories?: string[] | null): string
   return `https://source.unsplash.com/100x100/?${encodeURIComponent(`${category} ${name}`)}`;
 };
 
-const BoardEditor = ({ onClose, editBoard, availablePlaces }: BoardEditorProps) => {
-  const { savedPlaceIds, rankedPlaces, createCategory, updateCategory } = useApp();
+const BoardEditor = ({ onClose, editBoard, savedPlaces = [] }: BoardEditorProps) => {
+  const { createBoard, updateBoard, addPlaceToBoard, removePlaceFromBoard } = useBoards();
   const [name, setName] = useState(editBoard?.name || "");
   const [selectedPlaces, setSelectedPlaces] = useState<string[]>(editBoard?.placeIds || []);
   const [selectedColor, setSelectedColor] = useState(editBoard?.color || categoryColors[0].value);
-
-  // Use provided places or fallback to context
-  const savedPlaces = availablePlaces || rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
-  const allPlaces = availablePlaces || rankedPlaces;
+  const [isSaving, setIsSaving] = useState(false);
 
   const togglePlace = (placeId: string) => {
     setSelectedPlaces(prev => 
@@ -42,14 +44,42 @@ const BoardEditor = ({ onClose, editBoard, availablePlaces }: BoardEditorProps) 
     );
   };
 
-  const handleSave = () => {
-    if (!name.trim()) return;
-    if (editBoard) {
-      updateCategory(editBoard.id, name.trim(), selectedPlaces);
-    } else {
-      createCategory(name.trim(), selectedPlaces, selectedColor);
+  const handleSave = async () => {
+    if (!name.trim() || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      if (editBoard) {
+        // Update existing board
+        await updateBoard(editBoard.id, name.trim(), selectedColor);
+        
+        // Handle place changes
+        const currentPlaceIds = new Set(editBoard.placeIds);
+        const newPlaceIds = new Set(selectedPlaces);
+        
+        // Add new places
+        for (const placeId of selectedPlaces) {
+          if (!currentPlaceIds.has(placeId)) {
+            await addPlaceToBoard(editBoard.id, placeId);
+          }
+        }
+        
+        // Remove deselected places
+        for (const placeId of editBoard.placeIds) {
+          if (!newPlaceIds.has(placeId)) {
+            await removePlaceFromBoard(editBoard.id, placeId);
+          }
+        }
+      } else {
+        // Create new board with selected places
+        await createBoard(name.trim(), selectedColor, selectedPlaces);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error saving board:', error);
+    } finally {
+      setIsSaving(false);
     }
-    onClose();
   };
 
   return (
@@ -68,15 +98,15 @@ const BoardEditor = ({ onClose, editBoard, availablePlaces }: BoardEditorProps) 
           </h1>
           <button 
             onClick={handleSave}
-            disabled={!name.trim()}
+            disabled={!name.trim() || isSaving}
             className={cn(
               "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
-              name.trim() 
+              name.trim() && !isSaving
                 ? "bg-primary text-primary-foreground hover:bg-primary/90" 
                 : "bg-muted text-muted-foreground"
             )}
           >
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </button>
         </div>
       </header>
@@ -92,11 +122,11 @@ const BoardEditor = ({ onClose, editBoard, availablePlaces }: BoardEditorProps) 
               {selectedPlaces.length > 0 ? (
                 <div className="grid grid-cols-2 gap-0.5 w-full h-full p-1">
                   {selectedPlaces.slice(0, 4).map((placeId) => {
-                    const place = allPlaces.find(p => p.place_id === placeId);
+                    const place = savedPlaces.find(p => p.place_id === placeId);
                     return place ? (
                       <img
                         key={placeId}
-                        src={getPlaceholderImage(place.name, place.categories)}
+                        src={place.photos?.[0] || getPlaceholderImage(place.name, place.categories)}
                         alt=""
                         className="w-full h-full object-cover rounded-sm"
                       />
@@ -178,7 +208,7 @@ const BoardEditor = ({ onClose, editBoard, availablePlaces }: BoardEditorProps) 
                     )}
                   >
                     <img 
-                      src={getPlaceholderImage(place.name, place.categories)} 
+                      src={place.photos?.[0] || getPlaceholderImage(place.name, place.categories)} 
                       alt={place.name}
                       className="w-full h-full object-cover"
                     />
