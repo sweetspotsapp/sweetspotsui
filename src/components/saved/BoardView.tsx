@@ -34,15 +34,72 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   
+  // State for board-specific places (fetched from DB for custom boards)
+  const [boardPlacesData, setBoardPlacesData] = useState<RankedPlace[]>([]);
+  const [isLoadingBoardPlaces, setIsLoadingBoardPlaces] = useState(false);
+  
   const isAllSaved = board === "all";
   const boardName = isAllSaved ? "All Saved" : board.name;
   const colorClass = isAllSaved ? "from-primary to-primary/80" : board.color;
   const boardPlaceIds = isAllSaved ? places.map(p => p.place_id) : board.placeIds;
   
-  // Get places for this board
-  const boardPlaces = isAllSaved 
-    ? places
-    : places.filter(p => board.placeIds.includes(p.place_id));
+  // Fetch places for custom boards directly from the database
+  useEffect(() => {
+    const fetchBoardPlaces = async () => {
+      if (isAllSaved || board.placeIds.length === 0) {
+        setBoardPlacesData([]);
+        return;
+      }
+      
+      setIsLoadingBoardPlaces(true);
+      try {
+        const { data, error } = await supabase
+          .from('places')
+          .select('*')
+          .in('place_id', board.placeIds);
+          
+        if (error) {
+          console.error('Error fetching board places:', error);
+          return;
+        }
+        
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        
+        const fetchedPlaces: RankedPlace[] = (data || []).map(place => ({
+          place_id: place.place_id,
+          name: place.name,
+          address: place.address,
+          lat: place.lat,
+          lng: place.lng,
+          categories: place.categories,
+          rating: place.rating,
+          ratings_total: place.ratings_total,
+          provider: place.provider,
+          eta_seconds: null,
+          distance_meters: null,
+          score: 0,
+          why: place.ai_reason || '',
+          photo_name: place.photo_name,
+          photos: place.photos?.slice(0, 3).map((photoPath: string) => 
+            `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`
+          ) || (place.photo_name ? [`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`] : undefined),
+          filter_tags: place.filter_tags,
+          price_level: place.price_level,
+        }));
+        
+        setBoardPlacesData(fetchedPlaces);
+      } catch (err) {
+        console.error('Failed to fetch board places:', err);
+      } finally {
+        setIsLoadingBoardPlaces(false);
+      }
+    };
+    
+    fetchBoardPlaces();
+  }, [isAllSaved, board]);
+  
+  // Get places for this board - use fetched data for custom boards, props for "all"
+  const boardPlaces = isAllSaved ? places : boardPlacesData;
   
   // Fetch AI suggestions when board loads
   useEffect(() => {
@@ -152,6 +209,12 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     // Small delay for animation before removing
     setTimeout(() => {
       onRemoveFromBoard?.(place.place_id);
+      
+      // Also update local state for custom boards
+      if (!isAllSaved) {
+        setBoardPlacesData(prev => prev.filter(p => p.place_id !== place.place_id));
+      }
+      
       setRemovingPlaceId(null);
       
       const name = isAllSaved ? "Saved" : board.name;
@@ -213,7 +276,10 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           <div className="absolute bottom-4 left-4 right-4">
             <h1 className="text-xl font-bold text-white drop-shadow-lg">{boardName}</h1>
             <p className="text-white/80 text-sm mt-0.5">
-              {boardPlaces.length} {boardPlaces.length === 1 ? 'spot' : 'spots'} saved
+              {isAllSaved 
+                ? `${boardPlaces.length} ${boardPlaces.length === 1 ? 'spot' : 'spots'} saved`
+                : `${board.placeIds.length} ${board.placeIds.length === 1 ? 'spot' : 'spots'} saved`
+              }
             </p>
           </div>
         </div>
@@ -274,7 +340,11 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {sortedPlaces.length === 0 ? (
+          {isLoadingBoardPlaces ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : sortedPlaces.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <MapPin className="w-7 h-7 text-muted-foreground" />
