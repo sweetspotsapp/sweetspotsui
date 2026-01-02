@@ -1,9 +1,9 @@
 import { MoreHorizontal, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PlaceCategory } from "@/context/AppContext";
+import type { Board } from "@/hooks/useBoards";
 
 interface BoardCardProps {
-  board?: PlaceCategory;
+  board?: Board;
   isAllSaved?: boolean;
   savedCount?: number;
   coverImages?: string[]; // Up to 3 images for collage

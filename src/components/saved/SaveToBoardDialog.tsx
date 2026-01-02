@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { X, Plus, Check, FolderPlus } from "lucide-react";
-import { useApp, PlaceCategory } from "@/context/AppContext";
+import { useState, useEffect } from "react";
+import { X, Plus, Check, FolderPlus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBoards } from "@/hooks/useBoards";
+import { useSavedPlaces } from "@/hooks/useSavedPlaces";
 
 interface SaveToBoardDialogProps {
   placeId: string;
@@ -21,14 +22,20 @@ const categoryColors = [
 const boardSuggestions = ["Chill", "Party", "Date", "Family", "Solo", "Work"];
 
 const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoardDialogProps) => {
-  const { categories, createCategory, updateCategory } = useApp();
-  const [selectedBoards, setSelectedBoards] = useState<string[]>(() => {
-    // Pre-select boards that already contain this place
-    return categories.filter(c => c.placeIds.includes(placeId)).map(c => c.id);
-  });
+  const { boards, createBoard, addPlaceToBoard, removePlaceFromBoard, isLoading } = useBoards();
+  const { toggleSave, isSaved } = useSavedPlaces();
+  
+  const [selectedBoards, setSelectedBoards] = useState<string[]>([]);
   const [showNewBoard, setShowNewBoard] = useState(false);
   const [newBoardName, setNewBoardName] = useState("");
   const [newBoardColor, setNewBoardColor] = useState(categoryColors[0].value);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Pre-select boards that already contain this place
+  useEffect(() => {
+    const boardsWithPlace = boards.filter(b => b.placeIds.includes(placeId)).map(b => b.id);
+    setSelectedBoards(boardsWithPlace);
+  }, [boards, placeId]);
 
   const toggleBoard = (boardId: string) => {
     setSelectedBoards(prev => 
@@ -38,29 +45,52 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
     );
   };
 
-  const handleCreateBoard = () => {
+  const handleCreateBoard = async () => {
     if (!newBoardName.trim()) return;
-    createCategory(newBoardName.trim(), [placeId], newBoardColor);
-    setNewBoardName("");
-    setShowNewBoard(false);
-    onSaved?.();
+    setIsSaving(true);
+    
+    try {
+      const newBoard = await createBoard(newBoardName.trim(), newBoardColor, [placeId]);
+      if (newBoard) {
+        // Also save the place if not already saved
+        if (!isSaved(placeId)) {
+          await toggleSave(placeId);
+        }
+        setNewBoardName("");
+        setShowNewBoard(false);
+        onSaved?.();
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSave = () => {
-    // Update each board's placeIds
-    categories.forEach(board => {
-      const shouldHavePlace = selectedBoards.includes(board.id);
-      const hasPlace = board.placeIds.includes(placeId);
-      
-      if (shouldHavePlace && !hasPlace) {
-        updateCategory(board.id, board.name, [...board.placeIds, placeId]);
-      } else if (!shouldHavePlace && hasPlace) {
-        updateCategory(board.id, board.name, board.placeIds.filter(id => id !== placeId));
-      }
-    });
+  const handleSave = async () => {
+    setIsSaving(true);
     
-    onSaved?.();
-    onClose();
+    try {
+      // First, ensure the place is saved
+      if (!isSaved(placeId)) {
+        await toggleSave(placeId);
+      }
+
+      // Update each board's places
+      for (const board of boards) {
+        const shouldHavePlace = selectedBoards.includes(board.id);
+        const hasPlace = board.placeIds.includes(placeId);
+        
+        if (shouldHavePlace && !hasPlace) {
+          await addPlaceToBoard(board.id, placeId);
+        } else if (!shouldHavePlace && hasPlace) {
+          await removePlaceFromBoard(board.id, placeId);
+        }
+      }
+      
+      onSaved?.();
+      onClose();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -92,142 +122,156 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
           </button>
         </div>
 
-        {/* Board List */}
-        <div className="max-h-[50vh] overflow-y-auto p-4 space-y-2">
-          {categories.length === 0 && !showNewBoard ? (
-            <div className="text-center py-6">
-              <p className="text-sm text-muted-foreground mb-4">
-                No boards yet. Create your first one!
-              </p>
-            </div>
-          ) : (
-            categories.map((board) => (
-              <button
-                key={board.id}
-                onClick={() => toggleBoard(board.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-xl border transition-all",
-                  selectedBoards.includes(board.id)
-                    ? "bg-primary/10 border-primary/50"
-                    : "bg-background border-border hover:border-primary/30"
-                )}
-              >
-                <div className={cn(
-                  "w-10 h-10 rounded-lg bg-gradient-to-br flex-shrink-0",
-                  board.color
-                )} />
-                <div className="flex-1 text-left">
-                  <h3 className="font-medium text-foreground text-sm">{board.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {board.placeIds.length} spots
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Board List */}
+            <div className="max-h-[50vh] overflow-y-auto p-4 space-y-2">
+              {boards.length === 0 && !showNewBoard ? (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    No boards yet. Create your first one!
                   </p>
                 </div>
-                <div className={cn(
-                  "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                  selectedBoards.includes(board.id)
-                    ? "bg-primary border-primary"
-                    : "border-muted-foreground/30"
-                )}>
-                  {selectedBoards.includes(board.id) && (
-                    <Check className="w-3.5 h-3.5 text-primary-foreground" />
-                  )}
-                </div>
-              </button>
-            ))
-          )}
-
-          {/* New Board Form */}
-          {showNewBoard ? (
-            <div className="p-4 rounded-xl border border-primary/50 bg-primary/5 space-y-3">
-              <input
-                type="text"
-                value={newBoardName}
-                onChange={(e) => setNewBoardName(e.target.value)}
-                placeholder="Board name"
-                className="w-full px-3 py-2.5 rounded-lg bg-background border border-border text-foreground 
-                           placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                autoFocus
-              />
-              
-              {/* Quick suggestions */}
-              <div className="flex flex-wrap gap-2">
-                {boardSuggestions.map((suggestion) => (
+              ) : (
+                boards.map((board) => (
                   <button
-                    key={suggestion}
-                    onClick={() => setNewBoardName(suggestion)}
+                    key={board.id}
+                    onClick={() => toggleBoard(board.id)}
                     className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                      newBoardName === suggestion
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      "w-full flex items-center gap-3 p-3 rounded-xl border transition-all",
+                      selectedBoards.includes(board.id)
+                        ? "bg-primary/10 border-primary/50"
+                        : "bg-background border-border hover:border-primary/30"
                     )}
                   >
-                    {suggestion}
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg bg-gradient-to-br flex-shrink-0",
+                      board.color
+                    )} />
+                    <div className="flex-1 text-left">
+                      <h3 className="font-medium text-foreground text-sm">{board.name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {board.placeIds.length} spots
+                      </p>
+                    </div>
+                    <div className={cn(
+                      "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                      selectedBoards.includes(board.id)
+                        ? "bg-primary border-primary"
+                        : "border-muted-foreground/30"
+                    )}>
+                      {selectedBoards.includes(board.id) && (
+                        <Check className="w-3.5 h-3.5 text-primary-foreground" />
+                      )}
+                    </div>
                   </button>
-                ))}
-              </div>
-              
-              <div className="flex gap-2">
-                {categoryColors.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => setNewBoardColor(color.value)}
-                    className={cn(
-                      "w-8 h-8 rounded-full bg-gradient-to-br transition-all",
-                      color.value,
-                      newBoardColor === color.value 
-                        ? "ring-2 ring-foreground ring-offset-2 ring-offset-card scale-110" 
-                        : "hover:scale-105"
-                    )}
-                  />
-                ))}
-              </div>
-              
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowNewBoard(false)}
-                  className="flex-1 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-muted transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateBoard}
-                  disabled={!newBoardName.trim()}
-                  className={cn(
-                    "flex-1 py-2 rounded-lg text-sm font-medium transition-all",
-                    newBoardName.trim() 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  Create
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowNewBoard(true)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-dashed border-border 
-                         hover:border-primary/50 hover:bg-primary/5 transition-all"
-            >
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <FolderPlus className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <span className="font-medium text-foreground text-sm">Create New Board</span>
-            </button>
-          )}
-        </div>
+                ))
+              )}
 
-        {/* Footer */}
-        <div className="p-4 border-t border-border/50">
-          <button
-            onClick={handleSave}
-            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium 
-                       hover:bg-primary/90 transition-colors active:scale-[0.98]"
-          >
-            Save to {selectedBoards.length} {selectedBoards.length === 1 ? 'Board' : 'Boards'}
-          </button>
-        </div>
+              {/* New Board Form */}
+              {showNewBoard ? (
+                <div className="p-4 rounded-xl border border-primary/50 bg-primary/5 space-y-3">
+                  <input
+                    type="text"
+                    value={newBoardName}
+                    onChange={(e) => setNewBoardName(e.target.value)}
+                    placeholder="Board name"
+                    className="w-full px-3 py-2.5 rounded-lg bg-background border border-border text-foreground 
+                               placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    autoFocus
+                  />
+                  
+                  {/* Quick suggestions */}
+                  <div className="flex flex-wrap gap-2">
+                    {boardSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => setNewBoardName(suggestion)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                          newBoardName === suggestion
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        )}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    {categoryColors.map((color) => (
+                      <button
+                        key={color.value}
+                        onClick={() => setNewBoardColor(color.value)}
+                        className={cn(
+                          "w-8 h-8 rounded-full bg-gradient-to-br transition-all",
+                          color.value,
+                          newBoardColor === color.value 
+                            ? "ring-2 ring-foreground ring-offset-2 ring-offset-card scale-110" 
+                            : "hover:scale-105"
+                        )}
+                      />
+                    ))}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowNewBoard(false)}
+                      className="flex-1 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleCreateBoard}
+                      disabled={!newBoardName.trim() || isSaving}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
+                        newBoardName.trim() && !isSaving
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Create
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowNewBoard(true)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-dashed border-border 
+                             hover:border-primary/50 hover:bg-primary/5 transition-all"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                    <FolderPlus className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <span className="font-medium text-foreground text-sm">Create New Board</span>
+                </button>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border/50">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium 
+                           hover:bg-primary/90 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                {selectedBoards.length === 0 
+                  ? 'Save to All Saved' 
+                  : `Save to ${selectedBoards.length} ${selectedBoards.length === 1 ? 'Board' : 'Boards'}`}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

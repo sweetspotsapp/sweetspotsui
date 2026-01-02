@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign, Heart } from "lucide-react";
-import { PlaceCategory } from "@/context/AppContext";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign, Heart, Sparkles, Loader2 } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { Board } from "@/hooks/useBoards";
 
 interface BoardViewProps {
-  board: PlaceCategory | "all";
+  board: Board | "all";
   places: RankedPlace[];
   placeImages?: Record<string, string[]>;
   onClose: () => void;
@@ -28,14 +29,69 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   const [removingPlaceId, setRemovingPlaceId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   
+  // AI Suggestions state
+  const [suggestions, setSuggestions] = useState<RankedPlace[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  
   const isAllSaved = board === "all";
   const boardName = isAllSaved ? "All Saved" : board.name;
   const colorClass = isAllSaved ? "from-primary to-primary/80" : board.color;
+  const boardPlaceIds = isAllSaved ? places.map(p => p.place_id) : board.placeIds;
   
   // Get places for this board
   const boardPlaces = isAllSaved 
     ? places
     : places.filter(p => board.placeIds.includes(p.place_id));
+  
+  // Fetch AI suggestions when board loads
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (boardPlaceIds.length === 0) return;
+      
+      setIsLoadingSuggestions(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('suggest-places', {
+          body: { 
+            placeIds: boardPlaceIds,
+            boardName: boardName,
+            limit: 4
+          }
+        });
+
+        if (error) {
+          console.error('Error fetching suggestions:', error);
+          return;
+        }
+
+        if (data?.suggestions) {
+          // Convert to RankedPlace format
+          const suggestedPlaces: RankedPlace[] = data.suggestions.map((s: any) => ({
+            place_id: s.place_id,
+            name: s.name,
+            categories: s.categories,
+            rating: s.rating,
+            ratings_total: s.ratings_total,
+            address: s.address,
+            lat: s.lat,
+            lng: s.lng,
+            photo_name: s.photo_name,
+            photos: s.photos,
+            provider: s.provider || 'google',
+            score: s.score || 0,
+            why: s.ai_reason || `Similar to your ${boardName} collection`,
+          }));
+          setSuggestions(suggestedPlaces);
+        }
+      } catch (err) {
+        console.error('Failed to fetch suggestions:', err);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, [boardPlaceIds.length, boardName]);
   
   // Filter places
   const filteredPlaces = boardPlaces.filter(place => {
@@ -56,8 +112,13 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     }
   });
 
-  const getPlaceImage = (placeId: string): string => {
-    return placeImages[placeId]?.[0] || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400`;
+  const getPlaceImage = (place: RankedPlace): string => {
+    // Try placeImages first
+    if (placeImages[place.place_id]?.[0]) {
+      return placeImages[place.place_id][0];
+    }
+    // Fallback
+    return `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400`;
   };
 
   const handlePlaceClick = (place: RankedPlace) => {
@@ -77,15 +138,8 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
       onRemoveFromBoard?.(place.place_id);
       setRemovingPlaceId(null);
       
-      const boardName = isAllSaved ? "Saved" : board.name;
-      toast.success(`Removed from ${boardName}`, {
-        action: {
-          label: "Undo",
-          onClick: () => {
-            // The parent will handle re-adding via onRemoveFromBoard with undo logic
-          }
-        }
-      });
+      const name = isAllSaved ? "Saved" : board.name;
+      toast.success(`Removed from ${name}`);
     }, 200);
   };
 
@@ -202,7 +256,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           </div>
         )}
 
-        {/* Grid of Places */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
           {sortedPlaces.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -215,68 +269,144 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {sortedPlaces.map((place, index) => (
-                <div 
-                  key={place.place_id}
-                  onClick={() => handlePlaceClick(place)}
-                  className={cn(
-                    "bg-card rounded-xl overflow-hidden border border-border/50",
-                    "cursor-pointer active:scale-[0.98] transition-all duration-200",
-                    "hover:shadow-md hover:border-primary/30 group",
-                    removingPlaceId === place.place_id 
-                      ? "opacity-0 scale-95 transition-all duration-200" 
-                      : "opacity-0 animate-fade-up"
-                  )}
-                  style={{ 
-                    animationDelay: removingPlaceId === place.place_id ? '0ms' : `${index * 50}ms`, 
-                    animationFillMode: 'forwards' 
-                  }}
-                >
-                  <div className="aspect-square relative overflow-hidden">
-                    <img 
-                      src={getPlaceImage(place.place_id)} 
-                      alt={place.name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+            <>
+              {/* Grid of Places */}
+              <div className="grid grid-cols-2 gap-3">
+                {sortedPlaces.map((place, index) => (
+                  <div 
+                    key={place.place_id}
+                    onClick={() => handlePlaceClick(place)}
+                    className={cn(
+                      "bg-card rounded-xl overflow-hidden border border-border/50",
+                      "cursor-pointer active:scale-[0.98] transition-all duration-200",
+                      "hover:shadow-md hover:border-primary/30 group",
+                      removingPlaceId === place.place_id 
+                        ? "opacity-0 scale-95 transition-all duration-200" 
+                        : "opacity-0 animate-fade-up"
+                    )}
+                    style={{ 
+                      animationDelay: removingPlaceId === place.place_id ? '0ms' : `${index * 50}ms`, 
+                      animationFillMode: 'forwards' 
+                    }}
+                  >
+                    <div className="aspect-square relative overflow-hidden">
+                      <img 
+                        src={getPlaceImage(place)} 
+                        alt={place.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                      
+                      {/* Remove from Board Button */}
+                      <button 
+                        className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
+                        onClick={(e) => handleRemove(e, place)}
+                      >
+                        <Heart className="w-4 h-4 text-primary fill-primary" />
+                      </button>
+                      
+                      {/* Rating Badge */}
+                      {place.rating && (
+                        <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                          <span className="text-[11px] font-medium text-white">{place.rating.toFixed(1)}</span>
+                        </div>
+                      )}
+                      
+                      {/* Distance Badge */}
+                      {place.distance_meters && (
+                        <div className="absolute bottom-2 right-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                          <MapPin className="w-3 h-3 text-white" />
+                          <span className="text-[11px] font-medium text-white">
+                            {(place.distance_meters / 1000).toFixed(1)}km
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     
-                    {/* Remove from Board Button */}
+                    <div className="p-2.5">
+                      <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
+                      <p className="text-[11px] text-muted-foreground capitalize line-clamp-1 mt-0.5">
+                        {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* AI Suggestions Section */}
+              {showSuggestions && (suggestions.length > 0 || isLoadingSuggestions) && (
+                <div className="mt-6 pt-6 border-t border-border/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <h3 className="text-sm font-semibold text-foreground">You might also like</h3>
+                    </div>
                     <button 
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
-                      onClick={(e) => handleRemove(e, place)}
+                      onClick={() => setShowSuggestions(false)}
+                      className="text-xs text-muted-foreground hover:text-foreground"
                     >
-                      <Heart className="w-4 h-4 text-primary fill-primary" />
+                      Hide
                     </button>
-                    
-                    {/* Rating Badge */}
-                    {place.rating && (
-                      <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                        <span className="text-[11px] font-medium text-white">{place.rating.toFixed(1)}</span>
-                      </div>
-                    )}
-                    
-                    {/* Distance Badge */}
-                    {place.distance_meters && (
-                      <div className="absolute bottom-2 right-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-                        <MapPin className="w-3 h-3 text-white" />
-                        <span className="text-[11px] font-medium text-white">
-                          {(place.distance_meters / 1000).toFixed(1)}km
-                        </span>
-                      </div>
-                    )}
                   </div>
                   
-                  <div className="p-2.5">
-                    <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
-                    <p className="text-[11px] text-muted-foreground capitalize line-clamp-1 mt-0.5">
-                      {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
-                    </p>
-                  </div>
+                  {isLoadingSuggestions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-muted-foreground">Finding similar spots...</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {suggestions.map((place, index) => (
+                        <div 
+                          key={place.place_id}
+                          onClick={() => handlePlaceClick(place)}
+                          className="bg-card rounded-xl overflow-hidden border border-dashed border-primary/30 
+                                     cursor-pointer active:scale-[0.98] transition-all duration-200
+                                     hover:shadow-md hover:border-primary/50 group opacity-0 animate-fade-up"
+                          style={{ 
+                            animationDelay: `${index * 50}ms`, 
+                            animationFillMode: 'forwards' 
+                          }}
+                        >
+                          <div className="aspect-square relative overflow-hidden">
+                            <img 
+                              src={getPlaceImage(place)} 
+                              alt={place.name}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            
+                            {/* AI Badge */}
+                            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-primary/90 backdrop-blur-sm">
+                              <Sparkles className="w-3 h-3 text-primary-foreground" />
+                              <span className="text-[10px] font-medium text-primary-foreground">Suggested</span>
+                            </div>
+                            
+                            {/* Rating Badge */}
+                            {place.rating && (
+                              <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                <span className="text-[11px] font-medium text-white">{place.rating.toFixed(1)}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="p-2.5">
+                            <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
+                            {place.why && (
+                              <p className="text-[11px] text-primary/80 line-clamp-2 mt-0.5">
+                                {place.why}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>

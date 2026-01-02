@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      board_places: {
+        Row: {
+          added_at: string
+          board_id: string
+          id: string
+          place_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          board_id: string
+          id?: string
+          place_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          board_id?: string
+          id?: string
+          place_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_places_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boards: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       place_interactions: {
         Row: {
           action: string
