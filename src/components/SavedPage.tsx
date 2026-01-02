@@ -37,6 +37,7 @@ const SavedPage = () => {
     const fetchSavedPlaces = async () => {
       if (savedPlaceIds.size === 0) {
         setSavedPlaces([]);
+        setPlaceImages({});
         return;
       }
 
@@ -76,10 +77,22 @@ const SavedPage = () => {
 
         setSavedPlaces(places);
 
-        // Fetch photos for each place
+        // Build photo map - use photos array from DB if available, otherwise fetch from photo_name
         const photoMap: Record<string, string[]> = {};
-        for (const place of places) {
-          if (place.photo_name) {
+        const placesNeedingPhotoFetch: typeof data = [];
+        
+        for (const place of data || []) {
+          if (place.photos && place.photos.length > 0) {
+            // Photos are stored as paths, need to get signed URLs
+            photoMap[place.place_id] = place.photos.slice(0, 3);
+          } else if (place.photo_name) {
+            placesNeedingPhotoFetch.push(place);
+          }
+        }
+        
+        // Fetch photos for places that don't have them cached
+        await Promise.all(
+          placesNeedingPhotoFetch.map(async (place) => {
             try {
               const { data: photoData } = await supabase.functions.invoke('get_place_photo_url', {
                 body: { photoName: place.photo_name }
@@ -90,8 +103,39 @@ const SavedPage = () => {
             } catch {
               // Silently fail for individual photos
             }
+          })
+        );
+        
+        // For photos stored as paths, get signed URLs
+        const pathsToResolve: { placeId: string; paths: string[] }[] = [];
+        for (const [placeId, photos] of Object.entries(photoMap)) {
+          if (photos[0]?.startsWith('places/')) {
+            pathsToResolve.push({ placeId, paths: photos as string[] });
           }
         }
+        
+        if (pathsToResolve.length > 0) {
+          try {
+            const { data: resolvedData } = await supabase.functions.invoke('resolve_photos_for_places', {
+              body: { 
+                places: pathsToResolve.map(p => ({ 
+                  place_id: p.placeId, 
+                  photos: p.paths 
+                }))
+              }
+            });
+            if (resolvedData?.places) {
+              for (const resolved of resolvedData.places) {
+                if (resolved.photos?.length > 0) {
+                  photoMap[resolved.place_id] = resolved.photos.slice(0, 3);
+                }
+              }
+            }
+          } catch {
+            // Fall back to showing paths as-is
+          }
+        }
+        
         setPlaceImages(photoMap);
       } catch (err) {
         console.error('Failed to fetch saved places:', err);
@@ -143,6 +187,8 @@ const SavedPage = () => {
     if (selectedBoard === "all") {
       // Remove from saved places entirely
       await toggleSave(placeId);
+      // Also update local savedPlaces state immediately
+      setSavedPlaces(prev => prev.filter(p => p.place_id !== placeId));
       return;
     }
     
