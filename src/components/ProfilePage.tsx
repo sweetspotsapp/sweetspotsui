@@ -1,8 +1,10 @@
-import { User, Heart, MapPin, Sparkles, TrendingUp, Coffee, Moon, Sun, Users, Volume2 } from "lucide-react";
+import { User, Heart, MapPin, Sparkles, TrendingUp, Coffee, Moon, Sun, Users, Volume2, Loader2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { useVibeDNA } from "@/hooks/useVibeDNA";
 
 const ProfilePage = () => {
   const { savedPlaceIds, userVibes, rankedPlaces } = useApp();
+  const { vibeBreakdown, isLoading: isVibeLoading, totalInteractions, searchCount } = useVibeDNA();
 
   // Get saved places from rankedPlaces
   const savedPlaces = rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
@@ -28,12 +30,6 @@ const ProfilePage = () => {
     { icon: Volume2, label: "Conversation seeker", description: "Quiet enough to talk, lively enough to feel alive" },
     { icon: Coffee, label: "Café hopper", description: "You've got a thing for good coffee and better vibes" },
     { icon: Users, label: "Social butterfly", description: "Group-friendly spots are your go-to" },
-  ];
-
-  const vibeBreakdown = [
-    { label: "Chill", percentage: 65, color: "bg-gentle-sage" },
-    { label: "Aesthetic", percentage: 20, color: "bg-soft-coral" },
-    { label: "Social", percentage: 15, color: "bg-primary" },
   ];
 
   return (
@@ -69,7 +65,7 @@ const ProfilePage = () => {
             <div className="text-[10px] text-muted-foreground mt-0.5">Places shown</div>
           </div>
           <div className="bg-card rounded-xl p-3 border border-border text-center">
-            <div className="text-2xl font-bold text-primary">1</div>
+            <div className="text-2xl font-bold text-primary">{searchCount || 1}</div>
             <div className="text-[10px] text-muted-foreground mt-0.5">Mood searches</div>
           </div>
         </section>
@@ -79,28 +75,41 @@ const ProfilePage = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
             <h3 className="font-semibold text-foreground text-sm">Your Vibe DNA</h3>
+            {totalInteractions > 0 && (
+              <span className="text-[10px] text-muted-foreground ml-auto">
+                Based on {totalInteractions} interaction{totalInteractions !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
           
           <p className="text-xs text-muted-foreground">
-            Based on what you save and search for, here's what you're drawn to:
+            {totalInteractions > 0 
+              ? "Based on what you save and explore, here's what you're drawn to:"
+              : "Start exploring and saving places to build your unique Vibe DNA!"}
           </p>
 
-          <div className="space-y-2">
-            {vibeBreakdown.map((vibe, index) => (
-              <div key={index} className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-foreground font-medium">{vibe.label}</span>
-                  <span className="text-muted-foreground">{vibe.percentage}%</span>
+          {isVibeLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {vibeBreakdown.map((vibe, index) => (
+                <div key={index} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-foreground font-medium">{vibe.label}</span>
+                    <span className="text-muted-foreground">{vibe.percentage}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${vibe.color} rounded-full transition-all duration-500`}
+                      style={{ width: `${vibe.percentage}%`, animationDelay: `${index * 100}ms` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${vibe.color} rounded-full transition-all duration-500`}
-                    style={{ width: `${vibe.percentage}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Personality Traits */}
