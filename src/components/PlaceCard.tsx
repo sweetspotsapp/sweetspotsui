@@ -64,9 +64,9 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
   
   const handleImgError = () => setImgError(true);
 
-  const handleSaveClick = (e: React.MouseEvent) => {
+  const handleSaveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleSave(place.place_id);
+    await toggleSave(place.place_id);
   };
 
   if (variant === "featured") {

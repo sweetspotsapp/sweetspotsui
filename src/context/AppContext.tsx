@@ -2,6 +2,8 @@ import { useState, createContext, useContext, ReactNode, useCallback, useEffect 
 import { extractVibes } from "@/data/mockPlaces";
 import { supabase } from "@/integrations/supabase/client";
 import type { RankedPlace } from "@/hooks/useSearch";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 // Onboarding data structure (defined here to avoid circular deps)
 export interface OnboardingData {
@@ -29,10 +31,11 @@ interface AppContextType {
   rankedPlaces: RankedPlace[];
   setRankedPlaces: (places: RankedPlace[]) => void;
   
-  // Saved places (local)
+  // Saved places (synced with Supabase)
   savedPlaceIds: Set<string>;
-  toggleSave: (placeId: string) => void;
+  toggleSave: (placeId: string) => Promise<void>;
   isSaved: (placeId: string) => boolean;
+  isLoadingSavedPlaces: boolean;
   
   // User mood/vibes
   userMood: string;
@@ -130,8 +133,12 @@ const generateSections = (data: OnboardingData | null): SectionConfig[] => {
 };
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
   const [rankedPlaces, setRankedPlaces] = useState<RankedPlace[]>([]);
   const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
+  const [isLoadingSavedPlaces, setIsLoadingSavedPlaces] = useState(false);
   const [userMood, setUserMood] = useState("");
   const [userVibes, setUserVibes] = useState<string[]>([]);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
@@ -140,22 +147,119 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [onboardingData, setOnboardingDataState] = useState<OnboardingData | null>(null);
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
 
+  // Sync saved places with Supabase
+  useEffect(() => {
+    if (!user) {
+      setSavedPlaceIds(new Set());
+      return;
+    }
+
+    const loadSavedPlaces = async () => {
+      setIsLoadingSavedPlaces(true);
+      try {
+        const { data, error } = await supabase
+          .from('saved_places')
+          .select('place_id')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error loading saved places:', error);
+          return;
+        }
+
+        setSavedPlaceIds(new Set(data.map(p => p.place_id)));
+      } catch (err) {
+        console.error('Failed to load saved places:', err);
+      } finally {
+        setIsLoadingSavedPlaces(false);
+      }
+    };
+
+    loadSavedPlaces();
+  }, [user]);
+
   const setOnboardingData = useCallback((data: OnboardingData) => {
     setOnboardingDataState(data);
     setSections(generateSections(data));
   }, []);
 
-  const toggleSave = useCallback((placeId: string) => {
+  const toggleSave = useCallback(async (placeId: string) => {
+    if (!user) {
+      toast({
+        title: 'Login required',
+        description: 'Please log in to save places',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const wasSaved = savedPlaceIds.has(placeId);
+
+    // Optimistic update
     setSavedPlaceIds(prev => {
       const next = new Set(prev);
-      if (next.has(placeId)) {
+      if (wasSaved) {
         next.delete(placeId);
       } else {
         next.add(placeId);
       }
       return next;
     });
-  }, []);
+
+    try {
+      if (wasSaved) {
+        // Unsave: delete from saved_places
+        const { error } = await supabase
+          .from('saved_places')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('place_id', placeId);
+
+        if (error) throw error;
+
+        // Also remove from all boards
+        const { error: boardError } = await supabase
+          .from('board_places')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('place_id', placeId);
+
+        if (boardError) {
+          console.error('Error removing from boards:', boardError);
+        }
+      } else {
+        // Save: insert into saved_places
+        const { error } = await supabase
+          .from('saved_places')
+          .insert({
+            user_id: user.id,
+            place_id: placeId,
+          });
+
+        // Ignore duplicate error - place is already saved
+        if (error && error.code !== '23505') throw error;
+      }
+    } catch (err) {
+      console.error('Error toggling save:', err);
+      
+      // Rollback optimistic update
+      setSavedPlaceIds(prev => {
+        const next = new Set(prev);
+        if (wasSaved) {
+          next.add(placeId);
+        } else {
+          next.delete(placeId);
+        }
+        return next;
+      });
+
+      toast({
+        title: 'Error',
+        description: wasSaved ? 'Failed to unsave place' : 'Failed to save place',
+        variant: 'destructive',
+      });
+    }
+  }, [user, savedPlaceIds, toast]);
 
   const isSaved = useCallback((placeId: string) => savedPlaceIds.has(placeId), [savedPlaceIds]);
 
@@ -210,7 +314,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setRankedPlaces,
       savedPlaceIds,
       toggleSave, 
-      isSaved, 
+      isSaved,
+      isLoadingSavedPlaces,
       userMood, 
       setUserMood, 
       userVibes,

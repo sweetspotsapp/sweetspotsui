@@ -6,6 +6,26 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Board } from "@/hooks/useBoards";
+import { useLocation } from "@/hooks/useLocation";
+
+// Format price level to $ symbols
+const formatPriceLevel = (priceLevel: number | null | undefined): string | null => {
+  if (priceLevel === null || priceLevel === undefined) return null;
+  return '$'.repeat(Math.max(1, Math.min(priceLevel, 4)));
+};
+
+// Haversine distance calculation
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 interface BoardViewProps {
   board: Board | "all";
@@ -23,11 +43,13 @@ type FilterOption = "all" | "$$" | "$$$" | "nearby";
 
 const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete, onPlaceClick, onRemoveFromBoard }: BoardViewProps) => {
   const navigate = useNavigate();
+  const { location: userLocation } = useLocation();
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [removingPlaceId, setRemovingPlaceId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places); // Local state for optimistic updates
   
   // AI Suggestions state
   const [suggestions, setSuggestions] = useState<RankedPlace[]>([]);
@@ -97,9 +119,27 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     
     fetchBoardPlaces();
   }, [isAllSaved, board]);
+
+  // Sync local places with props (for "all saved" board)
+  useEffect(() => {
+    if (isAllSaved) {
+      setLocalPlaces(places);
+    }
+  }, [isAllSaved, places]);
   
-  // Get places for this board - use fetched data for custom boards, props for "all"
-  const boardPlaces = isAllSaved ? places : boardPlacesData;
+  // Get places for this board - use local state for optimistic updates
+  const rawBoardPlaces = isAllSaved ? localPlaces : boardPlacesData;
+  
+  // Add distance calculation for places that don't have it
+  const boardPlaces = rawBoardPlaces.map(place => {
+    if (place.distance_meters !== null || !userLocation || !place.lat || !place.lng) {
+      return place;
+    }
+    return {
+      ...place,
+      distance_meters: calculateDistance(userLocation.lat, userLocation.lng, place.lat, place.lng)
+    };
+  });
   
   // Fetch AI suggestions when board loads
   useEffect(() => {
@@ -206,20 +246,23 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     e.stopPropagation();
     setRemovingPlaceId(place.place_id);
     
-    // Small delay for animation before removing
+    // Immediately update local state (optimistic update)
+    if (isAllSaved) {
+      setLocalPlaces(prev => prev.filter(p => p.place_id !== place.place_id));
+    } else {
+      setBoardPlacesData(prev => prev.filter(p => p.place_id !== place.place_id));
+    }
+    
+    // Call the parent handler
+    onRemoveFromBoard?.(place.place_id);
+    
+    // Clear the removing animation state
     setTimeout(() => {
-      onRemoveFromBoard?.(place.place_id);
-      
-      // Also update local state for custom boards
-      if (!isAllSaved) {
-        setBoardPlacesData(prev => prev.filter(p => p.place_id !== place.place_id));
-      }
-      
       setRemovingPlaceId(null);
-      
-      const name = isAllSaved ? "Saved" : board.name;
-      toast.success(`Removed from ${name}`);
-    }, 200);
+    }, 100);
+    
+    const name = isAllSaved ? "Saved" : board.name;
+    toast.success(`Removed from ${name}`);
   };
 
   return (
@@ -412,9 +455,16 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                     
                     <div className="p-2.5">
                       <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
-                      <p className="text-[11px] text-muted-foreground capitalize line-clamp-1 mt-0.5">
-                        {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[11px] text-muted-foreground capitalize line-clamp-1">
+                          {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
+                        </p>
+                        {formatPriceLevel(place.price_level) && (
+                          <span className="text-[11px] font-medium text-primary">
+                            {formatPriceLevel(place.price_level)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
