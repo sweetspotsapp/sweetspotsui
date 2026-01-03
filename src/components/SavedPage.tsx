@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Menu, User, SortAsc, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { useBoards, Board } from "@/hooks/useBoards";
-import { useSavedPlaces } from "@/hooks/useSavedPlaces";
+import { useApp } from "@/context/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "@/hooks/useLocation";
 
 // Components
 import BoardCard from "./saved/BoardCard";
@@ -14,17 +15,32 @@ import BoardView from "./saved/BoardView";
 import BoardEditor from "./saved/BoardEditor";
 import EmptyState from "./saved/EmptyState";
 
+// Haversine distance calculation
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 type SortOption = "recent" | "alphabetical" | "most-saved";
 
 const SavedPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { location: userLocation } = useLocation();
   const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, updateBoard, refetch: refetchBoards } = useBoards();
-  const { savedPlaceIds, isLoading: savedLoading, toggleSave } = useSavedPlaces();
+  const { savedPlaceIds, isLoadingSavedPlaces, toggleSave } = useApp();
   
   const [savedPlaces, setSavedPlaces] = useState<RankedPlace[]>([]);
   const [placeImages, setPlaceImages] = useState<Record<string, string[]>>({});
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
+  const isRemovingRef = useRef(false); // Track if we're in the middle of removing
   
   const [selectedBoard, setSelectedBoard] = useState<Board | "all" | null>(null);
   const [showBoardEditor, setShowBoardEditor] = useState(false);
@@ -34,6 +50,9 @@ const SavedPage = () => {
 
   // Fetch saved places data
   useEffect(() => {
+    // Skip fetch if we're in the middle of removing
+    if (isRemovingRef.current) return;
+    
     const fetchSavedPlaces = async () => {
       if (savedPlaceIds.size === 0) {
         setSavedPlaces([]);
@@ -56,28 +75,40 @@ const SavedPage = () => {
         }
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
-        // Convert to RankedPlace format
-        const places: RankedPlace[] = (data || []).map(place => ({
-          place_id: place.place_id,
-          name: place.name,
-          address: place.address,
-          lat: place.lat,
-          lng: place.lng,
-          categories: place.categories,
-          rating: place.rating,
-          ratings_total: place.ratings_total,
-          provider: place.provider,
-          eta_seconds: null,
-          distance_meters: null,
-          score: 0,
-          why: place.ai_reason || '',
-          photo_name: place.photo_name,
-          photos: place.photos?.slice(0, 3).map((photoPath: string) => 
-            `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`
-          ) || (place.photo_name ? [`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`] : undefined),
-          filter_tags: place.filter_tags,
-          price_level: place.price_level,
-        }));
+        // Convert to RankedPlace format with distance calculation
+        const places: RankedPlace[] = (data || []).map(place => {
+          let distance_meters: number | null = null;
+          
+          // Calculate distance if we have user location and place coordinates
+          if (userLocation && place.lat && place.lng) {
+            distance_meters = calculateDistance(
+              userLocation.lat, userLocation.lng,
+              place.lat, place.lng
+            );
+          }
+          
+          return {
+            place_id: place.place_id,
+            name: place.name,
+            address: place.address,
+            lat: place.lat,
+            lng: place.lng,
+            categories: place.categories,
+            rating: place.rating,
+            ratings_total: place.ratings_total,
+            provider: place.provider,
+            eta_seconds: null,
+            distance_meters,
+            score: 0,
+            why: place.ai_reason || '',
+            photo_name: place.photo_name,
+            photos: place.photos?.slice(0, 3).map((photoPath: string) => 
+              `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`
+            ) || (place.photo_name ? [`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`] : undefined),
+            filter_tags: place.filter_tags,
+            price_level: place.price_level,
+          };
+        });
 
         setSavedPlaces(places);
 
@@ -108,7 +139,7 @@ const SavedPage = () => {
     };
 
     fetchSavedPlaces();
-  }, [savedPlaceIds]);
+  }, [savedPlaceIds, userLocation]);
   
   // Get cover images for a board (up to 3 for collage)
   const getBoardCoverImages = (board: Board): string[] => {
@@ -147,11 +178,20 @@ const SavedPage = () => {
   };
 
   const handleRemoveFromBoard = async (placeId: string) => {
+    // Mark that we're removing to prevent re-fetch from overwriting
+    isRemovingRef.current = true;
+    
     if (selectedBoard === "all") {
-      // Remove from saved places entirely
-      await toggleSave(placeId);
-      // Also update local savedPlaces state immediately
+      // Immediately update local state (optimistic)
       setSavedPlaces(prev => prev.filter(p => p.place_id !== placeId));
+      
+      // Then remove from saved places in DB
+      await toggleSave(placeId);
+      
+      // Reset flag after a short delay
+      setTimeout(() => {
+        isRemovingRef.current = false;
+      }, 500);
       return;
     }
     
@@ -164,9 +204,14 @@ const SavedPage = () => {
           : prev
       );
     }
+    
+    // Reset flag
+    setTimeout(() => {
+      isRemovingRef.current = false;
+    }, 500);
   };
 
-  const isLoading = boardsLoading || savedLoading || isLoadingPlaces;
+  const isLoading = boardsLoading || isLoadingSavedPlaces || isLoadingPlaces;
   const hasBoards = boards.length > 0 || savedPlaces.length > 0;
 
   if (!user) {
