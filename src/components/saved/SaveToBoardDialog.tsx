@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { X, Plus, Check, FolderPlus, Loader2 } from "lucide-react";
+import { X, Check, FolderPlus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBoards } from "@/hooks/useBoards";
-import { useSavedPlaces } from "@/hooks/useSavedPlaces";
+import { useApp } from "@/context/AppContext";
 
 interface SaveToBoardDialogProps {
   placeId: string;
@@ -23,7 +23,7 @@ const boardSuggestions = ["Chill", "Party", "Date", "Family", "Solo", "Work"];
 
 const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoardDialogProps) => {
   const { boards, createBoard, addPlaceToBoard, removePlaceFromBoard, isLoading } = useBoards();
-  const { toggleSave, isSaved } = useSavedPlaces();
+  const { toggleSave, isSaved } = useApp();
   
   const [selectedBoards, setSelectedBoards] = useState<string[]>([]);
   const [showNewBoard, setShowNewBoard] = useState(false);
@@ -67,10 +67,12 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
 
   const handleSave = async () => {
     setIsSaving(true);
-    
+
     try {
+      const alreadySaved = isSaved(placeId);
+
       // First, ensure the place is saved
-      if (!isSaved(placeId)) {
+      if (!alreadySaved) {
         await toggleSave(placeId);
       }
 
@@ -78,14 +80,28 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
       for (const board of boards) {
         const shouldHavePlace = selectedBoards.includes(board.id);
         const hasPlace = board.placeIds.includes(placeId);
-        
+
         if (shouldHavePlace && !hasPlace) {
           await addPlaceToBoard(board.id, placeId);
         } else if (!shouldHavePlace && hasPlace) {
           await removePlaceFromBoard(board.id, placeId);
         }
       }
-      
+
+      onSaved?.();
+      onClose();
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemoveEntirely = async () => {
+    setIsSaving(true);
+
+    try {
+      if (isSaved(placeId)) {
+        await toggleSave(placeId);
+      }
       onSaved?.();
       onClose();
     } finally {
@@ -257,7 +273,19 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-border/50">
+            <div className="p-4 border-t border-border/50 space-y-2">
+              {isSaved(placeId) && (
+                <button
+                  onClick={handleRemoveEntirely}
+                  disabled={isSaving}
+                  className="w-full py-3 rounded-xl bg-destructive text-destructive-foreground font-medium 
+                             hover:bg-destructive/90 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Remove entirely
+                </button>
+              )}
+
               <button
                 onClick={handleSave}
                 disabled={isSaving}
@@ -265,8 +293,8 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
                            hover:bg-primary/90 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {selectedBoards.length === 0 
-                  ? 'Save to All Saved' 
+                {selectedBoards.length === 0
+                  ? (isSaved(placeId) ? 'Done' : 'Save to All Saved')
                   : `Save to ${selectedBoards.length} ${selectedBoards.length === 1 ? 'Board' : 'Boards'}`}
               </button>
             </div>

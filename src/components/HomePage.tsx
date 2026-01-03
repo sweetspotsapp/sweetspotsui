@@ -186,7 +186,7 @@ const getTimeBasedPrompt = (): string => {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { userMood, setUserMood } = useApp();
+  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave } = useApp();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
@@ -239,7 +239,6 @@ const HomePage = () => {
     }
   }, [userMood]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [localSavedIds, setLocalSavedIds] = useState<Set<string>>(new Set());
   const [aiSummary, setAiSummary] = useState<string | null>(() => {
     if (wasSkipMode.current) return null;
     try {
@@ -368,30 +367,26 @@ const HomePage = () => {
 
   // Handle save
   const handleSaveClick = useCallback((placeId: string) => {
-    if (localSavedIds.has(placeId)) {
-      setLocalSavedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(placeId);
-        return next;
-      });
-    } else {
-      const place = getPlaceById(placeId);
-      if (place) {
-        setSaveToBoardPlace(place);
-      }
+    if (isPlaceSaved(placeId)) {
+      // Unsave directly
+      void togglePlaceSave(placeId);
+      return;
     }
-  }, [localSavedIds, getPlaceById]);
+
+    const place = getPlaceById(placeId);
+    if (place) {
+      setSaveToBoardPlace(place);
+    }
+  }, [isPlaceSaved, togglePlaceSave, getPlaceById]);
 
   const handleBoardSaveConfirmed = useCallback(() => {
-    if (saveToBoardPlace) {
-      setLocalSavedIds((prev) => new Set(prev).add(saveToBoardPlace.id));
-    }
+    // Saved state comes from AppContext; just close the dialog.
     setSaveToBoardPlace(null);
-  }, [saveToBoardPlace]);
+  }, []);
 
   const isSaved = useCallback(
-    (placeId: string) => localSavedIds.has(placeId),
-    [localSavedIds]
+    (placeId: string) => isPlaceSaved(placeId),
+    [isPlaceSaved]
   );
 
   const handlePlaceClick = (place: MockPlace) => {

@@ -14,6 +14,7 @@ import BoardCard from "./saved/BoardCard";
 import BoardView from "./saved/BoardView";
 import BoardEditor from "./saved/BoardEditor";
 import EmptyState from "./saved/EmptyState";
+import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 
 // Haversine distance calculation
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -43,6 +44,7 @@ const SavedPage = () => {
   const isRemovingRef = useRef(false); // Track if we're in the middle of removing
   
   const [selectedBoard, setSelectedBoard] = useState<Board | "all" | null>(null);
+  const [managePlace, setManagePlace] = useState<{ id: string; name: string } | null>(null);
   const [showBoardEditor, setShowBoardEditor] = useState(false);
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
@@ -166,6 +168,19 @@ const SavedPage = () => {
     }
   });
 
+  // Keep the currently opened custom board in sync with fresh board data
+  useEffect(() => {
+    if (!selectedBoard || selectedBoard === "all") return;
+
+    const updated = boards.find(b => b.id === selectedBoard.id);
+    if (!updated) {
+      setSelectedBoard(null);
+      return;
+    }
+
+    setSelectedBoard(updated);
+  }, [boards, selectedBoard]);
+
   const handleEditBoard = (board: Board) => {
     setEditingBoard(board);
     setSelectedBoard(null);
@@ -178,37 +193,33 @@ const SavedPage = () => {
   };
 
   const handleRemoveFromBoard = async (placeId: string) => {
-    // Mark that we're removing to prevent re-fetch from overwriting
     isRemovingRef.current = true;
-    
-    if (selectedBoard === "all") {
-      // Immediately update local state (optimistic)
-      setSavedPlaces(prev => prev.filter(p => p.place_id !== placeId));
-      
-      // Then remove from saved places in DB
-      await toggleSave(placeId);
-      
-      // Reset flag after a short delay
-      setTimeout(() => {
-        isRemovingRef.current = false;
-      }, 500);
-      return;
-    }
-    
-    if (selectedBoard) {
-      await removePlaceFromBoard(selectedBoard.id, placeId);
-      // Update the selectedBoard state as well
-      setSelectedBoard(prev => 
-        prev && prev !== "all" 
-          ? { ...prev, placeIds: prev.placeIds.filter(id => id !== placeId) }
-          : prev
-      );
-    }
-    
-    // Reset flag
-    setTimeout(() => {
+
+    try {
+      if (selectedBoard === "all") {
+        // Immediately update local state (optimistic)
+        setSavedPlaces(prev => prev.filter(p => p.place_id !== placeId));
+
+        // Remove from saved places in DB (also clears from all boards)
+        await toggleSave(placeId);
+
+        // Refresh boards so counts + board.placeIds update immediately
+        await refetchBoards();
+        return;
+      }
+
+      if (selectedBoard) {
+        await removePlaceFromBoard(selectedBoard.id, placeId);
+        // Update the selectedBoard state as well (optimistic)
+        setSelectedBoard(prev =>
+          prev && prev !== "all"
+            ? { ...prev, placeIds: prev.placeIds.filter(id => id !== placeId) }
+            : prev
+        );
+      }
+    } finally {
       isRemovingRef.current = false;
-    }, 500);
+    }
   };
 
   const isLoading = boardsLoading || isLoadingSavedPlaces || isLoadingPlaces;
@@ -371,7 +382,19 @@ const SavedPage = () => {
           onEdit={selectedBoard !== "all" ? () => handleEditBoard(selectedBoard) : undefined}
           onDelete={selectedBoard !== "all" ? () => handleDeleteBoard(selectedBoard) : undefined}
           onPlaceClick={(place) => navigate(`/place/${place.place_id}`)}
-          onRemoveFromBoard={handleRemoveFromBoard}
+          onManagePlace={(place) => setManagePlace({ id: place.place_id, name: place.name })}
+        />
+      )}
+
+      {/* Save / Manage Dialog */}
+      {managePlace && (
+        <SaveToBoardDialog
+          placeId={managePlace.id}
+          placeName={managePlace.name}
+          onClose={() => setManagePlace(null)}
+          onSaved={async () => {
+            await refetchBoards();
+          }}
         />
       )}
 
