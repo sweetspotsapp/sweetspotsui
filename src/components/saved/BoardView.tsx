@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign, Heart, Sparkles, Loader2 } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Board } from "@/hooks/useBoards";
 import { useLocation } from "@/hooks/useLocation";
@@ -35,21 +34,20 @@ interface BoardViewProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onPlaceClick?: (place: RankedPlace) => void;
-  onRemoveFromBoard?: (placeId: string) => void;
+  onManagePlace?: (place: RankedPlace) => void;
 }
 
 type SortOption = "recent" | "name" | "rating" | "distance";
 type FilterOption = "all" | "$$" | "$$$" | "nearby";
 
-const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete, onPlaceClick, onRemoveFromBoard }: BoardViewProps) => {
+const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete, onPlaceClick, onManagePlace }: BoardViewProps) => {
   const navigate = useNavigate();
   const { location: userLocation } = useLocation();
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
-  const [removingPlaceId, setRemovingPlaceId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places); // Local state for optimistic updates
+  const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places); // Local state to keep All Saved in sync
   
   // AI Suggestions state
   const [suggestions, setSuggestions] = useState<RankedPlace[]>([]);
@@ -242,27 +240,9 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     }
   };
 
-  const handleRemove = (e: React.MouseEvent, place: RankedPlace) => {
+  const handleHeartClick = (e: React.MouseEvent, place: RankedPlace) => {
     e.stopPropagation();
-    setRemovingPlaceId(place.place_id);
-    
-    // Immediately update local state (optimistic update)
-    if (isAllSaved) {
-      setLocalPlaces(prev => prev.filter(p => p.place_id !== place.place_id));
-    } else {
-      setBoardPlacesData(prev => prev.filter(p => p.place_id !== place.place_id));
-    }
-    
-    // Call the parent handler
-    onRemoveFromBoard?.(place.place_id);
-    
-    // Clear the removing animation state
-    setTimeout(() => {
-      setRemovingPlaceId(null);
-    }, 100);
-    
-    const name = isAllSaved ? "Saved" : board.name;
-    toast.success(`Removed from ${name}`);
+    onManagePlace?.(place);
   };
 
   return (
@@ -409,12 +389,10 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                       "bg-card rounded-xl overflow-hidden border border-border/50",
                       "cursor-pointer active:scale-[0.98] transition-all duration-200",
                       "hover:shadow-md hover:border-primary/30 group",
-                      removingPlaceId === place.place_id 
-                        ? "opacity-0 scale-95 transition-all duration-200" 
-                        : "opacity-0 animate-fade-up"
+                      "opacity-0 animate-fade-up"
                     )}
                     style={{ 
-                      animationDelay: removingPlaceId === place.place_id ? '0ms' : `${index * 50}ms`, 
+                      animationDelay: `${index * 50}ms`, 
                       animationFillMode: 'forwards' 
                     }}
                   >
@@ -426,10 +404,10 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                       
-                      {/* Remove from Board Button */}
+                      {/* Manage Saved Spot Button */}
                       <button 
                         className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
-                        onClick={(e) => handleRemove(e, place)}
+                        onClick={(e) => handleHeartClick(e, place)}
                       >
                         <Heart className="w-4 h-4 text-primary fill-primary" />
                       </button>
