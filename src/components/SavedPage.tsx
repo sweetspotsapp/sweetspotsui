@@ -225,6 +225,9 @@ const SavedPage = () => {
   const isLoading = boardsLoading || isLoadingSavedPlaces || isLoadingPlaces;
   const hasBoards = boards.length > 0 || savedPlaces.length > 0;
 
+  // Get auth dialog state from context
+  const { showAuthDialog, setShowAuthDialog } = useApp();
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 pb-20 max-w-md mx-auto">
@@ -236,7 +239,7 @@ const SavedPage = () => {
           Create an account to save your favorite places and organize them into boards
         </p>
         <button
-          onClick={() => navigate('/auth')}
+          onClick={() => setShowAuthDialog(true)}
           className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
         >
           Sign In

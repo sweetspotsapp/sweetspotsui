@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
+import AuthDialog from "@/components/AuthDialog";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -13,8 +13,15 @@ type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { hasCompletedOnboarding, setUserMood, completeOnboarding } = useApp();
-  const navigate = useNavigate();
+  const { 
+    hasCompletedOnboarding, 
+    setUserMood, 
+    completeOnboarding,
+    showAuthDialog,
+    setShowAuthDialog,
+    pendingSavePlaceId,
+    toggleSave
+  } = useApp();
   
   const [activeTab, setActiveTab] = useState<"home" | "saved" | "profile">("home");
   const [appState, setAppState] = useState<AppState>(
@@ -30,12 +37,15 @@ const Index = () => {
     }
   }, [hasCompletedOnboarding, appState]);
 
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
+  // Handle auth success - complete pending save if any
+  const handleAuthSuccess = async () => {
+    if (pendingSavePlaceId) {
+      // Small delay to ensure auth state is fully updated
+      setTimeout(() => {
+        toggleSave(pendingSavePlaceId);
+      }, 100);
     }
-  }, [user, authLoading, navigate]);
+  };
 
   const handleMoodSubmit = (mood: string) => {
     setUserMood(mood);
@@ -93,6 +103,13 @@ const Index = () => {
       <BottomNav 
         activeTab={activeTab} 
         onTabChange={handleTabChange}
+      />
+      
+      {/* Auth dialog for saving without login */}
+      <AuthDialog 
+        open={showAuthDialog} 
+        onOpenChange={setShowAuthDialog}
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );
