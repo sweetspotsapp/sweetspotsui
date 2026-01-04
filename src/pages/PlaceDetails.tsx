@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, DollarSign } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, DollarSign, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,8 @@ import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
 import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
 import BottomNav from '@/components/BottomNav';
 import SaveToBoardDialog from '@/components/saved/SaveToBoardDialog';
+import AuthDialog from '@/components/AuthDialog';
+import { useAuth } from '@/hooks/useAuth';
 interface OpeningHoursData {
   open_now: boolean;
   weekday_text: string[];
@@ -311,6 +313,8 @@ const PlaceDetailsPage = () => {
   } | null>(null);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [showSaveToBoardDialog, setShowSaveToBoardDialog] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const { user } = useAuth();
 
   // Get user location on mount
   useEffect(() => {
@@ -678,8 +682,106 @@ const PlaceDetailsPage = () => {
         </div>
       </div>;
   }
+  // Show blurred preview with auth overlay for non-authenticated users when place not found
   if (error || !place) {
-    return <div className="min-h-screen bg-background max-w-[420px] mx-auto flex flex-col items-center justify-center p-6">
+    // If user is not logged in, show a teaser with auth prompt
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-background max-w-[420px] mx-auto relative">
+          {/* Floating Back Button */}
+          <div className="fixed top-4 left-4 z-50">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate(-1)} 
+              className="bg-background/90 backdrop-blur-md shadow-lg hover:bg-background rounded-full w-10 h-10"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Blurred Background Content (Teaser) */}
+          <div className="filter blur-sm pointer-events-none select-none">
+            {/* Placeholder Hero Image */}
+            <div className="w-full aspect-[4/3] bg-gradient-to-br from-primary/20 to-secondary/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+            </div>
+            
+            {/* Placeholder Content */}
+            <div className="px-4 py-5 space-y-6">
+              <div className="space-y-3">
+                <div className="h-8 w-3/4 bg-muted rounded-lg" />
+                <div className="h-4 w-full bg-muted/60 rounded" />
+                <div className="flex gap-3">
+                  <div className="h-10 w-20 bg-primary/20 rounded-xl" />
+                  <div className="h-10 w-24 bg-muted rounded-xl" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-24 bg-muted rounded-xl" />
+                <div className="h-24 bg-muted rounded-xl" />
+                <div className="h-24 bg-muted rounded-xl" />
+              </div>
+              <div className="space-y-3">
+                <div className="h-6 w-1/2 bg-muted rounded" />
+                <div className="h-20 w-full bg-muted/60 rounded-xl" />
+              </div>
+            </div>
+          </div>
+
+          {/* Auth Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px] z-40">
+            <div className="bg-card rounded-2xl shadow-elevated p-6 mx-4 max-w-sm w-full text-center space-y-4 border border-border">
+              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                <Lock className="w-8 h-8 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-foreground">
+                  Sign in to explore
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  Create a free account to view place details, save your favorites, and discover personalized recommendations.
+                </p>
+              </div>
+              <div className="space-y-3 pt-2">
+                <Button 
+                  variant="primary" 
+                  size="lg" 
+                  className="w-full rounded-xl"
+                  onClick={() => setShowAuthDialog(true)}
+                >
+                  Sign in or Sign up
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground"
+                  onClick={() => navigate(-1)}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Go back
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Auth Dialog */}
+          <AuthDialog 
+            open={showAuthDialog} 
+            onOpenChange={setShowAuthDialog}
+            onSuccess={() => {
+              setShowAuthDialog(false);
+              // Refresh the page to reload place data
+              window.location.reload();
+            }}
+          />
+        </div>
+      );
+    }
+
+    // User is logged in but place genuinely not found
+    return (
+      <div className="min-h-screen bg-background max-w-[420px] mx-auto flex flex-col items-center justify-center p-6">
         <div className="text-center space-y-4">
           <h2 className="text-xl font-semibold text-foreground">
             {error || 'Place not found'}
@@ -692,7 +794,8 @@ const PlaceDetailsPage = () => {
             Go Back
           </Button>
         </div>
-      </div>;
+      </div>
+    );
   }
   const saved = placeId ? isSaved(placeId) : false;
   const priceRange = getPriceRangeFromLevel(place.price_level, place.categories);
