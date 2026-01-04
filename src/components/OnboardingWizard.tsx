@@ -1,29 +1,16 @@
-import { useState } from "react";
-import { Check, MapPin, Navigation } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ArrowRight, MapPin, Navigation } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import type { OnboardingData } from "@/context/AppContext";
+import { WORLD_CITIES } from "@/data/worldCities";
 
 interface OnboardingWizardProps {
   onComplete: (data: OnboardingData) => void;
 }
-
-// Popular cities around the world
-const POPULAR_CITIES = [
-  { name: "Tokyo", country: "Japan" },
-  { name: "Bali", country: "Indonesia" },
-  { name: "Bangkok", country: "Thailand" },
-  { name: "Singapore", country: "Singapore" },
-  { name: "Seoul", country: "South Korea" },
-  { name: "Paris", country: "France" },
-  { name: "London", country: "United Kingdom" },
-  { name: "New York", country: "USA" },
-  { name: "Sydney", country: "Australia" },
-  { name: "Dubai", country: "UAE" },
-];
 
 // SweetSpots Logo SVG
 const SweetSpotsLogo = () => (
@@ -65,6 +52,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [locationInput, setLocationInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [moodValue, setMoodValue] = useState("");
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
   
@@ -75,7 +63,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     explore_location: null,
   });
 
-  const totalSteps = 2; // Just location + mood prompt
+  const totalSteps = 2;
 
   const moodSuggestions = [
     "chill vibes",
@@ -88,16 +76,33 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     "live music",
   ];
 
+  // Filter cities based on input
+  const filteredCities = useMemo(() => {
+    if (!locationInput.trim()) return [];
+    const query = locationInput.toLowerCase();
+    return WORLD_CITIES.filter(city => 
+      city.name.toLowerCase().includes(query) || 
+      city.country.toLowerCase().includes(query)
+    ).slice(0, 8); // Limit to 8 results
+  }, [locationInput]);
+
   const handleSelectCity = (cityName: string) => {
     setLocationInput(cityName);
     setData(prev => ({ ...prev, explore_location: cityName }));
+    setShowSuggestions(false);
+  };
+
+  const handleConfirmCity = () => {
+    if (locationInput.trim()) {
+      setData(prev => ({ ...prev, explore_location: locationInput.trim() }));
+      setShowSuggestions(false);
+    }
   };
 
   const handleNext = async () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Final step - save and complete
       await saveAndComplete();
     }
   };
@@ -109,14 +114,12 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   };
 
   const handleSkip = () => {
-    // When skipping, default to nearby places
     const skipData = { ...data, explore_location: "nearby" };
     setData(skipData);
     onComplete(skipData);
   };
 
   const saveAndComplete = async () => {
-    // Combine mood input with selected suggestions
     const parts: string[] = [];
     if (moodValue.trim()) {
       parts.push(moodValue.trim());
@@ -128,7 +131,6 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     });
     
     const finalMood = parts.join(", ");
-    const finalData = { ...data, mood: finalMood };
 
     if (!user) {
       onComplete(data);
@@ -163,13 +165,13 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const handleSelectNearby = () => {
     setData(prev => ({ ...prev, explore_location: "nearby" }));
     setLocationInput("");
+    setShowSuggestions(false);
   };
 
   const handleLocationInputChange = (value: string) => {
     setLocationInput(value);
-    if (value.trim()) {
-      setData(prev => ({ ...prev, explore_location: value.trim() }));
-    } else {
+    setShowSuggestions(value.trim().length > 0);
+    if (!value.trim()) {
       setData(prev => ({ ...prev, explore_location: null }));
     }
   };
@@ -186,7 +188,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     });
   };
 
-  const hasMoodInput = moodValue.trim() || selectedSuggestions.size > 0;
+  const isLocationConfirmed = data.explore_location && data.explore_location !== "nearby" && data.explore_location === locationInput;
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -197,27 +199,62 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
             <p className="text-muted-foreground mb-6">Tell us where you'd like to discover amazing spots</p>
             
             <div className="border border-border rounded-2xl p-4 space-y-4">
-              {/* Nearby option */}
-              <button
-                onClick={handleSelectNearby}
-                className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl text-left transition-all ${
-                  data.explore_location === "nearby"
-                    ? 'bg-primary/10 border-2 border-primary'
-                    : 'bg-muted/50 hover:bg-muted/80 border border-border'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  data.explore_location === "nearby" ? 'bg-primary' : 'bg-muted'
-                }`}>
-                  <Navigation className={`w-5 h-5 ${
-                    data.explore_location === "nearby" ? 'text-primary-foreground' : 'text-muted-foreground'
-                  }`} />
-                </div>
-                <div>
-                  <span className="text-foreground font-medium block">Nearby places</span>
-                  <span className="text-muted-foreground text-sm">Use my current location</span>
-                </div>
-              </button>
+              {/* Location input - Main */}
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+                <Input
+                  type="text"
+                  value={locationInput}
+                  onChange={(e) => handleLocationInputChange(e.target.value)}
+                  placeholder="Enter a city or area"
+                  className={`pl-10 pr-12 h-14 rounded-xl text-base ${
+                    isLocationConfirmed
+                      ? 'border-primary ring-1 ring-primary'
+                      : ''
+                  }`}
+                  onFocus={() => {
+                    if (locationInput.trim()) {
+                      setShowSuggestions(true);
+                    }
+                    if (data.explore_location === "nearby") {
+                      setData(prev => ({ ...prev, explore_location: null }));
+                    }
+                  }}
+                  onBlur={() => {
+                    // Delay hiding to allow clicking on suggestions
+                    setTimeout(() => setShowSuggestions(false), 200);
+                  }}
+                />
+                {/* Confirm button */}
+                {locationInput.trim() && (
+                  <button
+                    onClick={handleConfirmCity}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                      isLocationConfirmed
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                )}
+                
+                {/* City suggestions dropdown */}
+                {showSuggestions && filteredCities.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 overflow-hidden">
+                    {filteredCities.map((city) => (
+                      <button
+                        key={`${city.name}-${city.country}`}
+                        onClick={() => handleSelectCity(city.name)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0"
+                      >
+                        <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-foreground font-medium">{city.name}, <span className="text-muted-foreground font-normal">{city.country}</span></span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               
               {/* Divider */}
               <div className="flex items-center gap-3">
@@ -226,51 +263,27 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                 <div className="flex-1 h-px bg-border" />
               </div>
               
-              {/* Location input */}
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  value={locationInput}
-                  onChange={(e) => handleLocationInputChange(e.target.value)}
-                  placeholder="Enter a city or area"
-                  className={`pl-10 pr-10 h-12 rounded-xl ${
-                    data.explore_location && data.explore_location !== "nearby"
-                      ? 'border-primary ring-1 ring-primary'
-                      : ''
-                  }`}
-                  onFocus={() => {
-                    if (data.explore_location === "nearby") {
-                      setData(prev => ({ ...prev, explore_location: null }));
-                    }
-                  }}
-                />
-                {data.explore_location && data.explore_location !== "nearby" && (
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-                )}
-              </div>
-              
-              {/* Popular cities list */}
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                <p className="text-xs text-muted-foreground px-1 mb-2">Popular destinations</p>
-                {POPULAR_CITIES.map((city) => {
-                  const isSelected = data.explore_location === city.name;
-                  return (
-                    <button
-                      key={city.name}
-                      onClick={() => handleSelectCity(city.name)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all ${
-                        isSelected
-                          ? 'bg-primary/10 text-primary'
-                          : 'hover:bg-muted/50 text-foreground'
-                      }`}
-                    >
-                      <span className="font-medium">{city.name}, <span className="text-muted-foreground font-normal">{city.country}</span></span>
-                      {isSelected && <Check className="w-4 h-4 text-primary" />}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Nearby option - Secondary */}
+              <button
+                onClick={handleSelectNearby}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
+                  data.explore_location === "nearby"
+                    ? 'bg-primary/10 border border-primary'
+                    : 'hover:bg-muted/50'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  data.explore_location === "nearby" ? 'bg-primary' : 'bg-muted'
+                }`}>
+                  <Navigation className={`w-4 h-4 ${
+                    data.explore_location === "nearby" ? 'text-primary-foreground' : 'text-muted-foreground'
+                  }`} />
+                </div>
+                <div>
+                  <span className="text-foreground font-medium text-sm block">Nearby places</span>
+                  <span className="text-muted-foreground text-xs">Use my current location</span>
+                </div>
+              </button>
             </div>
           </>
         );
@@ -295,7 +308,6 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                 "
               />
 
-              {/* Suggestion chips */}
               <div className="flex flex-wrap gap-2">
                 {moodSuggestions.map((suggestion) => {
                   const isSelected = selectedSuggestions.has(suggestion);
@@ -326,22 +338,17 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-[420px] mx-auto px-6 py-8">
-      {/* Logo */}
       <div className="mb-12">
         <SweetSpotsLogo />
       </div>
       
-      {/* Step Content */}
       <div className="flex-1">
         {renderStepContent()}
       </div>
       
-      {/* Bottom Section */}
       <div className="mt-8 space-y-4">
-        {/* Step Indicator */}
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
         
-        {/* Navigation Buttons */}
         <div className="flex gap-3">
           <Button
             variant="outline"
@@ -360,7 +367,6 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
           </Button>
         </div>
         
-        {/* Skip Link */}
         <button
           onClick={handleSkip}
           disabled={isSubmitting}
