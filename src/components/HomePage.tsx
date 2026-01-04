@@ -22,6 +22,7 @@ interface MockPlaceWithCoords extends MockPlace {
   lng?: number;
   filter_tags?: string[];
   price_level?: number;
+  is_open_now?: boolean | null;
 }
 
 // Helper to convert RankedPlace to MockPlace format with coords
@@ -38,6 +39,7 @@ const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   lng: place.lng,
   filter_tags: place.filter_tags || [],
   price_level: place.price_level,
+  is_open_now: place.is_open_now,
 });
 
 // Filter label mapping
@@ -627,7 +629,7 @@ const HomePage = () => {
     const moreToExplore = filteredResults.filter(p => !usedPlaceIds.has(p.id));
     if (moreToExplore.length > 0) {
       sections.push({
-        title: "🗺️ More to Explore",
+        title: "More to Explore",
         places: moreToExplore.slice(0, 10),
         featured: false,
       });

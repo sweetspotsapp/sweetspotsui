@@ -27,6 +27,7 @@ interface PlaceCandidate {
   photo_name: string | null;
   price_level?: number | null;
   filter_tags?: string[] | null;
+  is_open_now?: boolean | null;
 }
 
 interface RankedPlace extends PlaceCandidate {
@@ -34,6 +35,7 @@ interface RankedPlace extends PlaceCandidate {
   distance_meters: number | null;
   score: number;
   why: string;
+  is_open_now?: boolean | null;
 }
 
 interface Profile {
@@ -513,7 +515,7 @@ serve(async (req) => {
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': googleMapsApiKey,
-          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos,places.priceLevel,nextPageToken'
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos,places.priceLevel,places.currentOpeningHours,nextPageToken'
         },
         body: JSON.stringify(requestBody)
       });
@@ -556,6 +558,7 @@ serve(async (req) => {
       const firstPhoto = place.photos?.[0];
       const priceLevel = place.priceLevel ? 
         ['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'].indexOf(place.priceLevel) : null;
+      const isOpenNow = place.currentOpeningHours?.openNow ?? null;
       
       return {
         place_id: place.id,
@@ -568,6 +571,7 @@ serve(async (req) => {
         ratings_total: place.userRatingCount || null,
         photo_name: firstPhoto?.name || null,
         price_level: priceLevel,
+        is_open_now: isOpenNow,
       };
     });
 

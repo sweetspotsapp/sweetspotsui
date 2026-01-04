@@ -19,6 +19,7 @@ export interface UnifiedPlace {
   price_level?: number | null;
   filter_tags?: string[] | null;
   photo_url?: string | null;
+  is_open_now?: boolean | null;
 }
 
 interface SearchResult {
