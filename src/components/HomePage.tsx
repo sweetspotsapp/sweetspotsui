@@ -736,9 +736,17 @@ const HomePage = () => {
             )}
           </button>
 
-          <h1 className="text-xl font-bold text-foreground tracking-tight">
-            SweetSpots
-          </h1>
+          <div className="flex flex-col items-center">
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
+              SweetSpots
+            </h1>
+            {onboardingData?.explore_location && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="w-3 h-3" />
+                <span>{onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location}</span>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => setIsProfileMenuOpen(true)}
