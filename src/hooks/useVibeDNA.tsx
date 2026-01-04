@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { LucideIcon, Moon, Volume2, Coffee, Users, Sparkles, Camera, Utensils, MapPin, Music, Wine, Heart, Compass } from "lucide-react";
 
 interface VibeScore {
   label: string;
@@ -8,8 +9,16 @@ interface VibeScore {
   color: string;
 }
 
+export interface PersonalityTrait {
+  icon: LucideIcon;
+  label: string;
+  description: string;
+  score: number;
+}
+
 interface VibeDNAData {
   vibeBreakdown: VibeScore[];
+  personalityTraits: PersonalityTrait[];
   isLoading: boolean;
   totalInteractions: number;
   searchCount: number;
@@ -82,9 +91,90 @@ const VIBE_COLORS: Record<string, string> = {
   'Adventure': 'bg-emerald-500',
 };
 
+// Personality trait definitions based on behavior patterns
+const PERSONALITY_DEFINITIONS: Array<{
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  description: string;
+  triggers: { tags?: string[]; categories?: string[]; minScore: number };
+}> = [
+  {
+    id: 'night_owl',
+    icon: Moon,
+    label: 'Evening explorer',
+    description: 'You prefer spots that come alive after dark',
+    triggers: { tags: ['nightlife', 'late_night', 'dancing', 'live_music'], categories: ['bar', 'club', 'pub', 'nightclub'], minScore: 2 }
+  },
+  {
+    id: 'conversation_seeker',
+    icon: Volume2,
+    label: 'Conversation seeker',
+    description: 'Quiet enough to talk, lively enough to feel alive',
+    triggers: { tags: ['quiet', 'cozy', 'intimate', 'relaxed'], categories: ['cafe', 'coffee', 'tea'], minScore: 2 }
+  },
+  {
+    id: 'cafe_hopper',
+    icon: Coffee,
+    label: 'Café hopper',
+    description: "You've got a thing for good coffee and better vibes",
+    triggers: { tags: ['cozy', 'wifi_work', 'reading_friendly'], categories: ['cafe', 'coffee', 'bakery'], minScore: 2 }
+  },
+  {
+    id: 'social_butterfly',
+    icon: Users,
+    label: 'Social butterfly',
+    description: 'Group-friendly spots are your go-to',
+    triggers: { tags: ['group_friendly', 'lively', 'games', 'karaoke'], categories: ['bar', 'restaurant', 'entertainment'], minScore: 2 }
+  },
+  {
+    id: 'aesthetic_hunter',
+    icon: Camera,
+    label: 'Aesthetic hunter',
+    description: 'You chase the prettiest corners and Insta-worthy spots',
+    triggers: { tags: ['instagrammable', 'scenic', 'rooftop', 'waterfront', 'artsy'], categories: ['gallery', 'museum', 'art'], minScore: 2 }
+  },
+  {
+    id: 'foodie',
+    icon: Utensils,
+    label: 'Flavor chaser',
+    description: 'Great food is your love language',
+    triggers: { tags: ['fine_dining', 'local_cuisine', 'street_food', 'brunch'], categories: ['restaurant', 'food', 'dining'], minScore: 2 }
+  },
+  {
+    id: 'hidden_gem_finder',
+    icon: Compass,
+    label: 'Hidden gem finder',
+    description: 'You love discovering spots off the beaten path',
+    triggers: { tags: ['hidden_gem', 'off_beaten_path', 'local_favorite', 'unique'], categories: [], minScore: 2 }
+  },
+  {
+    id: 'cocktail_connoisseur',
+    icon: Wine,
+    label: 'Cocktail connoisseur',
+    description: 'A well-crafted drink is your thing',
+    triggers: { tags: ['cocktails', 'wine', 'craft_beer', 'speakeasy'], categories: ['bar', 'lounge', 'wine bar'], minScore: 2 }
+  },
+  {
+    id: 'music_lover',
+    icon: Music,
+    label: 'Music lover',
+    description: 'Live tunes make any spot better',
+    triggers: { tags: ['live_music', 'dancing', 'karaoke'], categories: ['music venue', 'jazz', 'concert'], minScore: 2 }
+  },
+  {
+    id: 'romantic',
+    icon: Heart,
+    label: 'Romantic at heart',
+    description: 'Intimate, date-worthy spots are your specialty',
+    triggers: { tags: ['romantic', 'intimate', 'scenic', 'fine_dining'], categories: [], minScore: 2 }
+  },
+];
+
 export const useVibeDNA = (): VibeDNAData => {
   const { user } = useAuth();
   const [vibeBreakdown, setVibeBreakdown] = useState<VibeScore[]>([]);
+  const [personalityTraits, setPersonalityTraits] = useState<PersonalityTrait[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalInteractions, setTotalInteractions] = useState(0);
   const [searchCount, setSearchCount] = useState(0);
@@ -163,8 +253,9 @@ export const useVibeDNA = (): VibeDNAData => {
         // Create a map of place_id to place data
         const placeMap = new Map(places?.map(p => [p.place_id, p]) || []);
 
-        // Calculate weighted vibe scores
+        // Calculate weighted vibe scores and personality trait scores
         const vibeScores: Record<string, number> = {};
+        const personalityScores: Record<string, number> = {};
 
         interactions.forEach(interaction => {
           const place = placeMap.get(interaction.place_id);
@@ -174,8 +265,12 @@ export const useVibeDNA = (): VibeDNAData => {
           const interactionWeight = interaction.weight || 1;
           const totalWeight = actionWeight * interactionWeight;
 
-          // Score from filter_tags
           const filterTags = place.filter_tags || [];
+          const categories = place.categories || [];
+          const allTagsLower = filterTags.map((t: string) => t.toLowerCase());
+          const allCatsLower = categories.map((c: string) => c.toLowerCase());
+
+          // Score from filter_tags for vibe breakdown
           filterTags.forEach((tag: string) => {
             const tagInfo = VIBE_TAG_MAP[tag.toLowerCase()];
             if (tagInfo) {
@@ -183,8 +278,34 @@ export const useVibeDNA = (): VibeDNAData => {
             }
           });
 
-          // Also consider categories as a fallback
-          const categories = place.categories || [];
+          // Calculate personality trait scores
+          PERSONALITY_DEFINITIONS.forEach(trait => {
+            let matchScore = 0;
+            
+            // Check tag matches
+            if (trait.triggers.tags) {
+              trait.triggers.tags.forEach(triggerTag => {
+                if (allTagsLower.some(t => t.includes(triggerTag) || triggerTag.includes(t))) {
+                  matchScore += totalWeight;
+                }
+              });
+            }
+            
+            // Check category matches
+            if (trait.triggers.categories) {
+              trait.triggers.categories.forEach(triggerCat => {
+                if (allCatsLower.some(c => c.includes(triggerCat) || triggerCat.includes(c))) {
+                  matchScore += totalWeight * 0.5; // Categories get less weight than tags
+                }
+              });
+            }
+            
+            if (matchScore > 0) {
+              personalityScores[trait.id] = (personalityScores[trait.id] || 0) + matchScore;
+            }
+          });
+
+          // Also consider categories as a fallback for vibe scores
           categories.forEach((cat: string) => {
             const catLower = cat.toLowerCase();
             if (catLower.includes('cafe') || catLower.includes('coffee')) {
@@ -204,6 +325,20 @@ export const useVibeDNA = (): VibeDNAData => {
             }
           });
         });
+
+        // Calculate personality traits from scores
+        const calculatedTraits: PersonalityTrait[] = PERSONALITY_DEFINITIONS
+          .filter(def => (personalityScores[def.id] || 0) >= def.triggers.minScore)
+          .map(def => ({
+            icon: def.icon,
+            label: def.label,
+            description: def.description,
+            score: personalityScores[def.id] || 0,
+          }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 4); // Show top 4 traits
+
+        setPersonalityTraits(calculatedTraits);
 
         // Convert to percentages
         const totalScore = Object.values(vibeScores).reduce((a, b) => a + b, 0);
@@ -249,5 +384,5 @@ export const useVibeDNA = (): VibeDNAData => {
     calculateVibeDNA();
   }, [user]);
 
-  return { vibeBreakdown, isLoading, totalInteractions, searchCount, placesShownCount };
+  return { vibeBreakdown, personalityTraits, isLoading, totalInteractions, searchCount, placesShownCount };
 };

@@ -1,20 +1,13 @@
-import { User, Heart, MapPin, Sparkles, TrendingUp, Coffee, Moon, Sun, Users, Volume2, Loader2 } from "lucide-react";
+import { User, Sparkles, TrendingUp, Loader2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 
 const ProfilePage = () => {
   const { savedPlaceIds, userVibes } = useApp();
-  const { vibeBreakdown, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount } = useVibeDNA();
+  const { vibeBreakdown, personalityTraits, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount } = useVibeDNA();
 
   // Total saved is directly from savedPlaceIds Set (synced with DB)
   const totalSaved = savedPlaceIds.size;
-
-  const personalityTraits = [
-    { icon: Moon, label: "Evening explorer", description: "You prefer spots that come alive after dark" },
-    { icon: Volume2, label: "Conversation seeker", description: "Quiet enough to talk, lively enough to feel alive" },
-    { icon: Coffee, label: "Café hopper", description: "You've got a thing for good coffee and better vibes" },
-    { icon: Users, label: "Social butterfly", description: "Group-friendly spots are your go-to" },
-  ];
 
   return (
     <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
@@ -103,25 +96,37 @@ const ProfilePage = () => {
             <h3 className="font-semibold text-foreground text-sm">What we've learned</h3>
           </div>
           
-          <div className="space-y-2">
-            {personalityTraits.map((trait, index) => {
-              const Icon = trait.icon;
-              return (
-                <div 
-                  key={index}
-                  className="flex gap-3 p-3 bg-card rounded-xl border border-border"
-                >
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-5 h-5 text-secondary-foreground" />
+          {isVibeLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            </div>
+          ) : personalityTraits.length === 0 ? (
+            <div className="p-4 bg-card rounded-xl border border-border text-center">
+              <p className="text-sm text-muted-foreground">
+                Start saving and exploring places to discover your personality traits!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {personalityTraits.map((trait, index) => {
+                const Icon = trait.icon;
+                return (
+                  <div 
+                    key={index}
+                    className="flex gap-3 p-3 bg-card rounded-xl border border-border"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-5 h-5 text-secondary-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground">{trait.label}</h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{trait.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-foreground">{trait.label}</h4>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{trait.description}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Current preferences */}
