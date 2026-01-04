@@ -515,7 +515,7 @@ serve(async (req) => {
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': googleMapsApiKey,
-          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos,places.priceLevel,places.currentOpeningHours,nextPageToken'
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos,places.priceLevel,places.currentOpeningHours,places.regularOpeningHours,nextPageToken'
         },
         body: JSON.stringify(requestBody)
       });
@@ -558,7 +558,7 @@ serve(async (req) => {
       const firstPhoto = place.photos?.[0];
       const priceLevel = place.priceLevel ? 
         ['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'].indexOf(place.priceLevel) : null;
-      const isOpenNow = place.currentOpeningHours?.openNow ?? null;
+      const isOpenNow = place.currentOpeningHours?.openNow ?? place.regularOpeningHours?.openNow ?? null;
       
       return {
         place_id: place.id,
@@ -703,6 +703,19 @@ serve(async (req) => {
       const priceLevel = place.priceLevel ? 
         ['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'].indexOf(place.priceLevel) : null;
       
+      // Extract opening hours from regularOpeningHours
+      let openingHours = null;
+      let isOpenNow = null;
+      if (place.regularOpeningHours) {
+        isOpenNow = place.regularOpeningHours.openNow ?? place.currentOpeningHours?.openNow ?? null;
+        openingHours = {
+          open_now: isOpenNow ?? false,
+          weekday_text: place.regularOpeningHours.weekdayDescriptions || [],
+        };
+      } else if (place.currentOpeningHours) {
+        isOpenNow = place.currentOpeningHours.openNow ?? null;
+      }
+      
       return {
         place_id: place.id,
         name: place.displayName?.text || 'Unknown',
@@ -716,6 +729,8 @@ serve(async (req) => {
         raw: place,
         photo_name: firstPhoto?.name || null,
         price_level: priceLevel,
+        opening_hours: openingHours,
+        is_open_now: isOpenNow,
         last_enriched_at: new Date().toISOString(),
       };
     });
