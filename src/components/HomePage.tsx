@@ -192,7 +192,7 @@ const getTimeBasedPrompt = (): string => {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, incrementFreeActions, hasExceededFreeActions, setShowAuthDialog } = useApp();
+  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, freeActionsUsed, incrementFreeActions, setShowAuthDialog } = useApp();
   const { user } = useAuth();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation } = useLocation();
@@ -400,8 +400,8 @@ const HomePage = () => {
   );
 
   const handlePlaceClick = (place: MockPlace) => {
-    // Check if user has exceeded free actions
-    if (hasExceededFreeActions()) {
+    // Clicking a place always requires auth if not logged in (after first search)
+    if (!user) {
       setShowLocalAuthDialog(true);
       return;
     }
@@ -409,8 +409,8 @@ const HomePage = () => {
   };
 
   const handleSeeAll = (allPlaces: MockPlaceWithCoords[]) => {
-    // Check if user has exceeded free actions
-    if (hasExceededFreeActions()) {
+    // See all requires auth if not logged in
+    if (!user) {
       setShowLocalAuthDialog(true);
       return;
     }
@@ -443,13 +443,13 @@ const HomePage = () => {
     e.preventDefault();
     if (!searchValue.trim()) return;
     
-    // Check if user has exceeded free actions (for second+ search)
-    if (hasExceededFreeActions()) {
+    // If not logged in and already used free search, show auth
+    if (!user && freeActionsUsed >= 1) {
       setShowLocalAuthDialog(true);
       return;
     }
     
-    // Increment free actions counter on each search
+    // Increment free actions counter on first search (if not logged in)
     if (!user) {
       incrementFreeActions();
     }
