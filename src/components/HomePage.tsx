@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, ChevronLeft, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone, Lock } from "lucide-react";
+import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone, Lock } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
@@ -763,6 +763,7 @@ const HomePage = () => {
                 ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
                 : "Set location"
               }</span>
+              <ChevronDown className="w-3 h-3" />
             </button>
           </div>
 
