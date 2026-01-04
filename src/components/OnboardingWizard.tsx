@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Navigation } from "lucide-react";
+import { Check, MapPin, Navigation } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,20 @@ import type { OnboardingData } from "@/context/AppContext";
 interface OnboardingWizardProps {
   onComplete: (data: OnboardingData) => void;
 }
+
+// Popular cities around the world
+const POPULAR_CITIES = [
+  { name: "Tokyo", country: "Japan" },
+  { name: "Bali", country: "Indonesia" },
+  { name: "Bangkok", country: "Thailand" },
+  { name: "Singapore", country: "Singapore" },
+  { name: "Seoul", country: "South Korea" },
+  { name: "Paris", country: "France" },
+  { name: "London", country: "United Kingdom" },
+  { name: "New York", country: "USA" },
+  { name: "Sydney", country: "Australia" },
+  { name: "Dubai", country: "UAE" },
+];
 
 // SweetSpots Logo SVG
 const SweetSpotsLogo = () => (
@@ -73,6 +87,11 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     "late night",
     "live music",
   ];
+
+  const handleSelectCity = (cityName: string) => {
+    setLocationInput(cityName);
+    setData(prev => ({ ...prev, explore_location: cityName }));
+  };
 
   const handleNext = async () => {
     if (currentStep < totalSteps - 1) {
@@ -214,8 +233,8 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                   type="text"
                   value={locationInput}
                   onChange={(e) => handleLocationInputChange(e.target.value)}
-                  placeholder="Enter a city or area (e.g., Tokyo, Bali)"
-                  className={`pl-10 h-12 rounded-xl ${
+                  placeholder="Enter a city or area"
+                  className={`pl-10 pr-10 h-12 rounded-xl ${
                     data.explore_location && data.explore_location !== "nearby"
                       ? 'border-primary ring-1 ring-primary'
                       : ''
@@ -226,6 +245,31 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                     }
                   }}
                 />
+                {data.explore_location && data.explore_location !== "nearby" && (
+                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
+                )}
+              </div>
+              
+              {/* Popular cities list */}
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                <p className="text-xs text-muted-foreground px-1 mb-2">Popular destinations</p>
+                {POPULAR_CITIES.map((city) => {
+                  const isSelected = data.explore_location === city.name;
+                  return (
+                    <button
+                      key={city.name}
+                      onClick={() => handleSelectCity(city.name)}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all ${
+                        isSelected
+                          ? 'bg-primary/10 text-primary'
+                          : 'hover:bg-muted/50 text-foreground'
+                      }`}
+                    >
+                      <span className="font-medium">{city.name}, <span className="text-muted-foreground font-normal">{city.country}</span></span>
+                      {isSelected && <Check className="w-4 h-4 text-primary" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </>
