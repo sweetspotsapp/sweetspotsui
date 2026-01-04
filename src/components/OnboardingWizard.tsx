@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, MapPin, Navigation } from "lucide-react";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -125,14 +126,16 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locationInput, setLocationInput] = useState("");
   
   const [data, setData] = useState<OnboardingData>({
     trip_intention: null,
     budget: null,
     travel_personality: [],
+    explore_location: null,
   });
 
-  const totalSteps = 3;
+  const totalSteps = 4; // Now 4 steps including location
 
   const handleNext = async () => {
     if (currentStep < totalSteps - 1) {
@@ -203,9 +206,83 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     }));
   };
 
+  const handleSelectNearby = () => {
+    setData(prev => ({ ...prev, explore_location: "nearby" }));
+    setLocationInput("");
+  };
+
+  const handleLocationInputChange = (value: string) => {
+    setLocationInput(value);
+    if (value.trim()) {
+      setData(prev => ({ ...prev, explore_location: value.trim() }));
+    } else {
+      setData(prev => ({ ...prev, explore_location: null }));
+    }
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
+        return (
+          <>
+            <h1 className="text-3xl font-semibold text-foreground mb-2">Where to explore?</h1>
+            <p className="text-muted-foreground mb-6">Tell us where you'd like to discover amazing spots</p>
+            
+            <div className="border border-border rounded-2xl p-4 space-y-4">
+              {/* Nearby option */}
+              <button
+                onClick={handleSelectNearby}
+                className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl text-left transition-all ${
+                  data.explore_location === "nearby"
+                    ? 'bg-primary/10 border-2 border-primary'
+                    : 'bg-muted/50 hover:bg-muted/80 border border-border'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  data.explore_location === "nearby" ? 'bg-primary' : 'bg-muted'
+                }`}>
+                  <Navigation className={`w-5 h-5 ${
+                    data.explore_location === "nearby" ? 'text-primary-foreground' : 'text-muted-foreground'
+                  }`} />
+                </div>
+                <div>
+                  <span className="text-foreground font-medium block">Nearby places</span>
+                  <span className="text-muted-foreground text-sm">Use my current location</span>
+                </div>
+              </button>
+              
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-muted-foreground text-sm">or</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              
+              {/* Location input */}
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  value={locationInput}
+                  onChange={(e) => handleLocationInputChange(e.target.value)}
+                  placeholder="Enter a city or area (e.g., Tokyo, Bali)"
+                  className={`pl-10 h-12 rounded-xl ${
+                    data.explore_location && data.explore_location !== "nearby"
+                      ? 'border-primary ring-1 ring-primary'
+                      : ''
+                  }`}
+                  onFocus={() => {
+                    if (data.explore_location === "nearby") {
+                      setData(prev => ({ ...prev, explore_location: null }));
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          </>
+        );
+
+      case 1:
         return (
           <>
             <h1 className="text-3xl font-semibold text-foreground mb-2">Trip intention</h1>
@@ -229,7 +306,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
           </>
         );
       
-      case 1:
+      case 2:
         return (
           <>
             <h1 className="text-3xl font-semibold text-foreground mb-2">Budget comfort</h1>
@@ -253,7 +330,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
           </>
         );
       
-      case 2:
+      case 3:
         return (
           <>
             <h1 className="text-3xl font-semibold text-foreground mb-2">Travel personality</h1>

@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
 
 export interface UnifiedPlace {
   place_id: string;
@@ -58,6 +57,7 @@ interface UseUnifiedSearchReturn {
     options?: {
       lat?: number;
       lng?: number;
+      locationName?: string; // e.g., "Tokyo", "Bali" - will geocode to get coordinates
       radiusM?: number;
       mode?: 'drive' | 'walk' | 'bike';
       limit?: number;
@@ -73,7 +73,6 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
   const [summary, setSummary] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { session } = useAuth();
   
   const lastSearchRef = useRef<{
     prompt: string;
@@ -133,17 +132,13 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
       options?: {
         lat?: number;
         lng?: number;
+        locationName?: string;
         radiusM?: number;
         mode?: 'drive' | 'walk' | 'bike';
         limit?: number;
         skipCache?: boolean;
       }
     ): Promise<SearchResult | null> => {
-      if (!session) {
-        setError("Please sign in to search");
-        return null;
-      }
-
       const radiusM = options?.radiusM ?? 4000;
       const mode = options?.mode ?? 'drive';
       const limit = options?.limit ?? 30;
@@ -153,21 +148,27 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
       setError(null);
 
       try {
-        // Get location (use provided or fetch current)
+        // Get location (use provided, or use locationName for geocoding by backend, or fetch GPS)
         let lat = options?.lat;
         let lng = options?.lng;
+        const locationName = options?.locationName;
         
         if (lat === undefined || lng === undefined) {
-          const location = await getLocation();
-          lat = location.lat;
-          lng = location.lng;
+          if (!locationName) {
+            // No location name provided, need GPS
+            const location = await getLocation();
+            lat = location.lat;
+            lng = location.lng;
+          }
+          // If locationName is provided, let the backend geocode it
         }
 
         // Store for potential retry
-        lastSearchRef.current = { prompt, lat, lng, radiusM, mode };
+        lastSearchRef.current = { prompt, lat: lat || 0, lng: lng || 0, radiusM, mode };
 
-        // Check cache
-        const cacheKey = getCacheKey(prompt, lat, lng, radiusM);
+        // Build cache key (include locationName if used)
+        const cacheKeyLocation = locationName || `${lat?.toFixed(3)}-${lng?.toFixed(3)}`;
+        const cacheKey = `${prompt.toLowerCase().trim()}-${cacheKeyLocation}-${radiusM}`;
         if (!skipCache) {
           const cached = searchCache.get(cacheKey);
           if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -179,13 +180,30 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
           }
         }
 
-        console.log('Searching:', { prompt, lat: lat.toFixed(4), lng: lng.toFixed(4), radiusM, mode });
+        console.log('Searching:', { prompt, lat, lng, locationName, radiusM, mode });
+
+        // Build request body - include location_name if provided
+        const requestBody: Record<string, unknown> = { 
+          prompt, 
+          radius_m: radiusM, 
+          mode, 
+          limit 
+        };
+        
+        if (lat !== undefined && lng !== undefined) {
+          requestBody.lat = lat;
+          requestBody.lng = lng;
+        }
+        
+        if (locationName) {
+          requestBody.location_name = locationName;
+        }
 
         // Call unified search endpoint
         const { data, error: searchError } = await supabase.functions.invoke(
           'unified-search',
           {
-            body: { prompt, lat, lng, radius_m: radiusM, mode, limit },
+            body: requestBody,
           }
         );
 
@@ -231,7 +249,7 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
         setIsSearching(false);
       }
     },
-    [session]
+    []
   );
 
   const clearError = useCallback(() => {

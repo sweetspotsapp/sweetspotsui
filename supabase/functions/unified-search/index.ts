@@ -8,8 +8,9 @@ const corsHeaders = {
 
 interface RequestBody {
   prompt: string;
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
+  location_name?: string; // City/area name to geocode
   radius_m?: number;
   mode?: 'drive' | 'walk' | 'bike';
   limit?: number;
@@ -596,11 +597,51 @@ serve(async (req) => {
 
     // Parse request
     const body: RequestBody = await req.json();
-    const { prompt, lat, lng, radius_m = 4000, mode = 'drive', limit = 30 } = body;
+    const { prompt, location_name, radius_m = 4000, mode = 'drive', limit = 30 } = body;
+    let { lat, lng } = body;
 
-    if (!prompt || lat === undefined || lng === undefined) {
+    if (!prompt) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: prompt, lat, lng' }),
+        JSON.stringify({ error: 'Missing required field: prompt' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // If location_name provided (but not lat/lng), geocode it
+    if (location_name && (lat === undefined || lng === undefined || (lat === 0 && lng === 0))) {
+      console.log(`Geocoding location: ${location_name}`);
+      
+      // Use Geoapify Geocoding API
+      const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location_name)}&limit=1&apiKey=${geoapifyApiKey}`;
+      
+      try {
+        const geoResponse = await fetch(geocodeUrl);
+        const geoData = await geoResponse.json();
+        
+        if (geoData.features && geoData.features.length > 0) {
+          const [geoLng, geoLat] = geoData.features[0].geometry.coordinates;
+          lat = geoLat;
+          lng = geoLng;
+          console.log(`Geocoded "${location_name}" to: ${lat}, ${lng}`);
+        } else {
+          console.error('Geocoding failed, no results');
+          return new Response(
+            JSON.stringify({ error: `Could not find location: ${location_name}` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (geoError) {
+        console.error('Geocoding error:', geoError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to geocode location' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    if (lat === undefined || lng === undefined) {
+      return new Response(
+        JSON.stringify({ error: 'Missing location: provide lat/lng or location_name' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
