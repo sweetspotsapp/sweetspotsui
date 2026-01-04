@@ -852,15 +852,6 @@ const PlaceDetailsPage = () => {
                 </span>
                 <span className="text-xs text-primary/70">/ 5</span>
               </div>}
-            {distanceKm !== null && (
-              <div className="flex items-center gap-1.5 bg-muted px-3 py-2 rounded-xl">
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-semibold text-foreground">
-                  {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm}km`}
-                </span>
-                <span className="text-xs text-muted-foreground">away</span>
-              </div>
-            )}
           </div>
           
           {place.ratings_total && <span className="text-sm text-muted-foreground">
@@ -883,9 +874,7 @@ const PlaceDetailsPage = () => {
 
 
         {/* 6. Reviews Section - Now with real Google reviews */}
-        {formattedReviews.length > 0 ? <ReviewsList reviews={formattedReviews} /> : <div className="text-center py-4 text-muted-foreground text-sm">
-            No reviews available yet
-          </div>}
+        {formattedReviews.length > 0 && <ReviewsList reviews={formattedReviews} />}
 
         {/* 7. Similar Places - "You might also like" */}
         {relatedPlaces.length > 0 && <RelatedSpots places={relatedPlaces} onPlaceClick={handleRelatedClick} />}
