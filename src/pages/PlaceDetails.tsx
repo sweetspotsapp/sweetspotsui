@@ -498,8 +498,9 @@ const PlaceDetailsPage = () => {
           return;
         }
 
-        // Check if place needs enrichment (missing photos, reviews, etc.)
-        const needsEnrichment = !data.photos || data.photos.length === 0 || !data.reviews;
+        // Check if place needs enrichment (missing photos, only 1 photo, or missing reviews)
+        const photosCount = data.photos?.length || (data.photo_name ? 1 : 0);
+        const needsEnrichment = !data.photos || photosCount <= 1 || !data.reviews;
         if (needsEnrichment) {
           console.log('Place needs enrichment, fetching additional data...');
           try {
