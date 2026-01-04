@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 export interface FilterState {
   budget: "under_50" | "50_100" | "100_plus" | null;
   vibes: string[];
+  placeTypes: string[];
 }
 
 interface TravelPersonalityFilterModalProps {
@@ -35,6 +36,17 @@ const VIBE_OPTIONS = [
   "Nights Life",
 ];
 
+const PLACE_TYPE_OPTIONS = [
+  { id: "restaurant", label: "Restaurant" },
+  { id: "cafe", label: "Cafe" },
+  { id: "bar", label: "Bar" },
+  { id: "museum", label: "Museum" },
+  { id: "park", label: "Park" },
+  { id: "shopping", label: "Shopping" },
+  { id: "attraction", label: "Attraction" },
+  { id: "hotel", label: "Hotel" },
+];
+
 const TravelPersonalityFilterModal: React.FC<TravelPersonalityFilterModalProps> = ({
   isOpen,
   onClose,
@@ -45,6 +57,7 @@ const TravelPersonalityFilterModal: React.FC<TravelPersonalityFilterModalProps> 
   const [filters, setFilters] = useState<FilterState>({
     budget: initialFilters?.budget || null,
     vibes: initialFilters?.vibes || [],
+    placeTypes: initialFilters?.placeTypes || [],
   });
 
   // Reset filters when modal opens with new initial values
@@ -53,6 +66,7 @@ const TravelPersonalityFilterModal: React.FC<TravelPersonalityFilterModalProps> 
       setFilters({
         budget: initialFilters.budget || null,
         vibes: initialFilters.vibes || [],
+        placeTypes: initialFilters.placeTypes || [],
       });
     }
   }, [isOpen, initialFilters]);
@@ -70,6 +84,15 @@ const TravelPersonalityFilterModal: React.FC<TravelPersonalityFilterModalProps> 
       vibes: prev.vibes.includes(vibe)
         ? prev.vibes.filter((v) => v !== vibe)
         : [...prev.vibes, vibe],
+    }));
+  };
+
+  const togglePlaceType = (typeId: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      placeTypes: prev.placeTypes.includes(typeId)
+        ? prev.placeTypes.filter((t) => t !== typeId)
+        : [...prev.placeTypes, typeId],
     }));
   };
 
@@ -102,7 +125,7 @@ const TravelPersonalityFilterModal: React.FC<TravelPersonalityFilterModalProps> 
     onClose();
   };
 
-  const hasSelection = filters.budget !== null || filters.vibes.length > 0;
+  const hasSelection = filters.budget !== null || filters.vibes.length > 0 || filters.placeTypes.length > 0;
 
   if (!isOpen) return null;
 
@@ -131,39 +154,65 @@ const TravelPersonalityFilterModal: React.FC<TravelPersonalityFilterModalProps> 
           </div>
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto px-6 pb-4">
+          <div className="flex-1 overflow-y-auto px-6 pb-4 space-y-5">
+            {/* Place Type Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">What are you looking for?</h3>
+              <div className="flex flex-wrap gap-2">
+                {PLACE_TYPE_OPTIONS.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => togglePlaceType(type.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      filters.placeTypes.includes(type.id)
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-card text-primary border border-primary hover:bg-primary/10"
+                    }`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Budget chips - single select */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {BUDGET_OPTIONS.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => toggleBudget(option.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    filters.budget === option.id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-card text-primary border border-primary hover:bg-primary/10"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Budget</h3>
+              <div className="flex flex-wrap gap-2">
+                {BUDGET_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => toggleBudget(option.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      filters.budget === option.id
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-card text-primary border border-primary hover:bg-primary/10"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Vibe chips - multi select */}
-            <div className="flex flex-wrap gap-2">
-              {VIBE_OPTIONS.map((vibe) => (
-                <button
-                  key={vibe}
-                  onClick={() => toggleVibe(vibe)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    filters.vibes.includes(vibe)
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-card text-primary border border-primary hover:bg-primary/10"
-                  }`}
-                >
-                  {vibe}
-                </button>
-              ))}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Vibe</h3>
+              <div className="flex flex-wrap gap-2">
+                {VIBE_OPTIONS.map((vibe) => (
+                  <button
+                    key={vibe}
+                    onClick={() => toggleVibe(vibe)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      filters.vibes.includes(vibe)
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-card text-primary border border-primary hover:bg-primary/10"
+                    }`}
+                  >
+                    {vibe}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
