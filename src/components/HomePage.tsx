@@ -18,6 +18,7 @@ import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 import { useAuth } from "@/hooks/useAuth";
 import AuthDialog from "./AuthDialog";
+import LocationPickerModal from "./LocationPickerModal";
 // Extended MockPlace with lat/lng for map view
 interface MockPlaceWithCoords extends MockPlace {
   lat?: number;
@@ -193,7 +194,7 @@ const getTimeBasedPrompt = (): string => {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, freeActionsUsed, incrementFreeActions, setShowAuthDialog, onboardingData } = useApp();
+  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, freeActionsUsed, incrementFreeActions, setShowAuthDialog, onboardingData, setOnboardingData } = useApp();
   const { user } = useAuth();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation, setManualLocation } = useLocation();
@@ -277,6 +278,9 @@ const HomePage = () => {
   
   // Auth dialog state for soft wall
   const [showLocalAuthDialog, setShowLocalAuthDialog] = useState(false);
+  
+  // Location picker modal state
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
 
   // Client-side filtering - instant results
   const filteredResults = useClientFilters(
@@ -601,6 +605,16 @@ const HomePage = () => {
     setActiveFilters(newFilters);
   };
 
+  // Handle location change from modal
+  const handleLocationChange = (newLocation: string) => {
+    // Update onboarding data with new location
+    setOnboardingData({
+      ...(onboardingData || { trip_intention: null, budget: null, travel_personality: [] }),
+      explore_location: newLocation,
+    });
+    setIsLocationPickerOpen(false);
+  };
+
   // Group places by AI category for display - ensuring NO duplicates across sections
   // Now uses filteredResults for instant client-side filtering
   const displaySections = useMemo(() => {
@@ -740,12 +754,16 @@ const HomePage = () => {
             <h1 className="text-xl font-bold text-foreground tracking-tight">
               SweetSpots
             </h1>
-            {onboardingData?.explore_location && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="w-3 h-3" />
-                <span>{onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location}</span>
-              </div>
-            )}
+            <button
+              onClick={() => setIsLocationPickerOpen(true)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              <MapPin className="w-3 h-3" />
+              <span>{onboardingData?.explore_location 
+                ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
+                : "Set location"
+              }</span>
+            </button>
           </div>
 
           <button
@@ -986,6 +1004,14 @@ const HomePage = () => {
             sessionStorage.removeItem('sweetspots_free_actions');
           } catch {}
         }}
+      />
+
+      {/* Location Picker Modal */}
+      <LocationPickerModal
+        isOpen={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        onSelectLocation={handleLocationChange}
+        currentLocation={onboardingData?.explore_location}
       />
     </div>
   );
