@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, ChevronLeft, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone } from "lucide-react";
+import { Menu, Search, ChevronRight, ChevronLeft, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone, Lock } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
@@ -16,6 +16,8 @@ import { useLocation } from "@/hooks/useLocation";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
+import { useAuth } from "@/hooks/useAuth";
+import AuthDialog from "./AuthDialog";
 // Extended MockPlace with lat/lng for map view
 interface MockPlaceWithCoords extends MockPlace {
   lat?: number;
@@ -190,7 +192,8 @@ const getTimeBasedPrompt = (): string => {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave } = useApp();
+  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, incrementFreeActions, hasExceededFreeActions, setShowAuthDialog } = useApp();
+  const { user } = useAuth();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
@@ -270,6 +273,9 @@ const HomePage = () => {
   // Filter modal state
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({ budget: null, vibes: [] });
+  
+  // Auth dialog state for soft wall
+  const [showLocalAuthDialog, setShowLocalAuthDialog] = useState(false);
 
   // Client-side filtering - instant results
   const filteredResults = useClientFilters(
@@ -394,10 +400,20 @@ const HomePage = () => {
   );
 
   const handlePlaceClick = (place: MockPlace) => {
+    // Check if user has exceeded free actions
+    if (hasExceededFreeActions()) {
+      setShowLocalAuthDialog(true);
+      return;
+    }
     navigate(`/place/${place.id}`, { state: { ai_reason: place.ai_reason } });
   };
 
   const handleSeeAll = (allPlaces: MockPlaceWithCoords[]) => {
+    // Check if user has exceeded free actions
+    if (hasExceededFreeActions()) {
+      setShowLocalAuthDialog(true);
+      return;
+    }
     navigate(`/see-all`, {
       state: { places: allPlaces, userLocation, searchQuery: searchValue || userMood },
     });
@@ -426,6 +442,17 @@ const HomePage = () => {
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
+    
+    // Check if user has exceeded free actions (for second+ search)
+    if (hasExceededFreeActions()) {
+      setShowLocalAuthDialog(true);
+      return;
+    }
+    
+    // Increment free actions counter on each search
+    if (!user) {
+      incrementFreeActions();
+    }
     
     setUserMood(searchValue.trim());
     setNeedsLocationPermission(false);
@@ -850,6 +877,19 @@ const HomePage = () => {
       <ProfileSlideMenu 
         isOpen={isProfileMenuOpen} 
         onClose={() => setIsProfileMenuOpen(false)} 
+      />
+      
+      {/* Auth Dialog for soft wall */}
+      <AuthDialog 
+        open={showLocalAuthDialog}
+        onOpenChange={setShowLocalAuthDialog}
+        onSuccess={() => {
+          setShowLocalAuthDialog(false);
+          // Clear the free actions counter on successful auth
+          try {
+            sessionStorage.removeItem('sweetspots_free_actions');
+          } catch {}
+        }}
       />
     </div>
   );

@@ -41,6 +41,11 @@ interface AppContextType {
   setShowAuthDialog: (show: boolean) => void;
   pendingSavePlaceId: string | null;
   
+  // Free actions tracking for soft wall
+  freeActionsUsed: number;
+  incrementFreeActions: () => void;
+  hasExceededFreeActions: () => boolean;
+  
   // User mood/vibes
   userMood: string;
   setUserMood: (mood: string) => void;
@@ -152,6 +157,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Auth dialog state for prompting login when saving
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [pendingSavePlaceId, setPendingSavePlaceId] = useState<string | null>(null);
+  
+  // Free actions tracking for soft wall (persisted in sessionStorage)
+  const [freeActionsUsed, setFreeActionsUsed] = useState<number>(() => {
+    try {
+      const stored = sessionStorage.getItem('sweetspots_free_actions');
+      return stored ? parseInt(stored, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  
+  const incrementFreeActions = useCallback(() => {
+    setFreeActionsUsed(prev => {
+      const newCount = prev + 1;
+      try {
+        sessionStorage.setItem('sweetspots_free_actions', String(newCount));
+      } catch {}
+      return newCount;
+    });
+  }, []);
+  
+  const hasExceededFreeActions = useCallback(() => {
+    // Allow 1 free action (first search), require auth after
+    return !user && freeActionsUsed >= 1;
+  }, [user, freeActionsUsed]);
 
   // Wrapper for toggleSave that shows auth dialog if not logged in
   const toggleSave = useCallback(async (placeId: string) => {
@@ -225,6 +255,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       showAuthDialog,
       setShowAuthDialog,
       pendingSavePlaceId,
+      freeActionsUsed,
+      incrementFreeActions,
+      hasExceededFreeActions,
       userMood, 
       setUserMood, 
       userVibes,
