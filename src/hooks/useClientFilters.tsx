@@ -36,14 +36,12 @@ export interface ExtendedMockPlace extends MockPlace {
 
 /**
  * Checks if a place matches a specific filter using filter_tags
- * 
- * For vibe/occasion filters, if a place has no filter_tags at all,
- * we give it the benefit of the doubt and include it (don't exclude).
- * Only exclude if it has tags but doesn't match.
  */
 const matchesFilter = (place: ExtendedMockPlace, filterId: string): boolean => {
   // Handle price filters
   if (PRICE_FILTER_MAP[filterId]) {
+    // For price, if place has no price_level, don't exclude it
+    if (place.price_level === undefined || place.price_level === null) return true;
     return PRICE_FILTER_MAP[filterId](place.price_level);
   }
 
@@ -53,9 +51,8 @@ const matchesFilter = (place: ExtendedMockPlace, filterId: string): boolean => {
 
   const tags = place.filter_tags;
   
-  // If place has no filter_tags (null or empty), include it - don't exclude
-  // This prevents filtering out places that just haven't been enriched yet
-  if (!tags || tags.length === 0) return true;
+  // If place has no filter_tags, don't match this filter
+  if (!tags || tags.length === 0) return false;
 
   // If place has tags, check if it includes the expected one
   return tags.includes(expectedTag);
