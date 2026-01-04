@@ -90,11 +90,10 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   };
 
   const handleSkip = () => {
-    if (currentStep < totalSteps - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      saveAndComplete();
-    }
+    // When skipping, default to nearby places
+    const skipData = { ...data, explore_location: "nearby" };
+    setData(skipData);
+    onComplete(skipData);
   };
 
   const saveAndComplete = async () => {
@@ -323,7 +322,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
           disabled={isSubmitting}
           className="w-full text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
         >
-          Skip onboarding question
+          Skip to home
         </button>
       </div>
     </div>
