@@ -937,7 +937,11 @@ const HomePage = () => {
           <>
             {/* AI Summary Card */}
             {aiSummary && (
-              <AISummaryCard summary={aiSummary} />
+              <AISummaryCard 
+                summary={aiSummary} 
+                searchQuery={userMood || searchValue}
+                location={onboardingData?.explore_location}
+              />
             )}
 
             {/* Top Picks Section - Large vertical cards */}
