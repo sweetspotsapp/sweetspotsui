@@ -272,7 +272,7 @@ const HomePage = () => {
   
   // Filter modal state
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [appliedFilters, setAppliedFilters] = useState<FilterState>({ budget: null, vibes: [] });
+  const [appliedFilters, setAppliedFilters] = useState<FilterState>({ budget: null, vibes: [], placeTypes: [] });
   
   // Auth dialog state for soft wall
   const [showLocalAuthDialog, setShowLocalAuthDialog] = useState(false);
@@ -429,6 +429,11 @@ const HomePage = () => {
   // Build search prompt with filters
   const buildSearchPrompt = (basePrompt: string, filters: FilterState): string => {
     let prompt = basePrompt;
+    
+    // Add place types to prompt
+    if (filters.placeTypes.length > 0) {
+      prompt += `, ${filters.placeTypes.join(", ")}`;
+    }
     
     if (filters.budget) {
       const budgetLabels: Record<string, string> = {
