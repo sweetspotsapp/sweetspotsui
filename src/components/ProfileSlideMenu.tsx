@@ -84,6 +84,14 @@ const ProfileSlideMenu = ({ isOpen, onClose }: ProfileSlideMenuProps) => {
       },
       trailing: <ChevronRight className="w-4 h-4 text-muted-foreground" />,
     },
+    {
+      id: "logout",
+      label: "Log Out",
+      icon: LogOut,
+      onClick: handleLogout,
+      trailing: null,
+      isDestructive: true,
+    },
   ];
 
   return (
@@ -141,34 +149,37 @@ const ProfileSlideMenu = ({ isOpen, onClose }: ProfileSlideMenuProps) => {
           <div className="flex-1 p-4 space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
+              const isDestructive = 'isDestructive' in item && item.isDestructive;
               return (
                 <button
                   key={item.id}
                   onClick={item.onClick}
-                  className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  className={cn(
+                    "flex items-center gap-3 w-full p-3 rounded-xl transition-colors",
+                    isDestructive 
+                      ? "hover:bg-destructive/10 text-destructive mt-4" 
+                      : "hover:bg-muted/50"
+                  )}
                 >
-                  <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-foreground" />
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center",
+                    isDestructive ? "bg-destructive/10" : "bg-muted/50"
+                  )}>
+                    <Icon className={cn(
+                      "w-5 h-5",
+                      isDestructive ? "text-destructive" : "text-foreground"
+                    )} />
                   </div>
-                  <span className="flex-1 text-left font-medium text-foreground">
+                  <span className={cn(
+                    "flex-1 text-left font-medium",
+                    isDestructive ? "text-destructive" : "text-foreground"
+                  )}>
                     {item.label}
                   </span>
                   {item.trailing}
                 </button>
               );
             })}
-          </div>
-
-          {/* Footer - Logout */}
-          <div className="p-4 border-t border-border">
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">Log Out</span>
-            </Button>
           </div>
         </div>
       </div>
