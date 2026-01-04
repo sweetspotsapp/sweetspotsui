@@ -13,15 +13,18 @@ interface TopPickCardProps {
 // Get vibe tag from categories or AI category
 const getVibeTag = (place: MockPlace): string | null => {
   if (place.ai_category) {
-    return place.ai_category.charAt(0).toUpperCase() + place.ai_category.slice(1);
+    // Replace underscores with spaces and capitalize first letter
+    const formatted = place.ai_category.replace(/_/g, ' ');
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
-  if (place.vibeTag) return place.vibeTag;
+  if (place.vibeTag) return place.vibeTag.replace(/_/g, ' ');
   if (!place.categories || place.categories.length === 0) return null;
   const category = place.categories[0];
   if (category.toLowerCase().includes('bar') || category.toLowerCase().includes('club')) return 'Nightlife';
   if (category.toLowerCase().includes('cafe') || category.toLowerCase().includes('coffee')) return 'Chill';
   if (category.toLowerCase().includes('restaurant')) return 'Restaurant';
-  return category.replace(/_/g, ' ').split(' ')[0];
+  // Replace underscores with spaces
+  return category.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 };
 
 const TopPickCard: React.FC<TopPickCardProps> = ({ 
@@ -132,18 +135,14 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
           />
         </button>
 
-        {/* Top Pick badge + Vibe tag */}
-        <div className="absolute top-2 left-2 flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
-            <Sparkles className="w-3 h-3" />
-            Top Pick
-          </span>
-          {vibeTag && (
+        {/* Vibe tag only - removed Top Pick badge */}
+        {vibeTag && (
+          <div className="absolute top-2 left-2">
             <span className="px-2 py-1 bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground rounded-full">
               {vibeTag}
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Info - same structure as PlaceCardCompact */}

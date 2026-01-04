@@ -29,15 +29,18 @@ interface PlaceCardCompactProps {
 const getVibeTag = (place: MockPlace): string | null => {
   // Prefer AI category
   if (place.ai_category) {
-    return place.ai_category.charAt(0).toUpperCase() + place.ai_category.slice(1);
+    // Replace underscores with spaces and capitalize first letter
+    const formatted = place.ai_category.replace(/_/g, ' ');
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
-  if (place.vibeTag) return place.vibeTag;
+  if (place.vibeTag) return place.vibeTag.replace(/_/g, ' ');
   if (!place.categories || place.categories.length === 0) return null;
   const category = place.categories[0];
   if (category.toLowerCase().includes('bar') || category.toLowerCase().includes('club')) return 'Nightlife';
   if (category.toLowerCase().includes('cafe') || category.toLowerCase().includes('coffee')) return 'Chill';
   if (category.toLowerCase().includes('restaurant')) return 'Restaurant';
-  return category.replace(/_/g, ' ').split(' ')[0];
+  // Replace underscores with spaces and capitalize each word
+  return category.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 };
 
 const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({ 
