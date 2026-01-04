@@ -192,10 +192,10 @@ const getTimeBasedPrompt = (): string => {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, freeActionsUsed, incrementFreeActions, setShowAuthDialog } = useApp();
+  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, freeActionsUsed, incrementFreeActions, setShowAuthDialog, onboardingData } = useApp();
   const { user } = useAuth();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
-  const { location: userLocation } = useLocation();
+  const { location: userLocation, setManualLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
 
   // Check cache version and clear if outdated
@@ -342,7 +342,14 @@ const HomePage = () => {
           }
         }
         
-        const result = await search(searchPrompt);
+        // Build search options based on onboarding location
+        const searchOptions: { locationName?: string } = {};
+        const exploreLocation = onboardingData?.explore_location;
+        if (exploreLocation && exploreLocation !== "nearby") {
+          searchOptions.locationName = exploreLocation;
+        }
+        
+        const result = await search(searchPrompt, searchOptions);
         if (result && result.places.length > 0) {
           setSearchResults(result.places.map(unifiedToMockPlace));
           setAiSummary(result.summary || null);
@@ -470,7 +477,14 @@ const HomePage = () => {
     const searchPrompt = buildSearchPrompt(searchValue.trim(), appliedFilters);
     console.log("Search with filters:", searchPrompt);
     
-    const result = await search(searchPrompt);
+    // Build search options based on onboarding location
+    const searchOptions: { locationName?: string } = {};
+    const exploreLocation = onboardingData?.explore_location;
+    if (exploreLocation && exploreLocation !== "nearby") {
+      searchOptions.locationName = exploreLocation;
+    }
+    
+    const result = await search(searchPrompt, searchOptions);
     if (result && result.places.length > 0) {
       setSearchResults(result.places.map(unifiedToMockPlace));
       setAiSummary(result.summary || null);
@@ -516,7 +530,14 @@ const HomePage = () => {
         console.error('Failed to clear cache:', e);
       }
       
-      const result = await search(searchPrompt);
+      // Build search options based on onboarding location
+      const searchOptions: { locationName?: string } = {};
+      const exploreLocation = onboardingData?.explore_location;
+      if (exploreLocation && exploreLocation !== "nearby") {
+        searchOptions.locationName = exploreLocation;
+      }
+      
+      const result = await search(searchPrompt, searchOptions);
       if (result && result.places.length > 0) {
         setSearchResults(result.places.map(unifiedToMockPlace));
         setAiSummary(result.summary || null);
@@ -529,7 +550,14 @@ const HomePage = () => {
     setNeedsLocationPermission(false);
     setIsInitialLoading(true);
     try {
-      const result = await search("popular restaurants and cafes nearby");
+      // Build search options based on onboarding location
+      const searchOptions: { locationName?: string } = {};
+      const exploreLocation = onboardingData?.explore_location;
+      if (exploreLocation && exploreLocation !== "nearby") {
+        searchOptions.locationName = exploreLocation;
+      }
+      
+      const result = await search("popular restaurants and cafes nearby", searchOptions);
       if (result && result.places.length > 0) {
         setSearchResults(result.places.map(unifiedToMockPlace));
         setAiSummary(result.summary || null);
