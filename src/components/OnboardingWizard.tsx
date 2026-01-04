@@ -201,13 +201,13 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
             <div className="border border-border rounded-2xl p-4 space-y-4">
               {/* Location input - Main */}
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground z-10" />
                 <Input
                   type="text"
                   value={locationInput}
                   onChange={(e) => handleLocationInputChange(e.target.value)}
                   placeholder="Enter a city or area"
-                  className={`pl-10 pr-12 h-14 rounded-xl text-base ${
+                  className={`pl-12 pr-14 h-16 rounded-2xl text-lg ${
                     isLocationConfirmed
                       ? 'border-primary ring-1 ring-primary'
                       : ''
@@ -229,7 +229,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                 {locationInput.trim() && (
                   <button
                     onClick={handleConfirmCity}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
                       isLocationConfirmed
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
@@ -263,25 +263,25 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                 <div className="flex-1 h-px bg-border" />
               </div>
               
-              {/* Nearby option - Secondary */}
+              {/* Nearby option - Secondary/smaller */}
               <button
                 onClick={handleSelectNearby}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all ${
                   data.explore_location === "nearby"
                     ? 'bg-primary/10 border border-primary'
                     : 'hover:bg-muted/50'
                 }`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                   data.explore_location === "nearby" ? 'bg-primary' : 'bg-muted'
                 }`}>
-                  <Navigation className={`w-4 h-4 ${
+                  <Navigation className={`w-3 h-3 ${
                     data.explore_location === "nearby" ? 'text-primary-foreground' : 'text-muted-foreground'
                   }`} />
                 </div>
                 <div>
-                  <span className="text-foreground font-medium text-sm block">Nearby places</span>
-                  <span className="text-muted-foreground text-xs">Use my current location</span>
+                  <span className="text-foreground font-medium text-xs block">Nearby places</span>
+                  <span className="text-muted-foreground text-[10px]">Use my current location</span>
                 </div>
               </button>
             </div>
