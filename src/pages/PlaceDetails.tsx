@@ -16,6 +16,7 @@ import BottomNav from '@/components/BottomNav';
 import SaveToBoardDialog from '@/components/saved/SaveToBoardDialog';
 import AuthDialog from '@/components/AuthDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useApp } from '@/context/AppContext';
 interface OpeningHoursData {
   open_now: boolean;
   weekday_text: string[];
@@ -315,6 +316,7 @@ const PlaceDetailsPage = () => {
   const [showSaveToBoardDialog, setShowSaveToBoardDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const { user } = useAuth();
+  const { hasExceededFreeActions } = useApp();
 
   // Get user location on mount
   useEffect(() => {
@@ -683,9 +685,10 @@ const PlaceDetailsPage = () => {
       </div>;
   }
   // Show blurred preview with auth overlay for non-authenticated users when place not found
+  // or when they've exceeded free actions
   if (error || !place) {
-    // If user is not logged in, show a teaser with auth prompt
-    if (!user) {
+    // If user has exceeded free actions or is not logged in, show a teaser with auth prompt
+    if (hasExceededFreeActions() || !user) {
       return (
         <div className="min-h-screen bg-background max-w-[420px] mx-auto relative">
           {/* Floating Back Button */}
