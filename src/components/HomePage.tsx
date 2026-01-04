@@ -838,6 +838,7 @@ const HomePage = () => {
         onDistanceChange={setMaxDistance}
         totalPlaces={searchResults.length}
         filteredCount={filteredResults.length}
+        isNearbyMode={onboardingData?.explore_location === "nearby"}
       />
 
       {/* Main Content */}
