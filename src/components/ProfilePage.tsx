@@ -3,27 +3,11 @@ import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 
 const ProfilePage = () => {
-  const { savedPlaceIds, userVibes, rankedPlaces } = useApp();
-  const { vibeBreakdown, isLoading: isVibeLoading, totalInteractions, searchCount } = useVibeDNA();
+  const { savedPlaceIds, userVibes } = useApp();
+  const { vibeBreakdown, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount } = useVibeDNA();
 
-  // Get saved places from rankedPlaces
-  const savedPlaces = rankedPlaces.filter(p => savedPlaceIds.has(p.place_id));
-
-  // Analyze saved places to derive insights
-  const getInsights = () => {
-    const categoryCount: Record<string, number> = {};
-    
-    savedPlaces.forEach(place => {
-      const category = place.categories?.[0] || "other";
-      categoryCount[category] = (categoryCount[category] || 0) + 1;
-    });
-
-    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "café";
-
-    return { topCategory, totalSaved: savedPlaces.length };
-  };
-
-  const insights = getInsights();
+  // Total saved is directly from savedPlaceIds Set (synced with DB)
+  const totalSaved = savedPlaceIds.size;
 
   const personalityTraits = [
     { icon: Moon, label: "Evening explorer", description: "You prefer spots that come alive after dark" },
@@ -57,15 +41,15 @@ const ProfilePage = () => {
         {/* Stats */}
         <section className="grid grid-cols-3 gap-3 opacity-0 animate-fade-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
           <div className="bg-card rounded-xl p-3 border border-border text-center">
-            <div className="text-2xl font-bold text-primary">{insights.totalSaved}</div>
+            <div className="text-2xl font-bold text-primary">{totalSaved}</div>
             <div className="text-[10px] text-muted-foreground mt-0.5">Saved spots</div>
           </div>
           <div className="bg-card rounded-xl p-3 border border-border text-center">
-            <div className="text-2xl font-bold text-primary">{rankedPlaces.length}</div>
+            <div className="text-2xl font-bold text-primary">{placesShownCount}</div>
             <div className="text-[10px] text-muted-foreground mt-0.5">Places shown</div>
           </div>
           <div className="bg-card rounded-xl p-3 border border-border text-center">
-            <div className="text-2xl font-bold text-primary">{searchCount || 1}</div>
+            <div className="text-2xl font-bold text-primary">{searchCount || 0}</div>
             <div className="text-[10px] text-muted-foreground mt-0.5">Mood searches</div>
           </div>
         </section>

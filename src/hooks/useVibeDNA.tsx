@@ -13,6 +13,7 @@ interface VibeDNAData {
   isLoading: boolean;
   totalInteractions: number;
   searchCount: number;
+  placesShownCount: number;
 }
 
 // Map filter_tags to vibe categories with weights
@@ -87,6 +88,7 @@ export const useVibeDNA = (): VibeDNAData => {
   const [isLoading, setIsLoading] = useState(true);
   const [totalInteractions, setTotalInteractions] = useState(0);
   const [searchCount, setSearchCount] = useState(0);
+  const [placesShownCount, setPlacesShownCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -124,6 +126,10 @@ export const useVibeDNA = (): VibeDNAData => {
         }
 
         setSearchCount(searchesCount || 0);
+        
+        // Calculate places shown count: unique places the user has interacted with
+        const uniquePlaceIds = new Set(interactions?.map(i => i.place_id) || []);
+        setPlacesShownCount(uniquePlaceIds.size);
 
         if (!interactions || interactions.length === 0) {
           // Default vibes for new users
@@ -243,5 +249,5 @@ export const useVibeDNA = (): VibeDNAData => {
     calculateVibeDNA();
   }, [user]);
 
-  return { vibeBreakdown, isLoading, totalInteractions, searchCount };
+  return { vibeBreakdown, isLoading, totalInteractions, searchCount, placesShownCount };
 };
