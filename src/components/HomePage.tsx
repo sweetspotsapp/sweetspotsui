@@ -813,10 +813,49 @@ const HomePage = () => {
             </Button>
           </div>
         ) : displaySections.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <Sparkles className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Ask me anything to discover amazing places!</p>
-          </div>
+          // Show auth prompt with blur if user has exceeded free actions
+          !user && freeActionsUsed >= 1 ? (
+            <div className="relative">
+              {/* Blurred placeholder content */}
+              <div className="filter blur-md pointer-events-none opacity-60 px-4">
+                <div className="space-y-4">
+                  <div className="h-48 bg-muted rounded-2xl" />
+                  <div className="h-6 bg-muted rounded-lg w-2/3" />
+                  <div className="flex gap-3">
+                    <div className="h-32 w-40 bg-muted rounded-xl flex-shrink-0" />
+                    <div className="h-32 w-40 bg-muted rounded-xl flex-shrink-0" />
+                    <div className="h-32 w-40 bg-muted rounded-xl flex-shrink-0" />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Auth overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                <div className="text-center p-6 max-w-sm">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Lock className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2 text-lg">Sign in to continue exploring</h3>
+                  <p className="text-muted-foreground text-sm mb-6">
+                    Create a free account to unlock unlimited searches and save your favorite spots
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <Button 
+                      onClick={() => setShowLocalAuthDialog(true)}
+                      className="rounded-full w-full"
+                    >
+                      Sign in or Sign up
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <Sparkles className="w-12 h-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Ask me anything to discover amazing places!</p>
+            </div>
+          )
         ) : (
           <>
             {/* AI Summary Card */}
