@@ -398,7 +398,7 @@ async function getAIRelevanceAndSummary(
                      categories.includes('bakery') || categories.includes('coffee');
       relevanceMap.set(p.place_id, isFood ? 80 : 40);
     });
-    summary = `Found ${places.length} spots matching your search nearby.`;
+    summary = `Found ${places.length} ${prompt.toLowerCase().includes('restaurant') ? 'restaurants' : prompt.toLowerCase().includes('cafe') || prompt.toLowerCase().includes('coffee') ? 'cafes' : 'spots'} ready to explore. These range from cozy local favorites to popular hangouts with great reviews.`;
     return { relevanceMap, summary };
   }
 
@@ -410,9 +410,14 @@ async function getAIRelevanceAndSummary(
     rating: p.rating,
   }));
 
-  const systemPrompt = `You are a place relevance evaluator and local guide. Given a user's search query and a list of places:
+  const systemPrompt = `You are a friendly local guide analyzing place recommendations. Given a user's search query and places found:
 1. Rate each place's relevance on a scale of 0-100
-2. Generate a brief, helpful summary about finding these spots in the area
+2. Generate a descriptive, engaging 2-3 sentence summary that:
+   - Acknowledges what they're looking for
+   - Highlights the variety/quality of options found
+   - Mentions standout spots or common themes (e.g., "lots of rooftop options", "mix of cozy cafes and trendy spots")
+   
+Write summaries like a helpful friend, NOT like a search engine. Be specific and insightful.
 
 SCORING GUIDE:
 - 80-100: Excellent match for the search intent
@@ -425,12 +430,14 @@ Be GENEROUS for places that could reasonably satisfy the user's intent.`;
 
   const userPrompt = `Query: "${prompt}"
 
-Places:
+Places found:
 ${placesInfo.map((p, i) => `${i}. ${p.name} (${p.categories || 'Unknown'}) - ${p.rating || 'N/A'}★`).join('\n')}
 
-Respond with a JSON object containing:
-1. "scores": array of [index, score] pairs for places scoring 40+
-2. "summary": 1-2 sentence helpful insight about these options`;
+Respond with a JSON object:
+{
+  "scores": [[index, score], ...] for places scoring 40+,
+  "summary": "Your engaging 2-3 sentence analysis of these options for someone looking for ${prompt}"
+}`;
 
   try {
     console.log('Calling Lovable AI for relevance scoring...');
@@ -463,7 +470,7 @@ Respond with a JSON object containing:
       
       // Fallback: give all places a neutral score
       places.forEach(p => relevanceMap.set(p.place_id, 50));
-      summary = `Found ${places.length} places matching "${prompt}" nearby.`;
+      summary = `Found ${places.length} options for "${prompt}". From highly-rated favorites to hidden gems, there's plenty to explore here.`;
       return { relevanceMap, summary };
     }
 
