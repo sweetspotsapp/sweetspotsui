@@ -6,6 +6,8 @@ import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
+import TopPickCard from "./TopPickCard";
+import TopPicksSection from "./TopPicksSection";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
 import AISummaryCard from "./AISummaryCard";
@@ -793,20 +795,33 @@ const HomePage = () => {
               <AISummaryCard summary={aiSummary} />
             )}
 
-            {displaySections.map((section, index) => (
-              <SectionRow
-                key={index}
-                title={section.title}
-                places={section.places}
-                allPlaces={searchResults}
+            {/* Top Picks Section - Large vertical cards */}
+            {displaySections.find(s => s.featured) && (
+              <TopPicksSection
+                places={displaySections.find(s => s.featured)!.places}
                 onPlaceClick={handlePlaceClick}
                 toggleSave={handleSaveClick}
                 isSaved={isSaved}
-                featured={section.featured}
-                userLocation={userLocation}
-                onSeeAll={handleSeeAll}
               />
-            ))}
+            )}
+
+            {/* Other Sections - Horizontal scroll rows */}
+            {displaySections
+              .filter(section => !section.featured)
+              .map((section, index) => (
+                <SectionRow
+                  key={index}
+                  title={section.title}
+                  places={section.places}
+                  allPlaces={searchResults}
+                  onPlaceClick={handlePlaceClick}
+                  toggleSave={handleSaveClick}
+                  isSaved={isSaved}
+                  featured={false}
+                  userLocation={userLocation}
+                  onSeeAll={handleSeeAll}
+                />
+              ))}
           </>
         )}
       </main>
