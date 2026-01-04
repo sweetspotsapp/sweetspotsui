@@ -2,6 +2,7 @@ import { useState, createContext, useContext, ReactNode, useCallback } from "rea
 import { extractVibes } from "@/data/mockPlaces";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { useSavedPlaces } from "@/hooks/useSavedPlaces";
+import { useAuth } from "@/hooks/useAuth";
 
 // Onboarding data structure (defined here to avoid circular deps)
 export interface OnboardingData {
@@ -34,6 +35,11 @@ interface AppContextType {
   toggleSave: (placeId: string) => Promise<void>;
   isSaved: (placeId: string) => boolean;
   isLoadingSavedPlaces: boolean;
+  
+  // Auth dialog for saving
+  showAuthDialog: boolean;
+  setShowAuthDialog: (show: boolean) => void;
+  pendingSavePlaceId: string | null;
   
   // User mood/vibes
   userMood: string;
@@ -131,7 +137,8 @@ const generateSections = (data: OnboardingData | null): SectionConfig[] => {
 };
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const { savedPlaceIds, toggleSave, isSaved, isLoading: isLoadingSavedPlaces } = useSavedPlaces();
+  const { user } = useAuth();
+  const { savedPlaceIds, toggleSave: originalToggleSave, isSaved, isLoading: isLoadingSavedPlaces } = useSavedPlaces();
 
   const [rankedPlaces, setRankedPlaces] = useState<RankedPlace[]>([]);
   const [userMood, setUserMood] = useState("");
@@ -141,6 +148,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [categories, setCategories] = useState<PlaceCategory[]>([]);
   const [onboardingData, setOnboardingDataState] = useState<OnboardingData | null>(null);
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
+  
+  // Auth dialog state for prompting login when saving
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [pendingSavePlaceId, setPendingSavePlaceId] = useState<string | null>(null);
+
+  // Wrapper for toggleSave that shows auth dialog if not logged in
+  const toggleSave = useCallback(async (placeId: string) => {
+    if (!user) {
+      setPendingSavePlaceId(placeId);
+      setShowAuthDialog(true);
+      return;
+    }
+    await originalToggleSave(placeId);
+  }, [user, originalToggleSave]);
 
   const setOnboardingData = useCallback((data: OnboardingData) => {
     setOnboardingDataState(data);
@@ -201,6 +222,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       toggleSave, 
       isSaved,
       isLoadingSavedPlaces,
+      showAuthDialog,
+      setShowAuthDialog,
+      pendingSavePlaceId,
       userMood, 
       setUserMood, 
       userVibes,

@@ -75,11 +75,7 @@ export const useSavedPlaces = (): UseSavedPlacesReturn => {
 
   const toggleSave = useCallback(async (placeId: string) => {
     if (!user) {
-      toast({
-        title: 'Login required',
-        description: 'Please log in to save places',
-        variant: 'destructive',
-      });
+      // Auth dialog is now handled by AppContext
       return;
     }
 
