@@ -28,12 +28,27 @@ const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) =
 
   const getContextText = () => {
     if (searchQuery) {
-      return `Searching for "${searchQuery}" ${getLocationText()}`;
+      const locationText = getLocationText();
+      return `Searching for "${searchQuery}" ${locationText}`;
     }
     return null;
   };
 
   const contextText = getContextText();
+
+  // Clean summary to remove redundant distance/nearby info when location is set
+  const cleanSummary = () => {
+    let cleaned = summary;
+    // Remove "nearby" mentions when location is a city
+    if (location && location !== "nearby") {
+      cleaned = cleaned.replace(/\s*nearby\.?/gi, '.');
+      cleaned = cleaned.replace(/\s*within \d+(\.\d+)?\s*(km|miles?)\.?/gi, '.');
+      cleaned = cleaned.replace(/\.\./g, '.').trim();
+    }
+    return cleaned;
+  };
+
+  const displaySummary = cleanSummary();
 
   return (
     <div className="mx-4 mb-6 p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/50 dark:border-amber-800/30">
@@ -57,7 +72,7 @@ const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) =
               !isExpanded && needsTruncation ? "line-clamp-2" : ""
             }`}
           >
-            {summary}
+            {displaySummary}
           </p>
           {needsTruncation && (
             <button
