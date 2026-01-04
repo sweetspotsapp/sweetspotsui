@@ -78,14 +78,10 @@ const RelatedSpots = ({
               </div>
               
               {/* Info */}
-              <div className="space-y-1 text-left">
+              <div className="text-left mt-2">
                 <p className="text-sm font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                   {place.name}
                 </p>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Navigation className="w-3 h-3" />
-                  <span className="text-xs">{place.distance} km</span>
-                </div>
               </div>
             </button>)}
         </div>
