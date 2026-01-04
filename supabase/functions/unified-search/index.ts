@@ -553,8 +553,8 @@ serve(async (req) => {
       );
     }
 
-    // Transform to candidates
-    const candidates: PlaceCandidate[] = allGooglePlaces.map((place: any) => {
+    // Transform to candidates (initial transform without filter_tags)
+    const baseCandidates: PlaceCandidate[] = allGooglePlaces.map((place: any) => {
       const firstPhoto = place.photos?.[0];
       const priceLevel = place.priceLevel ? 
         ['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'].indexOf(place.priceLevel) : null;
@@ -572,6 +572,32 @@ serve(async (req) => {
         photo_name: firstPhoto?.name || null,
         price_level: priceLevel,
         is_open_now: isOpenNow,
+      };
+    });
+
+    // Fetch existing filter_tags from database for these places
+    const placeIds = baseCandidates.map(p => p.place_id);
+    const { data: dbPlaces } = await supabaseAdmin
+      .from('places')
+      .select('place_id, filter_tags, price_level')
+      .in('place_id', placeIds);
+
+    const dbPlaceMap = new Map<string, { filter_tags?: string[] | null; price_level?: number | null }>();
+    if (dbPlaces) {
+      for (const p of dbPlaces) {
+        dbPlaceMap.set(p.place_id, { filter_tags: p.filter_tags, price_level: p.price_level });
+      }
+    }
+    console.log(`Found ${dbPlaceMap.size} places with existing filter_tags in DB`);
+
+    // Merge filter_tags from DB into candidates
+    const candidates: PlaceCandidate[] = baseCandidates.map(c => {
+      const dbData = dbPlaceMap.get(c.place_id);
+      return {
+        ...c,
+        filter_tags: dbData?.filter_tags || null,
+        // Use DB price_level if Google didn't provide one
+        price_level: c.price_level ?? dbData?.price_level ?? null,
       };
     });
 
