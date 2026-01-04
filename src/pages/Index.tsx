@@ -8,6 +8,7 @@ import LoadingTransition from "@/components/LoadingTransition";
 import AuthDialog from "@/components/AuthDialog";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
+import type { OnboardingData } from "@/context/AppContext";
 
 type AppState = "onboarding" | "loading" | "main";
 
@@ -17,6 +18,7 @@ const Index = () => {
     hasCompletedOnboarding, 
     setUserMood, 
     completeOnboarding,
+    setOnboardingData,
     showAuthDialog,
     setShowAuthDialog,
     pendingSavePlaceId,
@@ -45,6 +47,17 @@ const Index = () => {
         toggleSave(pendingSavePlaceId);
       }, 100);
     }
+  };
+
+  const handleOnboardingComplete = (data: OnboardingData) => {
+    setOnboardingData(data);
+    setAppState("loading");
+    
+    // Short loading transition
+    setTimeout(() => {
+      completeOnboarding("", []);
+      setAppState("main");
+    }, 800);
   };
 
   const handleMoodSubmit = (mood: string) => {
@@ -82,9 +95,9 @@ const Index = () => {
     );
   }
 
-  // Show mood input screen
+  // Show onboarding wizard
   if (appState === "onboarding") {
-    return <EntryScreen onSubmit={handleMoodSubmit} onSkip={handleSkip} />;
+    return <EntryScreen onSubmit={handleMoodSubmit} onSkip={handleSkip} onOnboardingComplete={handleOnboardingComplete} />;
   }
 
   // Show loading transition
