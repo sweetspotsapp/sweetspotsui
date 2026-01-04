@@ -20,17 +20,41 @@ const suggestions = [
 
 const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
   const [value, setValue] = useState("");
+  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Combine typed input with selected suggestions
+    const parts: string[] = [];
     if (value.trim()) {
-      onSubmit(value.trim());
+      parts.push(value.trim());
+    }
+    selectedSuggestions.forEach(s => {
+      if (!value.toLowerCase().includes(s.toLowerCase())) {
+        parts.push(s);
+      }
+    });
+    
+    const finalMood = parts.join(", ");
+    if (finalMood) {
+      onSubmit(finalMood);
     }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    setValue(suggestion);
+    setSelectedSuggestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(suggestion)) {
+        newSet.delete(suggestion);
+      } else {
+        newSet.add(suggestion);
+      }
+      return newSet;
+    });
   };
+
+  const hasInput = value.trim() || selectedSuggestions.size > 0;
 
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-4">
@@ -49,18 +73,25 @@ const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
         />
       </div>
 
-      {/* Suggestion chips */}
+      {/* Suggestion chips - multi-select */}
       <div className="flex flex-wrap gap-2">
-        {suggestions.map((suggestion) => (
-          <button
-            key={suggestion}
-            type="button"
-            onClick={() => handleSuggestionClick(suggestion)}
-            className="px-3 py-1.5 text-sm rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-          >
-            {suggestion}
-          </button>
-        ))}
+        {suggestions.map((suggestion) => {
+          const isSelected = selectedSuggestions.has(suggestion);
+          return (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => handleSuggestionClick(suggestion)}
+              className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                isSelected 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              }`}
+            >
+              {suggestion}
+            </button>
+          );
+        })}
       </div>
 
       <Button
@@ -68,7 +99,7 @@ const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
         variant="primary"
         size="lg"
         className="w-full h-12 text-base rounded-xl"
-        disabled={!value.trim()}
+        disabled={!hasInput}
       >
         Let's go
         <ArrowRight className="w-5 h-5 ml-1" />

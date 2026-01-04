@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Star, Heart, Navigation, Sparkles } from "lucide-react";
+import { Star, Heart, Navigation, Clock } from "lucide-react";
 
 // Dummy place type for mock data
 export interface MockPlace {
@@ -13,6 +13,7 @@ export interface MockPlace {
   categories?: string[];
   ai_reason?: string;
   ai_category?: string;
+  is_open_now?: boolean | null;
 }
 
 interface PlaceCardCompactProps {
@@ -185,6 +186,19 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
             <Navigation className="w-3 h-3" />
             <span>{place.distance_km.toFixed(1)} km</span>
           </div>
+
+          {/* Open/Closed status */}
+          {place.is_open_now !== null && place.is_open_now !== undefined && (
+            <>
+              <span className="text-border">•</span>
+              <div className="flex items-center gap-0.5">
+                <Clock className="w-3 h-3" />
+                <span className={place.is_open_now ? 'text-green-600' : 'text-red-500'}>
+                  {place.is_open_now ? 'Open' : 'Closed'}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
       </div>
