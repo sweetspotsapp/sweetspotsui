@@ -248,7 +248,132 @@ Return ONLY a JSON object: { "keywords": "search terms", "intent": "what user wa
   }
 }
 
-// AI-powered semantic relevance check using Lovable AI
+// Valid filter tags that can be assigned to places
+const VALID_FILTER_TAGS = [
+  'good-for-friends',
+  'romantic',
+  'family-friendly',
+  'good-for-solo',
+  'chill-vibe',
+  'lively-vibe',
+  'hidden-gem',
+  'scenic-view',
+  'pet-friendly',
+  'late-night',
+  'outdoor-seating',
+];
+
+// Generate filter_tags for places using AI
+async function generateFilterTagsWithAI(
+  places: PlaceCandidate[],
+  lovableApiKey: string
+): Promise<Map<string, string[]>> {
+  const tagsMap = new Map<string, string[]>();
+  
+  if (places.length === 0) return tagsMap;
+
+  // Limit to 30 places per batch to avoid token limits
+  const placesToProcess = places.slice(0, 30);
+
+  const placesInfo = placesToProcess.map((p, i) => ({
+    index: i,
+    place_id: p.place_id,
+    name: p.name,
+    categories: (p.categories || []).slice(0, 8).join(', '),
+    rating: p.rating,
+    address: p.address,
+  }));
+
+  const systemPrompt = `You analyze places and assign relevant filter tags. For each place, assign ALL tags that apply from this list:
+- good-for-friends: Social venues, group activities, lively atmosphere
+- romantic: Date spots, intimate settings, romantic ambiance
+- family-friendly: Kid-safe, welcoming to families, appropriate activities
+- good-for-solo: Comfortable alone, counter seating, solo-friendly
+- chill-vibe: Relaxed, quiet, calm atmosphere
+- lively-vibe: Energetic, bustling, exciting atmosphere
+- hidden-gem: Lesser-known, unique finds, off beaten path
+- scenic-view: Good views, waterfront, rooftop, scenic location
+- pet-friendly: Allows pets, outdoor seating areas
+- late-night: Open late, nightlife spots, bars
+- outdoor-seating: Patio, terrace, al fresco dining
+
+Be GENEROUS - if a place could reasonably have a tag based on its name, categories, or typical venue type, include it.`;
+
+  const userPrompt = `Analyze these places and assign filter tags:
+
+${placesInfo.map((p, i) => `${i}. ${p.name} | Categories: ${p.categories || 'Unknown'} | Rating: ${p.rating || 'N/A'}★`).join('\n')}
+
+Respond with JSON: {"tags": [[0, ["tag1", "tag2"]], [1, ["tag1"]], ...]}
+Only include places that have at least one tag. Use only tags from the valid list.`;
+
+  try {
+    console.log(`Generating filter_tags for ${placesToProcess.length} places...`);
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('AI filter tags error:', response.status);
+      return tagsMap;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    // Extract JSON from response
+    let jsonStr = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1];
+    }
+    
+    const objectMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (objectMatch) {
+      jsonStr = objectMatch[0];
+    }
+    
+    const parsed = JSON.parse(jsonStr.trim());
+    const tagResults = parsed.tags || [];
+    
+    for (const item of tagResults) {
+      let idx: number;
+      let tags: string[];
+      
+      if (Array.isArray(item) && item.length >= 2) {
+        [idx, tags] = item;
+      } else {
+        continue;
+      }
+      
+      if (typeof idx === 'number' && idx >= 0 && idx < placesToProcess.length && Array.isArray(tags)) {
+        // Filter to only valid tags
+        const validTags = tags.filter(t => VALID_FILTER_TAGS.includes(t));
+        if (validTags.length > 0) {
+          tagsMap.set(placesToProcess[idx].place_id, validTags);
+        }
+      }
+    }
+    
+    console.log(`Generated tags for ${tagsMap.size} places`);
+  } catch (error) {
+    console.error('Failed to generate filter tags:', error);
+  }
+
+  return tagsMap;
+}
+
 async function getAIRelevanceAndSummary(
   prompt: string,
   places: PlaceCandidate[],
@@ -588,14 +713,45 @@ serve(async (req) => {
         dbPlaceMap.set(p.place_id, { filter_tags: p.filter_tags, price_level: p.price_level });
       }
     }
-    console.log(`Found ${dbPlaceMap.size} places with existing filter_tags in DB`);
+    
+    // Identify places missing filter_tags
+    const placesNeedingTags = baseCandidates.filter(c => {
+      const dbData = dbPlaceMap.get(c.place_id);
+      return !dbData?.filter_tags || dbData.filter_tags.length === 0;
+    });
+    
+    console.log(`Found ${dbPlaceMap.size} places in DB, ${placesNeedingTags.length} need filter_tags`);
 
-    // Merge filter_tags from DB into candidates
+    // Generate filter_tags for places that don't have them using AI
+    let generatedTagsMap = new Map<string, string[]>();
+    if (placesNeedingTags.length > 0 && lovableApiKey) {
+      generatedTagsMap = await generateFilterTagsWithAI(placesNeedingTags, lovableApiKey);
+      console.log(`AI generated tags for ${generatedTagsMap.size} places`);
+      
+      // Save generated tags to database (fire and forget)
+      const tagsToUpdate = Array.from(generatedTagsMap.entries()).map(([place_id, filter_tags]) => ({
+        place_id,
+        filter_tags,
+      }));
+      
+      if (tagsToUpdate.length > 0) {
+        supabaseAdmin.from('places').upsert(tagsToUpdate, { onConflict: 'place_id' })
+          .then(({ error }) => {
+            if (error) console.error('Failed to save generated tags:', error);
+            else console.log(`Saved filter_tags for ${tagsToUpdate.length} places`);
+          });
+      }
+    }
+
+    // Merge filter_tags from DB or AI-generated into candidates
     const candidates: PlaceCandidate[] = baseCandidates.map(c => {
       const dbData = dbPlaceMap.get(c.place_id);
+      const existingTags = dbData?.filter_tags;
+      const generatedTags = generatedTagsMap.get(c.place_id);
+      
       return {
         ...c,
-        filter_tags: dbData?.filter_tags || null,
+        filter_tags: (existingTags && existingTags.length > 0) ? existingTags : (generatedTags || null),
         // Use DB price_level if Google didn't provide one
         price_level: c.price_level ?? dbData?.price_level ?? null,
       };
