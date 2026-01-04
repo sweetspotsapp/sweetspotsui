@@ -170,6 +170,7 @@ const CACHE_KEY = 'sweetspots_search_cache';
 const SUMMARY_CACHE_KEY = 'sweetspots_summary_cache';
 const CACHE_VERSION_KEY = 'sweetspots_cache_version';
 const CACHED_MOOD_KEY = 'sweetspots_cached_mood';
+const CACHED_LOCATION_KEY = 'sweetspots_cached_location';
 const SKIP_MODE_KEY = 'sweetspots_skip_mode';
 const CURRENT_CACHE_VERSION = '2'; // Increment to bust cache
 
@@ -307,14 +308,17 @@ const HomePage = () => {
 
   // Load initial places on mount - use userMood from EntryScreen if available
   useEffect(() => {
-    // Check if the mood has changed since last cache
+    // Check if the mood or location has changed since last cache
     const cachedMood = sessionStorage.getItem(CACHED_MOOD_KEY) || "";
+    const cachedLocation = sessionStorage.getItem(CACHED_LOCATION_KEY) || "";
     const currentMood = userMood?.trim() || "";
+    const currentLocation = onboardingData?.explore_location || "";
     const moodChanged = currentMood && currentMood !== cachedMood;
+    const locationChanged = currentLocation && currentLocation !== cachedLocation;
     
-    // Skip if already loaded and mood hasn't changed (but not if we're in skip mode)
-    if (hasLoadedInitial.current && !moodChanged && !wasSkipMode.current) return;
-    if (searchResults.length > 0 && !moodChanged && !wasSkipMode.current) {
+    // Skip if already loaded and nothing has changed (but not if we're in skip mode)
+    if (hasLoadedInitial.current && !moodChanged && !locationChanged && !wasSkipMode.current) return;
+    if (searchResults.length > 0 && !moodChanged && !locationChanged && !wasSkipMode.current) {
       hasLoadedInitial.current = true;
       return;
     }
@@ -322,6 +326,16 @@ const HomePage = () => {
 
     const loadInitialPlaces = async () => {
       setIsInitialLoading(true);
+      
+      // Clear cache if location changed
+      if (locationChanged) {
+        console.log("Location changed from", cachedLocation, "to", currentLocation, "- clearing cache");
+        sessionStorage.removeItem(CACHE_KEY);
+        sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+        setSearchResults([]);
+        setAiSummary(null);
+      }
+      
       try {
         let searchPrompt: string;
         
@@ -334,19 +348,21 @@ const HomePage = () => {
         } else {
           // Use the mood from EntryScreen if available, otherwise use default
           searchPrompt = currentMood || "popular restaurants and cafes nearby";
-          console.log("Initial search with prompt:", searchPrompt);
+          console.log("Initial search with prompt:", searchPrompt, "location:", currentLocation);
           
-          // Store the current mood in cache
+          // Store the current mood and location in cache
           if (currentMood) {
             sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
+          }
+          if (currentLocation) {
+            sessionStorage.setItem(CACHED_LOCATION_KEY, currentLocation);
           }
         }
         
         // Build search options based on onboarding location
         const searchOptions: { locationName?: string } = {};
-        const exploreLocation = onboardingData?.explore_location;
-        if (exploreLocation && exploreLocation !== "nearby") {
-          searchOptions.locationName = exploreLocation;
+        if (currentLocation && currentLocation !== "nearby") {
+          searchOptions.locationName = currentLocation;
         }
         
         const result = await search(searchPrompt, searchOptions);
@@ -365,7 +381,7 @@ const HomePage = () => {
     };
 
     loadInitialPlaces();
-  }, [search, searchResults.length, userMood]);
+  }, [search, searchResults.length, userMood, onboardingData?.explore_location]);
 
   // Show search errors as toast
   useEffect(() => {

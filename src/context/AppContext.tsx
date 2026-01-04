@@ -195,6 +195,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [user, originalToggleSave]);
 
   const setOnboardingData = useCallback((data: OnboardingData) => {
+    // Clear search cache when location changes
+    try {
+      const cachedLocation = sessionStorage.getItem('sweetspots_cached_location') || "";
+      if (data.explore_location && data.explore_location !== cachedLocation) {
+        sessionStorage.removeItem('sweetspots_search_cache');
+        sessionStorage.removeItem('sweetspots_summary_cache');
+        sessionStorage.removeItem('sweetspots_cached_location');
+      }
+    } catch {}
+    
     setOnboardingDataState(data);
     setSections(generateSections(data));
   }, []);
