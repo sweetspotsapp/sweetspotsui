@@ -549,17 +549,7 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('Missing authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
@@ -586,21 +576,22 @@ serve(async (req) => {
       );
     }
 
-    // Auth clients
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Admin client for database operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Optional: Get user if auth header provided (for personalization)
+    let userId: string | null = null;
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      userId = user?.id || null;
     }
 
-    console.log('User:', user.id);
+    console.log('User:', userId || 'anonymous');
 
     // Parse request
     const body: RequestBody = await req.json();
@@ -857,11 +848,15 @@ serve(async (req) => {
       // 2b: AI relevance scoring + summary (use intent for better context)
       getAIRelevanceAndSummary(intent || prompt, validCandidates, lovableApiKey),
 
-      // 2c: User profile
-      supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+      // 2c: User profile (only if authenticated)
+      userId 
+        ? supabaseAdmin.from('profiles').select('*').eq('id', userId).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
 
-      // 2d: Saved places
-      supabaseClient.from('saved_places').select('place_id').eq('user_id', user.id),
+      // 2d: Saved places (only if authenticated)
+      userId
+        ? supabaseAdmin.from('saved_places').select('place_id').eq('user_id', userId)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
     console.log(`Parallel operations completed in ${Date.now() - parallelStartTime}ms`);
@@ -869,7 +864,7 @@ serve(async (req) => {
     const travelData = travelTimeResult;
     const { relevanceMap, summary } = aiResult;
     const profile = profileResult.data;
-    const savedPlaces = savedPlacesResult.data || [];
+    const savedPlaces: { place_id: string }[] = savedPlacesResult.data || [];
 
     // ============ STEP 3: Score and rank places ============
     const relevantCandidates = validCandidates.filter(p => relevanceMap.has(p.place_id));
@@ -884,7 +879,7 @@ serve(async (req) => {
     // Find max values for normalization
     let maxEta = 0;
     let maxDistance = 0;
-    travelData.forEach(({ eta, distance }) => {
+    travelData.forEach(({ eta, distance }: { eta: number | null; distance: number | null }) => {
       if (eta !== null && eta > maxEta) maxEta = eta;
       if (distance !== null && distance > maxDistance) maxDistance = distance;
     });
@@ -972,17 +967,19 @@ serve(async (req) => {
         else console.log(`Upserted ${placesToUpsert.length} places`);
       });
 
-    // Log search (fire and forget)
-    supabaseClient.from('searches').insert({
-      user_id: user.id,
-      prompt,
-      lat,
-      lng,
-      mode,
-      created_at: new Date().toISOString(),
-    }).then(({ error }) => {
-      if (error) console.error('Search log error:', error);
-    });
+    // Log search (fire and forget) - only for authenticated users
+    if (userId) {
+      supabaseAdmin.from('searches').insert({
+        user_id: userId,
+        prompt,
+        lat,
+        lng,
+        mode,
+        created_at: new Date().toISOString(),
+      }).then(({ error }: { error: any }) => {
+        if (error) console.error('Search log error:', error);
+      });
+    }
 
     const totalTime = Date.now() - startTime;
     console.log(`Total: ${topPlaces.length} places in ${totalTime}ms`);
