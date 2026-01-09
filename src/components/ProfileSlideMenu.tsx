@@ -20,9 +20,10 @@ import { cn } from "@/lib/utils";
 interface ProfileSlideMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigateToProfile?: () => void;
 }
 
-const ProfileSlideMenu = ({ isOpen, onClose }: ProfileSlideMenuProps) => {
+const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlideMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -35,7 +36,9 @@ const ProfileSlideMenu = ({ isOpen, onClose }: ProfileSlideMenuProps) => {
 
   const handleViewProfile = () => {
     onClose();
-    // Navigate to profile page or show profile content
+    if (onNavigateToProfile) {
+      onNavigateToProfile();
+    }
   };
 
   const handleNavigateToSettings = () => {

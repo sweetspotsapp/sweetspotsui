@@ -192,7 +192,11 @@ const getTimeBasedPrompt = (): string => {
   }
 };
 
-const HomePage = () => {
+interface HomePageProps {
+  onNavigateToProfile?: () => void;
+}
+
+const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const navigate = useNavigate();
   const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, freeActionsUsed, incrementFreeActions, setShowAuthDialog, onboardingData, setOnboardingData } = useApp();
   const { user } = useAuth();
@@ -996,7 +1000,8 @@ const HomePage = () => {
       {/* Profile Slide Menu */}
       <ProfileSlideMenu 
         isOpen={isProfileMenuOpen} 
-        onClose={() => setIsProfileMenuOpen(false)} 
+        onClose={() => setIsProfileMenuOpen(false)}
+        onNavigateToProfile={onNavigateToProfile}
       />
       
       {/* Auth Dialog for soft wall */}

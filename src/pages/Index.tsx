@@ -109,7 +109,7 @@ const Index = () => {
   // Show main app
   return (
     <div className="min-h-screen bg-background">
-      {activeTab === "home" && <HomePage />}
+      {activeTab === "home" && <HomePage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "saved" && <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "profile" && <ProfilePage />}
       
