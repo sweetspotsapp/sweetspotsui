@@ -12,12 +12,25 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/40">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="w-9" /> {/* Spacer for balance */}
+            
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                SweetSpots
+              </span>
+            </div>
+            
+            <div className="w-9" /> {/* Spacer for balance */}
+          </div>
+        </header>
+
+        {/* Page Title */}
         <div className="px-4 pt-6 pb-4">
           <h1 className="text-2xl font-bold text-foreground">Your Profile</h1>
           <p className="text-sm text-muted-foreground mt-1">What Sweetspots knows about you</p>
         </div>
-      </header>
 
       <div className="p-4 space-y-5">
         {/* Profile Header */}
