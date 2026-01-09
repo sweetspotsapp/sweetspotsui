@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Menu, User, SortAsc, Loader2 } from "lucide-react";
+import { Plus, User, SortAsc, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -31,7 +31,11 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
 
 type SortOption = "recent" | "alphabetical" | "most-saved";
 
-const SavedPage = () => {
+interface SavedPageProps {
+  onNavigateToProfile?: () => void;
+}
+
+const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { location: userLocation } = useLocation();
@@ -254,12 +258,7 @@ const SavedPage = () => {
         {/* Header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40">
           <div className="flex items-center justify-between px-4 py-3">
-            <button 
-              onClick={() => navigate('/')}
-              className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
-            >
-              <Menu className="w-5 h-5 text-foreground" />
-            </button>
+            <div className="w-9" /> {/* Spacer for balance */}
             
             <div className="flex items-center gap-1">
               <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -268,7 +267,7 @@ const SavedPage = () => {
             </div>
             
             <button 
-              onClick={() => navigate('/profile')}
+              onClick={() => onNavigateToProfile?.()}
               className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors"
             >
               <User className="w-5 h-5 text-foreground" />
