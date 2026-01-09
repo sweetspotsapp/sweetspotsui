@@ -13,9 +13,9 @@ const ProfilePage = () => {
     <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/40">
-        <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-foreground">Your Profile</h1>
-          <p className="text-xs text-muted-foreground">What Sweetspots knows about you</p>
+        <div className="px-4 pt-6 pb-4">
+          <h1 className="text-2xl font-bold text-foreground">Your Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1">What Sweetspots knows about you</p>
         </div>
       </header>
 
