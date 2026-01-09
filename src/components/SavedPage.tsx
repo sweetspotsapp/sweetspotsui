@@ -270,7 +270,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
               onClick={() => onNavigateToProfile?.()}
               className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors"
             >
-              <User className="w-5 h-5 text-foreground" />
+              <User className="w-6 h-6 text-foreground" />
             </button>
           </div>
         </header>
