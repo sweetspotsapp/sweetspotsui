@@ -73,7 +73,7 @@ const RelatedSpots = ({
                 {/* Rating badge */}
                 <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg">
                   <Star className="w-3 h-3 text-primary fill-primary" />
-                  <span className="text-xs font-semibold text-primary-foreground">{place.rating}</span>
+                  <span className="text-xs font-semibold text-popover-foreground">{place.rating}</span>
                 </div>
               </div>
               
