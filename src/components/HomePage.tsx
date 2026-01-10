@@ -493,11 +493,13 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     setUserMood(searchValue.trim());
     setNeedsLocationPermission(false);
     
-    // Clear old cache before new search to prevent stale data
+    // Clear old cache and results before new search to prevent stale data
     setAiSummary(null);
+    setSearchResults([]); // Clear old results immediately so stale data isn't shown
     try {
       sessionStorage.removeItem(CACHE_KEY);
       sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+      sessionStorage.removeItem(CACHED_MOOD_KEY); // Clear cached mood so new search takes effect
     } catch (e) {
       console.error('Failed to clear cache:', e);
     }
@@ -507,7 +509,9 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     console.log("Search with filters:", searchPrompt);
     
     // Build search options based on onboarding location
-    const searchOptions: { locationName?: string } = {};
+    const searchOptions: { locationName?: string; skipCache?: boolean } = {
+      skipCache: true, // Always skip cache on new search to get fresh results
+    };
     const exploreLocation = onboardingData?.explore_location;
     if (exploreLocation && exploreLocation !== "nearby") {
       searchOptions.locationName = exploreLocation;
@@ -552,6 +556,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       const searchPrompt = buildSearchPrompt(basePrompt, filters);
       
       setAiSummary(null);
+      setSearchResults([]); // Clear old results immediately
       try {
         sessionStorage.removeItem(CACHE_KEY);
         sessionStorage.removeItem(SUMMARY_CACHE_KEY);
@@ -560,7 +565,9 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       }
       
       // Build search options based on onboarding location
-      const searchOptions: { locationName?: string } = {};
+      const searchOptions: { locationName?: string; skipCache?: boolean } = {
+        skipCache: true, // Always skip cache on filter change
+      };
       const exploreLocation = onboardingData?.explore_location;
       if (exploreLocation && exploreLocation !== "nearby") {
         searchOptions.locationName = exploreLocation;
