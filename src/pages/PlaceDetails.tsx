@@ -583,15 +583,21 @@ const PlaceDetailsPage = () => {
     fetchPlace();
   }, [placeId, userLocation]);
   const openInMaps = () => {
-    let url: string;
-    if (place?.lat && place?.lng) {
-      url = `https://maps.google.com/?q=${place.lat},${place.lng}`;
-    } else if (place?.address) {
-      const query = encodeURIComponent(`${place.name} ${place.address}`);
-      url = `https://maps.google.com/?q=${query}`;
+    if (!place) return;
+    
+    // Build a search query using the place name and address for best results
+    // This ensures Google Maps shows the place name instead of just coordinates
+    let query: string;
+    if (place.address) {
+      query = `${place.name}, ${place.address}`;
+    } else if (place.lat && place.lng) {
+      // Include coordinates as a fallback hint but prioritize the name
+      query = `${place.name} @${place.lat},${place.lng}`;
     } else {
-      return;
+      query = place.name;
     }
+    
+    const url = `https://maps.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
   const handleShare = () => {
