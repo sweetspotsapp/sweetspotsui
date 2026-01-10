@@ -294,6 +294,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) throw new Error("useApp must be used within AppProvider");
+  if (!context) {
+    // During HMR, context may temporarily be undefined
+    // Return a safe fallback during this transition
+    console.warn("useApp called outside of AppProvider - this may be a temporary HMR issue");
+    throw new Error("useApp must be used within AppProvider");
+  }
   return context;
 };
