@@ -51,11 +51,15 @@ const Index = () => {
 
   const handleOnboardingComplete = (data: OnboardingData) => {
     setOnboardingData(data);
+    // Set the user mood from onboarding data if available
+    if (data.mood) {
+      setUserMood(data.mood);
+    }
     setAppState("loading");
     
     // Short loading transition
     setTimeout(() => {
-      completeOnboarding("", []);
+      completeOnboarding(data.mood || "", []);
       setAppState("main");
     }, 800);
   };

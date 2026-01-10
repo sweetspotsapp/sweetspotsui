@@ -120,6 +120,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   };
 
   const saveAndComplete = async () => {
+    // Build the mood string from user input and selected suggestions
     const parts: string[] = [];
     if (moodValue.trim()) {
       parts.push(moodValue.trim());
@@ -131,9 +132,12 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     });
     
     const finalMood = parts.join(", ");
+    
+    // Create the final data with mood included
+    const finalData = { ...data, mood: finalMood || null };
 
     if (!user) {
-      onComplete(data);
+      onComplete(finalData);
       return;
     }
 
@@ -142,7 +146,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          vibe: { explore_location: data.explore_location },
+          vibe: { explore_location: data.explore_location, mood: finalMood },
         })
         .eq('id', user.id);
 
@@ -158,7 +162,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
       console.error('Error saving profile:', err);
     } finally {
       setIsSubmitting(false);
-      onComplete(data);
+      onComplete(finalData);
     }
   };
 

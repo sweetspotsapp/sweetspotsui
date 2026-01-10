@@ -335,11 +335,13 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     const loadInitialPlaces = async () => {
       setIsInitialLoading(true);
       
-      // Clear cache if location changed
-      if (locationChanged) {
-        console.log("Location changed from", cachedLocation, "to", currentLocation, "- clearing cache");
+      // Clear cache if location or mood changed
+      if (locationChanged || moodChanged) {
+        console.log("Location or mood changed - clearing cache");
         sessionStorage.removeItem(CACHE_KEY);
         sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+        sessionStorage.removeItem(CACHED_MOOD_KEY);
+        sessionStorage.removeItem(CACHED_LOCATION_KEY);
         setSearchResults([]);
         setAiSummary(null);
       }
@@ -354,21 +356,23 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           // Reset the ref so future navigations don't trigger skip mode
           wasSkipMode.current = false;
         } else {
-          // Use the mood from EntryScreen if available, otherwise use default
+          // Use the mood from onboarding/context if available, otherwise use default
           searchPrompt = currentMood || "popular restaurants and cafes nearby";
           console.log("Initial search with prompt:", searchPrompt, "location:", currentLocation);
-          
-          // Store the current mood and location in cache
-          if (currentMood) {
-            sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
-          }
-          if (currentLocation) {
-            sessionStorage.setItem(CACHED_LOCATION_KEY, currentLocation);
-          }
+        }
+        
+        // Store the current mood and location in cache after search starts
+        if (currentMood) {
+          sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
+        }
+        if (currentLocation) {
+          sessionStorage.setItem(CACHED_LOCATION_KEY, currentLocation);
         }
         
         // Build search options based on onboarding location
-        const searchOptions: { locationName?: string } = {};
+        const searchOptions: { locationName?: string; skipCache?: boolean } = {
+          skipCache: moodChanged || locationChanged, // Skip cache if anything changed
+        };
         if (currentLocation && currentLocation !== "nearby") {
           searchOptions.locationName = currentLocation;
         }
