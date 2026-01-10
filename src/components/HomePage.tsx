@@ -26,6 +26,8 @@ interface MockPlaceWithCoords extends MockPlace {
   filter_tags?: string[];
   price_level?: number;
   is_open_now?: boolean | null;
+  ai_score?: number; // AI relevance score from search
+  ratings_total?: number; // Total number of reviews
 }
 
 // Helper to convert RankedPlace to MockPlace format with coords
@@ -43,6 +45,8 @@ const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   filter_tags: place.filter_tags || [],
   price_level: place.price_level,
   is_open_now: place.is_open_now,
+  ai_score: place.score, // AI relevance score
+  ratings_total: place.ratings_total || 0, // Number of reviews
 });
 
 // Filter label mapping
@@ -638,10 +642,46 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     const usedPlaceIds = new Set<string>();
     const sections: { title: string; places: MockPlace[]; featured: boolean }[] = [];
     
-    // Section 1: Top Picks - Nearest places first (only 2)
-    const topPicks = [...filteredResults]
-      .sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999))
-      .slice(0, 2);
+    // Section 1: Top Picks - Smart scoring based on rating, review count, and AI relevance
+    // Calculate a composite score for each place
+    const scoredPlaces = filteredResults.map(place => {
+      const extPlace = place as MockPlaceWithCoords;
+      
+      // Normalize rating (0-5 scale → 0-1)
+      const ratingScore = (extPlace.rating || 0) / 5;
+      
+      // Normalize review count using log scale (more reviews = higher trust, but diminishing returns)
+      // log10(100) ≈ 2, log10(1000) ≈ 3, so we cap at ~4 for very popular places
+      const reviewCount = extPlace.ratings_total || 0;
+      const reviewScore = reviewCount > 0 ? Math.min(Math.log10(reviewCount + 1) / 4, 1) : 0;
+      
+      // AI relevance score (already 0-1 from search)
+      const aiScore = extPlace.ai_score || 0;
+      
+      // Distance penalty (closer is better, max 10km considered)
+      const distanceKm = extPlace.distance_km || 10;
+      const proximityScore = Math.max(0, 1 - (distanceKm / 10));
+      
+      // Combined score with weights:
+      // - Rating: 30% (quality matters)
+      // - Review count: 25% (social proof/trust)
+      // - AI relevance: 30% (matches search intent)
+      // - Proximity: 15% (convenience bonus)
+      const compositeScore = 
+        (ratingScore * 0.30) + 
+        (reviewScore * 0.25) + 
+        (aiScore * 0.30) + 
+        (proximityScore * 0.15);
+      
+      return { place, compositeScore, ratingScore, reviewScore, aiScore };
+    });
+    
+    // Sort by composite score (highest first) and take top 2
+    const topPicks = scoredPlaces
+      .sort((a, b) => b.compositeScore - a.compositeScore)
+      .slice(0, 2)
+      .map(item => item.place);
+    
     topPicks.forEach(p => usedPlaceIds.add(p.id));
     
     if (topPicks.length > 0) {
