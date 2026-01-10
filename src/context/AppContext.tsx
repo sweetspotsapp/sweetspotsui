@@ -10,6 +10,7 @@ export interface OnboardingData {
   budget: string | null;
   travel_personality: string[];
   explore_location: string | null; // City/area name or "nearby" for GPS
+  mood?: string; // User's mood/search intent from onboarding
 }
 export interface PlaceCategory {
   id: string;
