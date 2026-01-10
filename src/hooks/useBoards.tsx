@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { ToastAction } from '@/components/ui/toast';
 
 export interface Board {
   id: string;
@@ -27,6 +29,7 @@ interface UseBoardsReturn {
 export const useBoards = (): UseBoardsReturn => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [boards, setBoards] = useState<Board[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -103,6 +106,11 @@ export const useBoards = (): UseBoardsReturn => {
         title: 'Login required',
         description: 'Please log in to create boards',
         variant: 'destructive',
+        action: (
+          <ToastAction altText="Log in" onClick={() => navigate('/auth')}>
+            Log in
+          </ToastAction>
+        ),
       });
       return null;
     }
