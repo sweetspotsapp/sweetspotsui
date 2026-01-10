@@ -116,6 +116,13 @@ export const useSavedPlaces = (): UseSavedPlacesReturn => {
 
         // Log unsave interaction
         await logInteraction(placeId, 'unsave', -2);
+
+        // Show success toast for unsave
+        toast({
+          title: 'Removed from saved',
+          description: 'Place has been removed from your saved list',
+        });
+        await logInteraction(placeId, 'unsave', -2);
       } else {
         // Save: insert into saved_places
         const { error } = await supabase
