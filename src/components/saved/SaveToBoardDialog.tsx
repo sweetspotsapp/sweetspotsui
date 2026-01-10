@@ -30,6 +30,14 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
   const [newBoardName, setNewBoardName] = useState("");
   const [newBoardColor, setNewBoardColor] = useState(categoryColors[0].value);
   const [isSaving, setIsSaving] = useState(false);
+  const [wasInitiallySaved, setWasInitiallySaved] = useState<boolean | null>(null);
+
+  // Capture initial saved status once when dialog opens
+  useEffect(() => {
+    if (wasInitiallySaved === null) {
+      setWasInitiallySaved(isSaved(placeId));
+    }
+  }, [placeId, isSaved, wasInitiallySaved]);
 
   // Pre-select boards that already contain this place
   useEffect(() => {
@@ -274,7 +282,7 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
 
             {/* Footer */}
             <div className="p-4 border-t border-border/50 space-y-2">
-              {isSaved(placeId) && (
+              {wasInitiallySaved && (
                 <button
                   onClick={handleRemoveEntirely}
                   disabled={isSaving}
