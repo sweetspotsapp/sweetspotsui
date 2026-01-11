@@ -158,9 +158,9 @@ serve(async (req) => {
       }
     }
 
-    // First, filter candidates by distance if we have a centroid
+    // First, try to filter candidates by distance if we have a centroid
     // Only keep places within 100km of the saved places' centroid
-    const locationFilteredCandidates = hasCentroid 
+    let locationFilteredCandidates = hasCentroid 
       ? finalCandidates.filter(candidate => {
           if (!candidate.lat || !candidate.lng) return false;
           const dist = calculateDistance(centroidLat, centroidLng, candidate.lat, candidate.lng);
@@ -169,6 +169,13 @@ serve(async (req) => {
       : finalCandidates;
 
     console.log('After location filter:', locationFilteredCandidates.length, 'candidates within 100km');
+
+    // FALLBACK: If no nearby places found, use category-matched places regardless of location
+    // This ensures we always show some suggestions even for places in regions with sparse data
+    if (locationFilteredCandidates.length < limit && finalCandidates.length > 0) {
+      console.log('Fallback: Using category-matched places regardless of location');
+      locationFilteredCandidates = finalCandidates;
+    }
 
     // Score and rank candidates - with location priority
     const scoredCandidates = locationFilteredCandidates.map(candidate => {
