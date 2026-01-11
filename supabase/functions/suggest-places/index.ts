@@ -54,6 +54,11 @@ serve(async (req) => {
     let avgRating = 0;
     let avgPriceLevel = 0;
     let priceCount = 0;
+    
+    // Calculate centroid of saved places for location-based suggestions
+    let centroidLat = 0;
+    let centroidLng = 0;
+    let locationCount = 0;
 
     savedPlaces.forEach(place => {
       if (place.categories) {
@@ -69,17 +74,44 @@ serve(async (req) => {
         avgPriceLevel += place.price_level;
         priceCount++;
       }
+      // Accumulate coordinates for centroid
+      if (place.lat && place.lng) {
+        centroidLat += place.lat;
+        centroidLng += place.lng;
+        locationCount++;
+      }
     });
 
     avgRating = avgRating / savedPlaces.length;
     avgPriceLevel = priceCount > 0 ? avgPriceLevel / priceCount : 2;
+    
+    // Calculate centroid
+    const hasCentroid = locationCount > 0;
+    if (hasCentroid) {
+      centroidLat = centroidLat / locationCount;
+      centroidLng = centroidLng / locationCount;
+    }
 
     console.log('Extracted characteristics:', {
       categories: Array.from(categories),
       filterTags: Array.from(filterTags),
       avgRating,
-      avgPriceLevel
+      avgPriceLevel,
+      centroid: hasCentroid ? { lat: centroidLat, lng: centroidLng } : null
     });
+
+    // Haversine distance calculation (in km)
+    const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
 
     // Build a query to find similar places
     let query = supabase
@@ -88,7 +120,7 @@ serve(async (req) => {
       .not('place_id', 'in', `(${placeIds.join(',')})`) // Exclude already saved places
       .gte('rating', Math.max(3.5, avgRating - 0.5)) // Similar or better rating
       .order('rating', { ascending: false })
-      .limit(limit * 3); // Fetch more to filter
+      .limit(limit * 5); // Fetch more to filter and score by distance
 
     // If we have filter tags, try to match them
     if (filterTags.size > 0) {
@@ -113,7 +145,7 @@ serve(async (req) => {
         .not('place_id', 'in', `(${placeIds.join(',')})`)
         .gte('rating', 4.0)
         .order('rating', { ascending: false })
-        .limit(limit * 2);
+        .limit(limit * 3);
 
       if (broaderCandidates) {
         // Merge without duplicates
@@ -126,7 +158,7 @@ serve(async (req) => {
       }
     }
 
-    // Score and rank candidates
+    // Score and rank candidates - with location priority
     const scoredCandidates = finalCandidates.map(candidate => {
       let score = 0;
 
@@ -153,10 +185,31 @@ serve(async (req) => {
         score -= priceDiff * 3; // Penalize price difference
       }
 
-      return { ...candidate, score };
+      // LOCATION PRIORITY: Boost places near the centroid of saved places
+      let distanceFromCentroid: number | null = null;
+      if (hasCentroid && candidate.lat && candidate.lng) {
+        distanceFromCentroid = calculateDistance(centroidLat, centroidLng, candidate.lat, candidate.lng);
+        
+        // Scoring based on distance:
+        // - Within 5km: +20 points
+        // - 5-15km: +10 points
+        // - 15-30km: +5 points
+        // - Beyond 30km: no bonus, slight penalty for very far places
+        if (distanceFromCentroid <= 5) {
+          score += 20;
+        } else if (distanceFromCentroid <= 15) {
+          score += 10;
+        } else if (distanceFromCentroid <= 30) {
+          score += 5;
+        } else if (distanceFromCentroid > 50) {
+          score -= 5; // Slight penalty for very distant places
+        }
+      }
+
+      return { ...candidate, score, distanceFromCentroid };
     });
 
-    // Sort by score and take top results
+    // Sort by score (which now includes location priority) and take top results
     scoredCandidates.sort((a, b) => b.score - a.score);
     const suggestions = scoredCandidates.slice(0, limit);
 
