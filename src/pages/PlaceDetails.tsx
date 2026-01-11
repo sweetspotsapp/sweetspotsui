@@ -294,9 +294,12 @@ const PlaceDetailsPage = () => {
   }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const aiReason = (location.state as {
+  const locationState = location.state as {
     ai_reason?: string;
-  })?.ai_reason;
+    fromBoard?: string | "all";
+  } | null;
+  const aiReason = locationState?.ai_reason;
+  const fromBoard = locationState?.fromBoard;
   const {
     isSaved,
     toggleSave
@@ -318,7 +321,14 @@ const PlaceDetailsPage = () => {
   const { user } = useAuth();
   const { hasExceededFreeActions } = useApp();
 
-  // Get user location on mount
+  // Handle back navigation - return to board view if we came from one
+  const handleBack = () => {
+    if (fromBoard) {
+      navigate('/saved', { state: { openBoard: fromBoard } });
+    } else {
+      navigate(-1);
+    }
+  };
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(position => {
       setUserLocation({
@@ -703,7 +713,7 @@ const PlaceDetailsPage = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => navigate(-1)} 
+              onClick={handleBack} 
               className="bg-background/90 backdrop-blur-md shadow-lg hover:bg-background rounded-full w-10 h-10"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -766,7 +776,7 @@ const PlaceDetailsPage = () => {
                   variant="ghost" 
                   size="sm" 
                   className="text-muted-foreground"
-                  onClick={() => navigate(-1)}
+                  onClick={handleBack}
                 >
                   <ArrowLeft className="w-4 h-4 mr-1" />
                   Go back
@@ -799,7 +809,7 @@ const PlaceDetailsPage = () => {
           <p className="text-muted-foreground">
             We couldn't find the place you're looking for.
           </p>
-          <Button onClick={() => navigate(-1)} variant="outline">
+          <Button onClick={handleBack} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go Back
           </Button>
@@ -828,7 +838,7 @@ const PlaceDetailsPage = () => {
   return <div className="min-h-screen bg-background max-w-[420px] mx-auto pb-28">
       {/* Floating Back Button */}
       <div className="fixed top-4 left-4 z-50">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="bg-background/90 backdrop-blur-md shadow-lg hover:bg-background rounded-full w-10 h-10">
+        <Button variant="ghost" size="icon" onClick={handleBack} className="bg-background/90 backdrop-blur-md shadow-lg hover:bg-background rounded-full w-10 h-10">
           <ArrowLeft className="w-5 h-5" />
         </Button>
       </div>

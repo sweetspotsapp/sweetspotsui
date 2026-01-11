@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, User, SortAsc, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation as useRouterLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { useBoards, Board } from "@/hooks/useBoards";
@@ -37,6 +37,7 @@ interface SavedPageProps {
 
 const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const navigate = useNavigate();
+  const routerLocation = useRouterLocation();
   const { user } = useAuth();
   const { location: userLocation } = useLocation();
   const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, updateBoard, refetch: refetchBoards } = useBoards();
@@ -53,6 +54,23 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [showSortMenu, setShowSortMenu] = useState(false);
+
+  // Handle openBoard state from navigation (e.g., when returning from place details)
+  useEffect(() => {
+    const state = routerLocation.state as { openBoard?: string | "all" } | null;
+    if (state?.openBoard && boards.length > 0) {
+      if (state.openBoard === "all") {
+        setSelectedBoard("all");
+      } else {
+        const board = boards.find(b => b.id === state.openBoard);
+        if (board) {
+          setSelectedBoard(board);
+        }
+      }
+      // Clear the state so it doesn't persist on refresh
+      navigate(routerLocation.pathname, { replace: true, state: {} });
+    }
+  }, [routerLocation.state, boards, navigate, routerLocation.pathname]);
 
   // Fetch saved places data
   useEffect(() => {
@@ -383,7 +401,9 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
           onClose={() => setSelectedBoard(null)}
           onEdit={selectedBoard !== "all" ? () => handleEditBoard(selectedBoard) : undefined}
           onDelete={selectedBoard !== "all" ? () => handleDeleteBoard(selectedBoard) : undefined}
-          onPlaceClick={(place) => navigate(`/place/${place.place_id}`)}
+          onPlaceClick={(place) => navigate(`/place/${place.place_id}`, { 
+            state: { fromBoard: selectedBoard === "all" ? "all" : selectedBoard.id } 
+          })}
           onManagePlace={(place) => setManagePlace({ id: place.place_id, name: place.name })}
         />
       )}

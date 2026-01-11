@@ -158,8 +158,20 @@ serve(async (req) => {
       }
     }
 
+    // First, filter candidates by distance if we have a centroid
+    // Only keep places within 100km of the saved places' centroid
+    const locationFilteredCandidates = hasCentroid 
+      ? finalCandidates.filter(candidate => {
+          if (!candidate.lat || !candidate.lng) return false;
+          const dist = calculateDistance(centroidLat, centroidLng, candidate.lat, candidate.lng);
+          return dist <= 100; // Only keep places within 100km
+        })
+      : finalCandidates;
+
+    console.log('After location filter:', locationFilteredCandidates.length, 'candidates within 100km');
+
     // Score and rank candidates - with location priority
-    const scoredCandidates = finalCandidates.map(candidate => {
+    const scoredCandidates = locationFilteredCandidates.map(candidate => {
       let score = 0;
 
       // Category overlap
