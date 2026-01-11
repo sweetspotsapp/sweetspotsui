@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { placeIds, boardName, userLat, userLng, limit = 5 } = await req.json();
+    const { placeIds, boardName, userLat, userLng, limit = 4 } = await req.json();
 
     console.log('Suggest places request:', { placeIds, boardName, limit });
 
@@ -48,21 +48,31 @@ serve(async (req) => {
 
     console.log('Found saved places:', savedPlaces.length);
 
-    // Extract characteristics from saved places
-    const categories = new Set<string>();
+    // Extract meaningful categories (exclude generic ones)
+    const genericCategories = new Set([
+      'point_of_interest', 'establishment', 'store', 'food', 'place'
+    ]);
+    
+    const meaningfulCategories = new Set<string>();
+    const allCategories = new Set<string>();
     const filterTags = new Set<string>();
     let avgRating = 0;
     let avgPriceLevel = 0;
     let priceCount = 0;
     
-    // Calculate centroid of saved places for location-based suggestions
+    // Calculate centroid for location-based suggestions
     let centroidLat = 0;
     let centroidLng = 0;
     let locationCount = 0;
 
     savedPlaces.forEach(place => {
       if (place.categories) {
-        place.categories.forEach((cat: string) => categories.add(cat));
+        place.categories.forEach((cat: string) => {
+          allCategories.add(cat);
+          if (!genericCategories.has(cat)) {
+            meaningfulCategories.add(cat);
+          }
+        });
       }
       if (place.filter_tags) {
         place.filter_tags.forEach((tag: string) => filterTags.add(tag));
@@ -74,7 +84,6 @@ serve(async (req) => {
         avgPriceLevel += place.price_level;
         priceCount++;
       }
-      // Accumulate coordinates for centroid
       if (place.lat && place.lng) {
         centroidLat += place.lat;
         centroidLng += place.lng;
@@ -85,7 +94,6 @@ serve(async (req) => {
     avgRating = avgRating / savedPlaces.length;
     avgPriceLevel = priceCount > 0 ? avgPriceLevel / priceCount : 2;
     
-    // Calculate centroid
     const hasCentroid = locationCount > 0;
     if (hasCentroid) {
       centroidLat = centroidLat / locationCount;
@@ -93,16 +101,15 @@ serve(async (req) => {
     }
 
     console.log('Extracted characteristics:', {
-      categories: Array.from(categories),
+      meaningfulCategories: Array.from(meaningfulCategories),
       filterTags: Array.from(filterTags),
       avgRating,
-      avgPriceLevel,
       centroid: hasCentroid ? { lat: centroidLat, lng: centroidLng } : null
     });
 
     // Haversine distance calculation (in km)
     const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-      const R = 6371; // Earth's radius in km
+      const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLng = (lng2 - lng1) * Math.PI / 180;
       const a = 
@@ -113,142 +120,181 @@ serve(async (req) => {
       return R * c;
     };
 
-    // Build a query to find similar places
-    let query = supabase
-      .from('places')
-      .select('*')
-      .not('place_id', 'in', `(${placeIds.join(',')})`) // Exclude already saved places
-      .gte('rating', Math.max(3.5, avgRating - 0.5)) // Similar or better rating
-      .order('rating', { ascending: false })
-      .limit(limit * 5); // Fetch more to filter and score by distance
-
-    // If we have filter tags, try to match them
-    if (filterTags.size > 0) {
-      query = query.overlaps('filter_tags', Array.from(filterTags));
-    }
-
-    const { data: candidates, error: candidatesError } = await query;
-
-    if (candidatesError) {
-      console.error('Error fetching candidates:', candidatesError);
-      throw candidatesError;
-    }
-
-    console.log('Found candidates:', candidates?.length || 0);
-
-    // If no candidates with overlapping tags, try broader search
-    let finalCandidates = candidates || [];
-    if (finalCandidates.length < limit) {
-      const { data: broaderCandidates } = await supabase
+    // STEP 1: Try to find nearby places with matching MEANINGFUL categories
+    let suggestions: any[] = [];
+    
+    if (hasCentroid && meaningfulCategories.size > 0) {
+      // Query for places with overlapping meaningful categories
+      const { data: nearbyCandidates } = await supabase
         .from('places')
         .select('*')
         .not('place_id', 'in', `(${placeIds.join(',')})`)
+        .overlaps('categories', Array.from(meaningfulCategories))
+        .gte('rating', 3.5)
+        .limit(50);
+
+      if (nearbyCandidates && nearbyCandidates.length > 0) {
+        // Filter to within 100km and score by category match + distance
+        const nearbyScored = nearbyCandidates
+          .filter(p => p.lat && p.lng)
+          .map(p => {
+            const dist = calculateDistance(centroidLat, centroidLng, p.lat, p.lng);
+            const catOverlap = p.categories?.filter((c: string) => meaningfulCategories.has(c)).length || 0;
+            const tagOverlap = p.filter_tags?.filter((t: string) => filterTags.has(t)).length || 0;
+            
+            // Score: prioritize category match, then proximity
+            let score = catOverlap * 20 + tagOverlap * 5;
+            if (dist <= 50) score += 15;
+            else if (dist <= 100) score += 10;
+            else if (dist <= 200) score += 5;
+            // Small penalty for very far places, but don't exclude them
+            if (dist > 500) score -= 5;
+            
+            return { ...p, score, distance: dist };
+          })
+          .sort((a, b) => b.score - a.score);
+
+        // Take top matches within 200km first
+        const nearbyMatches = nearbyScored.filter(p => p.distance <= 200).slice(0, limit);
+        suggestions = nearbyMatches;
+        
+        console.log('Found nearby category matches:', suggestions.length);
+      }
+    }
+
+    // STEP 2: If not enough nearby, use AI to find similar vibes from broader pool
+    if (suggestions.length < limit) {
+      const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+      
+      if (lovableApiKey) {
+        // Get a broader pool of high-rated places
+        const { data: allCandidates } = await supabase
+          .from('places')
+          .select('place_id, name, categories, rating, filter_tags, lat, lng, photo_name, photos, address, price_level')
+          .not('place_id', 'in', `(${placeIds.join(',')})`)
+          .not('place_id', 'in', `(${suggestions.map(s => s.place_id).join(',') || 'none'})`)
+          .gte('rating', 4.0)
+          .limit(30);
+
+        if (allCandidates && allCandidates.length > 0) {
+          // Use AI to pick the most similar vibes
+          const savedPlaceDescriptions = savedPlaces.map(p => 
+            `${p.name} (${p.categories?.filter((c: string) => !genericCategories.has(c)).slice(0, 3).join(', ') || 'place'})`
+          ).join(', ');
+
+          const candidateList = allCandidates.map((c, i) => 
+            `${i + 1}. ${c.name} - ${c.categories?.filter((cat: string) => !genericCategories.has(cat)).slice(0, 3).join(', ') || 'place'}`
+          ).join('\n');
+
+          const prompt = `You're helping find places with SIMILAR VIBES to these saved places:
+${savedPlaceDescriptions}
+
+Board name: "${boardName || 'Favorites'}"
+
+From this list, pick the ${Math.min(limit - suggestions.length, 4)} places that have the MOST SIMILAR VIBE or experience. Consider cuisine type, atmosphere, experience type, etc.
+
+Available places:
+${candidateList}
+
+Return ONLY a JSON object with:
+- "picks": array of numbers (the place numbers you chose)
+- "reasons": array of strings (short reason for each pick)
+
+Example: {"picks": [3, 7, 12], "reasons": ["Same cuisine style", "Similar cozy atmosphere", "Great for groups like the saved spot"]}`;
+
+          try {
+            const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${lovableApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.5-flash',
+                messages: [
+                  { role: 'system', content: 'You are a local guide expert at matching place vibes. Pick places that would genuinely appeal to someone who saved the given places.' },
+                  { role: 'user', content: prompt }
+                ],
+              }),
+            });
+
+            if (aiResponse.ok) {
+              const aiData = await aiResponse.json();
+              const content = aiData.choices?.[0]?.message?.content || '';
+              
+              try {
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  const parsed = JSON.parse(jsonMatch[0]);
+                  const picks = parsed.picks || [];
+                  const reasons = parsed.reasons || [];
+                  
+                  picks.forEach((pickNum: number, idx: number) => {
+                    const candidate = allCandidates[pickNum - 1];
+                    if (candidate && suggestions.length < limit) {
+                      suggestions.push({
+                        ...candidate,
+                        ai_reason: reasons[idx] || 'Similar vibe to your saved places',
+                        score: 100 - idx // AI picks get high score
+                      });
+                    }
+                  });
+                  
+                  console.log('AI added suggestions:', picks.length);
+                }
+              } catch (parseErr) {
+                console.log('Could not parse AI response:', parseErr);
+              }
+            }
+          } catch (aiErr) {
+            console.log('AI suggestion failed:', aiErr);
+          }
+        }
+      }
+    }
+
+    // STEP 3: Final fallback - just use category overlap scoring
+    if (suggestions.length < limit) {
+      const { data: fallbackCandidates } = await supabase
+        .from('places')
+        .select('*')
+        .not('place_id', 'in', `(${placeIds.join(',')})`)
+        .not('place_id', 'in', `(${suggestions.map(s => s.place_id).join(',') || 'none'})`)
+        .overlaps('categories', Array.from(allCategories))
         .gte('rating', 4.0)
         .order('rating', { ascending: false })
-        .limit(limit * 3);
+        .limit(limit - suggestions.length);
 
-      if (broaderCandidates) {
-        // Merge without duplicates
-        const existingIds = new Set(finalCandidates.map(p => p.place_id));
-        broaderCandidates.forEach(p => {
-          if (!existingIds.has(p.place_id)) {
-            finalCandidates.push(p);
+      if (fallbackCandidates) {
+        fallbackCandidates.forEach(c => {
+          if (suggestions.length < limit) {
+            suggestions.push({
+              ...c,
+              ai_reason: `Highly rated ${c.categories?.[0]?.replace(/_/g, ' ') || 'spot'}`,
+              score: 50
+            });
           }
         });
       }
     }
 
-    // First, try to filter candidates by distance if we have a centroid
-    // Only keep places within 100km of the saved places' centroid
-    let locationFilteredCandidates = hasCentroid 
-      ? finalCandidates.filter(candidate => {
-          if (!candidate.lat || !candidate.lng) return false;
-          const dist = calculateDistance(centroidLat, centroidLng, candidate.lat, candidate.lng);
-          return dist <= 100; // Only keep places within 100km
-        })
-      : finalCandidates;
-
-    console.log('After location filter:', locationFilteredCandidates.length, 'candidates within 100km');
-
-    // FALLBACK: If no nearby places found, use category-matched places regardless of location
-    // This ensures we always show some suggestions even for places in regions with sparse data
-    if (locationFilteredCandidates.length < limit && finalCandidates.length > 0) {
-      console.log('Fallback: Using category-matched places regardless of location');
-      locationFilteredCandidates = finalCandidates;
-    }
-
-    // Score and rank candidates - with location priority
-    const scoredCandidates = locationFilteredCandidates.map(candidate => {
-      let score = 0;
-
-      // Category overlap
-      if (candidate.categories) {
-        const catOverlap = candidate.categories.filter((c: string) => categories.has(c)).length;
-        score += catOverlap * 10;
-      }
-
-      // Filter tag overlap
-      if (candidate.filter_tags) {
-        const tagOverlap = candidate.filter_tags.filter((t: string) => filterTags.has(t)).length;
-        score += tagOverlap * 5;
-      }
-
-      // Rating bonus
-      if (candidate.rating) {
-        score += (candidate.rating - 3.5) * 5;
-      }
-
-      // Price level similarity
-      if (candidate.price_level && priceCount > 0) {
-        const priceDiff = Math.abs(candidate.price_level - avgPriceLevel);
-        score -= priceDiff * 3; // Penalize price difference
-      }
-
-      // LOCATION PRIORITY: Boost places near the centroid of saved places
-      let distanceFromCentroid: number | null = null;
-      if (hasCentroid && candidate.lat && candidate.lng) {
-        distanceFromCentroid = calculateDistance(centroidLat, centroidLng, candidate.lat, candidate.lng);
-        
-        // Scoring based on distance:
-        // - Within 5km: +20 points
-        // - 5-15km: +10 points
-        // - 15-30km: +5 points
-        // - Beyond 30km: no bonus, slight penalty for very far places
-        if (distanceFromCentroid <= 5) {
-          score += 20;
-        } else if (distanceFromCentroid <= 15) {
-          score += 10;
-        } else if (distanceFromCentroid <= 30) {
-          score += 5;
-        } else if (distanceFromCentroid > 50) {
-          score -= 5; // Slight penalty for very distant places
-        }
-      }
-
-      return { ...candidate, score, distanceFromCentroid };
-    });
-
-    // Sort by score (which now includes location priority) and take top results
-    scoredCandidates.sort((a, b) => b.score - a.score);
-    const suggestions = scoredCandidates.slice(0, limit);
-
     console.log('Returning suggestions:', suggestions.length);
 
-    // Generate AI reasons for why these are suggested
+    // Generate AI reasons for suggestions that don't have them yet
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (lovableApiKey && suggestions.length > 0) {
+    const suggestionsNeedingReasons = suggestions.filter(s => !s.ai_reason);
+    
+    if (lovableApiKey && suggestionsNeedingReasons.length > 0) {
       try {
         const savedPlaceNames = savedPlaces.map(p => p.name).slice(0, 5).join(', ');
         
         const prompt = `Based on these saved places: ${savedPlaceNames}
-Board theme: "${boardName || 'My Favorites'}"
+Board: "${boardName || 'My Favorites'}"
 
-For each suggested place, write a SHORT 1-sentence reason why it would fit this collection. Be specific about what makes it similar.
+Write SHORT 1-sentence reasons why each suggested place would appeal to this user:
+${suggestionsNeedingReasons.map((s, i) => `${i + 1}. ${s.name} (${s.categories?.slice(0, 2).join(', ') || 'place'})`).join('\n')}
 
-Suggested places:
-${suggestions.map((s, i) => `${i + 1}. ${s.name} (${s.categories?.slice(0, 2).join(', ') || 'place'})`).join('\n')}
-
-Return ONLY a JSON array of strings with reasons, one per place. Example: ["Great for...", "Similar vibe..."]`;
+Return ONLY a JSON array of strings. Example: ["Great for...", "Similar vibe..."]`;
 
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
@@ -259,7 +305,7 @@ Return ONLY a JSON array of strings with reasons, one per place. Example: ["Grea
           body: JSON.stringify({
             model: 'google/gemini-2.5-flash',
             messages: [
-              { role: 'system', content: 'You are a helpful assistant that provides concise recommendations.' },
+              { role: 'system', content: 'You are a helpful assistant.' },
               { role: 'user', content: prompt }
             ],
           }),
@@ -269,12 +315,11 @@ Return ONLY a JSON array of strings with reasons, one per place. Example: ["Grea
           const aiData = await aiResponse.json();
           const content = aiData.choices?.[0]?.message?.content || '';
           
-          // Try to parse JSON from response
           try {
             const jsonMatch = content.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
               const reasons = JSON.parse(jsonMatch[0]);
-              suggestions.forEach((s, i) => {
+              suggestionsNeedingReasons.forEach((s, i) => {
                 if (reasons[i]) {
                   s.ai_reason = reasons[i];
                 }
@@ -285,8 +330,7 @@ Return ONLY a JSON array of strings with reasons, one per place. Example: ["Grea
           }
         }
       } catch (aiErr) {
-        console.log('AI suggestion generation failed:', aiErr);
-        // Continue without AI reasons
+        console.log('AI reason generation failed:', aiErr);
       }
     }
 
