@@ -497,6 +497,14 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                               <span className="text-[10px] font-medium text-primary-foreground">Suggested</span>
                             </div>
                             
+                            {/* Save Button - Heart icon at top right */}
+                            <button 
+                              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
+                              onClick={(e) => handleHeartClick(e, place)}
+                            >
+                              <Heart className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                            
                             {/* Rating Badge */}
                             {place.rating && (
                               <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
