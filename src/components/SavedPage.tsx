@@ -8,6 +8,7 @@ import { useApp } from "@/context/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "@/hooks/useLocation";
+import { useToast } from "@/hooks/use-toast";
 
 // Components
 import BoardCard from "./saved/BoardCard";
@@ -42,7 +43,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const { location: userLocation } = useLocation();
   const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, updateBoard, refetch: refetchBoards } = useBoards();
   const { savedPlaceIds, isLoadingSavedPlaces, toggleSave } = useApp();
-  
+  const { toast } = useToast();
   const [savedPlaces, setSavedPlaces] = useState<RankedPlace[]>([]);
   const [placeImages, setPlaceImages] = useState<Record<string, string[]>>({});
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
@@ -247,6 +248,28 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const isLoading = boardsLoading || isLoadingSavedPlaces || isLoadingPlaces;
   const hasBoards = boards.length > 0 || savedPlaces.length > 0;
 
+  // Smart unsave handler: immediate unsave for no-board places, dialog for board-managed places
+  const handleSmartUnsave = async (place: RankedPlace) => {
+    // Check if the place is in any boards
+    const boardsContainingPlace = boards.filter(b => b.placeIds.includes(place.place_id));
+    
+    if (boardsContainingPlace.length === 0) {
+      // Place is only in "All Saved" (no boards) → immediate unsave with toast
+      isRemovingRef.current = true;
+      
+      // Optimistically remove from local state
+      setSavedPlaces(prev => prev.filter(p => p.place_id !== place.place_id));
+      
+      await toggleSave(place.place_id);
+      await refetchBoards();
+      
+      isRemovingRef.current = false;
+    } else {
+      // Place is in one or more boards → show dialog for management
+      setManagePlace({ id: place.place_id, name: place.name });
+    }
+  };
+
   // Get auth dialog state from context
   const { showAuthDialog, setShowAuthDialog } = useApp();
 
@@ -404,7 +427,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
           onPlaceClick={(place) => navigate(`/place/${place.place_id}`, { 
             state: { fromBoard: selectedBoard === "all" ? "all" : selectedBoard.id } 
           })}
-          onManagePlace={(place) => setManagePlace({ id: place.place_id, name: place.name })}
+          onManagePlace={handleSmartUnsave}
         />
       )}
 
