@@ -1,103 +1,90 @@
 
-# Improve Save/Unsave UX for Better Clarity
+# Fix Natural Language Detection for Search Queries
 
 ## The Problem
-Currently, when clicking the heart icon on a saved place, the dialog shows confusing options:
-- "Remove entirely" appears even when the place is only in one location (All Saved)
-- "Save to 1 Board" button is irrelevant when the user wants to unsave
-- The flow doesn't match user expectations for a simple unsave action
+Searches like "chill vibes, outdoor" return **zero results** because:
+1. The prompt is incorrectly classified as "keyword-like" due to the 3-word limit
+2. The word "vibes" (plural) isn't detected as a conversational pattern (only "vibe" singular is)
+3. Google Places API doesn't understand mood words like "chill" or "vibes" - it needs concrete terms like "cafe outdoor seating relaxed"
+
+## Root Cause Analysis
+
+```
+User types: "chill vibes, outdoor"
+                    ↓
+Split by spaces: ["chill", "vibes,", "outdoor"] = 3 words
+                    ↓
+Pattern check: /\bvibe\b/ does NOT match "vibes,"
+                    ↓
+Result: isAlreadyKeywords = TRUE (incorrectly!)
+                    ↓
+Google receives: "chill vibes, outdoor" → 0 results
+```
 
 ## The Solution
-Create a smarter, context-aware unsave flow:
+Expand the natural language detection to:
+1. Add plural forms (vibes, moods, feels)
+2. Add common mood words (chill, cozy, relaxing, fun, etc.)
+3. Remove the strict 3-word limit in favor of smarter detection
 
-1. **Immediate unsave for simple cases**: When a place is saved but NOT added to any specific boards, clicking the heart icon should immediately unsave with a success toast - no dialog needed
-
-2. **Confirmation dialog for complex cases**: When a place IS in one or more boards, show a cleaner dialog asking what to do:
-   - "Remove from X board(s) and unsave"
-   - "Just remove from this board" (when opened from a specific board)
-   - Option to deselect specific boards before confirming
-
-3. **Cleaner button labels**: Replace confusing text with clear, action-oriented labels
-
-## Implementation Details
-
-### File Changes
+## File Changes
 
 | File | Change |
 |------|--------|
-| `src/components/saved/BoardView.tsx` | Update heart click handler to check board count before opening dialog |
-| `src/components/saved/SaveToBoardDialog.tsx` | Redesign the footer section with context-aware buttons |
-| `src/components/SavedPage.tsx` | Add logic to handle immediate unsave vs dialog flow |
-| `src/hooks/useSavedPlaces.tsx` | Already shows toast on unsave (no changes needed) |
+| `supabase/functions/unified-search/index.ts` | Improve the `translatePromptToKeywords` function |
 
-### New Dialog Behavior
+## Code Changes
 
-**Scenario A: Place saved only to "All Saved" (no boards)**
-- Heart click → Immediate unsave
-- Show toast: "Removed from saved"
-- No dialog opens
-
-**Scenario B: Place is in 1 or more boards**
-- Heart click → Open dialog
-- Dialog shows:
-  - List of boards (user can deselect to remove from specific boards)
-  - "Remove from all boards & unsave" button (red, destructive)
-  - "Update boards" button (only if user changed board selections)
-  - Hide confusing "Save to X Boards" text when in removal mode
-
-### UI Changes
+### Updated Detection Logic
 
 **Before:**
-```
-[Family]  [ ]
-[Date]    [✓]    ← already selected
+```typescript
+const conversationalPatterns = /\b(where|what|...vibe...)\b/i;
 
-[Remove entirely]     ← confusing
-[Save to 1 Board]     ← irrelevant
+const isAlreadyKeywords = 
+  prompt.split(' ').length <= 3 && 
+  !conversationalPatterns.test(prompt) &&
+  !personalPronouns.test(prompt);
 ```
 
 **After:**
-```
-[Family]  [ ]
-[Date]    [✓]    ← can uncheck to remove
+```typescript
+// Mood/vibe words that Google doesn't understand well
+const moodWords = /\b(chill|vibes?|cozy|relaxing|romantic|fun|lively|trendy|quiet|peaceful|aesthetic|cute|fancy|casual|hipster|artsy|authentic|hidden|local)\b/i;
 
-[Remove from all & unsave]    ← only when place was already saved
-[Done]                        ← saves current board selection
+// Conversational patterns (expanded)
+const conversationalPatterns = /\b(where|what|how|can|should|want|wanna|need|looking|find|get|take|go|somewhere|place|spot|feel|feeling|i'm|im|i am|tonight|today|right now|mood|craving|bored|hungry|tired)\b/i;
+
+// ALWAYS translate if prompt contains mood words
+// because Google doesn't understand "chill" or "vibes"
+const containsMoodWords = moodWords.test(prompt);
+
+// Skip translation only if:
+// 1. Very short AND no mood words AND no conversational patterns
+const isAlreadyKeywords = 
+  prompt.split(' ').length <= 2 &&   // Even stricter
+  !containsMoodWords &&               // NEW: catch mood words
+  !conversationalPatterns.test(prompt) &&
+  !personalPronouns.test(prompt);
 ```
 
-If user unchecks all boards:
-```
-[Family]  [ ]
-[Date]    [ ]
-
-[Remove from saved]   ← clear action
-```
-
-### Flow Diagram
+### Expected Result
 
 ```
-User clicks heart on saved place
-          |
-          v
-   Is place in any boards?
-         / \
-        /   \
-       No    Yes
-       |      |
-       v      v
-  Immediate   Open dialog
-   unsave     with boards
-       |           |
-       v           v
-  "Removed"    Show current
-   toast       board memberships
-                   |
-                   v
-             User can toggle
-             boards on/off
-                   |
-                   v
-             "Done" saves changes
-             OR "Remove entirely"
-             unsaves completely
+User types: "chill vibes, outdoor"
+                    ↓
+Mood word check: /\bchill\b/ matches → containsMoodWords = TRUE
+                    ↓
+isAlreadyKeywords = FALSE → Translate!
+                    ↓
+AI translates: "cafe park outdoor seating lounge relaxed"
+                    ↓
+Google receives proper keywords → Results returned!
 ```
+
+## Testing
+
+After implementation, the same search should:
+1. Log: `Translating natural language to keywords...`
+2. Log: `Translated: "chill vibes, outdoor" → "cafe lounge park outdoor seating"`
+3. Return actual places from Google
