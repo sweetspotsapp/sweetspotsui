@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, forwardRef } from "react";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from "@react-google-maps/api";
 import { Star, MapPin, Loader2, Navigation } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +81,25 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
     ],
   }), []);
 
+  // Memoize marker icons to prevent recreation
+  const userLocationIcon = useMemo(() => ({
+    path: 0, // google.maps.SymbolPath.CIRCLE = 0
+    scale: 8,
+    fillColor: "#3B82F6",
+    fillOpacity: 1,
+    strokeColor: "#FFFFFF",
+    strokeWeight: 3,
+  }), []);
+
+  const placeIcon = useMemo(() => ({
+    path: 0, // google.maps.SymbolPath.CIRCLE = 0
+    scale: 10,
+    fillColor: "#E11D48",
+    fillOpacity: 1,
+    strokeColor: "#FFFFFF",
+    strokeWeight: 2,
+  }), []);
+
   return (
     <>
       <GoogleMap
@@ -93,41 +112,27 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
       >
         {/* User Location Marker */}
         {userLocation && (
-          <Marker
+          <MarkerF
             position={userLocation}
-            icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: "#3B82F6",
-              fillOpacity: 1,
-              strokeColor: "#FFFFFF",
-              strokeWeight: 3,
-            }}
+            icon={userLocationIcon}
             title="Your location"
           />
         )}
 
         {/* Place Markers */}
         {validPlaces.map((place) => (
-          <Marker
+          <MarkerF
             key={place.place_id}
             position={{ lat: place.lat!, lng: place.lng! }}
             onClick={() => setSelectedPlace(place)}
-            icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 10,
-              fillColor: "#E11D48",
-              fillOpacity: 1,
-              strokeColor: "#FFFFFF",
-              strokeWeight: 2,
-            }}
+            icon={placeIcon}
             title={place.name}
           />
         ))}
 
         {/* Info Window */}
         {selectedPlace && selectedPlace.lat && selectedPlace.lng && (
-          <InfoWindow
+          <InfoWindowF
             position={{ lat: selectedPlace.lat, lng: selectedPlace.lng }}
             onCloseClick={() => setSelectedPlace(null)}
             options={{ pixelOffset: new google.maps.Size(0, -12) }}
@@ -171,7 +176,7 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
                 </div>
               </div>
             </div>
-          </InfoWindow>
+          </InfoWindowF>
         )}
       </GoogleMap>
 
@@ -195,15 +200,24 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
   );
 };
 
+// Cache API key in module scope to avoid refetching
+let cachedApiKey: string | null = null;
+
 // Main component that handles API key fetching and useJsApiLoader
 const BoardMapView = forwardRef<HTMLDivElement, BoardMapViewProps>(
   ({ places, userLocation, onPlaceClick, getPlaceImage }, ref) => {
-    const [apiKey, setApiKey] = useState<string | null>(null);
-    const [isLoadingKey, setIsLoadingKey] = useState(true);
+    const [apiKey, setApiKey] = useState<string | null>(cachedApiKey);
+    const [isLoadingKey, setIsLoadingKey] = useState(!cachedApiKey);
     const [keyError, setKeyError] = useState(false);
 
-    // Fetch API key from edge function
+    // Fetch API key from edge function (only if not cached)
     useEffect(() => {
+      if (cachedApiKey) {
+        setApiKey(cachedApiKey);
+        setIsLoadingKey(false);
+        return;
+      }
+
       const fetchApiKey = async () => {
         try {
           const { data, error } = await supabase.functions.invoke('get-maps-key');
@@ -212,6 +226,7 @@ const BoardMapView = forwardRef<HTMLDivElement, BoardMapViewProps>(
             setKeyError(true);
             return;
           }
+          cachedApiKey = data.apiKey;
           setApiKey(data.apiKey);
         } catch (err) {
           console.error('Failed to fetch maps key:', err);
