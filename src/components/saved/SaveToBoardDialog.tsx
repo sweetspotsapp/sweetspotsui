@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { X, Check, FolderPlus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBoards } from "@/hooks/useBoards";
@@ -31,19 +31,31 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
   const [newBoardColor, setNewBoardColor] = useState(categoryColors[0].value);
   const [isSaving, setIsSaving] = useState(false);
   const [wasInitiallySaved, setWasInitiallySaved] = useState<boolean | null>(null);
+  const [initialBoardIds, setInitialBoardIds] = useState<string[]>([]);
 
-  // Capture initial saved status once when dialog opens
+  // Capture initial saved status and board memberships once when dialog opens
   useEffect(() => {
     if (wasInitiallySaved === null) {
       setWasInitiallySaved(isSaved(placeId));
+      const boardsWithPlace = boards.filter(b => b.placeIds.includes(placeId)).map(b => b.id);
+      setInitialBoardIds(boardsWithPlace);
     }
-  }, [placeId, isSaved, wasInitiallySaved]);
+  }, [placeId, isSaved, wasInitiallySaved, boards]);
 
   // Pre-select boards that already contain this place
   useEffect(() => {
     const boardsWithPlace = boards.filter(b => b.placeIds.includes(placeId)).map(b => b.id);
     setSelectedBoards(boardsWithPlace);
   }, [boards, placeId]);
+
+  // Determine if user has made changes to board selections
+  const hasSelectionChanges = useMemo(() => {
+    if (selectedBoards.length !== initialBoardIds.length) return true;
+    return !selectedBoards.every(id => initialBoardIds.includes(id));
+  }, [selectedBoards, initialBoardIds]);
+
+  // Check if all boards are deselected (user wants to remove from all)
+  const allBoardsDeselected = selectedBoards.length === 0 && initialBoardIds.length > 0;
 
   const toggleBoard = (boardId: string) => {
     setSelectedBoards(prev => 
@@ -78,6 +90,12 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
 
     try {
       const alreadySaved = isSaved(placeId);
+
+      // If user deselected all boards and wants to remove entirely
+      if (allBoardsDeselected && wasInitiallySaved) {
+        await handleRemoveEntirely();
+        return;
+      }
 
       // First, ensure the place is saved
       if (!alreadySaved) {
@@ -117,6 +135,31 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
     }
   };
 
+  // Determine button label based on context
+  const getActionButtonLabel = () => {
+    // If user unchecked all boards → show clear removal action
+    if (allBoardsDeselected) {
+      return "Remove from saved";
+    }
+    
+    // If user made changes to board selection → update
+    if (hasSelectionChanges && selectedBoards.length > 0) {
+      return "Update boards";
+    }
+    
+    // If place is already saved and no changes → Done
+    if (wasInitiallySaved && !hasSelectionChanges) {
+      return "Done";
+    }
+    
+    // New save scenario
+    if (selectedBoards.length === 0) {
+      return "Save to All Saved";
+    }
+    
+    return `Save to ${selectedBoards.length} ${selectedBoards.length === 1 ? 'board' : 'boards'}`;
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center animate-fade-in">
       {/* Backdrop */}
@@ -135,7 +178,9 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
         {/* Header */}
         <div className="flex items-center justify-between px-5 pb-3 border-b border-border/50">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Save to Board</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              {wasInitiallySaved ? "Manage boards" : "Save to Board"}
+            </h2>
             <p className="text-xs text-muted-foreground line-clamp-1">"{placeName}"</p>
           </div>
           <button 
@@ -282,28 +327,31 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
 
             {/* Footer */}
             <div className="p-4 border-t border-border/50 space-y-2">
-              {wasInitiallySaved && (
+              {/* Show "Remove from all & unsave" only when place is saved AND is in at least one board AND user hasn't deselected all */}
+              {wasInitiallySaved && initialBoardIds.length > 0 && !allBoardsDeselected && (
                 <button
                   onClick={handleRemoveEntirely}
                   disabled={isSaving}
-                  className="w-full py-3 rounded-xl bg-destructive text-destructive-foreground font-medium 
-                             hover:bg-destructive/90 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl border border-destructive/50 text-destructive font-medium 
+                             hover:bg-destructive/10 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Remove entirely
+                  Remove from all & unsave
                 </button>
               )}
 
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium 
-                           hover:bg-primary/90 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+                className={cn(
+                  "w-full py-3 rounded-xl font-medium transition-colors active:scale-[0.98] flex items-center justify-center gap-2",
+                  allBoardsDeselected 
+                    ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
               >
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {selectedBoards.length === 0
-                  ? (isSaved(placeId) ? 'Done' : 'Save to All Saved')
-                  : `Save to ${selectedBoards.length} ${selectedBoards.length === 1 ? 'Board' : 'Boards'}`}
+                {getActionButtonLabel()}
               </button>
             </div>
           </>
