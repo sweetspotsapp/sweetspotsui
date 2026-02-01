@@ -8,6 +8,7 @@ interface TopPickCardProps {
   onSave: (placeId: string) => void;
   isSaved: boolean;
   onClick: () => void;
+  showDistance?: boolean;
 }
 
 // Get vibe tag from categories or AI category
@@ -31,7 +32,8 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
   place, 
   onSave, 
   isSaved, 
-  onClick 
+  onClick,
+  showDistance = true
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -156,13 +158,16 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
             <span className="font-medium text-foreground">{place.rating.toFixed(1)}</span>
           </div>
 
-          <span className="text-border">•</span>
-
-          {/* Distance in km */}
-          <div className="flex items-center gap-0.5">
-            <Navigation className="w-3 h-3" />
-            <span>{place.distance_km.toFixed(1)} km</span>
-          </div>
+          {/* Distance in km - only show when using Nearby mode */}
+          {showDistance && (
+            <>
+              <span className="text-border">•</span>
+              <div className="flex items-center gap-0.5">
+                <Navigation className="w-3 h-3" />
+                <span>{place.distance_km.toFixed(1)} km</span>
+              </div>
+            </>
+          )}
 
           {/* Open/Closed status */}
           {place.is_open_now !== null && place.is_open_now !== undefined && (

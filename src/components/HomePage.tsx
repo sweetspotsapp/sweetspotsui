@@ -77,6 +77,7 @@ interface SectionRowProps {
   featured?: boolean;
   userLocation?: { lat: number; lng: number } | null;
   onSeeAll?: (allPlaces: MockPlaceWithCoords[]) => void;
+  showDistance?: boolean;
 }
 
 const SectionRow: React.FC<SectionRowProps> = ({
@@ -89,6 +90,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
   featured = false,
   userLocation,
   onSeeAll,
+  showDistance = true,
 }) => {
   const handleSeeAll = () => {
     if (onSeeAll) {
@@ -162,6 +164,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
               isSaved={isSaved(place.id)}
               onClick={() => onPlaceClick(place)}
               featured={featured}
+              showDistance={showDistance}
             />
           ))}
         </div>
@@ -1006,6 +1009,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 onPlaceClick={handlePlaceClick}
                 toggleSave={handleSaveClick}
                 isSaved={isSaved}
+                showDistance={onboardingData?.explore_location === "nearby"}
               />
             )}
 
@@ -1024,6 +1028,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                   featured={false}
                   userLocation={userLocation}
                   onSeeAll={handleSeeAll}
+                  showDistance={onboardingData?.explore_location === "nearby"}
                 />
               ))}
           </>

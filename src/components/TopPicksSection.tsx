@@ -7,6 +7,7 @@ interface TopPicksSectionProps {
   onPlaceClick: (place: MockPlace) => void;
   toggleSave: (placeId: string) => void;
   isSaved: (placeId: string) => boolean;
+  showDistance?: boolean;
 }
 
 const TopPicksSection: React.FC<TopPicksSectionProps> = ({
@@ -14,6 +15,7 @@ const TopPicksSection: React.FC<TopPicksSectionProps> = ({
   onPlaceClick,
   toggleSave,
   isSaved,
+  showDistance = true,
 }) => {
   if (places.length === 0) return null;
 
@@ -34,6 +36,7 @@ const TopPicksSection: React.FC<TopPicksSectionProps> = ({
             onSave={toggleSave}
             isSaved={isSaved(place.id)}
             onClick={() => onPlaceClick(place)}
+            showDistance={showDistance}
           />
         ))}
       </div>
