@@ -717,8 +717,132 @@ serve(async (req) => {
       );
     }
 
+    // ============ RELEVANCE FILTER: Exclude non-travel categories ============
+    // These categories don't fit SweetSpots' travel/food/experience focus
+    const EXCLUDED_CATEGORIES = new Set([
+      // Retail/Shopping (not experiences)
+      'clothing_store',
+      'shoe_store',
+      'jewelry_store',
+      'electronics_store',
+      'furniture_store',
+      'hardware_store',
+      'home_goods_store',
+      'home_improvement_store',
+      'department_store',
+      'shopping_mall',
+      'convenience_store',
+      'supermarket',
+      'grocery_or_supermarket',
+      'discount_store',
+      'wholesale_store',
+      'liquor_store',
+      'pet_store',
+      'florist',
+      'book_store',
+      'sporting_goods_store',
+      'outdoor_goods_store',
+      // Services (not destinations)
+      'car_dealer',
+      'car_rental',
+      'car_repair',
+      'car_wash',
+      'gas_station',
+      'parking',
+      'atm',
+      'bank',
+      'insurance_agency',
+      'real_estate_agency',
+      'lawyer',
+      'accounting',
+      'electrician',
+      'plumber',
+      'locksmith',
+      'moving_company',
+      'storage',
+      'post_office',
+      'laundry',
+      'dry_cleaning',
+      'tailor',
+      // Medical (not experiences)
+      'hospital',
+      'doctor',
+      'dentist',
+      'pharmacy',
+      'veterinary_care',
+      'physiotherapist',
+      // Education (not experiences)
+      'school',
+      'primary_school',
+      'secondary_school',
+      'university',
+      'library',
+      // Other non-relevant
+      'cemetery',
+      'funeral_home',
+      'local_government_office',
+      'police',
+      'fire_station',
+      'embassy',
+      'courthouse',
+      'city_hall',
+    ]);
+
+    // Categories that indicate the place IS relevant (override exclusion)
+    const INCLUDED_CATEGORIES = new Set([
+      'restaurant',
+      'cafe',
+      'coffee_shop',
+      'bar',
+      'bakery',
+      'food',
+      'meal_takeaway',
+      'meal_delivery',
+      'night_club',
+      'tourist_attraction',
+      'point_of_interest',
+      'establishment',
+      'park',
+      'beach',
+      'natural_feature',
+      'museum',
+      'art_gallery',
+      'movie_theater',
+      'bowling_alley',
+      'amusement_park',
+      'zoo',
+      'aquarium',
+      'spa',
+      'gym',
+      'stadium',
+      'casino',
+      'campground',
+      'rv_park',
+      'lodging',
+      'hotel',
+      'resort',
+    ]);
+
+    // Filter out irrelevant places
+    const filteredGooglePlaces = allGooglePlaces.filter((place: any) => {
+      const types: string[] = place.types || [];
+      
+      // If it has ANY included category, keep it
+      const hasIncludedCategory = types.some(t => INCLUDED_CATEGORIES.has(t));
+      if (hasIncludedCategory) return true;
+      
+      // If it has ANY excluded category and no included ones, drop it
+      const hasExcludedCategory = types.some(t => EXCLUDED_CATEGORIES.has(t));
+      if (hasExcludedCategory) return false;
+      
+      // If uncertain, keep it (could be a unique local spot)
+      return true;
+    });
+
+    console.log(`Category filter: ${allGooglePlaces.length} → ${filteredGooglePlaces.length} places (removed ${allGooglePlaces.length - filteredGooglePlaces.length} irrelevant)`);
+
     // Transform to candidates (initial transform without filter_tags)
-    const baseCandidates: PlaceCandidate[] = allGooglePlaces.map((place: any) => {
+    const baseCandidates: PlaceCandidate[] = filteredGooglePlaces.map((place: any) => {
       const firstPhoto = place.photos?.[0];
       const priceLevel = place.priceLevel ? 
         ['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'].indexOf(place.priceLevel) : null;
