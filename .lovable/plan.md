@@ -1,80 +1,103 @@
 
-# Map View for Saved Places Board
+# Improve Save/Unsave UX for Better Clarity
 
-## Overview
-Add a "View on Map" toggle to the Board View screen that displays all saved places as markers on an interactive Google Map. Users can see the geographic distribution of their saved spots and tap markers to view place details.
+## The Problem
+Currently, when clicking the heart icon on a saved place, the dialog shows confusing options:
+- "Remove entirely" appears even when the place is only in one location (All Saved)
+- "Save to 1 Board" button is irrelevant when the user wants to unsave
+- The flow doesn't match user expectations for a simple unsave action
 
-## What We Have Already
-- **Google Maps API Key**: Already configured in the backend secrets
-- **`@react-google-maps/api`**: Already installed (v2.20.8)
-- **`get-maps-key` edge function**: Returns the API key securely to the frontend
-- **Place coordinates**: All places have `lat` and `lng` stored in the database
+## The Solution
+Create a smarter, context-aware unsave flow:
 
-## Implementation Steps
+1. **Immediate unsave for simple cases**: When a place is saved but NOT added to any specific boards, clicking the heart icon should immediately unsave with a success toast - no dialog needed
 
-### 1. Create a Map View Component
-Create `src/components/saved/BoardMapView.tsx` that:
-- Uses `@react-google-maps/api` with `useJsApiLoader` hook
-- Fetches the API key from `get-maps-key` edge function
-- Renders a Google Map with markers for each saved place
-- Shows place name and rating in an info window when a marker is tapped
-- Auto-fits the map bounds to show all markers
+2. **Confirmation dialog for complex cases**: When a place IS in one or more boards, show a cleaner dialog asking what to do:
+   - "Remove from X board(s) and unsave"
+   - "Just remove from this board" (when opened from a specific board)
+   - Option to deselect specific boards before confirming
 
-### 2. Update BoardView Component
-Modify `src/components/saved/BoardView.tsx` to:
-- Add a map/list toggle button in the header or filter bar
-- Conditionally render either the grid view or the new map view
-- Pass the sorted/filtered places to the map component
+3. **Cleaner button labels**: Replace confusing text with clear, action-oriented labels
 
-### 3. Map Features
-- **Markers**: Custom markers showing place photos or category icons
-- **Info Windows**: Popup showing place name, rating, and "View Details" button
-- **Clustering**: Group nearby markers when zoomed out (optional enhancement)
-- **User Location**: Show user's current location if available
+## Implementation Details
 
-## Technical Details
+### File Changes
 
-### API Requirements
-| API | Status | Purpose |
-|-----|--------|---------|
-| Google Maps JavaScript API | Already configured | Display interactive map |
-| `get-maps-key` edge function | Already exists | Securely provide API key |
+| File | Change |
+|------|--------|
+| `src/components/saved/BoardView.tsx` | Update heart click handler to check board count before opening dialog |
+| `src/components/saved/SaveToBoardDialog.tsx` | Redesign the footer section with context-aware buttons |
+| `src/components/SavedPage.tsx` | Add logic to handle immediate unsave vs dialog flow |
+| `src/hooks/useSavedPlaces.tsx` | Already shows toast on unsave (no changes needed) |
 
-### Data Flow
-```text
-BoardView
-    |
-    +--> [Map Toggle Button]
-    |
-    +--> BoardMapView
-              |
-              +--> Fetch API key from get-maps-key
-              |
-              +--> GoogleMap component
-                        |
-                        +--> Markers for each place
-                        |
-                        +--> InfoWindow on click
+### New Dialog Behavior
+
+**Scenario A: Place saved only to "All Saved" (no boards)**
+- Heart click → Immediate unsave
+- Show toast: "Removed from saved"
+- No dialog opens
+
+**Scenario B: Place is in 1 or more boards**
+- Heart click → Open dialog
+- Dialog shows:
+  - List of boards (user can deselect to remove from specific boards)
+  - "Remove from all boards & unsave" button (red, destructive)
+  - "Update boards" button (only if user changed board selections)
+  - Hide confusing "Save to X Boards" text when in removal mode
+
+### UI Changes
+
+**Before:**
+```
+[Family]  [ ]
+[Date]    [✓]    ← already selected
+
+[Remove entirely]     ← confusing
+[Save to 1 Board]     ← irrelevant
 ```
 
-### Component Props (BoardMapView)
-```typescript
-interface BoardMapViewProps {
-  places: RankedPlace[];
-  userLocation: { lat: number; lng: number } | null;
-  onPlaceClick: (place: RankedPlace) => void;
-}
+**After:**
+```
+[Family]  [ ]
+[Date]    [✓]    ← can uncheck to remove
+
+[Remove from all & unsave]    ← only when place was already saved
+[Done]                        ← saves current board selection
 ```
 
-## Files to Create/Modify
+If user unchecks all boards:
+```
+[Family]  [ ]
+[Date]    [ ]
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/components/saved/BoardMapView.tsx` | Create | New map component |
-| `src/components/saved/BoardView.tsx` | Modify | Add toggle and map view state |
+[Remove from saved]   ← clear action
+```
 
-## UI Design
-- Add a small "Map" icon button next to the existing filter button
-- When map is active, show the map fullscreen with a floating "List" button to return
-- Markers should be visually distinct (primary color with white border)
-- Info windows should match the app's design language
+### Flow Diagram
+
+```
+User clicks heart on saved place
+          |
+          v
+   Is place in any boards?
+         / \
+        /   \
+       No    Yes
+       |      |
+       v      v
+  Immediate   Open dialog
+   unsave     with boards
+       |           |
+       v           v
+  "Removed"    Show current
+   toast       board memberships
+                   |
+                   v
+             User can toggle
+             boards on/off
+                   |
+                   v
+             "Done" saves changes
+             OR "Remove entirely"
+             unsaves completely
+```
