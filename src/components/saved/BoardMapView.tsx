@@ -308,13 +308,22 @@ const MapLoader = forwardRef<HTMLDivElement, MapLoaderProps>(
       id: 'google-map-script', // Consistent ID prevents reloading
     });
 
+    // Log any errors for debugging
     if (loadError) {
+      console.error('Google Maps load error:', loadError.message);
+    }
+
+    if (loadError) {
+      const isRefererError = loadError.message?.toLowerCase().includes('referer') || 
+                             loadError.message?.toLowerCase().includes('api key');
       return (
         <div ref={ref} className="flex-1 flex items-center justify-center bg-muted/30">
           <div className="flex flex-col items-center gap-3 text-center px-6">
             <MapPin className="w-12 h-12 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Failed to load map. Please try again later.
+              {isRefererError 
+                ? "Map API key needs domain authorization. Please update your Google Cloud Console settings to allow *.lovable.app and *.lovableproject.com"
+                : "Failed to load map. Please try again later."}
             </p>
           </div>
         </div>
