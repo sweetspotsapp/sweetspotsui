@@ -299,18 +299,40 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
             <p className="text-muted-foreground mb-6">Just describe what you're feeling, and we'll show you places that match.</p>
             
             <div className="space-y-4">
-              <input
-                type="text"
-                value={moodValue}
-                onChange={(e) => setMoodValue(e.target.value)}
-                placeholder="Cheap eats, nice views, fun with friends…"
-                className="
-                  w-full px-4 py-4 text-base rounded-2xl border-2 border-border 
-                  bg-card text-foreground placeholder:text-muted-foreground
-                  focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10
-                  transition-all duration-300
-                "
-              />
+              {/* Input container with selected tags */}
+              <div className="relative border-2 border-border rounded-2xl bg-card focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all duration-300">
+                {/* Selected vibe tags displayed inside the input area */}
+                {selectedSuggestions.size > 0 && (
+                  <div className="flex flex-wrap gap-1.5 px-4 pt-3 pb-1">
+                    {Array.from(selectedSuggestions).map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-sm rounded-full bg-primary/15 text-primary font-medium"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleSuggestionClick(tag)}
+                          className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-primary/20 transition-colors"
+                        >
+                          <span className="text-xs leading-none">×</span>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input
+                  type="text"
+                  value={moodValue}
+                  onChange={(e) => setMoodValue(e.target.value)}
+                  placeholder={selectedSuggestions.size > 0 ? "Add more details..." : "Cheap eats, nice views, fun with friends…"}
+                  className={`
+                    w-full px-4 text-base bg-transparent text-foreground placeholder:text-muted-foreground
+                    focus:outline-none border-none
+                    ${selectedSuggestions.size > 0 ? 'pt-2 pb-3' : 'py-4'}
+                  `}
+                />
+              </div>
 
               <div className="flex flex-wrap gap-2">
                 {moodSuggestions.map((suggestion) => {
