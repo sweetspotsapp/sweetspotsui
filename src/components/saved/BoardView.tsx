@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign, Heart, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign, Heart, Sparkles, Loader2, Map, List } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
+import BoardMapView from "./BoardMapView";
 import { supabase } from "@/integrations/supabase/client";
 import type { Board } from "@/hooks/useBoards";
 import { useLocation } from "@/hooks/useLocation";
@@ -47,6 +48,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places); // Local state to keep All Saved in sync
   
   // AI Suggestions state
@@ -336,6 +338,18 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           >
             <Filter className="w-4 h-4" />
           </button>
+          
+          {/* Map/List Toggle */}
+          <button
+            onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
+            className={cn(
+              "p-2 rounded-full transition-colors flex-shrink-0",
+              viewMode === "map" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+            )}
+            title={viewMode === "list" ? "View on map" : "View as list"}
+          >
+            {viewMode === "list" ? <Map className="w-4 h-4" /> : <List className="w-4 h-4" />}
+          </button>
         </div>
         
         {/* Filter Pills */}
@@ -362,175 +376,184 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {isLoadingBoardPlaces ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : sortedPlaces.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <MapPin className="w-7 h-7 text-muted-foreground" />
+        {viewMode === "map" ? (
+          <BoardMapView
+            places={sortedPlaces}
+            userLocation={userLocation}
+            onPlaceClick={handlePlaceClick}
+            getPlaceImage={getPlaceImage}
+          />
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4">
+            {isLoadingBoardPlaces ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
-              <h3 className="text-base font-semibold text-foreground mb-1">No spots yet</h3>
-              <p className="text-sm text-muted-foreground max-w-[220px]">
-                Save some places and add them to this board
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Grid of Places */}
-              <div className="grid grid-cols-2 gap-3">
-                {sortedPlaces.map((place, index) => (
-                  <div 
-                    key={place.place_id}
-                    onClick={() => handlePlaceClick(place)}
-                    className={cn(
-                      "bg-card rounded-xl overflow-hidden border border-border/50",
-                      "cursor-pointer active:scale-[0.98] transition-all duration-200",
-                      "hover:shadow-md hover:border-primary/30 group",
-                      "opacity-0 animate-fade-up"
-                    )}
-                    style={{ 
-                      animationDelay: `${index * 50}ms`, 
-                      animationFillMode: 'forwards' 
-                    }}
-                  >
-                    <div className="aspect-square relative overflow-hidden">
-                      <img 
-                        src={getPlaceImage(place)} 
-                        alt={place.name}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                      
-                      {/* Manage Saved Spot Button */}
-                      <button 
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
-                        onClick={(e) => handleHeartClick(e, place)}
-                      >
-                        <Heart className="w-4 h-4 text-primary fill-primary" />
-                      </button>
-                      
-                      {/* Rating Badge */}
-                      {place.rating && (
-                        <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                          <span className="text-[11px] font-medium text-white">{place.rating.toFixed(1)}</span>
-                        </div>
+            ) : sortedPlaces.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <MapPin className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-1">No spots yet</h3>
+                <p className="text-sm text-muted-foreground max-w-[220px]">
+                  Save some places and add them to this board
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Grid of Places */}
+                <div className="grid grid-cols-2 gap-3">
+                  {sortedPlaces.map((place, index) => (
+                    <div 
+                      key={place.place_id}
+                      onClick={() => handlePlaceClick(place)}
+                      className={cn(
+                        "bg-card rounded-xl overflow-hidden border border-border/50",
+                        "cursor-pointer active:scale-[0.98] transition-all duration-200",
+                        "hover:shadow-md hover:border-primary/30 group",
+                        "opacity-0 animate-fade-up"
                       )}
-                      
-                      {/* Distance Badge */}
-                      {place.distance_meters && (
-                        <div className="absolute bottom-2 right-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-                          <MapPin className="w-3 h-3 text-white" />
-                          <span className="text-[11px] font-medium text-white">
-                            {(place.distance_meters / 1000).toFixed(1)}km
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="p-2.5">
-                      <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[11px] text-muted-foreground capitalize line-clamp-1">
-                          {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
-                        </p>
-                        {formatPriceLevel(place.price_level) && (
-                          <span className="text-[11px] font-medium text-primary">
-                            {formatPriceLevel(place.price_level)}
-                          </span>
+                      style={{ 
+                        animationDelay: `${index * 50}ms`, 
+                        animationFillMode: 'forwards' 
+                      }}
+                    >
+                      <div className="aspect-square relative overflow-hidden">
+                        <img 
+                          src={getPlaceImage(place)} 
+                          alt={place.name}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                        
+                        {/* Manage Saved Spot Button */}
+                        <button 
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
+                          onClick={(e) => handleHeartClick(e, place)}
+                        >
+                          <Heart className="w-4 h-4 text-primary fill-primary" />
+                        </button>
+                        
+                        {/* Rating Badge */}
+                        {place.rating && (
+                          <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            <span className="text-[11px] font-medium text-white">{place.rating.toFixed(1)}</span>
+                          </div>
+                        )}
+                        
+                        {/* Distance Badge */}
+                        {place.distance_meters && (
+                          <div className="absolute bottom-2 right-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                            <MapPin className="w-3 h-3 text-white" />
+                            <span className="text-[11px] font-medium text-white">
+                              {(place.distance_meters / 1000).toFixed(1)}km
+                            </span>
+                          </div>
                         )}
                       </div>
+                      
+                      <div className="p-2.5">
+                        <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[11px] text-muted-foreground capitalize line-clamp-1">
+                            {place.categories?.[0]?.replace(/_/g, " ") || "Place"}
+                          </p>
+                          {formatPriceLevel(place.price_level) && (
+                            <span className="text-[11px] font-medium text-primary">
+                              {formatPriceLevel(place.price_level)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* AI Suggestions Section */}
-              {showSuggestions && (suggestions.length > 0 || isLoadingSuggestions) && (
-                <div className="mt-6 pt-6 border-t border-border/50">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      <h3 className="text-sm font-semibold text-foreground">You might also like</h3>
+                {/* AI Suggestions Section */}
+                {showSuggestions && (suggestions.length > 0 || isLoadingSuggestions) && (
+                  <div className="mt-6 pt-6 border-t border-border/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <h3 className="text-sm font-semibold text-foreground">You might also like</h3>
+                      </div>
+                      <button 
+                        onClick={() => setShowSuggestions(false)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Hide
+                      </button>
                     </div>
-                    <button 
-                      onClick={() => setShowSuggestions(false)}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Hide
-                    </button>
-                  </div>
-                  
-                  {isLoadingSuggestions ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                      <span className="ml-2 text-sm text-muted-foreground">Finding similar spots...</span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      {suggestions.map((place, index) => (
-                        <div 
-                          key={place.place_id}
-                          onClick={() => handlePlaceClick(place)}
-                          className="bg-card rounded-xl overflow-hidden border border-dashed border-primary/30 
-                                     cursor-pointer active:scale-[0.98] transition-all duration-200
-                                     hover:shadow-md hover:border-primary/50 group opacity-0 animate-fade-up"
-                          style={{ 
-                            animationDelay: `${index * 50}ms`, 
-                            animationFillMode: 'forwards' 
-                          }}
-                        >
-                          <div className="aspect-square relative overflow-hidden">
-                            <img 
-                              src={getPlaceImage(place)} 
-                              alt={place.name}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                            
-                            {/* AI Badge */}
-                            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-primary/90 backdrop-blur-sm">
-                              <Sparkles className="w-3 h-3 text-primary-foreground" />
-                              <span className="text-[10px] font-medium text-primary-foreground">Suggested</span>
+                    
+                    {isLoadingSuggestions ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        <span className="ml-2 text-sm text-muted-foreground">Finding similar spots...</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {suggestions.map((place, index) => (
+                          <div 
+                            key={place.place_id}
+                            onClick={() => handlePlaceClick(place)}
+                            className="bg-card rounded-xl overflow-hidden border border-dashed border-primary/30 
+                                       cursor-pointer active:scale-[0.98] transition-all duration-200
+                                       hover:shadow-md hover:border-primary/50 group opacity-0 animate-fade-up"
+                            style={{ 
+                              animationDelay: `${index * 50}ms`, 
+                              animationFillMode: 'forwards' 
+                            }}
+                          >
+                            <div className="aspect-square relative overflow-hidden">
+                              <img 
+                                src={getPlaceImage(place)} 
+                                alt={place.name}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                              
+                              {/* AI Badge */}
+                              <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-primary/90 backdrop-blur-sm">
+                                <Sparkles className="w-3 h-3 text-primary-foreground" />
+                                <span className="text-[10px] font-medium text-primary-foreground">Suggested</span>
+                              </div>
+                              
+                              {/* Save Button - Heart icon at top right */}
+                              <button 
+                                className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
+                                onClick={(e) => handleHeartClick(e, place)}
+                              >
+                                <Heart className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                              
+                              {/* Rating Badge */}
+                              {place.rating && (
+                                <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                  <span className="text-[11px] font-medium text-white">{place.rating.toFixed(1)}</span>
+                                </div>
+                              )}
                             </div>
                             
-                            {/* Save Button - Heart icon at top right */}
-                            <button 
-                              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white active:scale-95 transition-all"
-                              onClick={(e) => handleHeartClick(e, place)}
-                            >
-                              <Heart className="w-4 h-4 text-muted-foreground" />
-                            </button>
-                            
-                            {/* Rating Badge */}
-                            {place.rating && (
-                              <div className="absolute bottom-2 left-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                                <span className="text-[11px] font-medium text-white">{place.rating.toFixed(1)}</span>
-                              </div>
-                            )}
+                            <div className="p-2.5">
+                              <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
+                              {place.why && (
+                                <p className="text-[11px] text-primary/80 line-clamp-2 mt-0.5">
+                                  {place.why}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          
-                          <div className="p-2.5">
-                            <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>
-                            {place.why && (
-                              <p className="text-[11px] text-primary/80 line-clamp-2 mt-0.5">
-                                {place.why}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
