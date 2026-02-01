@@ -3,7 +3,6 @@ import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-map
 import { Star, MapPin, Loader2, Navigation } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
 
 interface BoardMapViewProps {
   places: RankedPlace[];
@@ -34,33 +33,19 @@ const mapOptions: google.maps.MapOptions = {
   ],
 };
 
-const BoardMapView = ({ places, userLocation, onPlaceClick, getPlaceImage }: BoardMapViewProps) => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isLoadingKey, setIsLoadingKey] = useState(true);
+// Inner component that uses the Google Maps API after key is loaded
+const MapContent = ({ 
+  apiKey, 
+  places, 
+  userLocation, 
+  onPlaceClick, 
+  getPlaceImage 
+}: BoardMapViewProps & { apiKey: string }) => {
   const [selectedPlace, setSelectedPlace] = useState<RankedPlace | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
 
-  // Fetch API key from edge function
-  useEffect(() => {
-    const fetchApiKey = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-maps-key');
-        if (error) {
-          console.error('Error fetching maps key:', error);
-          return;
-        }
-        setApiKey(data.apiKey);
-      } catch (err) {
-        console.error('Failed to fetch maps key:', err);
-      } finally {
-        setIsLoadingKey(false);
-      }
-    };
-    fetchApiKey();
-  }, []);
-
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey || "",
+    googleMapsApiKey: apiKey,
     id: "google-map-script",
   });
 
@@ -118,18 +103,7 @@ const BoardMapView = ({ places, userLocation, onPlaceClick, getPlaceImage }: Boa
     return { lat: avgLat, lng: avgLng };
   }, [places, userLocation]);
 
-  if (isLoadingKey) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-muted/30">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading map...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!apiKey || loadError) {
+  if (loadError) {
     return (
       <div className="flex-1 flex items-center justify-center bg-muted/30">
         <div className="flex flex-col items-center gap-3 text-center px-6">
@@ -266,6 +240,69 @@ const BoardMapView = ({ places, userLocation, onPlaceClick, getPlaceImage }: Boa
         </button>
       )}
     </div>
+  );
+};
+
+// Main component that fetches API key first
+const BoardMapView = ({ places, userLocation, onPlaceClick, getPlaceImage }: BoardMapViewProps) => {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [isLoadingKey, setIsLoadingKey] = useState(true);
+  const [keyError, setKeyError] = useState(false);
+
+  // Fetch API key from edge function
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-maps-key');
+        if (error || !data?.apiKey) {
+          console.error('Error fetching maps key:', error);
+          setKeyError(true);
+          return;
+        }
+        setApiKey(data.apiKey);
+      } catch (err) {
+        console.error('Failed to fetch maps key:', err);
+        setKeyError(true);
+      } finally {
+        setIsLoadingKey(false);
+      }
+    };
+    fetchApiKey();
+  }, []);
+
+  if (isLoadingKey) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-muted/30">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading map...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (keyError || !apiKey) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-muted/30">
+        <div className="flex flex-col items-center gap-3 text-center px-6">
+          <MapPin className="w-12 h-12 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Unable to load map. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only render the map component after we have the API key
+  return (
+    <MapContent
+      apiKey={apiKey}
+      places={places}
+      userLocation={userLocation}
+      onPlaceClick={onPlaceClick}
+      getPlaceImage={getPlaceImage}
+    />
   );
 };
 
