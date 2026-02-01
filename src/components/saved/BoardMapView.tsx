@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, forwardRef } from "react";
-import { GoogleMap, LoadScript, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import { Star, MapPin, Loader2, Navigation } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { supabase } from "@/integrations/supabase/client";
@@ -195,7 +195,7 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
   );
 };
 
-// Main component that handles API key fetching and LoadScript
+// Main component that handles API key fetching and useJsApiLoader
 const BoardMapView = forwardRef<HTMLDivElement, BoardMapViewProps>(
   ({ places, userLocation, onPlaceClick, getPlaceImage }, ref) => {
     const [apiKey, setApiKey] = useState<string | null>(null);
@@ -263,32 +263,75 @@ const BoardMapView = forwardRef<HTMLDivElement, BoardMapViewProps>(
     }
 
     return (
-      <div ref={ref} className="flex-1 relative">
-        <LoadScript 
-          googleMapsApiKey={apiKey}
-          loadingElement={
-            <div className="flex-1 flex items-center justify-center bg-muted/30 absolute inset-0">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Initializing map...</p>
-              </div>
-            </div>
-          }
-        >
-          <MapContent
-            places={places}
-            userLocation={userLocation}
-            onPlaceClick={onPlaceClick}
-            getPlaceImage={getPlaceImage}
-            center={center}
-            validPlaces={validPlaces}
-          />
-        </LoadScript>
-      </div>
+      <MapLoader
+        ref={ref}
+        apiKey={apiKey}
+        places={places}
+        userLocation={userLocation}
+        onPlaceClick={onPlaceClick}
+        getPlaceImage={getPlaceImage}
+        center={center}
+        validPlaces={validPlaces}
+      />
     );
   }
 );
 
 BoardMapView.displayName = 'BoardMapView';
+
+// Separate component that uses the hook (can't use hooks conditionally)
+interface MapLoaderProps extends BoardMapViewProps {
+  apiKey: string;
+  center: { lat: number; lng: number };
+  validPlaces: RankedPlace[];
+}
+
+const MapLoader = forwardRef<HTMLDivElement, MapLoaderProps>(
+  ({ apiKey, places, userLocation, onPlaceClick, getPlaceImage, center, validPlaces }, ref) => {
+    const { isLoaded, loadError } = useJsApiLoader({
+      googleMapsApiKey: apiKey,
+      id: 'google-map-script', // Consistent ID prevents reloading
+    });
+
+    if (loadError) {
+      return (
+        <div ref={ref} className="flex-1 flex items-center justify-center bg-muted/30">
+          <div className="flex flex-col items-center gap-3 text-center px-6">
+            <MapPin className="w-12 h-12 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Failed to load map. Please try again later.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isLoaded) {
+      return (
+        <div ref={ref} className="flex-1 flex items-center justify-center bg-muted/30">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Initializing map...</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div ref={ref} className="flex-1 relative">
+        <MapContent
+          places={places}
+          userLocation={userLocation}
+          onPlaceClick={onPlaceClick}
+          getPlaceImage={getPlaceImage}
+          center={center}
+          validPlaces={validPlaces}
+        />
+      </div>
+    );
+  }
+);
+
+MapLoader.displayName = 'MapLoader';
 
 export default BoardMapView;
