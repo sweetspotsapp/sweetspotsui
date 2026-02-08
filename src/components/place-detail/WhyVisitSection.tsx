@@ -7,6 +7,7 @@ interface WhyVisitSectionProps {
   priceLevel: number | null;
   reviewCount: number | null;
   aiReason?: string;
+  uniqueVibes?: string | null;
 }
 
 // Generate contextual bullet points based on place data
@@ -104,7 +105,7 @@ const formatCategories = (categories: string[]): string[] => {
     ).join(' '));
 };
 
-const WhyVisitSection = ({ placeName, categories, rating, priceLevel, reviewCount, aiReason }: WhyVisitSectionProps) => {
+const WhyVisitSection = ({ placeName, categories, rating, priceLevel, reviewCount, aiReason, uniqueVibes }: WhyVisitSectionProps) => {
   const highlights = generateHighlights(placeName, categories, rating, priceLevel, reviewCount);
   const tags = formatCategories(categories);
   
@@ -112,11 +113,18 @@ const WhyVisitSection = ({ placeName, categories, rating, priceLevel, reviewCoun
     <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.15s' }}>
       <div className="flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-primary" />
-        <h3 className="font-semibold text-foreground">Why Visit</h3>
+        <h3 className="font-semibold text-foreground">Why SweetSpots Picked This</h3>
       </div>
       
       <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-4 space-y-4">
-        {/* AI Reason - shown first if available */}
+        {/* Unique Vibes - the one-liner that captures the soul */}
+        {uniqueVibes && (
+          <p className="text-sm text-foreground leading-relaxed font-medium italic border-l-2 border-primary/30 pl-3">
+            "{uniqueVibes}"
+          </p>
+        )}
+        
+        {/* AI Reason - personalized match explanation */}
         {aiReason && (
           <p className="text-sm text-foreground leading-relaxed">
             ✨ {aiReason}

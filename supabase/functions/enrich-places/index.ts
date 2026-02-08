@@ -29,6 +29,14 @@ interface OpeningHours {
   }>;
 }
 
+interface PlaceInsights {
+  insider_tips: string[];
+  signature_items: string[];
+  unique_vibes: string;
+  best_for: string[];
+  local_secrets: string;
+}
+
 interface EnrichedPlace {
   place_id: string;
   name: string;
@@ -48,6 +56,11 @@ interface EnrichedPlace {
   reviews: Review[] | null;
   is_open_now: boolean | null;
   filter_tags: string[] | null;
+  insider_tips: string[] | null;
+  signature_items: string[] | null;
+  unique_vibes: string | null;
+  best_for: string[] | null;
+  local_secrets: string | null;
 }
 
 // Valid filter tags that can be generated
@@ -170,6 +183,104 @@ Example: {"0": ["good-for-friends", "lively-vibe"], "1": ["romantic", "chill-vib
   return results;
 }
 
+/**
+ * Generate unique AI insights for a place using Lovable AI
+ */
+async function generatePlaceInsights(
+  place: {
+    name: string;
+    categories: string[] | null;
+    price_level: number | null;
+    address: string | null;
+    reviews: Review[] | null;
+  }
+): Promise<PlaceInsights | null> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) {
+    console.error('LOVABLE_API_KEY not configured, skipping insight generation');
+    return null;
+  }
+
+  try {
+    const reviewTexts = (place.reviews || [])
+      .slice(0, 5)
+      .map(r => `"${r.text.slice(0, 200)}" (${r.rating}★)`)
+      .join('\n');
+
+    const priceLabel = place.price_level !== null 
+      ? ['Free', 'Budget', 'Moderate', 'Upscale', 'Fine Dining'][place.price_level] || 'Unknown'
+      : 'Unknown';
+
+    const systemPrompt = `You are a local insider who writes about hidden gems and unique experiences. Your job is to extract UNIQUE, SPECIFIC insights that differentiate this place from competitors. Avoid generic phrases like "great food" or "nice atmosphere" - be SPECIFIC.
+
+Analyze the reviews and place info to generate:
+1. insider_tips: 2-3 specific tips only a local would know (e.g., "Ask for a table by the window for sunset views", "The secret menu has a spicy tuna not listed")
+2. signature_items: 1-2 must-try items specifically mentioned in reviews (e.g., "Lavender honey latte", "The truffle fries")  
+3. unique_vibes: ONE sentence capturing what makes this place DIFFERENT (e.g., "Feels like a hidden speakeasy from the 1920s")
+4. best_for: 2-3 specific occasions this place is perfect for (e.g., "First dates", "Remote work", "Catch-ups with old friends")
+5. local_secrets: One insider secret or hidden feature (e.g., "Ask for the off-menu spicy roll")
+
+If reviews don't provide enough detail for a field, make an educated inference based on the category, location, and price level - but keep it plausible.
+
+Return ONLY valid JSON in this exact format:
+{
+  "insider_tips": ["tip1", "tip2"],
+  "signature_items": ["item1", "item2"],
+  "unique_vibes": "one sentence",
+  "best_for": ["occasion1", "occasion2"],
+  "local_secrets": "one secret"
+}`;
+
+    const userPrompt = `Analyze this place and generate unique insights:
+
+Place: ${place.name}
+Categories: ${(place.categories || []).join(', ') || 'Unknown'}
+Price Level: ${priceLabel}
+Location: ${place.address || 'Unknown'}
+
+Reviews:
+${reviewTexts || 'No reviews available - make educated inferences based on category and price level'}`;
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('AI insight generation failed:', response.status, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    // Parse JSON from response (handle markdown code blocks)
+    let jsonStr = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1].trim();
+    }
+    
+    const parsed = JSON.parse(jsonStr) as PlaceInsights;
+    console.log(`Generated insights for "${place.name}"`);
+    return parsed;
+  } catch (error) {
+    console.error('Error generating place insights:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -283,6 +394,11 @@ serve(async (req) => {
           reviews: reviews,
           is_open_now: isOpenNow,
           filter_tags: null,
+          insider_tips: null,
+          signature_items: null,
+          unique_vibes: null,
+          best_for: null,
+          local_secrets: null,
         };
 
         // Generate filter tags for this single place
@@ -295,6 +411,22 @@ serve(async (req) => {
           ai_reason: enrichedPlace.ai_reason,
         }]);
         enrichedPlace.filter_tags = filterTagsMap.get(enrichedPlace.name) || null;
+
+        // Generate AI insights for this place
+        const insights = await generatePlaceInsights({
+          name: enrichedPlace.name,
+          categories: enrichedPlace.categories,
+          price_level: enrichedPlace.price_level,
+          address: enrichedPlace.address,
+          reviews: enrichedPlace.reviews,
+        });
+        if (insights) {
+          enrichedPlace.insider_tips = insights.insider_tips;
+          enrichedPlace.signature_items = insights.signature_items;
+          enrichedPlace.unique_vibes = insights.unique_vibes;
+          enrichedPlace.best_for = insights.best_for;
+          enrichedPlace.local_secrets = insights.local_secrets;
+        }
 
         // Save to database
         const { error: upsertError } = await supabase
@@ -316,6 +448,11 @@ serve(async (req) => {
             reviews: enrichedPlace.reviews,
             is_open_now: enrichedPlace.is_open_now,
             filter_tags: enrichedPlace.filter_tags,
+            insider_tips: enrichedPlace.insider_tips,
+            signature_items: enrichedPlace.signature_items,
+            unique_vibes: enrichedPlace.unique_vibes,
+            best_for: enrichedPlace.best_for,
+            local_secrets: enrichedPlace.local_secrets,
             last_enriched_at: new Date().toISOString(),
           }, { onConflict: 'place_id' });
 
@@ -583,6 +720,11 @@ serve(async (req) => {
                 reviews: reviews,
                 is_open_now: isOpenNow,
                 filter_tags: null, // Will be populated later
+                insider_tips: null, // Will be populated later
+                signature_items: null,
+                unique_vibes: null,
+                best_for: null,
+                local_secrets: null,
               } as EnrichedPlace;
 
             } catch (error) {
@@ -603,7 +745,7 @@ serve(async (req) => {
 
       console.log(`Successfully fetched ${newlyEnrichedPlaces.length}/${placesToFetch.length} places from Google`);
 
-      // Generate filter tags for newly enriched places
+      // Generate filter tags and AI insights for newly enriched places
       if (newlyEnrichedPlaces.length > 0) {
         const tagBatchSize = 10;
         for (let i = 0; i < newlyEnrichedPlaces.length; i += tagBatchSize) {
@@ -621,6 +763,24 @@ serve(async (req) => {
           batch.forEach(place => {
             place.filter_tags = filterTagsMap.get(place.name) || null;
           });
+        }
+
+        // Generate AI insights for each place (individually for quality)
+        for (const place of newlyEnrichedPlaces) {
+          const insights = await generatePlaceInsights({
+            name: place.name,
+            categories: place.categories,
+            price_level: place.price_level,
+            address: place.address,
+            reviews: place.reviews,
+          });
+          if (insights) {
+            place.insider_tips = insights.insider_tips;
+            place.signature_items = insights.signature_items;
+            place.unique_vibes = insights.unique_vibes;
+            place.best_for = insights.best_for;
+            place.local_secrets = insights.local_secrets;
+          }
         }
       }
 
@@ -644,6 +804,11 @@ serve(async (req) => {
           is_open_now: place.is_open_now,
           ai_reason: place.ai_reason,
           filter_tags: place.filter_tags,
+          insider_tips: place.insider_tips,
+          signature_items: place.signature_items,
+          unique_vibes: place.unique_vibes,
+          best_for: place.best_for,
+          local_secrets: place.local_secrets,
           last_enriched_at: new Date().toISOString(),
         }));
 
@@ -654,7 +819,7 @@ serve(async (req) => {
         if (upsertError) {
           console.error('Error saving places to database:', upsertError);
         } else {
-          console.log(`Saved ${placesToInsert.length} NEW places to database`);
+          console.log(`Saved ${placesToInsert.length} NEW places to database with AI insights`);
         }
       }
     }

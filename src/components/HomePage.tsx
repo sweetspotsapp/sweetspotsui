@@ -28,6 +28,7 @@ interface MockPlaceWithCoords extends MockPlace {
   is_open_now?: boolean | null;
   ai_score?: number; // AI relevance score from search
   ratings_total?: number; // Total number of reviews
+  unique_vibes?: string | null;
 }
 
 // Helper to convert RankedPlace to MockPlace format with coords
@@ -47,6 +48,7 @@ const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   is_open_now: place.is_open_now,
   ai_score: place.score, // AI relevance score
   ratings_total: place.ratings_total || 0, // Number of reviews
+  unique_vibes: place.unique_vibes, // AI-generated one-liner
 });
 
 // Filter label mapping

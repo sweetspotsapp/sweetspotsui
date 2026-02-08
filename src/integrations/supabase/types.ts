@@ -112,12 +112,15 @@ export type Database = {
         Row: {
           address: string | null
           ai_reason: string | null
+          best_for: string[] | null
           categories: string[] | null
           filter_tags: string[] | null
+          insider_tips: string[] | null
           is_open_now: boolean | null
           last_enriched_at: string | null
           lat: number | null
           lng: number | null
+          local_secrets: string | null
           name: string
           opening_hours: Json | null
           photo_name: string | null
@@ -129,16 +132,21 @@ export type Database = {
           ratings_total: number | null
           raw: Json | null
           reviews: Json | null
+          signature_items: string[] | null
+          unique_vibes: string | null
         }
         Insert: {
           address?: string | null
           ai_reason?: string | null
+          best_for?: string[] | null
           categories?: string[] | null
           filter_tags?: string[] | null
+          insider_tips?: string[] | null
           is_open_now?: boolean | null
           last_enriched_at?: string | null
           lat?: number | null
           lng?: number | null
+          local_secrets?: string | null
           name: string
           opening_hours?: Json | null
           photo_name?: string | null
@@ -150,16 +158,21 @@ export type Database = {
           ratings_total?: number | null
           raw?: Json | null
           reviews?: Json | null
+          signature_items?: string[] | null
+          unique_vibes?: string | null
         }
         Update: {
           address?: string | null
           ai_reason?: string | null
+          best_for?: string[] | null
           categories?: string[] | null
           filter_tags?: string[] | null
+          insider_tips?: string[] | null
           is_open_now?: boolean | null
           last_enriched_at?: string | null
           lat?: number | null
           lng?: number | null
+          local_secrets?: string | null
           name?: string
           opening_hours?: Json | null
           photo_name?: string | null
@@ -171,6 +184,8 @@ export type Database = {
           ratings_total?: number | null
           raw?: Json | null
           reviews?: Json | null
+          signature_items?: string[] | null
+          unique_vibes?: string | null
         }
         Relationships: []
       }

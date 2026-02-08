@@ -14,6 +14,7 @@ export interface MockPlace {
   ai_reason?: string;
   ai_category?: string;
   is_open_now?: boolean | null;
+  unique_vibes?: string | null;
 }
 
 interface PlaceCardCompactProps {
@@ -176,6 +177,13 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
       {/* Info */}
       <div className="mt-2.5 space-y-1">
         <h3 className="font-semibold text-foreground text-sm line-clamp-1">{place.name}</h3>
+        
+        {/* Unique vibes one-liner */}
+        {place.unique_vibes && (
+          <p className="text-xs text-muted-foreground italic line-clamp-1">
+            "{place.unique_vibes}"
+          </p>
+        )}
         
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {/* Rating */}
