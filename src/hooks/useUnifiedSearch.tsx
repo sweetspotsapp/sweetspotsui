@@ -19,6 +19,7 @@ export interface UnifiedPlace {
   filter_tags?: string[] | null;
   photo_url?: string | null;
   is_open_now?: boolean | null;
+  unique_vibes?: string | null;
 }
 
 interface SearchResult {

@@ -29,6 +29,7 @@ interface PlaceCandidate {
   price_level?: number | null;
   filter_tags?: string[] | null;
   is_open_now?: boolean | null;
+  unique_vibes?: string | null;
 }
 
 interface RankedPlace extends PlaceCandidate {
@@ -37,6 +38,7 @@ interface RankedPlace extends PlaceCandidate {
   score: number;
   why: string;
   is_open_now?: boolean | null;
+  unique_vibes?: string | null;
 }
 
 interface Profile {
@@ -875,13 +877,13 @@ serve(async (req) => {
     const placeIds = baseCandidates.map(p => p.place_id);
     const { data: dbPlaces } = await supabaseAdmin
       .from('places')
-      .select('place_id, filter_tags, price_level')
+      .select('place_id, filter_tags, price_level, unique_vibes')
       .in('place_id', placeIds);
 
-    const dbPlaceMap = new Map<string, { filter_tags?: string[] | null; price_level?: number | null }>();
+    const dbPlaceMap = new Map<string, { filter_tags?: string[] | null; price_level?: number | null; unique_vibes?: string | null }>();
     if (dbPlaces) {
       for (const p of dbPlaces) {
-        dbPlaceMap.set(p.place_id, { filter_tags: p.filter_tags, price_level: p.price_level });
+        dbPlaceMap.set(p.place_id, { filter_tags: p.filter_tags, price_level: p.price_level, unique_vibes: p.unique_vibes });
       }
     }
     
@@ -925,6 +927,8 @@ serve(async (req) => {
         filter_tags: (existingTags && existingTags.length > 0) ? existingTags : (generatedTags || null),
         // Use DB price_level if Google didn't provide one
         price_level: c.price_level ?? dbData?.price_level ?? null,
+        // Include unique_vibes from DB
+        unique_vibes: dbData?.unique_vibes ?? null,
       };
     });
 

@@ -12,6 +12,9 @@ import RelatedSpots from '@/components/place-detail/RelatedSpots';
 import ActionButtons from '@/components/place-detail/ActionButtons';
 import QuickInfoSection from '@/components/place-detail/QuickInfoSection';
 import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
+import InsiderTipsSection from '@/components/place-detail/InsiderTipsSection';
+import SignatureItemsSection from '@/components/place-detail/SignatureItemsSection';
+import PerfectForSection from '@/components/place-detail/PerfectForSection';
 import BottomNav from '@/components/BottomNav';
 import SaveToBoardDialog from '@/components/saved/SaveToBoardDialog';
 import AuthDialog from '@/components/AuthDialog';
@@ -43,6 +46,11 @@ interface PlaceDetails {
   reviews: ReviewData[] | null;
   is_open_now: boolean | null;
   ai_reason: string | null;
+  insider_tips: string[] | null;
+  signature_items: string[] | null;
+  unique_vibes: string | null;
+  best_for: string[] | null;
+  local_secrets: string | null;
 }
 interface RelatedPlace {
   id: string;
@@ -493,7 +501,12 @@ const PlaceDetailsPage = () => {
                     opening_hours: (newData as any).opening_hours as OpeningHoursData | null,
                     reviews: (newData as any).reviews as ReviewData[] | null,
                     is_open_now: (newData as any).is_open_now ?? null,
-                    ai_reason: (newData as any).ai_reason ?? null
+                    ai_reason: (newData as any).ai_reason ?? null,
+                    insider_tips: (newData as any).insider_tips ?? null,
+                    signature_items: (newData as any).signature_items ?? null,
+                    unique_vibes: (newData as any).unique_vibes ?? null,
+                    best_for: (newData as any).best_for ?? null,
+                    local_secrets: (newData as any).local_secrets ?? null,
                   };
                   setPlace(placeData);
                   await fetchRelatedPlaces(newData);
@@ -551,7 +564,12 @@ const PlaceDetailsPage = () => {
                   opening_hours: (enrichedData as any).opening_hours as OpeningHoursData | null,
                   reviews: (enrichedData as any).reviews as ReviewData[] | null,
                   is_open_now: (enrichedData as any).is_open_now ?? null,
-                  ai_reason: (enrichedData as any).ai_reason ?? null
+                  ai_reason: (enrichedData as any).ai_reason ?? null,
+                  insider_tips: (enrichedData as any).insider_tips ?? null,
+                  signature_items: (enrichedData as any).signature_items ?? null,
+                  unique_vibes: (enrichedData as any).unique_vibes ?? null,
+                  best_for: (enrichedData as any).best_for ?? null,
+                  local_secrets: (enrichedData as any).local_secrets ?? null,
                 };
                 setPlace(enrichedPlaceData);
                 await fetchRelatedPlaces(enrichedData);
@@ -579,7 +597,12 @@ const PlaceDetailsPage = () => {
           opening_hours: (data as any).opening_hours as OpeningHoursData | null,
           reviews: (data as any).reviews as ReviewData[] | null,
           is_open_now: (data as any).is_open_now ?? null,
-          ai_reason: (data as any).ai_reason ?? null
+          ai_reason: (data as any).ai_reason ?? null,
+          insider_tips: (data as any).insider_tips ?? null,
+          signature_items: (data as any).signature_items ?? null,
+          unique_vibes: (data as any).unique_vibes ?? null,
+          best_for: (data as any).best_for ?? null,
+          local_secrets: (data as any).local_secrets ?? null,
         };
         setPlace(placeData);
         await fetchRelatedPlaces(data);
@@ -886,14 +909,36 @@ const PlaceDetailsPage = () => {
         isToday: true
       }]} isOpen={place.is_open_now} />
 
-        {/* 4. Why You Should Visit */}
-        <WhyVisitSection placeName={place.name} categories={place.categories || []} rating={place.rating} priceLevel={place.price_level} reviewCount={place.ratings_total} aiReason={aiReason || place.ai_reason || undefined} />
+        {/* 4. Why You Should Visit - AI-powered personalized reason */}
+        <WhyVisitSection 
+          placeName={place.name} 
+          categories={place.categories || []} 
+          rating={place.rating} 
+          priceLevel={place.price_level} 
+          reviewCount={place.ratings_total} 
+          aiReason={aiReason || place.ai_reason || undefined}
+          uniqueVibes={place.unique_vibes}
+        />
 
+        {/* 5. What to Try - AI-generated signature items */}
+        {place.signature_items && place.signature_items.length > 0 && (
+          <SignatureItemsSection items={place.signature_items} />
+        )}
 
-        {/* 6. Reviews Section - Now with real Google reviews */}
+        {/* 6. Insider Tips - AI-generated tips and local secrets */}
+        {((place.insider_tips && place.insider_tips.length > 0) || place.local_secrets) && (
+          <InsiderTipsSection tips={place.insider_tips || []} localSecret={place.local_secrets} />
+        )}
+
+        {/* 7. Perfect For - AI-generated occasions/personas */}
+        {place.best_for && place.best_for.length > 0 && (
+          <PerfectForSection occasions={place.best_for} />
+        )}
+
+        {/* 8. Reviews Section - Now with real Google reviews */}
         {formattedReviews.length > 0 && <ReviewsList reviews={formattedReviews} />}
 
-        {/* 7. Similar Places - "You might also like" */}
+        {/* 9. Similar Places - "You might also like" */}
         {relatedPlaces.length > 0 && <RelatedSpots places={relatedPlaces} onPlaceClick={handleRelatedClick} />}
       </div>
 
