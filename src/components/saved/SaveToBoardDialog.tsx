@@ -326,7 +326,7 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-border/50 space-y-2">
+            <div className="px-4 pt-4 pb-20 border-t border-border/50 space-y-2">
               {/* Show "Remove from all & unsave" only when place is saved AND is in at least one board AND user hasn't deselected all */}
               {wasInitiallySaved && initialBoardIds.length > 0 && !allBoardsDeselected && (
                 <button
