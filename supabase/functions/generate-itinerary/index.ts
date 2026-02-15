@@ -147,51 +147,75 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
 
     const itinerary = JSON.parse(toolCall.function.arguments);
 
-    // Enrich activities with place data (photo_name, lat/lng) from the places table
-    const allActivityNames: string[] = [];
-    for (const day of itinerary.days) {
-      for (const slot of day.slots) {
-        for (const act of slot.activities) {
-          allActivityNames.push(act.name.toLowerCase().trim());
-        }
+    // Enrich activities with real place data using Google Places API
+    const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
+
+    // First try matching from DB cache
+    const { data: cachedPlaces } = await sb
+      .from("places")
+      .select("name, photo_name, lat, lng, address, photos")
+      .limit(500);
+
+    const placeCache = new Map<string, { photo_name: string | null; lat: number | null; lng: number | null; address: string | null; photos: string[] | null }>();
+    if (cachedPlaces) {
+      for (const p of cachedPlaces) {
+        placeCache.set(p.name.toLowerCase().trim(), p);
       }
     }
 
-    // Try to find matching places in the database
-    if (allActivityNames.length > 0) {
-      const { data: matchedPlaces } = await sb
-        .from("places")
-        .select("name, photo_name, lat, lng, address, photos")
-        .limit(200);
+    // Enrich each activity - try DB cache first, then Google Places API
+    for (const day of itinerary.days) {
+      for (const slot of day.slots) {
+        for (const act of slot.activities) {
+          const normalizedName = act.name.toLowerCase().trim();
 
-      if (matchedPlaces && matchedPlaces.length > 0) {
-        const placeMap = new Map<string, typeof matchedPlaces[0]>();
-        for (const p of matchedPlaces) {
-          placeMap.set(p.name.toLowerCase().trim(), p);
-        }
-
-        for (const day of itinerary.days) {
-          for (const slot of day.slots) {
-            for (const act of slot.activities) {
-              const normalizedName = act.name.toLowerCase().trim();
-              // Exact match
-              let match = placeMap.get(normalizedName);
-              // Fuzzy match - check if place name contains activity name or vice versa
-              if (!match) {
-                for (const [key, val] of placeMap) {
-                  if (key.includes(normalizedName) || normalizedName.includes(key)) {
-                    match = val;
-                    break;
-                  }
-                }
-              }
-              if (match) {
-                act.photoName = match.photo_name || (match.photos && match.photos[0]) || null;
-                act.lat = match.lat;
-                act.lng = match.lng;
-                act.address = match.address;
+          // Try exact match from cache
+          let match = placeCache.get(normalizedName);
+          // Fuzzy match
+          if (!match) {
+            for (const [key, val] of placeCache) {
+              if (key.includes(normalizedName) || normalizedName.includes(key)) {
+                match = val;
+                break;
               }
             }
+          }
+
+          if (match) {
+            act.photoName = match.photo_name || (match.photos && match.photos[0]) || null;
+            act.lat = match.lat;
+            act.lng = match.lng;
+            act.address = match.address;
+            continue;
+          }
+
+          // No cache hit — use Google Places Text Search
+          if (!GOOGLE_MAPS_API_KEY) continue;
+
+          try {
+            const searchQuery = `${act.name} ${destination}`;
+            const gRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+                "X-Goog-FieldMask": "places.displayName,places.photos,places.location,places.formattedAddress",
+              },
+              body: JSON.stringify({ textQuery: searchQuery, maxResultCount: 1 }),
+            });
+
+            if (gRes.ok) {
+              const gData = await gRes.json();
+              const place = gData.places?.[0];
+              if (place) {
+                act.photoName = place.photos?.[0]?.name || null;
+                act.lat = place.location?.latitude || null;
+                act.lng = place.location?.longitude || null;
+                act.address = place.formattedAddress || null;
+              }
+            }
+          } catch (err) {
+            console.error(`Google Places lookup failed for "${act.name}":`, err);
           }
         }
       }
