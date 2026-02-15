@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, User, Settings, SortAsc, Loader2 } from "lucide-react";
+import { Plus, User, Settings, SortAsc, Loader2, Link2 } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useNavigate, useLocation as useRouterLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import BoardView from "./saved/BoardView";
 import BoardEditor from "./saved/BoardEditor";
 import EmptyState from "./saved/EmptyState";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
+import ImportLinkDialog from "./saved/ImportLinkDialog";
 
 // Haversine distance calculation
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -57,6 +58,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   // Handle openBoard state from navigation (e.g., when returning from place details)
   useEffect(() => {
     const state = routerLocation.state as { openBoard?: string | "all" } | null;
@@ -297,12 +299,21 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
               SweetSpots
             </h1>
             
-            <button 
-              onClick={() => setIsProfileMenuOpen(true)}
-              className="p-2 -mr-2 text-foreground hover:text-primary transition-colors"
-            >
-              <Settings className="w-6 h-6" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowImportDialog(true)}
+                className="p-2 text-foreground hover:text-primary transition-colors"
+                aria-label="Import from link"
+              >
+                <Link2 className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setIsProfileMenuOpen(true)}
+                className="p-2 -mr-2 text-foreground hover:text-primary transition-colors"
+              >
+                <Settings className="w-6 h-6" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -445,6 +456,12 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
           savedPlaces={savedPlaces}
         />
       )}
+
+      {/* Import Link Dialog */}
+      <ImportLinkDialog
+        open={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+      />
 
       {/* Profile Slide Menu */}
       <ProfileSlideMenu 
