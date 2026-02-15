@@ -714,7 +714,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     // Section 2: Primary category (5 places max)
     if (sortedCategories.length > 0) {
       const [category, places] = sortedCategories[0];
-      const sectionPlaces = places.slice(0, 5);
+      const sectionPlaces = places.slice(0, 8);
       sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
       
       sections.push({
@@ -727,7 +727,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     // Section 3: Secondary category (5 places max)
     if (sortedCategories.length > 1) {
       const [category, places] = sortedCategories[1];
-      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 5);
+      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 8);
       sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
       
       if (sectionPlaces.length > 0) {
@@ -742,7 +742,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     // Section 4: Third category (5 places max)
     if (sortedCategories.length > 2) {
       const [category, places] = sortedCategories[2];
-      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 5);
+      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 8);
       sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
       
       if (sectionPlaces.length > 0) {
@@ -759,7 +759,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     if (moreToExplore.length > 0) {
       sections.push({
         title: "More to Explore",
-        places: moreToExplore.slice(0, 10),
+        places: moreToExplore.slice(0, 20),
         featured: false,
       });
     }

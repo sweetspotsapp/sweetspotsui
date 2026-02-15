@@ -633,7 +633,7 @@ serve(async (req) => {
 
     // Parse request
     const body: RequestBody = await req.json();
-    const { prompt, location_name, radius_m = 4000, mode = 'drive', limit = 30 } = body;
+    const { prompt, location_name, radius_m = 4000, mode = 'drive', limit = 50 } = body;
     let { lat, lng } = body;
 
     if (!prompt) {
