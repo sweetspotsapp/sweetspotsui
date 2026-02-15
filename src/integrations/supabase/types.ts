@@ -73,6 +73,54 @@ export type Database = {
         }
         Relationships: []
       }
+      itineraries: {
+        Row: {
+          board_ids: string[] | null
+          budget: string
+          created_at: string
+          destination: string
+          end_date: string
+          group_size: number
+          id: string
+          itinerary_data: Json | null
+          must_include_place_ids: string[] | null
+          start_date: string
+          updated_at: string
+          user_id: string
+          vibes: string[] | null
+        }
+        Insert: {
+          board_ids?: string[] | null
+          budget?: string
+          created_at?: string
+          destination: string
+          end_date: string
+          group_size?: number
+          id?: string
+          itinerary_data?: Json | null
+          must_include_place_ids?: string[] | null
+          start_date: string
+          updated_at?: string
+          user_id: string
+          vibes?: string[] | null
+        }
+        Update: {
+          board_ids?: string[] | null
+          budget?: string
+          created_at?: string
+          destination?: string
+          end_date?: string
+          group_size?: number
+          id?: string
+          itinerary_data?: Json | null
+          must_include_place_ids?: string[] | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+          vibes?: string[] | null
+        }
+        Relationships: []
+      }
       place_interactions: {
         Row: {
           action: string
