@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2 } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { useState, useEffect } from "react";
+import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft } from "lucide-react";
+import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,16 +15,22 @@ const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "S
 interface TripSetupFormProps {
   onGenerate: (params: TripParams) => void;
   isGenerating: boolean;
+  initialParams?: TripParams | null;
+  onBack?: () => void;
 }
 
-const TripSetupForm = ({ onGenerate, isGenerating }: TripSetupFormProps) => {
-  const [destination, setDestination] = useState("");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [budget, setBudget] = useState("$$");
-  const [groupSize, setGroupSize] = useState(2);
-  const [vibes, setVibes] = useState<string[]>([]);
-  const [mustIncludePlaceIds, setMustIncludePlaceIds] = useState<string[]>([]);
-  const [boardIds, setBoardIds] = useState<string[]>([]);
+const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: TripSetupFormProps) => {
+  const [destination, setDestination] = useState(initialParams?.destination || "");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(
+    initialParams?.startDate && initialParams?.endDate
+      ? { from: parseISO(initialParams.startDate), to: parseISO(initialParams.endDate) }
+      : undefined
+  );
+  const [budget, setBudget] = useState(initialParams?.budget || "$$");
+  const [groupSize, setGroupSize] = useState(initialParams?.groupSize || 2);
+  const [vibes, setVibes] = useState<string[]>(initialParams?.vibes || []);
+  const [mustIncludePlaceIds, setMustIncludePlaceIds] = useState<string[]>(initialParams?.mustIncludePlaceIds || []);
+  const [boardIds, setBoardIds] = useState<string[]>(initialParams?.boardIds || []);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   const duration = dateRange?.from && dateRange?.to
@@ -53,6 +59,16 @@ const TripSetupForm = ({ onGenerate, isGenerating }: TripSetupFormProps) => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Itineraries
+        </button>
+      )}
       {/* Destination */}
       <section className="space-y-2">
         <label className="text-sm font-medium text-foreground">Destination</label>

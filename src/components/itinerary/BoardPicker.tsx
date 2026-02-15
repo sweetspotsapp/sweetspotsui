@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useBoards } from "@/hooks/useBoards";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useSavedPlaces } from "@/hooks/useSavedPlaces";
 
 interface BoardPickerProps {
   selectedPlaceIds: string[];
@@ -17,16 +18,38 @@ interface PlaceInfo {
   name: string;
 }
 
+interface VirtualBoard {
+  id: string;
+  name: string;
+  color: string;
+  placeIds: string[];
+  isAllSaved?: boolean;
+}
+
 const BoardPicker = ({ selectedPlaceIds, onPlaceIdsChange, selectedBoardIds, onBoardIdsChange }: BoardPickerProps) => {
   const { user } = useAuth();
   const { boards, isLoading } = useBoards();
+  const { savedPlaceIds } = useSavedPlaces();
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
   const [placesMap, setPlacesMap] = useState<Record<string, PlaceInfo[]>>({});
+
+  // Build virtual boards list: "All Saved" + custom boards
+  const allSavedIds = Array.from(savedPlaceIds);
+  const virtualBoards: VirtualBoard[] = [
+    ...(allSavedIds.length > 0 ? [{
+      id: "__all_saved__",
+      name: "All Saved",
+      color: "from-primary to-primary/70",
+      placeIds: allSavedIds,
+      isAllSaved: true,
+    }] : []),
+    ...boards.map(b => ({ id: b.id, name: b.name, color: b.color, placeIds: b.placeIds })),
+  ];
 
   // Load place names when a board is expanded
   useEffect(() => {
     if (!expandedBoard || placesMap[expandedBoard]) return;
-    const board = boards.find(b => b.id === expandedBoard);
+    const board = virtualBoards.find(b => b.id === expandedBoard);
     if (!board || board.placeIds.length === 0) return;
 
     const loadPlaces = async () => {
@@ -34,13 +57,13 @@ const BoardPicker = ({ selectedPlaceIds, onPlaceIdsChange, selectedBoardIds, onB
         .from("places")
         .select("place_id, name")
         .in("place_id", board.placeIds);
-      
+
       if (data) {
         setPlacesMap(prev => ({ ...prev, [expandedBoard]: data }));
       }
     };
     loadPlaces();
-  }, [expandedBoard, boards, placesMap]);
+  }, [expandedBoard, virtualBoards]);
 
   const togglePlace = (placeId: string) => {
     onPlaceIdsChange(
@@ -50,14 +73,14 @@ const BoardPicker = ({ selectedPlaceIds, onPlaceIdsChange, selectedBoardIds, onB
     );
   };
 
-  if (!user || boards.length === 0) {
+  if (!user || virtualBoards.length === 0) {
     return (
       <section className="space-y-2">
         <label className="text-sm font-medium text-foreground">Add from Saved Spots</label>
         <div className="px-4 py-6 rounded-2xl bg-card border border-border text-center">
           <Heart className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">
-            {!user ? "Log in to add saved spots" : "No saved boards yet"}
+            {!user ? "Log in to add saved spots" : "No saved spots yet"}
           </p>
         </div>
       </section>
@@ -68,7 +91,7 @@ const BoardPicker = ({ selectedPlaceIds, onPlaceIdsChange, selectedBoardIds, onB
     <section className="space-y-2">
       <label className="text-sm font-medium text-foreground">Add from Saved Spots</label>
       <div className="space-y-2">
-        {boards.map((board) => {
+        {virtualBoards.map((board) => {
           const isExpanded = expandedBoard === board.id;
           const places = placesMap[board.id] || [];
           const boardSelectedCount = board.placeIds.filter(id => selectedPlaceIds.includes(id)).length;
@@ -79,8 +102,11 @@ const BoardPicker = ({ selectedPlaceIds, onPlaceIdsChange, selectedBoardIds, onB
                 onClick={() => setExpandedBoard(isExpanded ? null : board.id)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors"
               >
-                <div className={cn("w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center", board.color)}>
-                  <Heart className="w-4 h-4 text-primary-foreground" />
+                <div className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center",
+                  board.isAllSaved ? "bg-primary" : "bg-gradient-to-br " + board.color
+                )}>
+                  <Heart className={cn("w-4 h-4", board.isAllSaved ? "text-primary-foreground fill-primary-foreground" : "text-primary-foreground")} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-medium text-foreground block truncate">{board.name}</span>
@@ -115,9 +141,7 @@ const BoardPicker = ({ selectedPlaceIds, onPlaceIdsChange, selectedBoardIds, onB
                         >
                           <div className={cn(
                             "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
-                            isSelected
-                              ? "bg-primary border-primary"
-                              : "border-border"
+                            isSelected ? "bg-primary border-primary" : "border-border"
                           )}>
                             {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
                           </div>
