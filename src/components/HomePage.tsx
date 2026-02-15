@@ -985,18 +985,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
               />
             )}
 
-            {/* Map/List Toggle */}
-            {filteredResults.length > 0 && (
-              <div className="px-4 mb-4">
-                <button
-                  onClick={() => setIsMapView(!isMapView)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-foreground/90 text-background rounded-full text-sm font-medium shadow-md hover:bg-foreground transition-colors"
-                >
-                  {isMapView ? <List className="w-4 h-4" /> : <Map className="w-4 h-4" />}
-                  {isMapView ? "List" : "Map"}
-                </button>
-              </div>
-            )}
 
             {isMapView && mapPlaces.length > 0 ? (
               <div className="h-[calc(100vh-280px)] mx-4 rounded-xl overflow-hidden border border-border">
@@ -1043,6 +1031,17 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           </>
         )}
       </main>
+
+      {/* Floating Map/List Toggle */}
+      {filteredResults.length > 0 && !isSearching && !isInitialLoading && (
+        <button
+          onClick={() => setIsMapView(!isMapView)}
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-full text-sm font-semibold shadow-xl hover:bg-foreground/90 transition-all active:scale-95"
+        >
+          {isMapView ? <List className="w-4 h-4" /> : <Map className="w-4 h-4" />}
+          {isMapView ? "List" : "Map"}
+        </button>
+      )}
 
       {/* Save to Board Dialog */}
       {saveToBoardPlace && (
