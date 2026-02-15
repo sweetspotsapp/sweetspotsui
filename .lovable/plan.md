@@ -1,76 +1,135 @@
-# Differentiation Strategy: "Why This Place?" Value Proposition
 
-## ✅ IMPLEMENTATION COMPLETE
+# Itinerary Creation Module
 
----
+## Overview
 
-## What Was Built
-
-### Phase 1: Enhanced AI Enrichment (Backend) ✅
-- **Database migration**: Added `insider_tips`, `signature_items`, `unique_vibes`, `best_for`, `local_secrets` columns to `places` table
-- **Updated `enrich-places` edge function**: AI analyzes reviews, categories, and location to extract unique insights
-
-### Phase 2: Place Card Enhancement (Frontend) ✅
-- Updated `MockPlace` interface to include `unique_vibes`
-- Updated `PlaceCardCompact.tsx` to show unique vibes one-liner
-- Updated `TopPickCard.tsx` to show unique vibes one-liner
-- Updated `useUnifiedSearch` hook to include `unique_vibes` in response
-
-### Phase 3: Place Details Revolution ✅
-- Updated `PlaceDetails` interface with new AI insight fields
-- Created `SignatureItemsSection.tsx` - displays must-try items
-- Created `InsiderTipsSection.tsx` - displays tips and local secrets  
-- Created `PerfectForSection.tsx` - displays best-for occasion badges
-- Updated `WhyVisitSection.tsx` to show unique vibes and improved layout
-- Integrated all new sections into `PlaceDetails.tsx` page
-
-### Phase 4: Search Results Context ✅
-- Updated `unified-search` to include `unique_vibes` in response
+Add a new "Itinerary" tab to the bottom navigation (Home > Saved > Itinerary > Profile) that lets users generate AI-powered trip itineraries. Users can specify trip parameters, pull in spots from their saved boards, and get a drag-and-drop schedule with swap suggestions.
 
 ---
 
-## How It Works
+## Navigation Changes
 
-### AI Enrichment Flow
-When a place is enriched via `enrich-places`:
-1. Filter tags are generated for categorization
-2. AI analyzes reviews and place data to generate:
-   - **insider_tips**: 2-3 specific tips only a local would know
-   - **signature_items**: 1-2 must-try items from reviews
-   - **unique_vibes**: One sentence capturing what makes this place DIFFERENT
-   - **best_for**: 2-3 specific occasions/personas
-   - **local_secrets**: One insider secret or hidden feature
-
-### Place Details Page
-Now shows rich sections:
-1. **Why SweetSpots Picked This** - Unique vibes quote + AI reason
-2. **What to Try** - Signature items from reviews
-3. **Insider Tips** - Numbered tips + local secret
-4. **Perfect For** - Occasion/persona badges
-5. Reviews & Related spots
-
-### Place Cards
-Both `PlaceCardCompact` and `TopPickCard` now display the `unique_vibes` one-liner under the place name.
+Update `BottomNav` to include 4 tabs: Home, Saved, Itinerary, Profile. The Itinerary tab uses a `CalendarDays` icon from lucide-react. Update `Index.tsx` to render the new `ItineraryPage` component when the itinerary tab is active.
 
 ---
 
-## Files Modified
+## Itinerary Page: Two-Phase UI
 
-| File | Changes |
-|------|---------|
-| `supabase/functions/enrich-places/index.ts` | AI insight generation |
-| `supabase/functions/unified-search/index.ts` | Include unique_vibes in response |
-| `src/hooks/useUnifiedSearch.tsx` | Added unique_vibes to interface |
-| `src/components/PlaceCardCompact.tsx` | Show unique vibes one-liner |
-| `src/components/TopPickCard.tsx` | Show unique vibes one-liner |
-| `src/components/HomePage.tsx` | Include unique_vibes in transform |
-| `src/pages/PlaceDetails.tsx` | Integrated new sections |
-| `src/components/place-detail/WhyVisitSection.tsx` | Updated with unique vibes |
+### Phase 1: Trip Setup Form
 
-## New Files Created
+A scrollable form matching the app's existing mobile-first style (max-w-md, sticky header with "SweetSpots" branding):
+
+| Field | Input Type | Details |
+|-------|-----------|---------|
+| Destination | Location picker (reuse `LocationPickerModal`) | City/area for the trip |
+| Dates | Date range picker (start + end date) | Using the existing Calendar component in a popover |
+| Duration | Auto-calculated from dates | Display as "X days" |
+| Budget | Segmented buttons | $ / $$ / $$$ / $$$$ |
+| Group Size | Number stepper | 1-20 with +/- buttons |
+| Trip Vibe | Multi-select chips | "Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature" |
+
+Below the form, a "Add from Saved Spots" section:
+- Shows user's boards as selectable cards (reusing `BoardCard` style)
+- Tapping a board expands it to show individual spots with checkboxes
+- Selected spots get a "Must Include" badge
+- A "Generate Itinerary" button at the bottom
+
+### Phase 2: Generated Itinerary View
+
+A day-by-day timeline:
+- Each day is a collapsible section with time slots (Morning, Afternoon, Evening)
+- Each activity shows: place name, time, category icon, brief description
+- Drag handle on each item for reordering (using CSS-based drag or simple up/down arrows for mobile)
+- Each item has a "Swap" button that opens a bottom sheet with 3-4 alternative suggestions
+- "Must Include" spots are pinned with a lock icon
+- A floating "Regenerate" button to re-run with tweaks
+
+---
+
+## Database Changes
+
+New `itineraries` table:
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| id | uuid (PK) | Auto-generated |
+| user_id | uuid | Owner |
+| destination | text | Trip location |
+| start_date | date | Trip start |
+| end_date | date | Trip end |
+| budget | text | Budget level |
+| group_size | integer | Number of travelers |
+| vibes | text[] | Selected trip vibes |
+| must_include_place_ids | text[] | Pinned spots from saved |
+| board_ids | text[] | Source boards |
+| itinerary_data | jsonb | The generated schedule |
+| created_at | timestamptz | Auto |
+| updated_at | timestamptz | Auto |
+
+RLS policies: Users can only CRUD their own itineraries (user_id = auth.uid()).
+
+---
+
+## Edge Function: `generate-itinerary`
+
+A new backend function that:
+1. Receives trip params (destination, dates, budget, group_size, vibes, must_include_place_ids)
+2. Fetches "must include" place details from the `places` table
+3. Calls Lovable AI (google/gemini-3-flash-preview) with a structured prompt to generate a day-by-day itinerary
+4. Uses tool calling to return structured JSON output with time slots, activities, and alternative suggestions
+5. Returns the itinerary as structured JSON
+
+The prompt instructs the AI to:
+- Place "must include" spots at optimal times
+- Fill remaining slots with contextually relevant activities
+- Generate 3 alternatives per slot for swapping
+- Respect budget and group size constraints
+
+---
+
+## Edge Function: `swap-itinerary-activity`
+
+A lighter function that:
+1. Takes the current activity context (time, day, location, vibes)
+2. Generates 3-4 alternative suggestions using AI
+3. Returns alternatives with name, description, category, and reasoning
+
+---
+
+## New Files
 
 | File | Purpose |
 |------|---------|
-| `src/components/place-detail/SignatureItemsSection.tsx` | Display must-try items |
-| `src/components/place-detail/InsiderTipsSection.tsx` | Display tips + local secrets |
-| `src/components/place-detail/PerfectForSection.tsx` | Display best-for badges |
+| `src/components/ItineraryPage.tsx` | Main page with form + results |
+| `src/components/itinerary/TripSetupForm.tsx` | The setup form with all inputs |
+| `src/components/itinerary/BoardPicker.tsx` | Select boards and spots to include |
+| `src/components/itinerary/ItineraryView.tsx` | Day-by-day timeline display |
+| `src/components/itinerary/DaySection.tsx` | Single day with time slots |
+| `src/components/itinerary/ActivityCard.tsx` | Individual activity with swap/reorder |
+| `src/components/itinerary/SwapSheet.tsx` | Bottom sheet showing alternatives |
+| `src/hooks/useItinerary.tsx` | Hook for generating/saving/loading itineraries |
+| `supabase/functions/generate-itinerary/index.ts` | AI itinerary generation |
+| `supabase/functions/swap-itinerary-activity/index.ts` | AI swap suggestions |
+
+---
+
+## Modified Files
+
+| File | Change |
+|------|--------|
+| `src/components/BottomNav.tsx` | Add "itinerary" tab with CalendarDays icon, update type union |
+| `src/pages/Index.tsx` | Add "itinerary" to activeTab type, render ItineraryPage |
+| `supabase/config.toml` | Add verify_jwt settings for new edge functions |
+
+---
+
+## Implementation Order
+
+1. Database migration (itineraries table + RLS)
+2. BottomNav + Index.tsx navigation updates
+3. ItineraryPage shell with TripSetupForm
+4. BoardPicker component (reuses existing board/saved data)
+5. `generate-itinerary` edge function
+6. ItineraryView + DaySection + ActivityCard
+7. `swap-itinerary-activity` edge function + SwapSheet
+8. useItinerary hook for save/load from database
