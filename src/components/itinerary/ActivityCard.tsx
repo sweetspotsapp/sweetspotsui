@@ -57,71 +57,88 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
     ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(activity.photoName)}&maxWidthPx=200&maxHeightPx=200`
     : null;
 
+  // Build larger image URL
+  const largeImageUrl = activity.photoName && !imageError
+    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(activity.photoName)}&maxWidthPx=400&maxHeightPx=250`
+    : null;
+
   return (
     <>
       <div className={cn(
-        "flex items-start gap-3 px-3 py-2.5 rounded-xl transition-colors",
-        activity.mustInclude ? "bg-primary/5 border border-primary/15" : "hover:bg-muted/30"
+        "rounded-xl overflow-hidden transition-colors",
+        activity.mustInclude ? "bg-primary/5 border border-primary/15" : "bg-card border border-border/50 hover:border-border"
       )}>
-        {/* Image or Icon */}
-        {imageUrl ? (
-          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+        {/* Hero Image */}
+        {largeImageUrl && (
+          <div className="relative w-full h-32 bg-muted">
             <img
-              src={imageUrl}
+              src={largeImageUrl}
               alt={activity.name}
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
             />
-          </div>
-        ) : (
-          <span className="text-lg mt-0.5 flex-shrink-0">{icon}</span>
-        )}
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-foreground truncate">{activity.name}</span>
-            {activity.mustInclude && <Lock className="w-3 h-3 text-primary flex-shrink-0" />}
-          </div>
-          {activity.time && (
-            <span className="text-xs text-muted-foreground">{activity.time}</span>
-          )}
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{activity.description}</p>
-          {activity.estimatedCost !== undefined && activity.estimatedCost > 0 && (
-            <div className="flex items-center gap-0.5 mt-1">
-              <DollarSign className="w-3 h-3 text-primary" />
-              <span className="text-xs font-medium text-primary">${activity.estimatedCost}/pp</span>
+            <div className="absolute top-2 left-2 bg-card/80 backdrop-blur-sm text-xs font-medium px-2 py-0.5 rounded-full text-foreground capitalize">
+              {icon} {activity.category}
             </div>
-          )}
-          {activity.estimatedCost === 0 && (
-            <span className="text-xs text-green-600 mt-1 inline-block">Free</span>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Actions */}
-        <div className="flex flex-col gap-1 flex-shrink-0">
-          {onMoveUp && (
-            <button onClick={onMoveUp} className="p-1 rounded-md hover:bg-muted transition-colors">
-              <ArrowUp className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          )}
-          {onMoveDown && (
-            <button onClick={onMoveDown} className="p-1 rounded-md hover:bg-muted transition-colors">
-              <ArrowDown className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          )}
-          {!activity.mustInclude && (
-            <button
-              onClick={handleSwapClick}
-              disabled={loading}
-              className="p-1 rounded-md hover:bg-muted transition-colors"
-            >
-              {loading ? (
-                <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
-              ) : (
-                <RefreshCw className="w-3.5 h-3.5 text-primary" />
+        <div className="px-3 py-2.5">
+          <div className="flex items-start gap-2">
+            {/* Icon fallback when no image */}
+            {!largeImageUrl && (
+              <span className="text-lg mt-0.5 flex-shrink-0">{icon}</span>
+            )}
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-semibold text-foreground truncate">{activity.name}</span>
+                {activity.mustInclude && <Lock className="w-3 h-3 text-primary flex-shrink-0" />}
+              </div>
+              {activity.time && (
+                <span className="text-xs text-muted-foreground">{activity.time}</span>
               )}
-            </button>
-          )}
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{activity.description}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                {activity.estimatedCost !== undefined && activity.estimatedCost > 0 && (
+                  <div className="flex items-center gap-0.5">
+                    <DollarSign className="w-3 h-3 text-primary" />
+                    <span className="text-xs font-medium text-primary">${activity.estimatedCost}/pp</span>
+                  </div>
+                )}
+                {activity.estimatedCost === 0 && (
+                  <span className="text-xs font-medium text-green-600">Free</span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-1 flex-shrink-0">
+              {onMoveUp && (
+                <button onClick={onMoveUp} className="p-1 rounded-md hover:bg-muted transition-colors">
+                  <ArrowUp className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              )}
+              {onMoveDown && (
+                <button onClick={onMoveDown} className="p-1 rounded-md hover:bg-muted transition-colors">
+                  <ArrowDown className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              )}
+              {!activity.mustInclude && (
+                <button
+                  onClick={handleSwapClick}
+                  disabled={loading}
+                  className="p-1 rounded-md hover:bg-muted transition-colors"
+                >
+                  {loading ? (
+                    <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3.5 h-3.5 text-primary" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

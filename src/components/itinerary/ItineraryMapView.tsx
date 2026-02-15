@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import { Loader2, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -139,7 +139,7 @@ const MapInner = ({ apiKey, activities }: { apiKey: string; activities: MapActiv
       }}
     >
       {activities.map((act, i) => (
-        <MarkerF
+        <Marker
           key={`${act.name}-${i}`}
           position={{ lat: act.lat, lng: act.lng }}
           onClick={() => setSelectedActivity(act)}
@@ -161,21 +161,21 @@ const MapInner = ({ apiKey, activities }: { apiKey: string; activities: MapActiv
       ))}
 
       {selectedActivity && (
-        <InfoWindowF
+        <InfoWindow
           position={{ lat: selectedActivity.lat, lng: selectedActivity.lng }}
           onCloseClick={() => setSelectedActivity(null)}
           options={{ pixelOffset: new google.maps.Size(0, -16) }}
         >
           <div className="p-1 min-w-[150px]">
-            <h4 className="font-semibold text-sm text-gray-900">{selectedActivity.name}</h4>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h4 className="font-semibold text-sm">{selectedActivity.name}</h4>
+            <p className="text-xs opacity-60 mt-0.5">
               {selectedActivity.dayLabel} · {selectedActivity.time}
             </p>
-            <span className="text-xs text-gray-400 capitalize">
+            <span className="text-xs opacity-50 capitalize">
               {selectedActivity.category.replace(/_/g, ' ')}
             </span>
           </div>
-        </InfoWindowF>
+        </InfoWindow>
       )}
     </GoogleMap>
   );
