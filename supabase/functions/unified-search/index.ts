@@ -685,31 +685,23 @@ serve(async (req) => {
     let nextPageToken: string | null = null;
     const maxPages = 3;
 
-    // Use strict location restriction to prevent far-away results
-    const useStrictBounds = radius_m <= 10000; // strict for small radii
+    // Note: searchText only supports locationBias, not locationRestriction
+    // We enforce distance limits via post-filtering with haversine
+    const strictRadius = radius_m <= 10000;
 
     for (let page = 0; page < maxPages; page++) {
       const requestBody: any = {
         textQuery: keywords,
         pageSize: 20,
-        languageCode: "en"
+        languageCode: "en",
+        locationBias: {
+          circle: {
+            center: { latitude: lat, longitude: lng },
+            radius: strictRadius ? Math.max(radius_m, 5000) : radius_m
+          }
+        },
+        strictTypeFiltering: strictRadius
       };
-
-      if (useStrictBounds) {
-        requestBody.locationRestriction = {
-          circle: {
-            center: { latitude: lat, longitude: lng },
-            radius: Math.max(radius_m, 5000) // minimum 5km for restriction
-          }
-        };
-      } else {
-        requestBody.locationBias = {
-          circle: {
-            center: { latitude: lat, longitude: lng },
-            radius: radius_m
-          }
-        };
-      }
 
       if (nextPageToken) {
         requestBody.pageToken = nextPageToken;
