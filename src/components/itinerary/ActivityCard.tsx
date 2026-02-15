@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowUp, ArrowDown, RefreshCw, Lock, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowUp, ArrowDown, RefreshCw, Lock, Loader2, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
@@ -30,10 +31,17 @@ interface ActivityCardProps {
 }
 
 const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwapping }: ActivityCardProps) => {
+  const navigate = useNavigate();
   const [showSwap, setShowSwap] = useState(false);
   const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  const handleCardClick = () => {
+    if (activity.placeId) {
+      navigate(`/place/${activity.placeId}`);
+    }
+  };
 
   const handleSwapClick = async () => {
     setLoading(true);
@@ -82,8 +90,11 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
         "rounded-xl overflow-hidden transition-colors",
         activity.mustInclude ? "bg-primary/5 border border-primary/15" : "bg-card border border-border/50 hover:border-border"
       )}>
-        {/* Hero Image - always show */}
-        <div className="relative w-full h-32 bg-muted overflow-hidden">
+        {/* Hero Image - clickable to place detail */}
+        <div
+          className={cn("relative w-full h-32 bg-muted overflow-hidden", activity.placeId && "cursor-pointer")}
+          onClick={handleCardClick}
+        >
           {largeImageUrl ? (
             <img
               src={largeImageUrl}
@@ -99,13 +110,23 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
           <div className="absolute top-2 left-2 bg-card/80 backdrop-blur-sm text-xs font-medium px-2 py-0.5 rounded-full text-foreground capitalize">
             {icon} {activity.category}
           </div>
+          {activity.placeId && (
+            <div className="absolute top-2 right-2 bg-card/80 backdrop-blur-sm p-1 rounded-full">
+              <ExternalLink className="w-3 h-3 text-muted-foreground" />
+            </div>
+          )}
         </div>
 
         <div className="px-3 py-2.5">
           <div className="flex items-start gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold text-foreground truncate">{activity.name}</span>
+                <span
+                  className={cn("text-sm font-semibold text-foreground truncate", activity.placeId && "cursor-pointer hover:text-primary transition-colors")}
+                  onClick={handleCardClick}
+                >
+                  {activity.name}
+                </span>
                 {activity.mustInclude && <Lock className="w-3 h-3 text-primary flex-shrink-0" />}
               </div>
               {activity.time && (

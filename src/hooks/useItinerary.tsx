@@ -14,6 +14,7 @@ export interface Activity {
   lat?: number;
   lng?: number;
   address?: string;
+  placeId?: string;
 }
 
 export interface TimeSlot {

@@ -240,10 +240,10 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
     // First try matching from DB cache
     const { data: cachedPlaces } = await sb
       .from("places")
-      .select("name, photo_name, lat, lng, address, photos")
+      .select("place_id, name, photo_name, lat, lng, address, photos")
       .limit(500);
 
-    const placeCache = new Map<string, { photo_name: string | null; lat: number | null; lng: number | null; address: string | null; photos: string[] | null }>();
+    const placeCache = new Map<string, { place_id: string; photo_name: string | null; lat: number | null; lng: number | null; address: string | null; photos: string[] | null }>();
     if (cachedPlaces) {
       for (const p of cachedPlaces) {
         placeCache.set(p.name.toLowerCase().trim(), p);
@@ -269,6 +269,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
           }
 
           if (match) {
+            act.placeId = match.place_id;
             act.photoName = match.photo_name || (match.photos && match.photos[0]) || null;
             act.lat = match.lat;
             act.lng = match.lng;
