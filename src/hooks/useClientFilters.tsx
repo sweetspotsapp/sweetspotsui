@@ -31,17 +31,17 @@ const PRICE_FILTER_MAP: Record<string, (priceLevel: number | undefined) => boole
 
 // Map UI filter IDs to stored filter_tags
 const FILTER_TAG_MAP: Record<string, string> = {
-  friends: 'good-for-friends',
-  romantic: 'romantic',
-  family: 'family-friendly',
-  solo: 'good-for-solo',
-  chill: 'chill-vibe',
-  lively: 'lively-vibe',
-  hidden: 'hidden-gem',
-  scenic: 'scenic-view',
-  pet: 'pet-friendly',
-  late_night: 'late-night',
+  halal: 'halal',
+  vegetarian: 'vegetarian-vegan',
+  gluten_free: 'gluten-free',
+  wifi: 'free-wifi',
   outdoor: 'outdoor-seating',
+  parking: 'parking',
+  wheelchair: 'wheelchair-accessible',
+  dog_friendly: 'pet-friendly',
+  kid_friendly: 'family-friendly',
+  late_night: 'late-night',
+  large_groups: 'large-groups',
 };
 
 export interface ExtendedMockPlace extends MockPlace {

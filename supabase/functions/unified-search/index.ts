@@ -261,17 +261,17 @@ Return ONLY a JSON object: { "keywords": "search terms", "intent": "what user wa
 
 // Valid filter tags that can be assigned to places
 const VALID_FILTER_TAGS = [
-  'good-for-friends',
-  'romantic',
-  'family-friendly',
-  'good-for-solo',
-  'chill-vibe',
-  'lively-vibe',
-  'hidden-gem',
-  'scenic-view',
-  'pet-friendly',
-  'late-night',
+  'halal',
+  'vegetarian-vegan',
+  'gluten-free',
+  'free-wifi',
   'outdoor-seating',
+  'parking',
+  'wheelchair-accessible',
+  'pet-friendly',
+  'family-friendly',
+  'late-night',
+  'large-groups',
 ];
 
 // Generate filter_tags for places using AI
@@ -296,17 +296,17 @@ async function generateFilterTagsWithAI(
   }));
 
   const systemPrompt = `You analyze places and assign relevant filter tags. For each place, assign ALL tags that apply from this list:
-- good-for-friends: Social venues, group activities, lively atmosphere
-- romantic: Date spots, intimate settings, romantic ambiance
+- halal: Halal-certified or serves halal food
+- vegetarian-vegan: Vegetarian or vegan options available
+- gluten-free: Gluten-free options available
+- free-wifi: Free WiFi available for customers
+- outdoor-seating: Patio, terrace, garden seating, al fresco dining
+- parking: Has parking lot, valet, or dedicated parking
+- wheelchair-accessible: Wheelchair accessible entrance and facilities
+- pet-friendly: Allows pets, dog-friendly, outdoor pet area
 - family-friendly: Kid-safe, welcoming to families, appropriate activities
-- good-for-solo: Comfortable alone, counter seating, solo-friendly
-- chill-vibe: Relaxed, quiet, calm atmosphere
-- lively-vibe: Energetic, bustling, exciting atmosphere
-- hidden-gem: Lesser-known, unique finds, off beaten path
-- scenic-view: Good views, waterfront, rooftop, scenic location
-- pet-friendly: Allows pets, outdoor seating areas
-- late-night: Open late, nightlife spots, bars
-- outdoor-seating: Patio, terrace, al fresco dining
+- late-night: Open after 10pm, 24 hours, midnight operations, bars, clubs
+- large-groups: Can accommodate large groups, group dining, event space
 
 Be GENEROUS - if a place could reasonably have a tag based on its name, categories, or typical venue type, include it.`;
 
