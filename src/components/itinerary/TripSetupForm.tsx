@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft } from "lucide-react";
+import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft, DollarSign } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,6 +11,13 @@ import type { DateRange } from "react-day-picker";
 
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
+
+const BUDGET_LABELS: Record<string, string> = {
+  "$": "~$50/day",
+  "$$": "~$100/day",
+  "$$$": "~$200/day",
+  "$$$$": "$300+/day",
+};
 
 interface TripSetupFormProps {
   onGenerate: (params: TripParams) => void;
@@ -27,6 +34,8 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
       : undefined
   );
   const [budget, setBudget] = useState(initialParams?.budget || "$$");
+  const [totalBudget, setTotalBudget] = useState<string>("");
+  const [useTotalBudget, setUseTotalBudget] = useState(false);
   const [groupSize, setGroupSize] = useState(initialParams?.groupSize || 2);
   const [vibes, setVibes] = useState<string[]>(initialParams?.vibes || []);
   const [mustIncludePlaceIds, setMustIncludePlaceIds] = useState<string[]>(initialParams?.mustIncludePlaceIds || []);
@@ -36,6 +45,10 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
   const duration = dateRange?.from && dateRange?.to
     ? differenceInDays(dateRange.to, dateRange.from) + 1
     : 0;
+
+  const perDayBudget = useTotalBudget && totalBudget && duration > 0
+    ? Math.round(parseFloat(totalBudget) / duration)
+    : null;
 
   const toggleVibe = (v: string) => {
     setVibes(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
@@ -118,24 +131,76 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
       </section>
 
       {/* Budget */}
-      <section className="space-y-2">
+      <section className="space-y-3">
         <label className="text-sm font-medium text-foreground">Budget</label>
-        <div className="flex gap-2">
-          {BUDGET_OPTIONS.map((b) => (
-            <button
-              key={b}
-              onClick={() => setBudget(b)}
-              className={cn(
-                "flex-1 py-2.5 rounded-xl text-sm font-medium transition-all",
-                budget === b
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {b}
-            </button>
-          ))}
+        
+        {/* Toggle between tier and total */}
+        <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
+          <button
+            onClick={() => setUseTotalBudget(false)}
+            className={cn(
+              "flex-1 py-2 rounded-lg text-xs font-medium transition-all",
+              !useTotalBudget ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Spending Tier
+          </button>
+          <button
+            onClick={() => setUseTotalBudget(true)}
+            className={cn(
+              "flex-1 py-2 rounded-lg text-xs font-medium transition-all",
+              useTotalBudget ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Total Budget
+          </button>
         </div>
+
+        {!useTotalBudget ? (
+          <div className="flex gap-2">
+            {BUDGET_OPTIONS.map((b) => (
+              <button
+                key={b}
+                onClick={() => setBudget(b)}
+                className={cn(
+                  "flex-1 py-2.5 rounded-xl text-sm font-medium transition-all flex flex-col items-center gap-0.5",
+                  budget === b
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span>{b}</span>
+                <span className={cn("text-[10px]", budget === b ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
+                  {BUDGET_LABELS[b]}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border">
+              <DollarSign className="w-5 h-5 text-primary flex-shrink-0" />
+              <input
+                type="number"
+                value={totalBudget}
+                onChange={(e) => setTotalBudget(e.target.value)}
+                placeholder="Enter total trip budget"
+                className="flex-1 text-base bg-transparent outline-none text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-sm text-muted-foreground">USD</span>
+            </div>
+            {perDayBudget !== null && perDayBudget > 0 && (
+              <p className="text-xs text-muted-foreground px-1">
+                ≈ <span className="font-medium text-foreground">${perDayBudget}</span>/day for {duration} {duration === 1 ? "day" : "days"}
+              </p>
+            )}
+            {totalBudget && !duration && (
+              <p className="text-xs text-muted-foreground px-1">
+                Select dates to see per-day breakdown
+              </p>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Group Size */}
