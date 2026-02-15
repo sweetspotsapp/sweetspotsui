@@ -409,7 +409,11 @@ async function getAIRelevanceAndSummary(
       relevanceMap.set(p.place_id, isFood ? 80 : 40);
     });
     const type = prompt.toLowerCase().includes('restaurant') ? 'restaurants' : prompt.toLowerCase().includes('cafe') || prompt.toLowerCase().includes('coffee') ? 'cafes' : 'spots';
-    summary = `We picked these ${type} because they match your "${prompt}" vibe — top-rated by locals and fitting the mood you're after.`;
+    summary = JSON.stringify([
+      `Try our best picks because you like "${prompt}"`,
+      `Based on your keywords, some places you might find are ${type}, cafes, and local favorites`,
+      `I'd suggest you go for the top-rated ${type} that locals love`
+    ]);
     return { relevanceMap, summary };
   }
 
@@ -423,12 +427,13 @@ async function getAIRelevanceAndSummary(
 
   const systemPrompt = `You are a friendly local guide. Given a user's search query and places found:
 1. Rate each place's relevance on a scale of 0-100
-2. Generate a SHORT 2-sentence summary that:
-   - Explains WHY these places were picked for this specific search intent (not just "found X places")
-   - Highlights what makes these results special for their mood/vibe (e.g., "These spots nail the chill rooftop vibe — most have outdoor seating with views that locals swear by")
-   
-NEVER say "Found X places" or generic filler. Be specific about WHY these match.
+2. Generate EXACTLY 3 bullet points as a JSON array "bullets":
+   - Bullet 1: "Try our best picks because you like [user's vibe/interest from their query]"
+   - Bullet 2: "Based on your keywords, some places you might find are [category 1], [category 2]" (derive categories from the results)
+   - Bullet 3: "I'd suggest you go for [specific AI recommendation based on the results, e.g. a standout place type or experience]"
 
+Keep each bullet under 120 characters. Be specific and reference the user's actual query.
+   
 SCORING GUIDE:
 - 80-100: Excellent match for the search intent
 - 60-79: Good match, likely useful
@@ -446,7 +451,7 @@ ${placesInfo.map((p, i) => `${i}. ${p.name} (${p.categories || 'Unknown'}) - ${p
 Respond with a JSON object:
 {
   "scores": [[index, score], ...] for places scoring 40+,
-  "summary": "2-sentence explanation of WHY these places match the '${prompt}' intent"
+  "bullets": ["bullet 1", "bullet 2", "bullet 3"]
 }`;
 
   try {
@@ -480,7 +485,11 @@ Respond with a JSON object:
       
       // Fallback: give all places a neutral score
       places.forEach(p => relevanceMap.set(p.place_id, 50));
-      summary = `These spots were picked because they match your "${prompt}" mood — a mix of highly-rated local favorites worth checking out.`;
+      summary = JSON.stringify([
+        `Try our best picks because you like "${prompt}"`,
+        `Based on your keywords, some places you might find are restaurants, cafes, and bars`,
+        `I'd suggest you go for the highest-rated spots nearby`
+      ]);
       return { relevanceMap, summary };
     }
 
@@ -526,8 +535,19 @@ Respond with a JSON object:
         }
       }
       
-      // Extract summary
-      summary = parsed.summary || parsed.insight || `These spots were hand-picked for your "${prompt}" vibe — the best matches based on mood and local ratings.`;
+      // Extract bullets - convert array to JSON string for transport
+      const bullets = parsed.bullets || parsed.summary;
+      if (Array.isArray(bullets)) {
+        summary = JSON.stringify(bullets);
+      } else if (typeof bullets === 'string') {
+        summary = bullets;
+      } else {
+        summary = JSON.stringify([
+          `Try our best picks because you like "${prompt}"`,
+          `Based on your keywords, we found some great matching spots`,
+          `I'd suggest you go for the top-rated options`
+        ]);
+      }
       
       console.log(`AI scored ${relevanceMap.size}/${places.length} places`);
       
@@ -539,13 +559,21 @@ Respond with a JSON object:
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       places.forEach(p => relevanceMap.set(p.place_id, 50));
-      summary = `Curated for your "${prompt}" search — these are the best-matching spots based on vibe, reviews, and location.`;
+      summary = JSON.stringify([
+        `Try our best picks because you like "${prompt}"`,
+        `Based on your keywords, we found some great matching spots`,
+        `I'd suggest you go for the top-rated options nearby`
+      ]);
     }
     
   } catch (error) {
     console.error('AI relevance check failed:', error);
     places.forEach(p => relevanceMap.set(p.place_id, 50));
-    summary = `Found ${places.length} places nearby.`;
+    summary = JSON.stringify([
+      `Try our best picks because you like "${prompt}"`,
+      `Based on your keywords, we found some great spots for you`,
+      `I'd suggest you go for the highest-rated places nearby`
+    ]);
   }
 
   return { relevanceMap, summary };
