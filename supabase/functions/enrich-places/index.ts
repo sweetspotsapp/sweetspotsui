@@ -597,6 +597,11 @@ serve(async (req) => {
             reviews: cachedPlace.reviews,
             is_open_now: cachedPlace.is_open_now,
             filter_tags: cachedPlace.filter_tags,
+            insider_tips: cachedPlace.insider_tips || null,
+            signature_items: cachedPlace.signature_items || null,
+            unique_vibes: cachedPlace.unique_vibes || null,
+            best_for: cachedPlace.best_for || null,
+            local_secrets: cachedPlace.local_secrets || null,
           };
           freshCachedPlaces.push(enrichedFromCache);
           foundCached = true;
