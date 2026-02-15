@@ -298,7 +298,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   // Client-side filtering - instant results
   const filteredResults = useClientFilters(
     searchResults as ExtendedMockPlace[],
-    { activeFilters, maxDistance }
+    { activeFilters, maxDistance, userLat: userLocation?.lat, userLng: userLocation?.lng }
   );
 
   // Cache results to session storage

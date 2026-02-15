@@ -4,6 +4,22 @@ import { MockPlace } from "@/components/PlaceCardCompact";
 interface FilterOptions {
   activeFilters: Set<string>;
   maxDistance: number; // in km
+  userLat?: number;
+  userLng?: number;
+}
+
+// Haversine distance in km between two coordinates
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 // Price level mapping: 1 = cheap, 4 = expensive
@@ -32,6 +48,8 @@ export interface ExtendedMockPlace extends MockPlace {
   price_level?: number;
   opening_hours?: unknown;
   filter_tags?: string[];
+  lat?: number;
+  lng?: number;
 }
 
 /**
@@ -65,17 +83,23 @@ export const useClientFilters = (
   places: ExtendedMockPlace[],
   options: FilterOptions
 ): ExtendedMockPlace[] => {
-  const { activeFilters, maxDistance } = options;
+  const { activeFilters, maxDistance, userLat, userLng } = options;
 
   return useMemo(() => {
     if (places.length === 0) return [];
     if (activeFilters.size === 0 && maxDistance >= 25) return places;
 
     return places.filter((place) => {
-      // Check distance filter
+      // Check distance filter using haversine if user coordinates available
       if (maxDistance < 25) {
-        const placeDistance = place.distance_km || 0;
-        if (placeDistance > maxDistance) return false;
+        if (userLat !== undefined && userLng !== undefined && place.lat !== undefined && place.lng !== undefined) {
+          const straightLineKm = haversineKm(userLat, userLng, place.lat, place.lng);
+          if (straightLineKm > maxDistance) return false;
+        } else {
+          // Fallback to reported distance_km
+          const placeDistance = place.distance_km || 0;
+          if (placeDistance > maxDistance) return false;
+        }
       }
 
       // Group filters by type for smarter matching
@@ -99,7 +123,7 @@ export const useClientFilters = (
 
       return true;
     });
-  }, [places, activeFilters, maxDistance]);
+  }, [places, activeFilters, maxDistance, userLat, userLng]);
 };
 
 export default useClientFilters;

@@ -619,10 +619,11 @@ serve(async (req) => {
     if (location_name && (lat === undefined || lng === undefined || (lat === 0 && lng === 0))) {
       console.log(`Geocoding location: ${location_name}`);
       
-      // Use Geoapify Geocoding API
-      const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location_name)}&limit=1&apiKey=${geoapifyApiKey}`;
-      
+      let geocoded = false;
+
+      // Try Geoapify first
       try {
+        const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location_name)}&limit=1&apiKey=${geoapifyApiKey}`;
         const geoResponse = await fetch(geocodeUrl);
         const geoData = await geoResponse.json();
         
@@ -630,19 +631,36 @@ serve(async (req) => {
           const [geoLng, geoLat] = geoData.features[0].geometry.coordinates;
           lat = geoLat;
           lng = geoLng;
-          console.log(`Geocoded "${location_name}" to: ${lat}, ${lng}`);
-        } else {
-          console.error('Geocoding failed, no results');
-          return new Response(
-            JSON.stringify({ error: `Could not find location: ${location_name}` }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          geocoded = true;
+          console.log(`Geoapify geocoded "${location_name}" to: ${lat}, ${lng}`);
         }
-      } catch (geoError) {
-        console.error('Geocoding error:', geoError);
+      } catch (e) {
+        console.error('Geoapify geocoding error:', e);
+      }
+
+      // Fallback to Google Geocoding if Geoapify failed
+      if (!geocoded) {
+        try {
+          const googleGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location_name)}&key=${googleMapsApiKey}`;
+          const googleGeoResponse = await fetch(googleGeoUrl);
+          const googleGeoData = await googleGeoResponse.json();
+          
+          if (googleGeoData.results && googleGeoData.results.length > 0) {
+            const loc = googleGeoData.results[0].geometry.location;
+            lat = loc.lat;
+            lng = loc.lng;
+            geocoded = true;
+            console.log(`Google geocoded "${location_name}" to: ${lat}, ${lng}`);
+          }
+        } catch (e) {
+          console.error('Google geocoding error:', e);
+        }
+      }
+
+      if (!geocoded) {
         return new Response(
-          JSON.stringify({ error: 'Failed to geocode location' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: `Could not find location: ${location_name}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
@@ -667,18 +685,31 @@ serve(async (req) => {
     let nextPageToken: string | null = null;
     const maxPages = 3;
 
+    // Use strict location restriction to prevent far-away results
+    const useStrictBounds = radius_m <= 10000; // strict for small radii
+
     for (let page = 0; page < maxPages; page++) {
       const requestBody: any = {
-        textQuery: keywords,  // Use translated keywords instead of raw prompt
-        locationBias: {
+        textQuery: keywords,
+        pageSize: 20,
+        languageCode: "en"
+      };
+
+      if (useStrictBounds) {
+        requestBody.locationRestriction = {
+          circle: {
+            center: { latitude: lat, longitude: lng },
+            radius: Math.max(radius_m, 5000) // minimum 5km for restriction
+          }
+        };
+      } else {
+        requestBody.locationBias = {
           circle: {
             center: { latitude: lat, longitude: lng },
             radius: radius_m
           }
-        },
-        pageSize: 20,
-        languageCode: "en"
-      };
+        };
+      }
 
       if (nextPageToken) {
         requestBody.pageToken = nextPageToken;
@@ -728,114 +759,59 @@ serve(async (req) => {
     }
 
     // ============ RELEVANCE FILTER: Exclude non-travel categories ============
-    // These categories don't fit SweetSpots' travel/food/experience focus
     const EXCLUDED_CATEGORIES = new Set([
-      // Retail/Shopping (not experiences)
-      'clothing_store',
-      'shoe_store',
-      'jewelry_store',
-      'electronics_store',
-      'furniture_store',
-      'hardware_store',
-      'home_goods_store',
-      'home_improvement_store',
-      'department_store',
-      'shopping_mall',
-      'convenience_store',
-      'supermarket',
-      'grocery_or_supermarket',
-      'discount_store',
-      'wholesale_store',
-      'liquor_store',
-      'pet_store',
-      'florist',
-      'book_store',
-      'sporting_goods_store',
-      'outdoor_goods_store',
-      // Services (not destinations)
-      'car_dealer',
-      'car_rental',
-      'car_repair',
-      'car_wash',
-      'gas_station',
-      'parking',
-      'atm',
-      'bank',
-      'insurance_agency',
-      'real_estate_agency',
-      'lawyer',
-      'accounting',
-      'electrician',
-      'plumber',
-      'locksmith',
-      'moving_company',
-      'storage',
-      'post_office',
-      'laundry',
-      'dry_cleaning',
-      'tailor',
-      // Medical (not experiences)
-      'hospital',
-      'doctor',
-      'dentist',
-      'pharmacy',
-      'veterinary_care',
-      'physiotherapist',
-      // Education (not experiences)
-      'school',
-      'primary_school',
-      'secondary_school',
-      'university',
-      'library',
-      // Other non-relevant
-      'cemetery',
-      'funeral_home',
-      'local_government_office',
-      'police',
-      'fire_station',
-      'embassy',
-      'courthouse',
-      'city_hall',
+      // Retail/Shopping
+      'clothing_store', 'shoe_store', 'jewelry_store', 'electronics_store',
+      'furniture_store', 'hardware_store', 'home_goods_store', 'home_improvement_store',
+      'department_store', 'shopping_mall', 'convenience_store', 'supermarket',
+      'grocery_or_supermarket', 'discount_store', 'wholesale_store', 'liquor_store',
+      'pet_store', 'florist', 'book_store', 'sporting_goods_store', 'outdoor_goods_store',
+      // Services
+      'car_dealer', 'car_rental', 'car_repair', 'car_wash', 'gas_station', 'parking',
+      'atm', 'bank', 'insurance_agency', 'real_estate_agency', 'lawyer', 'accounting',
+      'electrician', 'plumber', 'locksmith', 'moving_company', 'storage', 'post_office',
+      'laundry', 'dry_cleaning', 'tailor', 'travel_agency',
+      // Corporate/Industrial
+      'corporate_office', 'general_contractor', 'roofing_contractor',
+      // Medical
+      'hospital', 'doctor', 'dentist', 'pharmacy', 'veterinary_care', 'physiotherapist',
+      // Education
+      'school', 'primary_school', 'secondary_school', 'university', 'library',
+      // Government/Other
+      'cemetery', 'funeral_home', 'local_government_office', 'police', 'fire_station',
+      'embassy', 'courthouse', 'city_hall', 'place_of_worship', 'church', 'mosque',
+      'hindu_temple', 'synagogue',
     ]);
 
     // Categories that indicate the place IS relevant (override exclusion)
     const INCLUDED_CATEGORIES = new Set([
-      'restaurant',
-      'cafe',
-      'coffee_shop',
-      'bar',
-      'bakery',
-      'food',
-      'meal_takeaway',
-      'meal_delivery',
-      'night_club',
-      'tourist_attraction',
-      'point_of_interest',
-      'establishment',
-      'park',
-      'beach',
-      'natural_feature',
-      'museum',
-      'art_gallery',
-      'movie_theater',
-      'bowling_alley',
-      'amusement_park',
-      'zoo',
-      'aquarium',
-      'spa',
-      'gym',
-      'stadium',
-      'casino',
-      'campground',
-      'rv_park',
-      'lodging',
-      'hotel',
-      'resort',
+      'restaurant', 'cafe', 'coffee_shop', 'bar', 'bakery', 'food',
+      'meal_takeaway', 'meal_delivery', 'night_club', 'tourist_attraction',
+      'park', 'beach', 'natural_feature', 'museum', 'art_gallery',
+      'movie_theater', 'bowling_alley', 'amusement_park', 'zoo', 'aquarium',
+      'spa', 'gym', 'stadium', 'casino', 'campground', 'rv_park',
+      'lodging', 'hotel', 'resort', 'pub', 'gastropub', 'cocktail_bar',
+      'hookah_bar', 'live_music_venue', 'event_venue', 'ice_cream_shop',
+      'lounge_bar', 'sports_bar', 'wine_bar', 'brunch_restaurant',
+      'indonesian_restaurant', 'japanese_restaurant', 'italian_restaurant',
+      'indian_restaurant', 'chinese_restaurant', 'thai_restaurant',
+      'mexican_restaurant', 'french_restaurant', 'korean_restaurant',
+      'vietnamese_restaurant', 'mediterranean_restaurant', 'seafood_restaurant',
+      'steak_house', 'pizza_restaurant', 'hamburger_restaurant',
+      'vegetarian_restaurant', 'vegan_restaurant', 'ramen_restaurant',
+      'sushi_restaurant', 'barbecue_restaurant',
     ]);
+
+    // Name patterns indicating non-travel businesses (common in SE Asia)
+    const EXCLUDED_NAME_PATTERNS = /^(PT\s|CV\s|UD\s|TB\s|PD\s)/i;
 
     // Filter out irrelevant places
     const filteredGooglePlaces = allGooglePlaces.filter((place: any) => {
       const types: string[] = place.types || [];
+      const name: string = place.displayName?.text || '';
+      
+      // Filter by name patterns (corporate entities)
+      if (EXCLUDED_NAME_PATTERNS.test(name)) return false;
       
       // If it has ANY included category, keep it
       const hasIncludedCategory = types.some(t => INCLUDED_CATEGORIES.has(t));
@@ -844,8 +820,11 @@ serve(async (req) => {
       // If it has ANY excluded category and no included ones, drop it
       const hasExcludedCategory = types.some(t => EXCLUDED_CATEGORIES.has(t));
       if (hasExcludedCategory) return false;
+
+      // If only generic types (point_of_interest, establishment), be suspicious
+      const genericOnly = types.every(t => t === 'point_of_interest' || t === 'establishment');
+      if (genericOnly) return false;
       
-      // If uncertain, keep it (could be a unique local spot)
       return true;
     });
 
