@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link2, Loader2, MapPin, Star, X, Check, AlertCircle } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import SaveToBoardDialog from "./SaveToBoardDialog";
 
 interface ImportedPlace {
   place_id: string;
@@ -26,9 +26,8 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
   const [state, setState] = useState<ImportState>("idle");
   const [place, setPlace] = useState<ImportedPlace | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const { toggleSave, isSaved } = useApp();
-  const { toast } = useToast();
+  const [showBoardDialog, setShowBoardDialog] = useState(false);
+  const { isSaved } = useApp();
 
   const handleImport = async () => {
     if (!url.trim()) return;
@@ -62,26 +61,14 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!place) return;
+    setShowBoardDialog(true);
+  };
 
-    setIsSaving(true);
-    try {
-      await toggleSave(place.place_id);
-      toast({
-        title: "Spot saved!",
-        description: `${place.name} has been added to your saved spots.`,
-      });
-      handleClose();
-    } catch {
-      toast({
-        title: "Couldn't save",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+  const handleBoardSaved = () => {
+    setShowBoardDialog(false);
+    handleClose();
   };
 
   const handleClose = () => {
@@ -209,10 +196,8 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
             ) : (
               <button
                 onClick={handleSave}
-                disabled={isSaving}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
               >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 Save to My Spots
               </button>
             )
@@ -227,6 +212,16 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
           )}
         </div>
       </div>
+
+      {/* Save to Board Dialog */}
+      {showBoardDialog && place && (
+        <SaveToBoardDialog
+          placeId={place.place_id}
+          placeName={place.name}
+          onClose={() => setShowBoardDialog(false)}
+          onSaved={handleBoardSaved}
+        />
+      )}
     </div>
   );
 };
