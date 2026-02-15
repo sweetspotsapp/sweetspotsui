@@ -261,6 +261,15 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
 
   return (
     <div className="max-w-md mx-auto px-4 py-4 space-y-3">
+      {/* Always show create button */}
+      <button
+        onClick={onCreateNew}
+        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl border-2 border-dashed border-primary/30 text-primary font-medium hover:bg-primary/5 transition-colors"
+      >
+        <Plus className="w-5 h-5" />
+        New Itinerary
+      </button>
+
       {itineraries.map((it, i) => {
         const startDate = it.start_date ? format(parseISO(it.start_date), "MMM d") : "";
         const endDate = it.end_date ? format(parseISO(it.end_date), "MMM d, yyyy") : "";
