@@ -1,46 +1,34 @@
 
-# Replace Vibe & Other Filters with Practical Filters
+# Add Map View Toggle to Homepage
 
-## What Changes
+## Overview
+Add a "View on Map" toggle button to the homepage that lets users switch between the current list/card view and a full map view showing all discovered places as pins. This reuses the existing `BoardMapView` component already built for the Saved boards.
 
-Replace the current abstract "Occasion", "Vibe", and "Other" filter sections with more practical, actionable categories that help users find exactly what they need.
-
-## New Filter Sections
-
-**Dietary** (replacing Occasion)
-- Halal
-- Vegetarian / Vegan
-- Gluten-Free
-
-**Amenities** (replacing Vibe)
-- Free WiFi
-- Outdoor Seating
-- Parking Available
-- Wheelchair Accessible
-
-**Good For** (replacing Other)
-- Dog-Friendly
-- Kid-Friendly
-- Late Night
-- Large Groups
-
-Price and Distance filters stay as they are.
+## What You'll See
+- A small map icon button appears near the top of the homepage (below the search bar area)
+- Tapping it switches the main content area to a full-screen map with pins for all search results
+- Tapping a pin shows a mini info card with the place name, rating, and a "View Details" link
+- A button to switch back to the list view
+- Your location is shown as a blue dot on the map
 
 ## Technical Details
 
-### Files to update:
+### 1. Add map view state to `HomePage.tsx`
+- New `isMapView` boolean state
+- A toggle button (Map/List icon) placed after the filter chips area in the sticky header
 
-1. **`src/components/SlideOutMenu.tsx`** -- Update `FILTER_SECTIONS` array with the new filter IDs and labels.
+### 2. Reuse `BoardMapView` component
+- The existing `BoardMapView` (in `src/components/saved/BoardMapView.tsx`) already handles:
+  - Google Maps API key fetching and caching
+  - Map rendering with markers, info windows, and bounds fitting
+  - User location dot
+- Convert `searchResults` (MockPlaceWithCoords) to the `RankedPlace` format expected by `BoardMapView`
 
-2. **`src/hooks/useClientFilters.tsx`** -- Update `FILTER_TAG_MAP` to map new filter IDs to their corresponding `filter_tags` stored in the database (e.g., `halal` -> `'halal'`, `wifi` -> `'free-wifi'`, `dog_friendly` -> `'pet-friendly'`).
+### 3. Conditional rendering in main content
+- When `isMapView` is true, render the map instead of the section rows
+- The map container fills the available space (below header, above bottom nav)
+- AI summary card and section rows are hidden in map mode
 
-3. **`supabase/functions/unified-search/index.ts`** -- Add new valid tags to `VALID_FILTER_TAGS` array (e.g., `'halal'`, `'vegetarian-vegan'`, `'gluten-free'`, `'free-wifi'`, `'parking'`, `'wheelchair-accessible'`, `'large-groups'`).
-
-4. **`supabase/functions/backfill-filter-tags/index.ts`** -- Add the same new valid tags so the AI tagging engine can assign them to existing places.
-
-5. **`src/components/TravelPersonalityFilterModal.tsx`** -- Update `VIBE_OPTIONS` to align with the new practical categories (e.g., replace "Chill & relaxation" with "Halal", "Free WiFi", "Dog-Friendly", etc.).
-
-### How filtering works (no change to logic):
-- The `useClientFilters` hook matches selected filter IDs against `filter_tags` stored on each place in the database.
-- The AI tagging engine in `unified-search` and `backfill-filter-tags` will start generating the new tags for places going forward.
-- Existing untagged places will pass through filters (lenient matching already in place).
+### 4. Files to modify
+- **`src/components/HomePage.tsx`**: Add toggle state, map toggle button in header, conditional map rendering, and data conversion helper
+- No new files needed -- reuses existing `BoardMapView`
