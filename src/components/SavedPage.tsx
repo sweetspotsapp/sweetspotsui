@@ -291,19 +291,17 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
         {/* Header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40">
           <div className="flex items-center justify-between px-4 py-3">
-            <div className="w-9" /> {/* Spacer for balance */}
+            <div className="w-10" />
             
-            <div className="flex items-center gap-1">
-              <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                SweetSpots
-              </span>
-            </div>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
+              SweetSpots
+            </h1>
             
             <button 
               onClick={() => setIsProfileMenuOpen(true)}
-              className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors"
+              className="p-2 -mr-2 text-foreground hover:text-primary transition-colors"
             >
-              <Settings className="w-6 h-6 text-foreground" />
+              <Settings className="w-6 h-6" />
             </button>
           </div>
         </header>
