@@ -1,15 +1,19 @@
+import { useState } from "react";
 import { User, Sparkles, TrendingUp, Loader2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
+import ProfileSlideMenu from "./ProfileSlideMenu";
 
 const ProfilePage = () => {
   const { savedPlaceIds, userVibes } = useApp();
   const { vibeBreakdown, personalityTraits, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount } = useVibeDNA();
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   // Total saved is directly from savedPlaceIds Set (synced with DB)
   const totalSaved = savedPlaceIds.size;
 
   return (
+    <>
     <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40">
@@ -22,7 +26,12 @@ const ProfilePage = () => {
               </span>
             </div>
             
-            <div className="w-9" /> {/* Spacer for balance */}
+            <button 
+              onClick={() => setIsProfileMenuOpen(true)}
+              className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors"
+            >
+              <User className="w-6 h-6 text-foreground" />
+            </button>
           </div>
         </header>
 
@@ -158,6 +167,12 @@ const ProfilePage = () => {
         </section>
       </div>
     </div>
+
+    <ProfileSlideMenu 
+      isOpen={isProfileMenuOpen} 
+      onClose={() => setIsProfileMenuOpen(false)}
+    />
+    </>
   );
 };
 

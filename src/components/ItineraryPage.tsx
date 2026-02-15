@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight } from "lucide-react";
+import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, User } from "lucide-react";
+import ProfileSlideMenu from "./ProfileSlideMenu";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import TripSetupForm from "./itinerary/TripSetupForm";
@@ -22,6 +23,7 @@ const ItineraryPage = () => {
   const [tripParams, setTripParams] = useState<TripParams | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [prefillParams, setPrefillParams] = useState<TripParams | null>(null);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const handleNewItinerary = () => {
     setEditingId(null);
@@ -145,20 +147,29 @@ const ItineraryPage = () => {
   const headerTitle = phase === "list" ? "Itineraries" : phase === "setup" ? (editingId ? "Edit Trip" : "Plan Your Trip") : "Your Itinerary";
 
   return (
+    <>
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-lg font-bold text-foreground">{headerTitle}</h1>
-          {phase === "list" && (
-            <button
-              onClick={handleNewItinerary}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          <div className="flex items-center gap-2">
+            {phase === "list" && (
+              <button
+                onClick={handleNewItinerary}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New
+              </button>
+            )}
+            <button 
+              onClick={() => setIsProfileMenuOpen(true)}
+              className="p-2 rounded-full hover:bg-muted transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              New
+              <User className="w-5 h-5 text-foreground" />
             </button>
-          )}
+          </div>
         </div>
       </div>
 
@@ -178,8 +189,8 @@ const ItineraryPage = () => {
         <TripSetupForm
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
-          initialParams={prefillParams}
           onBack={handleBackToList}
+          initialParams={prefillParams}
         />
       )}
 
@@ -198,6 +209,12 @@ const ItineraryPage = () => {
         />
       )}
     </div>
+
+    <ProfileSlideMenu 
+      isOpen={isProfileMenuOpen} 
+      onClose={() => setIsProfileMenuOpen(false)}
+    />
+    </>
   );
 };
 
