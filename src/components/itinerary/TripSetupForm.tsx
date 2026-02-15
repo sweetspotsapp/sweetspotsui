@@ -65,8 +65,13 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
   const [budget, setBudget] = useState(initialParams?.budget || "$$");
   const [totalBudget, setTotalBudget] = useState<string>("");
   const [useTotalBudget, setUseTotalBudget] = useState(false);
+  const [budgetCurrency, setBudgetCurrency] = useState("USD");
+  const [budgetIsPerPerson, setBudgetIsPerPerson] = useState(true);
+  const [budgetIncludesAccommodation, setBudgetIncludesAccommodation] = useState(false);
+  const [budgetIncludesFlights, setBudgetIncludesFlights] = useState(false);
   const [groupSize, setGroupSize] = useState(initialParams?.groupSize || 2);
   const [vibes, setVibes] = useState<string[]>(initialParams?.vibes || []);
+  const [customVibe, setCustomVibe] = useState("");
   const [mustIncludePlaceIds, setMustIncludePlaceIds] = useState<string[]>(initialParams?.mustIncludePlaceIds || []);
   const [boardIds, setBoardIds] = useState<string[]>(initialParams?.boardIds || []);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -89,12 +94,21 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
     ? differenceInDays(dateRange.to, dateRange.from) + 1
     : 0;
 
+  const budgetSymbol = CURRENCIES.find(c => c.code === budgetCurrency)?.symbol || "$";
   const perDayBudget = useTotalBudget && totalBudget && duration > 0
     ? Math.round(parseFloat(totalBudget) / duration)
     : null;
 
   const toggleVibe = (v: string) => {
     setVibes(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
+  };
+
+  const addCustomVibe = () => {
+    const trimmed = customVibe.trim();
+    if (trimmed && !vibes.includes(trimmed)) {
+      setVibes(prev => [...prev, trimmed]);
+      setCustomVibe("");
+    }
   };
 
   const canGenerate = destination && dateRange?.from && dateRange?.to && vibes.length > 0;
@@ -246,21 +260,79 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
             ))}
           </div>
         ) : (
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border">
-              <DollarSign className="w-5 h-5 text-primary flex-shrink-0" />
-              <input
-                type="number"
-                value={totalBudget}
-                onChange={(e) => setTotalBudget(e.target.value)}
-                placeholder="Enter total trip budget"
-                className="flex-1 text-base bg-transparent outline-none text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <span className="text-sm text-muted-foreground">USD</span>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border">
+                <span className="text-primary font-medium">{budgetSymbol}</span>
+                <input
+                  type="number"
+                  value={totalBudget}
+                  onChange={(e) => setTotalBudget(e.target.value)}
+                  placeholder="Enter total trip budget"
+                  className="flex-1 text-base bg-transparent outline-none text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <select
+                value={budgetCurrency}
+                onChange={(e) => setBudgetCurrency(e.target.value)}
+                className="px-3 py-3.5 rounded-2xl bg-card border border-border text-sm text-foreground outline-none"
+              >
+                {CURRENCIES.map(c => (
+                  <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
+                ))}
+              </select>
             </div>
+
+            {/* Per person / whole group toggle */}
+            <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
+              <button
+                onClick={() => setBudgetIsPerPerson(true)}
+                className={cn(
+                  "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
+                  budgetIsPerPerson ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+                )}
+              >
+                Per Person
+              </button>
+              <button
+                onClick={() => setBudgetIsPerPerson(false)}
+                className={cn(
+                  "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
+                  !budgetIsPerPerson ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+                )}
+              >
+                Whole Group
+              </button>
+            </div>
+
+            {/* Includes checkboxes */}
+            <div className="flex flex-wrap gap-3 px-1">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={budgetIncludesAccommodation}
+                  onChange={(e) => setBudgetIncludesAccommodation(e.target.checked)}
+                  className="rounded accent-primary w-3.5 h-3.5"
+                />
+                Includes accommodation
+              </label>
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={budgetIncludesFlights}
+                  onChange={(e) => setBudgetIncludesFlights(e.target.checked)}
+                  className="rounded accent-primary w-3.5 h-3.5"
+                />
+                Includes flights
+              </label>
+            </div>
+
             {perDayBudget !== null && perDayBudget > 0 && (
               <p className="text-xs text-muted-foreground px-1">
-                ≈ <span className="font-medium text-foreground">${perDayBudget}</span>/day for {duration} {duration === 1 ? "day" : "days"}
+                ≈ <span className="font-medium text-foreground">{budgetSymbol}{perDayBudget}</span>/day for {duration} {duration === 1 ? "day" : "days"}
+                {!budgetIsPerPerson && groupSize > 1 && (
+                  <span> ({budgetSymbol}{Math.round(perDayBudget / groupSize)}/day per person)</span>
+                )}
               </p>
             )}
             {totalBudget && !duration && (
@@ -313,6 +385,34 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
               {v}
             </button>
           ))}
+          {/* Custom vibes that were added */}
+          {vibes.filter(v => !VIBE_OPTIONS.includes(v)).map((v) => (
+            <button
+              key={v}
+              onClick={() => toggleVibe(v)}
+              className="px-4 py-2 rounded-full text-sm font-medium transition-all bg-primary text-primary-foreground shadow-sm"
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        {/* Custom vibe input */}
+        <div className="flex items-center gap-2">
+          <input
+            value={customVibe}
+            onChange={(e) => setCustomVibe(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addCustomVibe()}
+            placeholder="Add your own vibe..."
+            className="flex-1 px-4 py-2 rounded-full text-sm bg-card border border-border text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary/30"
+          />
+          {customVibe.trim() && (
+            <button
+              onClick={addCustomVibe}
+              className="px-3 py-2 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+            >
+              Add
+            </button>
+          )}
         </div>
       </section>
 
