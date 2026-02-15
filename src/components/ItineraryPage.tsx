@@ -37,6 +37,7 @@ const ItineraryPage = () => {
     if (saved.itinerary_data) {
       setItinerary(saved.itinerary_data);
       setTripParams({
+        name: saved.name || undefined,
         destination: saved.destination,
         startDate: saved.start_date,
         endDate: saved.end_date,
@@ -45,6 +46,8 @@ const ItineraryPage = () => {
         vibes: saved.vibes || [],
         mustIncludePlaceIds: saved.must_include_place_ids || [],
         boardIds: saved.board_ids || [],
+        accommodation: saved.accommodation || undefined,
+        flightDetails: saved.flight_details || undefined,
       });
       setEditingId(saved.id);
       setPhase("view");
@@ -53,6 +56,7 @@ const ItineraryPage = () => {
 
   const handleEditItinerary = (saved: SavedItinerary) => {
     setPrefillParams({
+      name: saved.name || undefined,
       destination: saved.destination,
       startDate: saved.start_date,
       endDate: saved.end_date,
@@ -61,6 +65,8 @@ const ItineraryPage = () => {
       vibes: saved.vibes || [],
       mustIncludePlaceIds: saved.must_include_place_ids || [],
       boardIds: saved.board_ids || [],
+      accommodation: saved.accommodation || undefined,
+      flightDetails: saved.flight_details || undefined,
     });
     setEditingId(saved.id);
     setItinerary(saved.itinerary_data);
@@ -69,6 +75,7 @@ const ItineraryPage = () => {
 
   const handleDuplicate = (saved: SavedItinerary) => {
     setPrefillParams({
+      name: saved.name ? `${saved.name} (copy)` : undefined,
       destination: saved.destination,
       startDate: saved.start_date,
       endDate: saved.end_date,
@@ -77,8 +84,10 @@ const ItineraryPage = () => {
       vibes: saved.vibes || [],
       mustIncludePlaceIds: saved.must_include_place_ids || [],
       boardIds: saved.board_ids || [],
+      accommodation: saved.accommodation || undefined,
+      flightDetails: saved.flight_details || undefined,
     });
-    setEditingId(null); // new copy
+    setEditingId(null);
     setItinerary(null);
     setPhase("setup");
   };
@@ -293,7 +302,8 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
                   <MapPin className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground truncate">{it.destination}</h3>
+                  <h3 className="text-sm font-semibold text-foreground truncate">{it.name || it.destination}</h3>
+                  {it.name && <p className="text-xs text-muted-foreground truncate">{it.destination}</p>}
                   <p className="text-xs text-muted-foreground">
                     {startDate} – {endDate}
                   </p>
