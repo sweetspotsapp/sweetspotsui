@@ -34,13 +34,19 @@ const Index = () => {
   };
   
   const [activeTab, setActiveTab] = useState<"home" | "saved" | "itinerary" | "profile">(getInitialTab);
+  const [resumeItineraryId, setResumeItineraryId] = useState<string | null>(null);
 
   // Handle navigation state changes (e.g. returning from place details to itinerary)
   useEffect(() => {
     const state = location.state as { openItinerary?: boolean } | null;
     if (state?.openItinerary) {
       setActiveTab("itinerary");
-      // Clear the state to avoid re-triggering
+      // Check sessionStorage for the itinerary ID to resume
+      const storedId = sessionStorage.getItem('sweetspots_resume_itinerary');
+      if (storedId) {
+        setResumeItineraryId(storedId);
+        sessionStorage.removeItem('sweetspots_resume_itinerary');
+      }
       window.history.replaceState({}, '');
     }
   }, [location.state]);
@@ -124,7 +130,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {activeTab === "home" && <HomePage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "saved" && <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />}
-      {activeTab === "itinerary" && <ItineraryPage />}
+      {activeTab === "itinerary" && <ItineraryPage resumeItineraryId={resumeItineraryId} onResumed={() => setResumeItineraryId(null)} />}
       {activeTab === "profile" && <ProfilePage />}
       
       <BottomNav 
