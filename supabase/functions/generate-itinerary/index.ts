@@ -142,8 +142,95 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
     }
 
     const aiData = await response.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error("No tool call in response");
+    let toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+
+    // Retry once if no tool call returned
+    if (!toolCall) {
+      console.warn("No tool call in first response, retrying with google/gemini-2.5-flash...");
+      const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "You are a travel planning expert. You MUST use the create_itinerary tool to return your response. Do not respond with plain text." },
+            { role: "user", content: prompt },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "create_itinerary",
+                description: "Return a structured travel itinerary with cost estimates",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    summary: { type: "string", description: "A 1-2 sentence overview of the trip" },
+                    days: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          label: { type: "string" },
+                          slots: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                time: { type: "string", enum: ["Morning", "Afternoon", "Evening"] },
+                                activities: {
+                                  type: "array",
+                                  items: {
+                                    type: "object",
+                                    properties: {
+                                      name: { type: "string" },
+                                      time: { type: "string" },
+                                      category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market"] },
+                                      description: { type: "string" },
+                                      mustInclude: { type: "boolean" },
+                                      estimatedCost: { type: "number" },
+                                    },
+                                    required: ["name", "category", "description", "estimatedCost"],
+                                    additionalProperties: false,
+                                  },
+                                },
+                              },
+                              required: ["time", "activities"],
+                              additionalProperties: false,
+                            },
+                          },
+                        },
+                        required: ["label", "slots"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["summary", "days"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "create_itinerary" } },
+        }),
+      });
+
+      if (!retryResponse.ok) {
+        const retryText = await retryResponse.text();
+        console.error("Retry AI error:", retryResponse.status, retryText);
+        throw new Error("AI failed to generate itinerary after retry");
+      }
+
+      const retryData = await retryResponse.json();
+      toolCall = retryData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall) {
+        console.error("Retry response:", JSON.stringify(retryData));
+        throw new Error("AI did not return structured itinerary. Please try again.");
+      }
+    }
 
     const itinerary = JSON.parse(toolCall.function.arguments);
 
