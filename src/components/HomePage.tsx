@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone, Lock } from "lucide-react";
+import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
@@ -16,8 +16,6 @@ import { useLocation } from "@/hooks/useLocation";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
-import { useAuth } from "@/hooks/useAuth";
-import AuthDialog from "./AuthDialog";
 import LocationPickerModal from "./LocationPickerModal";
 // Extended MockPlace with lat/lng for map view
 interface MockPlaceWithCoords extends MockPlace {
@@ -207,8 +205,7 @@ interface HomePageProps {
 
 const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const navigate = useNavigate();
-  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, freeActionsUsed, incrementFreeActions, setShowAuthDialog, onboardingData, setOnboardingData } = useApp();
-  const { user } = useAuth();
+  const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, onboardingData, setOnboardingData } = useApp();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation, setManualLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
@@ -288,9 +285,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   // Filter modal state
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({ budget: null, vibes: [], placeTypes: [] });
-  
-  // Auth dialog state for soft wall
-  const [showLocalAuthDialog, setShowLocalAuthDialog] = useState(false);
   
   // Location picker modal state
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
@@ -444,20 +438,10 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   );
 
   const handlePlaceClick = (place: MockPlace) => {
-    // Clicking a place always requires auth if not logged in (after first search)
-    if (!user) {
-      setShowLocalAuthDialog(true);
-      return;
-    }
     navigate(`/place/${place.id}`, { state: { ai_reason: place.ai_reason } });
   };
 
   const handleSeeAll = (allPlaces: MockPlaceWithCoords[]) => {
-    // See all requires auth if not logged in
-    if (!user) {
-      setShowLocalAuthDialog(true);
-      return;
-    }
     navigate(`/see-all`, {
       state: { places: allPlaces, userLocation, searchQuery: searchValue || userMood },
     });
@@ -492,16 +476,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
     
-    // If not logged in and already used free search, show auth
-    if (!user && freeActionsUsed >= 1) {
-      setShowLocalAuthDialog(true);
-      return;
-    }
-    
-    // Increment free actions counter on first search (if not logged in)
-    if (!user) {
-      incrementFreeActions();
-    }
     
     setUserMood(searchValue.trim());
     setNeedsLocationPermission(false);
@@ -950,49 +924,10 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             </Button>
           </div>
         ) : displaySections.length === 0 ? (
-          // Show auth prompt with blur if user has exceeded free actions
-          !user && freeActionsUsed >= 1 ? (
-            <div className="relative">
-              {/* Blurred placeholder content */}
-              <div className="filter blur-md pointer-events-none opacity-60 px-4">
-                <div className="space-y-4">
-                  <div className="h-48 bg-muted rounded-2xl" />
-                  <div className="h-6 bg-muted rounded-lg w-2/3" />
-                  <div className="flex gap-3">
-                    <div className="h-32 w-40 bg-muted rounded-xl flex-shrink-0" />
-                    <div className="h-32 w-40 bg-muted rounded-xl flex-shrink-0" />
-                    <div className="h-32 w-40 bg-muted rounded-xl flex-shrink-0" />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Auth overlay */}
-              <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-                <div className="text-center p-6 max-w-sm">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Lock className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-2 text-lg">Sign in to continue exploring</h3>
-                  <p className="text-muted-foreground text-sm mb-6">
-                    Create a free account to unlock unlimited searches and save your favorite spots
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    <Button 
-                      onClick={() => setShowLocalAuthDialog(true)}
-                      className="rounded-full w-full"
-                    >
-                      Sign in or Sign up
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
               <Sparkles className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Ask me anything to discover amazing places!</p>
             </div>
-          )
         ) : (
           <>
             {/* AI Summary Card */}
@@ -1062,18 +997,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         onNavigateToProfile={onNavigateToProfile}
       />
       
-      {/* Auth Dialog for soft wall */}
-      <AuthDialog 
-        open={showLocalAuthDialog}
-        onOpenChange={setShowLocalAuthDialog}
-        onSuccess={() => {
-          setShowLocalAuthDialog(false);
-          // Clear the free actions counter on successful auth
-          try {
-            sessionStorage.removeItem('sweetspots_free_actions');
-          } catch {}
-        }}
-      />
 
       {/* Location Picker Modal */}
       <LocationPickerModal

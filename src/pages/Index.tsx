@@ -6,7 +6,7 @@ import ItineraryPage from "@/components/ItineraryPage";
 import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
-import AuthDialog from "@/components/AuthDialog";
+
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import type { OnboardingData } from "@/context/AppContext";
@@ -20,10 +20,6 @@ const Index = () => {
     setUserMood, 
     completeOnboarding,
     setOnboardingData,
-    showAuthDialog,
-    setShowAuthDialog,
-    pendingSavePlaceId,
-    toggleSave
   } = useApp();
   
   const [activeTab, setActiveTab] = useState<"home" | "saved" | "itinerary" | "profile">("home");
@@ -40,15 +36,6 @@ const Index = () => {
     }
   }, [hasCompletedOnboarding, appState]);
 
-  // Handle auth success - complete pending save if any
-  const handleAuthSuccess = async () => {
-    if (pendingSavePlaceId) {
-      // Small delay to ensure auth state is fully updated
-      setTimeout(() => {
-        toggleSave(pendingSavePlaceId);
-      }, 100);
-    }
-  };
 
   const handleOnboardingComplete = (data: OnboardingData) => {
     setOnboardingData(data);
@@ -122,13 +109,6 @@ const Index = () => {
       <BottomNav 
         activeTab={activeTab} 
         onTabChange={handleTabChange}
-      />
-      
-      {/* Auth dialog for saving without login */}
-      <AuthDialog 
-        open={showAuthDialog} 
-        onOpenChange={setShowAuthDialog}
-        onSuccess={handleAuthSuccess}
       />
     </div>
   );

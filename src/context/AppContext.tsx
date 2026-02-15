@@ -181,19 +181,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const hasExceededFreeActions = useCallback(() => {
-    // Allow 1 free action (first search), require auth after
-    return !user && freeActionsUsed >= 1;
-  }, [user, freeActionsUsed]);
+    return false; // No auth wall
+  }, []);
 
-  // Wrapper for toggleSave that shows auth dialog if not logged in
+  // Direct save without auth check
   const toggleSave = useCallback(async (placeId: string) => {
-    if (!user) {
-      setPendingSavePlaceId(placeId);
-      setShowAuthDialog(true);
-      return;
-    }
     await originalToggleSave(placeId);
-  }, [user, originalToggleSave]);
+  }, [originalToggleSave]);
 
   const setOnboardingData = useCallback((data: OnboardingData) => {
     // Clear search cache when location changes
