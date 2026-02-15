@@ -303,9 +303,11 @@ const PlaceDetailsPage = () => {
   const locationState = location.state as {
     ai_reason?: string;
     fromBoard?: string | "all";
+    fromItinerary?: boolean;
   } | null;
   const aiReason = locationState?.ai_reason;
   const fromBoard = locationState?.fromBoard;
+  const fromItinerary = locationState?.fromItinerary;
   const {
     isSaved,
     toggleSave
@@ -329,6 +331,8 @@ const PlaceDetailsPage = () => {
   const handleBack = () => {
     if (fromBoard) {
       navigate('/saved', { state: { openBoard: fromBoard } });
+    } else if (fromItinerary) {
+      navigate('/', { state: { openItinerary: true } });
     } else {
       navigate(-1);
     }

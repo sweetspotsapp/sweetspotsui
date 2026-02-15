@@ -39,7 +39,7 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
 
   const handleCardClick = () => {
     if (activity.placeId) {
-      navigate(`/place/${activity.placeId}`);
+      navigate(`/place/${activity.placeId}`, { state: { fromItinerary: true } });
     }
   };
 
