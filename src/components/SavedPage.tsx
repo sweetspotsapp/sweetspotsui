@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, User, SortAsc, Loader2 } from "lucide-react";
+import { Plus, User, Settings, SortAsc, Loader2 } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useNavigate, useLocation as useRouterLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -303,7 +303,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
               onClick={() => setIsProfileMenuOpen(true)}
               className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors"
             >
-              <User className="w-6 h-6 text-foreground" />
+              <Settings className="w-6 h-6 text-foreground" />
             </button>
           </div>
         </header>
