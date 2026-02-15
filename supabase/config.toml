@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.swap-itinerary-activity]
 verify_jwt = false
+
+[functions.import-from-link]
+verify_jwt = false
