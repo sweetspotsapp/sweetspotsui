@@ -1,34 +1,57 @@
 
-# Add Map View Toggle to Homepage
+
+# Import Places from Social Media Links
 
 ## Overview
-Add a "View on Map" toggle button to the homepage that lets users switch between the current list/card view and a full map view showing all discovered places as pins. This reuses the existing `BoardMapView` component already built for the Saved boards.
+Add a "Paste a Link" feature to the Saved page that lets you import places from Instagram, TikTok, or Google Maps URLs. You paste a link, the app extracts the place name using AI, looks it up, and adds it to your saved spots.
 
-## What You'll See
-- A small map icon button appears near the top of the homepage (below the search bar area)
-- Tapping it switches the main content area to a full-screen map with pins for all search results
-- Tapping a pin shows a mini info card with the place name, rating, and a "View Details" link
-- A button to switch back to the list view
-- Your location is shown as a blue dot on the map
+## How It Works (User Experience)
+
+1. On the Saved page, a new "Import Link" button appears (link/plus icon) in the header area
+2. Tapping it opens a simple dialog with a text input for pasting a URL
+3. After pasting and tapping "Import", the app shows a loading state ("Finding place...")
+4. Once found, it shows the place name and a confirm button to save it
+5. If not found, a friendly error message appears
 
 ## Technical Details
 
-### 1. Add map view state to `HomePage.tsx`
-- New `isMapView` boolean state
-- A toggle button (Map/List icon) placed after the filter chips area in the sticky header
+### 1. New Edge Function: `import-from-link`
+**Path:** `supabase/functions/import-from-link/index.ts`
 
-### 2. Reuse `BoardMapView` component
-- The existing `BoardMapView` (in `src/components/saved/BoardMapView.tsx`) already handles:
-  - Google Maps API key fetching and caching
-  - Map rendering with markers, info windows, and bounds fitting
-  - User location dot
-- Convert `searchResults` (MockPlaceWithCoords) to the `RankedPlace` format expected by `BoardMapView`
+This function handles the full pipeline:
+- **Input:** A URL (Instagram, TikTok, Google Maps, or any link mentioning a place)
+- **Step 1:** Fetch the page content. For Instagram/TikTok, use a simple fetch with appropriate headers to get the page HTML/meta tags (og:title, og:description). No Firecrawl needed for meta tag extraction -- a direct fetch with the right user-agent can grab Open Graph metadata.
+- **Step 2:** Send the extracted text to Lovable AI (Gemini Flash) with a prompt like: "Extract the place name and city from this social media post. Return JSON: {place_name, city, confidence}"
+- **Step 3:** Use the Google Maps Places API (already available via `GOOGLE_MAPS_API_KEY`) to search for the extracted place name + city
+- **Step 4:** Return the matched place details (name, place_id, address, lat, lng, photo) or an error if no match
 
-### 3. Conditional rendering in main content
-- When `isMapView` is true, render the map instead of the section rows
-- The map container fills the available space (below header, above bottom nav)
-- AI summary card and section rows are hidden in map mode
+### 2. New Component: `ImportLinkDialog`
+**Path:** `src/components/saved/ImportLinkDialog.tsx`
 
-### 4. Files to modify
-- **`src/components/HomePage.tsx`**: Add toggle state, map toggle button in header, conditional map rendering, and data conversion helper
-- No new files needed -- reuses existing `BoardMapView`
+A dialog/sheet with:
+- URL input field with paste button
+- States: idle, loading ("Extracting place..."), found (shows place preview card with Save button), error
+- Supported URL validation (Instagram, TikTok, Google Maps patterns, or any URL)
+- On successful import: calls `toggleSave(place_id)` via AppContext, shows success toast, closes dialog
+
+### 3. Modifications to `SavedPage.tsx`
+- Add an "Import" button in the header (next to Settings icon)
+- Render the `ImportLinkDialog` component with open/close state
+- Wire up the save flow using existing `toggleSave` from AppContext
+
+### 4. Place Caching
+- When a place is found via Google Maps API, the edge function upserts it into the `places` table (same pattern used by `unified-search` and `discover_candidates`)
+- This ensures the place has photos, categories, and other enrichment data for display
+
+### Files to Create
+- `supabase/functions/import-from-link/index.ts` -- Edge function for link extraction + place lookup
+- `src/components/saved/ImportLinkDialog.tsx` -- UI dialog component
+
+### Files to Modify
+- `src/components/SavedPage.tsx` -- Add import button + dialog state
+- `supabase/config.toml` -- Add `[functions.import-from-link]` with `verify_jwt = false`
+
+### No New Dependencies Required
+- Uses existing Google Maps API key, Lovable AI gateway, and Supabase client
+- No Firecrawl connector needed (direct fetch for meta tags is sufficient)
+
