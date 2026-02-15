@@ -10,8 +10,18 @@ interface AISummaryCardProps {
 const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Clean and split summary into max 2 bullet points
-  const getBulletPoints = () => {
+  const getBulletPoints = (): string[] => {
+    // Try to parse as JSON array first (new format)
+    try {
+      const parsed = JSON.parse(summary);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((s: string) => typeof s === 'string' && s.length > 0).slice(0, 3);
+      }
+    } catch {
+      // Not JSON, fall back to sentence splitting
+    }
+
+    // Legacy: split by sentences
     let cleaned = summary;
     if (location && location !== "nearby") {
       cleaned = cleaned.replace(/\s*nearby\.?/gi, '.');
@@ -22,7 +32,7 @@ const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) =
       .split(/(?<=\.)\s+/)
       .map(s => s.trim())
       .filter(s => s.length > 5)
-      .slice(0, 2);
+      .slice(0, 3);
   };
 
   const bullets = getBulletPoints();
@@ -49,7 +59,7 @@ const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) =
 
       {isExpanded && (
         <div className="px-4 pb-4 pt-0">
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {bullets.map((point, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground/80 leading-relaxed">
                 <span className="text-amber-500 mt-1 shrink-0">•</span>
