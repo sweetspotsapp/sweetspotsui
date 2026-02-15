@@ -1,16 +1,36 @@
 
-# Fix: Save to Board Dialog Overlapping Bottom Navigation
+# Increase Minimum Search Results
 
 ## Problem
-The "Save to Board" dialog's footer buttons (e.g., "Save to 1 board") sit flush at the bottom of the screen and are covered by the persistent BottomNav bar, making them untappable.
+Sometimes searches return only ~10 places because:
+1. The backend `unified-search` function uses `pageSize: 20` per Google API page, and for some queries only one page of results comes back
+2. The frontend "More to Explore" section caps at 10 places, hiding additional results even when available
+3. The default `limit` parameter is 30, which is fine but could be higher
 
-## Solution
-Add bottom padding to the dialog's footer area so buttons remain visible and tappable above the navigation bar.
+## Changes
 
-## Technical Details
+### 1. Backend: `supabase/functions/unified-search/index.ts`
+- Increase default `limit` from `30` to `50` (line 636)
+- This ensures we return more results when Google has them
 
-### File: `src/components/saved/SaveToBoardDialog.tsx`
-- Add `pb-20` (or `safe-area-bottom` equivalent) to the footer `div` at line 329, changing `p-4` to `px-4 pt-4 pb-20`
-- This ensures the action buttons ("Save to X boards", "Remove from saved") clear the fixed BottomNav
+### 2. Backend: Ensure all 3 pages are fetched
+- The current code already fetches up to 3 pages (60 places max from Google) -- this is good
+- No change needed here, the pagination logic is correct
 
-This is a one-line CSS class change -- no logic changes needed.
+### 3. Frontend: `src/components/HomePage.tsx`
+- Increase "More to Explore" cap from `10` to `20` (line 762): change `.slice(0, 10)` to `.slice(0, 20)`
+- Increase each category section cap from `5` to `8` places (lines 717, 730, 745)
+- This allows more places to be visible across all sections
+
+### 4. Frontend: Top Picks section
+- Check `TopPicksSection` for any limits and increase if needed
+
+## Summary of numeric changes
+
+| Location | Current | New |
+|---|---|---|
+| `unified-search` default limit | 30 | 50 |
+| Category section caps | 5 each | 8 each |
+| "More to Explore" cap | 10 | 20 |
+
+This means users will typically see 40-50+ places instead of sometimes just 10-15.
