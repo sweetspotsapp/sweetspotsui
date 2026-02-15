@@ -69,8 +69,8 @@ const matchesFilter = (place: ExtendedMockPlace, filterId: string): boolean => {
 
   const tags = place.filter_tags;
   
-  // If place has no filter_tags, don't match this filter
-  if (!tags || tags.length === 0) return false;
+  // If place has no filter_tags, keep it (don't penalize untagged places)
+  if (!tags || tags.length === 0) return true;
 
   // If place has tags, check if it includes the expected one
   return tags.includes(expectedTag);
