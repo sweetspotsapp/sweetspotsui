@@ -65,18 +65,48 @@ interface EnrichedPlace {
 
 // Valid filter tags that can be generated
 const VALID_FILTER_TAGS = [
-  'good-for-friends',
-  'romantic',
-  'family-friendly',
-  'good-for-solo',
-  'chill-vibe',
-  'lively-vibe',
-  'hidden-gem',
-  'scenic-view',
-  'pet-friendly',
-  'late-night',
+  'halal',
+  'vegetarian-vegan',
+  'gluten-free',
+  'free-wifi',
   'outdoor-seating',
+  'parking',
+  'wheelchair-accessible',
+  'pet-friendly',
+  'family-friendly',
+  'late-night',
+  'large-groups',
 ];
+
+/**
+ * Extract verified filter tags from Google Places API structured attributes
+ */
+function extractGoogleFilterTags(googlePlace: any): string[] {
+  const tags: string[] = [];
+  
+  if (googlePlace.outdoorSeating === true) tags.push('outdoor-seating');
+  if (googlePlace.allowsDogs === true) tags.push('pet-friendly');
+  if (googlePlace.goodForChildren === true) tags.push('family-friendly');
+  if (googlePlace.servesVegetarianFood === true) tags.push('vegetarian-vegan');
+  
+  // Parking options - any parking counts
+  if (googlePlace.parkingOptions) {
+    const p = googlePlace.parkingOptions;
+    if (p.freeParkingLot || p.paidParkingLot || p.freeStreetParking || 
+        p.paidStreetParking || p.valetParking || p.freeGarageParking || p.paidGarageParking) {
+      tags.push('parking');
+    }
+  }
+  
+  // Accessibility
+  if (googlePlace.accessibilityOptions) {
+    if (googlePlace.accessibilityOptions.wheelchairAccessibleEntrance === true) {
+      tags.push('wheelchair-accessible');
+    }
+  }
+  
+  return tags;
+}
 
 /**
  * Generate filter tags for a batch of places using Lovable AI
@@ -117,23 +147,23 @@ Reviews: ${reviewSnippets || 'None'}
 AI Description: ${p.ai_reason || 'None'}`;
     }).join('\n\n');
 
-    const systemPrompt = `You are a place categorization expert. Analyze each place and determine which filter tags apply based on the provided information. Be conservative - only include tags that clearly match the place.
+    const systemPrompt = `You are a place categorization expert. Analyze each place and determine which filter tags apply based on the provided information. Be generous but reasonable. ONLY assign tags that are NOT already provided as "Known tags" — those are verified from Google and already included.
 
 Valid tags and their meanings:
-- good-for-friends: Groups, social gatherings, fun atmosphere, shareable food
-- romantic: Intimate setting, date-worthy, couples, candlelit, quiet corners
-- family-friendly: Kids welcome, family activities, highchairs, kid menus
-- good-for-solo: Work-friendly, quiet, comfortable alone, counter seating, wifi
-- chill-vibe: Relaxed, calm, peaceful, cozy, laid-back atmosphere
-- lively-vibe: Energetic, loud, vibrant, buzzing, party atmosphere
-- hidden-gem: Local secret, underrated, off-the-beaten-path, not touristy
-- scenic-view: Rooftop, beach view, sunset views, panoramic, waterfront
+- halal: Halal-certified or serves halal food
+- vegetarian-vegan: Vegetarian or vegan options available
+- gluten-free: Gluten-free options available
+- free-wifi: Free WiFi available for customers
+- outdoor-seating: Patio, terrace, garden seating, alfresco dining
+- parking: Has parking lot, valet, or dedicated parking
+- wheelchair-accessible: Wheelchair accessible entrance and facilities
 - pet-friendly: Dogs allowed, pet-welcoming, outdoor pet area
+- family-friendly: Kids welcome, family activities, kid-friendly food
 - late-night: Open after 10pm, 24 hours, midnight operations
-- outdoor-seating: Terrace, patio, garden seating, alfresco dining
+- large-groups: Can accommodate large groups, group dining, event space
 
-Respond with a JSON object where keys are the place indices (0, 1, 2...) and values are arrays of applicable tags.
-Example: {"0": ["good-for-friends", "lively-vibe"], "1": ["romantic", "chill-vibe"], "2": []}`;
+Respond with a JSON object where keys are the place indices (0, 1, 2...) and values are arrays of ADDITIONAL applicable tags (don't repeat Known tags).
+Example: {"0": ["halal", "large-groups"], "1": ["free-wifi"], "2": []}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -307,7 +337,9 @@ serve(async (req) => {
         const fieldMask = [
           'id', 'displayName', 'formattedAddress', 'location', 'types',
           'rating', 'userRatingCount', 'photos', 'priceLevel',
-          'regularOpeningHours', 'reviews'
+          'regularOpeningHours', 'reviews',
+          'outdoorSeating', 'allowsDogs', 'goodForChildren',
+          'servesVegetarianFood', 'parkingOptions', 'accessibilityOptions'
         ].join(',');
 
         const detailsResponse = await fetch(
@@ -393,7 +425,7 @@ serve(async (req) => {
           opening_hours: openingHours,
           reviews: reviews,
           is_open_now: isOpenNow,
-          filter_tags: null,
+          filter_tags: extractGoogleFilterTags(googlePlace),
           insider_tips: null,
           signature_items: null,
           unique_vibes: null,
@@ -410,7 +442,10 @@ serve(async (req) => {
           reviews: enrichedPlace.reviews,
           ai_reason: enrichedPlace.ai_reason,
         }]);
-        enrichedPlace.filter_tags = filterTagsMap.get(enrichedPlace.name) || null;
+        const aiTags = filterTagsMap.get(enrichedPlace.name) || [];
+        const googleTags = enrichedPlace.filter_tags || [];
+        const mergedTags = [...new Set([...googleTags, ...aiTags])];
+        enrichedPlace.filter_tags = mergedTags.length > 0 ? mergedTags : null;
 
         // Generate AI insights for this place
         const insights = await generatePlaceInsights({
@@ -622,7 +657,13 @@ serve(async (req) => {
                 'places.photos',
                 'places.priceLevel',
                 'places.regularOpeningHours',
-                'places.reviews'
+                'places.reviews',
+                'places.outdoorSeating',
+                'places.allowsDogs',
+                'places.goodForChildren',
+                'places.servesVegetarianFood',
+                'places.parkingOptions',
+                'places.accessibilityOptions'
               ].join(',');
 
               const searchResponse = await fetch(searchUrl, {
@@ -719,7 +760,7 @@ serve(async (req) => {
                 opening_hours: openingHours,
                 reviews: reviews,
                 is_open_now: isOpenNow,
-                filter_tags: null, // Will be populated later
+                filter_tags: extractGoogleFilterTags(googlePlace), // Google-verified tags, AI will add more
                 insider_tips: null, // Will be populated later
                 signature_items: null,
                 unique_vibes: null,
@@ -759,9 +800,12 @@ serve(async (req) => {
             ai_reason: p.ai_reason,
           })));
           
-          // Apply filter tags to places
+          // Merge Google-verified tags with AI-inferred tags
           batch.forEach(place => {
-            place.filter_tags = filterTagsMap.get(place.name) || null;
+            const aiTags = filterTagsMap.get(place.name) || [];
+            const googleTags = place.filter_tags || [];
+            const mergedTags = [...new Set([...googleTags, ...aiTags])];
+            place.filter_tags = mergedTags.length > 0 ? mergedTags : null;
           });
         }
 
