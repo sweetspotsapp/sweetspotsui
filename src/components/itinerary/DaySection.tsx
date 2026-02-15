@@ -55,41 +55,62 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
       {/* Time Slots */}
       {isOpen && (
         <div className="border-t border-border">
-          {day.slots.map((slot, slotIndex) => (
-            <div key={slotIndex} className={cn(slotIndex > 0 && "border-t border-border/50")}>
-              {/* Slot Header */}
-              <div className="px-4 py-2 bg-muted/20">
-                <span className="text-xs font-medium text-muted-foreground">
-                  {TIME_ICONS[slot.time] || "📍"} {slot.time}
-                </span>
-              </div>
+          {day.slots.map((slot, slotIndex) => {
+            // Get the last activity of the previous slot for cross-slot distance
+            const prevSlot = slotIndex > 0 ? day.slots[slotIndex - 1] : null;
+            const prevLastActivity = prevSlot?.activities?.[prevSlot.activities.length - 1];
+            const firstActivity = slot.activities?.[0];
 
-              {/* Activities with distance connectors */}
-              <div className="px-3 py-2 space-y-0">
-                {slot.activities.map((activity, activityIndex) => (
-                  <div key={activityIndex}>
-                    <ActivityCard
-                      activity={activity}
-                      onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
-                      onMoveUp={activityIndex > 0 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex - 1) : undefined}
-                      onMoveDown={activityIndex < slot.activities.length - 1 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex + 1) : undefined}
-                      onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
-                      isSwapping={isSwapping}
+            return (
+              <div key={slotIndex}>
+                {/* Cross-slot distance connector */}
+                {prevLastActivity && firstActivity && (
+                  <div className="border-t border-border/30">
+                    <DistanceConnector
+                      fromLat={prevLastActivity.lat}
+                      fromLng={prevLastActivity.lng}
+                      toLat={firstActivity.lat}
+                      toLng={firstActivity.lng}
                     />
-                    {/* Distance connector to next activity */}
-                    {activityIndex < slot.activities.length - 1 && (
-                      <DistanceConnector
-                        fromLat={activity.lat}
-                        fromLng={activity.lng}
-                        toLat={slot.activities[activityIndex + 1].lat}
-                        toLng={slot.activities[activityIndex + 1].lng}
-                      />
-                    )}
                   </div>
-                ))}
+                )}
+
+                <div className={cn(slotIndex > 0 && !prevLastActivity && "border-t border-border/50")}>
+                  {/* Slot Header */}
+                  <div className="px-4 py-2 bg-muted/20">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {TIME_ICONS[slot.time] || "📍"} {slot.time}
+                    </span>
+                  </div>
+
+                  {/* Activities with distance connectors */}
+                  <div className="px-3 py-2 space-y-2">
+                    {slot.activities.map((activity, activityIndex) => (
+                      <div key={activityIndex}>
+                        <ActivityCard
+                          activity={activity}
+                          onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
+                          onMoveUp={activityIndex > 0 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex - 1) : undefined}
+                          onMoveDown={activityIndex < slot.activities.length - 1 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex + 1) : undefined}
+                          onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
+                          isSwapping={isSwapping}
+                        />
+                        {/* Distance connector to next activity */}
+                        {activityIndex < slot.activities.length - 1 && (
+                          <DistanceConnector
+                            fromLat={activity.lat}
+                            fromLng={activity.lng}
+                            toLat={slot.activities[activityIndex + 1].lat}
+                            toLng={slot.activities[activityIndex + 1].lng}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
