@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUp, ArrowDown, RefreshCw, Lock, Loader2, DollarSign } from "lucide-react";
+import { ArrowUp, ArrowDown, RefreshCw, Lock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
@@ -52,15 +52,29 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
 
   const icon = CATEGORY_ICONS[activity.category] || "📍";
 
-  // Build image URL from photo_name using the place-photo proxy
-  const imageUrl = activity.photoName && !imageError
-    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(activity.photoName)}&maxWidthPx=200&maxHeightPx=200`
-    : null;
-
   // Build larger image URL
   const largeImageUrl = activity.photoName && !imageError
     ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(activity.photoName)}&maxWidthPx=400&maxHeightPx=250`
     : null;
+
+  // Category-based gradient fallbacks when no photo available
+  const CATEGORY_GRADIENTS: Record<string, string> = {
+    food: "from-orange-800/60 to-amber-900/60",
+    cafe: "from-amber-800/60 to-yellow-900/60",
+    bar: "from-purple-800/60 to-violet-900/60",
+    museum: "from-blue-800/60 to-indigo-900/60",
+    park: "from-green-800/60 to-emerald-900/60",
+    shopping: "from-pink-800/60 to-rose-900/60",
+    landmark: "from-amber-700/60 to-orange-900/60",
+    entertainment: "from-violet-800/60 to-purple-900/60",
+    adventure: "from-teal-800/60 to-green-900/60",
+    nightlife: "from-indigo-800/60 to-purple-900/60",
+    beach: "from-cyan-700/60 to-blue-900/60",
+    temple: "from-red-800/60 to-rose-900/60",
+    market: "from-orange-700/60 to-red-900/60",
+  };
+
+  const fallbackGradient = CATEGORY_GRADIENTS[activity.category] || "from-muted to-muted-foreground/20";
 
   return (
     <>
@@ -68,28 +82,27 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
         "rounded-xl overflow-hidden transition-colors",
         activity.mustInclude ? "bg-primary/5 border border-primary/15" : "bg-card border border-border/50 hover:border-border"
       )}>
-        {/* Hero Image */}
-        {largeImageUrl && (
-          <div className="relative w-full h-32 bg-muted">
+        {/* Hero Image - always show */}
+        <div className="relative w-full h-32 bg-muted overflow-hidden">
+          {largeImageUrl ? (
             <img
               src={largeImageUrl}
               alt={activity.name}
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
             />
-            <div className="absolute top-2 left-2 bg-card/80 backdrop-blur-sm text-xs font-medium px-2 py-0.5 rounded-full text-foreground capitalize">
-              {icon} {activity.category}
+          ) : (
+            <div className={cn("w-full h-full bg-gradient-to-br flex items-center justify-center", fallbackGradient)}>
+              <span className="text-4xl opacity-60">{icon}</span>
             </div>
+          )}
+          <div className="absolute top-2 left-2 bg-card/80 backdrop-blur-sm text-xs font-medium px-2 py-0.5 rounded-full text-foreground capitalize">
+            {icon} {activity.category}
           </div>
-        )}
+        </div>
 
         <div className="px-3 py-2.5">
           <div className="flex items-start gap-2">
-            {/* Icon fallback when no image */}
-            {!largeImageUrl && (
-              <span className="text-lg mt-0.5 flex-shrink-0">{icon}</span>
-            )}
-            
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-semibold text-foreground truncate">{activity.name}</span>
@@ -101,10 +114,7 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{activity.description}</p>
               <div className="flex items-center gap-2 mt-1.5">
                 {activity.estimatedCost !== undefined && activity.estimatedCost > 0 && (
-                  <div className="flex items-center gap-0.5">
-                    <DollarSign className="w-3 h-3 text-primary" />
-                    <span className="text-xs font-medium text-primary">${activity.estimatedCost}/pp</span>
-                  </div>
+                  <span className="text-xs font-medium text-primary">${activity.estimatedCost}/pp</span>
                 )}
                 {activity.estimatedCost === 0 && (
                   <span className="text-xs font-medium text-green-600">Free</span>
