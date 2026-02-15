@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone } from "lucide-react";
+import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone, Map, List } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 import LocationPickerModal from "./LocationPickerModal";
+import BoardMapView from "./saved/BoardMapView";
+import type { RankedPlace } from "@/hooks/useSearch";
 // Extended MockPlace with lat/lng for map view
 interface MockPlaceWithCoords extends MockPlace {
   lat?: number;
@@ -288,6 +290,9 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   
   // Location picker modal state
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  
+  // Map view toggle state
+  const [isMapView, setIsMapView] = useState(false);
 
   // Client-side filtering - instant results
   const filteredResults = useClientFilters(
@@ -762,6 +767,47 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     return sections;
   }, [filteredResults]);
 
+  // Convert search results to RankedPlace format for BoardMapView
+  const mapPlaces: RankedPlace[] = useMemo(() => {
+    return filteredResults
+      .filter(p => {
+        const ext = p as MockPlaceWithCoords;
+        return ext.lat && ext.lng;
+      })
+      .map(p => {
+        const ext = p as MockPlaceWithCoords;
+        return {
+          place_id: p.id,
+          name: p.name,
+          address: null,
+          lat: ext.lat!,
+          lng: ext.lng!,
+          categories: p.categories || null,
+          rating: p.rating || null,
+          ratings_total: ext.ratings_total || null,
+          provider: null,
+          eta_seconds: null,
+          distance_meters: p.distance_km ? p.distance_km * 1000 : null,
+          score: ext.ai_score || 0,
+          why: p.ai_reason || "",
+          photo_name: null,
+          photos: [],
+          ai_reason: p.ai_reason,
+          ai_category: p.ai_category,
+          filter_tags: ext.filter_tags,
+          price_level: ext.price_level,
+        } as RankedPlace;
+      });
+  }, [filteredResults]);
+
+  const getPlaceImage = useCallback((place: RankedPlace) => {
+    return `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`;
+  }, []);
+
+  const handleMapPlaceClick = useCallback((place: RankedPlace) => {
+    navigate(`/place/${place.place_id}`, { state: { ai_reason: place.ai_reason } });
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
       {/* Nav Bar */}
@@ -845,21 +891,30 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           </form>
         </div>
 
-        {/* Active Filter Chips */}
-        {activeFilters.size > 0 && (
-          <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
-            {Array.from(activeFilters).map((filterId) => (
-              <button
-                key={filterId}
-                onClick={() => removeFilter(filterId)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors"
-              >
-                {FILTER_LABELS[filterId] || filterId}
-                <X className="w-3 h-3" />
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Map/List Toggle & Active Filter Chips */}
+        <div className="px-4 pb-3 flex items-center gap-2">
+          <button
+            onClick={() => setIsMapView(!isMapView)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full text-xs font-medium whitespace-nowrap hover:bg-muted/80 transition-colors text-foreground"
+          >
+            {isMapView ? <List className="w-3.5 h-3.5" /> : <Map className="w-3.5 h-3.5" />}
+            {isMapView ? "List" : "Map"}
+          </button>
+          {activeFilters.size > 0 && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {Array.from(activeFilters).map((filterId) => (
+                <button
+                  key={filterId}
+                  onClick={() => removeFilter(filterId)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors"
+                >
+                  {FILTER_LABELS[filterId] || filterId}
+                  <X className="w-3 h-3" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Slide-out Menu */}
@@ -928,6 +983,15 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
               <Sparkles className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Ask me anything to discover amazing places!</p>
             </div>
+        ) : isMapView && mapPlaces.length > 0 ? (
+          <div className="h-[calc(100vh-200px)] relative">
+            <BoardMapView
+              places={mapPlaces}
+              userLocation={userLocation}
+              onPlaceClick={handleMapPlaceClick}
+              getPlaceImage={getPlaceImage}
+            />
+          </div>
         ) : (
           <>
             {/* AI Summary Card */}
