@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
@@ -22,7 +23,15 @@ const Index = () => {
     setOnboardingData,
   } = useApp();
   
-  const [activeTab, setActiveTab] = useState<"home" | "saved" | "itinerary" | "profile">("home");
+  const location = useLocation();
+  
+  // Determine initial tab from route
+  const getInitialTab = (): "home" | "saved" | "itinerary" | "profile" => {
+    if (location.pathname === "/saved") return "saved";
+    return "home";
+  };
+  
+  const [activeTab, setActiveTab] = useState<"home" | "saved" | "itinerary" | "profile">(getInitialTab);
   const [appState, setAppState] = useState<AppState>(
     hasCompletedOnboarding ? "main" : "onboarding"
   );
