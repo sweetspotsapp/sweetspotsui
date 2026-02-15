@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, User } from "lucide-react";
+import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Settings } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -167,7 +167,7 @@ const ItineraryPage = () => {
               onClick={() => setIsProfileMenuOpen(true)}
               className="p-2 rounded-full hover:bg-muted transition-colors"
             >
-              <User className="w-5 h-5 text-foreground" />
+              <Settings className="w-6 h-6 text-foreground" />
             </button>
           </div>
         </div>
