@@ -46,7 +46,7 @@ const ItineraryPage = () => {
         vibes: saved.vibes || [],
         mustIncludePlaceIds: saved.must_include_place_ids || [],
         boardIds: saved.board_ids || [],
-        accommodation: saved.accommodation || undefined,
+        accommodations: saved.accommodation || undefined,
         flightDetails: saved.flight_details || undefined,
       });
       setEditingId(saved.id);
@@ -65,7 +65,7 @@ const ItineraryPage = () => {
       vibes: saved.vibes || [],
       mustIncludePlaceIds: saved.must_include_place_ids || [],
       boardIds: saved.board_ids || [],
-      accommodation: saved.accommodation || undefined,
+      accommodations: saved.accommodation || undefined,
       flightDetails: saved.flight_details || undefined,
     });
     setEditingId(saved.id);
@@ -84,7 +84,7 @@ const ItineraryPage = () => {
       vibes: saved.vibes || [],
       mustIncludePlaceIds: saved.must_include_place_ids || [],
       boardIds: saved.board_ids || [],
-      accommodation: saved.accommodation || undefined,
+      accommodations: saved.accommodation || undefined,
       flightDetails: saved.flight_details || undefined,
     });
     setEditingId(null);

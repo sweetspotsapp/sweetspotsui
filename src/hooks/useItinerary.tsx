@@ -26,6 +26,15 @@ export interface ItineraryData {
   days: ItineraryDay[];
 }
 
+export interface AccommodationEntry {
+  name?: string;
+  address?: string;
+  checkIn?: string;
+  checkOut?: string;
+  cost?: number;
+  currency?: string;
+}
+
 export interface TripParams {
   name?: string;
   destination: string;
@@ -36,16 +45,12 @@ export interface TripParams {
   vibes: string[];
   mustIncludePlaceIds: string[];
   boardIds: string[];
-  accommodation?: {
-    name?: string;
-    address?: string;
-    checkIn?: string;
-    checkOut?: string;
-  };
+  accommodations?: AccommodationEntry[];
   flightDetails?: {
     outbound?: string;
     returnFlight?: string;
     price?: number;
+    currency?: string;
   };
 }
 
@@ -61,8 +66,8 @@ export interface SavedItinerary {
   must_include_place_ids: string[];
   board_ids: string[];
   itinerary_data: ItineraryData | null;
-  accommodation: { name?: string; address?: string; checkIn?: string; checkOut?: string } | null;
-  flight_details: { outbound?: string; returnFlight?: string; price?: number } | null;
+  accommodation: AccommodationEntry[] | null;
+  flight_details: { outbound?: string; returnFlight?: string; price?: number; currency?: string } | null;
   created_at: string;
   updated_at: string;
 }
@@ -132,7 +137,7 @@ export const useItinerary = () => {
         must_include_place_ids: params.mustIncludePlaceIds,
         board_ids: params.boardIds,
         itinerary_data: JSON.parse(JSON.stringify(itineraryData)),
-        accommodation: params.accommodation ? JSON.parse(JSON.stringify(params.accommodation)) : null,
+        accommodation: params.accommodations ? JSON.parse(JSON.stringify(params.accommodations)) : null,
         flight_details: params.flightDetails ? JSON.parse(JSON.stringify(params.flightDetails)) : null,
       };
 

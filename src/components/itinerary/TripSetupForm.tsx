@@ -13,6 +13,33 @@ import { Input } from "@/components/ui/input";
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
 
+const CURRENCIES = [
+  { code: "USD", symbol: "$" },
+  { code: "EUR", symbol: "€" },
+  { code: "GBP", symbol: "£" },
+  { code: "JPY", symbol: "¥" },
+  { code: "AUD", symbol: "A$" },
+  { code: "CAD", symbol: "C$" },
+  { code: "SGD", symbol: "S$" },
+  { code: "MYR", symbol: "RM" },
+  { code: "THB", symbol: "฿" },
+  { code: "KRW", symbol: "₩" },
+  { code: "INR", symbol: "₹" },
+  { code: "PHP", symbol: "₱" },
+  { code: "IDR", symbol: "Rp" },
+  { code: "VND", symbol: "₫" },
+  { code: "CHF", symbol: "Fr" },
+  { code: "SEK", symbol: "kr" },
+  { code: "NZD", symbol: "NZ$" },
+  { code: "HKD", symbol: "HK$" },
+  { code: "TWD", symbol: "NT$" },
+  { code: "AED", symbol: "د.إ" },
+  { code: "BRL", symbol: "R$" },
+  { code: "MXN", symbol: "MX$" },
+  { code: "ZAR", symbol: "R" },
+  { code: "CNY", symbol: "¥" },
+];
+
 const BUDGET_LABELS: Record<string, string> = {
   "$": "~$50/day",
   "$$": "~$100/day",
@@ -43,13 +70,20 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
   const [mustIncludePlaceIds, setMustIncludePlaceIds] = useState<string[]>(initialParams?.mustIncludePlaceIds || []);
   const [boardIds, setBoardIds] = useState<string[]>(initialParams?.boardIds || []);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [showAccommodation, setShowAccommodation] = useState(!!initialParams?.accommodation);
-  const [accommodationName, setAccommodationName] = useState(initialParams?.accommodation?.name || "");
-  const [accommodationAddress, setAccommodationAddress] = useState(initialParams?.accommodation?.address || "");
+  const [showAccommodation, setShowAccommodation] = useState(!!(initialParams?.accommodations && initialParams.accommodations.length > 0));
+  const [accommodations, setAccommodations] = useState<Array<{ name: string; address: string; cost: string; currency: string }>>(
+    initialParams?.accommodations?.map(a => ({
+      name: a.name || "",
+      address: a.address || "",
+      cost: a.cost?.toString() || "",
+      currency: a.currency || "USD",
+    })) || [{ name: "", address: "", cost: "", currency: "USD" }]
+  );
   const [showFlightDetails, setShowFlightDetails] = useState(!!initialParams?.flightDetails);
   const [outboundFlight, setOutboundFlight] = useState(initialParams?.flightDetails?.outbound || "");
   const [returnFlight, setReturnFlight] = useState(initialParams?.flightDetails?.returnFlight || "");
   const [flightPrice, setFlightPrice] = useState(initialParams?.flightDetails?.price?.toString() || "");
+  const [flightCurrency, setFlightCurrency] = useState(initialParams?.flightDetails?.currency || "USD");
 
   const duration = dateRange?.from && dateRange?.to
     ? differenceInDays(dateRange.to, dateRange.from) + 1
@@ -77,14 +111,19 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
       vibes,
       mustIncludePlaceIds,
       boardIds,
-      accommodation: showAccommodation && (accommodationName || accommodationAddress) ? {
-        name: accommodationName || undefined,
-        address: accommodationAddress || undefined,
-      } : undefined,
+      accommodations: showAccommodation ? accommodations
+        .filter(a => a.name || a.address)
+        .map(a => ({
+          name: a.name || undefined,
+          address: a.address || undefined,
+          cost: a.cost ? parseFloat(a.cost) : undefined,
+          currency: a.currency || "USD",
+        })) : undefined,
       flightDetails: showFlightDetails && (outboundFlight || returnFlight || flightPrice) ? {
         outbound: outboundFlight || undefined,
         returnFlight: returnFlight || undefined,
         price: flightPrice ? parseFloat(flightPrice) : undefined,
+        currency: flightCurrency || "USD",
       } : undefined,
     });
   };
@@ -286,10 +325,10 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
       />
 
       {/* Accommodation (Optional) */}
-      <section className="space-y-2">
+      <section className="space-y-3">
         <button
           onClick={() => setShowAccommodation(!showAccommodation)}
-          className="flex items-center gap-2 text-sm font-medium text-foreground"
+          className="flex items-center gap-2 text-sm font-medium text-foreground w-full"
         >
           <Home className="w-4 h-4 text-primary" />
           Where are you staying?
@@ -297,19 +336,78 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
           {showAccommodation ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
         </button>
         {showAccommodation && (
-          <div className="space-y-2 pl-6">
-            <Input
-              value={accommodationName}
-              onChange={(e) => setAccommodationName(e.target.value)}
-              placeholder="Hotel / Airbnb name"
-              className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
-            />
-            <Input
-              value={accommodationAddress}
-              onChange={(e) => setAccommodationAddress(e.target.value)}
-              placeholder="Address"
-              className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
-            />
+          <div className="space-y-4 pl-6">
+            {accommodations.map((acc, idx) => (
+              <div key={idx} className="space-y-2 relative">
+                {accommodations.length > 1 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">Stay {idx + 1}</span>
+                    <button
+                      onClick={() => setAccommodations(prev => prev.filter((_, i) => i !== idx))}
+                      className="text-xs text-destructive hover:text-destructive/80"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+                <Input
+                  value={acc.name}
+                  onChange={(e) => {
+                    const updated = [...accommodations];
+                    updated[idx] = { ...updated[idx], name: e.target.value };
+                    setAccommodations(updated);
+                  }}
+                  placeholder="Hotel / Airbnb name"
+                  className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
+                />
+                <Input
+                  value={acc.address}
+                  onChange={(e) => {
+                    const updated = [...accommodations];
+                    updated[idx] = { ...updated[idx], address: e.target.value };
+                    setAccommodations(updated);
+                  }}
+                  placeholder="Address"
+                  className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
+                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border">
+                    <DollarSign className="w-4 h-4 text-primary flex-shrink-0" />
+                    <input
+                      type="number"
+                      value={acc.cost}
+                      onChange={(e) => {
+                        const updated = [...accommodations];
+                        updated[idx] = { ...updated[idx], cost: e.target.value };
+                        setAccommodations(updated);
+                      }}
+                      placeholder="Total cost"
+                      className="flex-1 text-sm bg-transparent outline-none text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  <select
+                    value={acc.currency}
+                    onChange={(e) => {
+                      const updated = [...accommodations];
+                      updated[idx] = { ...updated[idx], currency: e.target.value };
+                      setAccommodations(updated);
+                    }}
+                    className="px-3 py-3 rounded-2xl bg-card border border-border text-sm text-foreground outline-none"
+                  >
+                    {CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => setAccommodations(prev => [...prev, { name: "", address: "", cost: "", currency: prev[prev.length - 1]?.currency || "USD" }])}
+              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add another stay
+            </button>
           </div>
         )}
       </section>
@@ -318,7 +416,7 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
       <section className="space-y-2">
         <button
           onClick={() => setShowFlightDetails(!showFlightDetails)}
-          className="flex items-center gap-2 text-sm font-medium text-foreground"
+          className="flex items-center gap-2 text-sm font-medium text-foreground w-full"
         >
           <Plane className="w-4 h-4 text-primary" />
           Flight Details
@@ -339,16 +437,26 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
               placeholder="Return flight (e.g. SQ21, 6:00 PM)"
               className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
             />
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border">
-              <DollarSign className="w-4 h-4 text-primary flex-shrink-0" />
-              <input
-                type="number"
-                value={flightPrice}
-                onChange={(e) => setFlightPrice(e.target.value)}
-                placeholder="Total flight cost"
-                className="flex-1 text-sm bg-transparent outline-none text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <span className="text-xs text-muted-foreground">USD</span>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border">
+                <DollarSign className="w-4 h-4 text-primary flex-shrink-0" />
+                <input
+                  type="number"
+                  value={flightPrice}
+                  onChange={(e) => setFlightPrice(e.target.value)}
+                  placeholder="Total flight cost"
+                  className="flex-1 text-sm bg-transparent outline-none text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <select
+                value={flightCurrency}
+                onChange={(e) => setFlightCurrency(e.target.value)}
+                className="px-3 py-3 rounded-2xl bg-card border border-border text-sm text-foreground outline-none"
+              >
+                {CURRENCIES.map(c => (
+                  <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
+                ))}
+              </select>
             </div>
           </div>
         )}
