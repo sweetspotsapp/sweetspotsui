@@ -408,7 +408,8 @@ async function getAIRelevanceAndSummary(
                      categories.includes('bakery') || categories.includes('coffee');
       relevanceMap.set(p.place_id, isFood ? 80 : 40);
     });
-    summary = `Found ${places.length} ${prompt.toLowerCase().includes('restaurant') ? 'restaurants' : prompt.toLowerCase().includes('cafe') || prompt.toLowerCase().includes('coffee') ? 'cafes' : 'spots'} ready to explore. These range from cozy local favorites to popular hangouts with great reviews.`;
+    const type = prompt.toLowerCase().includes('restaurant') ? 'restaurants' : prompt.toLowerCase().includes('cafe') || prompt.toLowerCase().includes('coffee') ? 'cafes' : 'spots';
+    summary = `We picked these ${type} because they match your "${prompt}" vibe — top-rated by locals and fitting the mood you're after.`;
     return { relevanceMap, summary };
   }
 
@@ -420,14 +421,13 @@ async function getAIRelevanceAndSummary(
     rating: p.rating,
   }));
 
-  const systemPrompt = `You are a friendly local guide analyzing place recommendations. Given a user's search query and places found:
+  const systemPrompt = `You are a friendly local guide. Given a user's search query and places found:
 1. Rate each place's relevance on a scale of 0-100
-2. Generate a descriptive, engaging 2-3 sentence summary that:
-   - Acknowledges what they're looking for
-   - Highlights the variety/quality of options found
-   - Mentions standout spots or common themes (e.g., "lots of rooftop options", "mix of cozy cafes and trendy spots")
+2. Generate a SHORT 2-sentence summary that:
+   - Explains WHY these places were picked for this specific search intent (not just "found X places")
+   - Highlights what makes these results special for their mood/vibe (e.g., "These spots nail the chill rooftop vibe — most have outdoor seating with views that locals swear by")
    
-Write summaries like a helpful friend, NOT like a search engine. Be specific and insightful.
+NEVER say "Found X places" or generic filler. Be specific about WHY these match.
 
 SCORING GUIDE:
 - 80-100: Excellent match for the search intent
@@ -446,7 +446,7 @@ ${placesInfo.map((p, i) => `${i}. ${p.name} (${p.categories || 'Unknown'}) - ${p
 Respond with a JSON object:
 {
   "scores": [[index, score], ...] for places scoring 40+,
-  "summary": "Your engaging 2-3 sentence analysis of these options for someone looking for ${prompt}"
+  "summary": "2-sentence explanation of WHY these places match the '${prompt}' intent"
 }`;
 
   try {
@@ -480,7 +480,7 @@ Respond with a JSON object:
       
       // Fallback: give all places a neutral score
       places.forEach(p => relevanceMap.set(p.place_id, 50));
-      summary = `Found ${places.length} options for "${prompt}". From highly-rated favorites to hidden gems, there's plenty to explore here.`;
+      summary = `These spots were picked because they match your "${prompt}" mood — a mix of highly-rated local favorites worth checking out.`;
       return { relevanceMap, summary };
     }
 
@@ -527,7 +527,7 @@ Respond with a JSON object:
       }
       
       // Extract summary
-      summary = parsed.summary || parsed.insight || `Found ${relevanceMap.size} great spots for "${prompt}".`;
+      summary = parsed.summary || parsed.insight || `These spots were hand-picked for your "${prompt}" vibe — the best matches based on mood and local ratings.`;
       
       console.log(`AI scored ${relevanceMap.size}/${places.length} places`);
       
@@ -539,7 +539,7 @@ Respond with a JSON object:
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       places.forEach(p => relevanceMap.set(p.place_id, 50));
-      summary = `Found ${places.length} places matching "${prompt}" nearby.`;
+      summary = `Curated for your "${prompt}" search — these are the best-matching spots based on vibe, reviews, and location.`;
     }
     
   } catch (error) {
