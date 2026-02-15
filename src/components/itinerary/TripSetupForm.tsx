@@ -283,50 +283,6 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
               </select>
             </div>
 
-            {/* Per person / whole group toggle */}
-            <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
-              <button
-                onClick={() => setBudgetIsPerPerson(true)}
-                className={cn(
-                  "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
-                  budgetIsPerPerson ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-                )}
-              >
-                Per Person
-              </button>
-              <button
-                onClick={() => setBudgetIsPerPerson(false)}
-                className={cn(
-                  "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
-                  !budgetIsPerPerson ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-                )}
-              >
-                Whole Group
-              </button>
-            </div>
-
-            {/* Includes checkboxes */}
-            <div className="flex flex-wrap gap-3 px-1">
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={budgetIncludesAccommodation}
-                  onChange={(e) => setBudgetIncludesAccommodation(e.target.checked)}
-                  className="rounded accent-primary w-3.5 h-3.5"
-                />
-                Includes accommodation
-              </label>
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={budgetIncludesFlights}
-                  onChange={(e) => setBudgetIncludesFlights(e.target.checked)}
-                  className="rounded accent-primary w-3.5 h-3.5"
-                />
-                Includes flights
-              </label>
-            </div>
-
             {perDayBudget !== null && perDayBudget > 0 && (
               <p className="text-xs text-muted-foreground px-1">
                 ≈ <span className="font-medium text-foreground">{budgetSymbol}{perDayBudget}</span>/day for {duration} {duration === 1 ? "day" : "days"}
@@ -342,6 +298,50 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
             )}
           </div>
         )}
+
+        {/* Shared: Per person / whole group toggle */}
+        <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
+          <button
+            onClick={() => setBudgetIsPerPerson(true)}
+            className={cn(
+              "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
+              budgetIsPerPerson ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Per Person
+          </button>
+          <button
+            onClick={() => setBudgetIsPerPerson(false)}
+            className={cn(
+              "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
+              !budgetIsPerPerson ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Whole Group
+          </button>
+        </div>
+
+        {/* Shared: Includes checkboxes */}
+        <div className="flex flex-wrap gap-3 px-1">
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={budgetIncludesAccommodation}
+              onChange={(e) => setBudgetIncludesAccommodation(e.target.checked)}
+              className="rounded accent-primary w-3.5 h-3.5"
+            />
+            Includes accommodation
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={budgetIncludesFlights}
+              onChange={(e) => setBudgetIncludesFlights(e.target.checked)}
+              className="rounded accent-primary w-3.5 h-3.5"
+            />
+            Includes flights
+          </label>
+        </div>
       </section>
 
       {/* Group Size */}
