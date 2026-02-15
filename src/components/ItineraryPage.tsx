@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Settings } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { format, parseISO } from "date-fns";
@@ -10,7 +10,12 @@ import { useAuth } from "@/hooks/useAuth";
 
 type Phase = "list" | "setup" | "view";
 
-const ItineraryPage = () => {
+interface ItineraryPageProps {
+  resumeItineraryId?: string | null;
+  onResumed?: () => void;
+}
+
+const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
@@ -24,6 +29,24 @@ const ItineraryPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [prefillParams, setPrefillParams] = useState<TripParams | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+
+  // Resume a specific itinerary when returning from place details
+  useEffect(() => {
+    if (resumeItineraryId && savedItineraries.length > 0 && !isLoading) {
+      const found = savedItineraries.find(it => it.id === resumeItineraryId);
+      if (found && found.itinerary_data) {
+        handleViewItinerary(found);
+      }
+      onResumed?.();
+    }
+  }, [resumeItineraryId, savedItineraries, isLoading]);
+
+  // Store current editing ID so ActivityCard can reference it for back-navigation
+  useEffect(() => {
+    if (phase === "view" && editingId) {
+      sessionStorage.setItem('sweetspots_resume_itinerary', editingId);
+    }
+  }, [phase, editingId]);
 
   const handleNewItinerary = () => {
     setEditingId(null);
