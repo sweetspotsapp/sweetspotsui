@@ -27,6 +27,7 @@ export interface ItineraryData {
 }
 
 export interface TripParams {
+  name?: string;
   destination: string;
   startDate: string;
   endDate: string;
@@ -35,10 +36,22 @@ export interface TripParams {
   vibes: string[];
   mustIncludePlaceIds: string[];
   boardIds: string[];
+  accommodation?: {
+    name?: string;
+    address?: string;
+    checkIn?: string;
+    checkOut?: string;
+  };
+  flightDetails?: {
+    outbound?: string;
+    returnFlight?: string;
+    price?: number;
+  };
 }
 
 export interface SavedItinerary {
   id: string;
+  name: string | null;
   destination: string;
   start_date: string;
   end_date: string;
@@ -48,6 +61,8 @@ export interface SavedItinerary {
   must_include_place_ids: string[];
   board_ids: string[];
   itinerary_data: ItineraryData | null;
+  accommodation: { name?: string; address?: string; checkIn?: string; checkOut?: string } | null;
+  flight_details: { outbound?: string; returnFlight?: string; price?: number } | null;
   created_at: string;
   updated_at: string;
 }
@@ -90,6 +105,8 @@ export const useItinerary = () => {
       setSavedItineraries((data || []).map(d => ({
         ...d,
         itinerary_data: d.itinerary_data as unknown as ItineraryData | null,
+        accommodation: d.accommodation as unknown as SavedItinerary['accommodation'],
+        flight_details: d.flight_details as unknown as SavedItinerary['flight_details'],
       })));
     } catch (err) {
       console.error("Error loading itineraries:", err);
@@ -103,8 +120,9 @@ export const useItinerary = () => {
   const saveItinerary = async (params: TripParams, itineraryData: ItineraryData, existingId?: string): Promise<string | null> => {
     if (!user) { toast({ title: "Login required", description: "Please log in to save itineraries.", variant: "destructive" }); return null; }
     try {
-      const record = {
+      const record: any = {
         user_id: user.id,
+        name: params.name || null,
         destination: params.destination,
         start_date: params.startDate,
         end_date: params.endDate,
@@ -114,6 +132,8 @@ export const useItinerary = () => {
         must_include_place_ids: params.mustIncludePlaceIds,
         board_ids: params.boardIds,
         itinerary_data: JSON.parse(JSON.stringify(itineraryData)),
+        accommodation: params.accommodation ? JSON.parse(JSON.stringify(params.accommodation)) : null,
+        flight_details: params.flightDetails ? JSON.parse(JSON.stringify(params.flightDetails)) : null,
       };
 
       if (existingId) {

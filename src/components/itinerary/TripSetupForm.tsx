@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft, DollarSign } from "lucide-react";
+import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft, DollarSign, Home, Plane, ChevronDown, ChevronUp } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -8,6 +8,7 @@ import LocationPickerModal from "@/components/LocationPickerModal";
 import BoardPicker from "./BoardPicker";
 import type { TripParams } from "@/hooks/useItinerary";
 import type { DateRange } from "react-day-picker";
+import { Input } from "@/components/ui/input";
 
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
@@ -27,6 +28,7 @@ interface TripSetupFormProps {
 }
 
 const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: TripSetupFormProps) => {
+  const [name, setName] = useState(initialParams?.name || "");
   const [destination, setDestination] = useState(initialParams?.destination || "");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(
     initialParams?.startDate && initialParams?.endDate
@@ -41,6 +43,13 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
   const [mustIncludePlaceIds, setMustIncludePlaceIds] = useState<string[]>(initialParams?.mustIncludePlaceIds || []);
   const [boardIds, setBoardIds] = useState<string[]>(initialParams?.boardIds || []);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [showAccommodation, setShowAccommodation] = useState(!!initialParams?.accommodation);
+  const [accommodationName, setAccommodationName] = useState(initialParams?.accommodation?.name || "");
+  const [accommodationAddress, setAccommodationAddress] = useState(initialParams?.accommodation?.address || "");
+  const [showFlightDetails, setShowFlightDetails] = useState(!!initialParams?.flightDetails);
+  const [outboundFlight, setOutboundFlight] = useState(initialParams?.flightDetails?.outbound || "");
+  const [returnFlight, setReturnFlight] = useState(initialParams?.flightDetails?.returnFlight || "");
+  const [flightPrice, setFlightPrice] = useState(initialParams?.flightDetails?.price?.toString() || "");
 
   const duration = dateRange?.from && dateRange?.to
     ? differenceInDays(dateRange.to, dateRange.from) + 1
@@ -59,6 +68,7 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
   const handleSubmit = () => {
     if (!canGenerate) return;
     onGenerate({
+      name: name.trim() || undefined,
       destination,
       startDate: format(dateRange!.from!, "yyyy-MM-dd"),
       endDate: format(dateRange!.to!, "yyyy-MM-dd"),
@@ -67,6 +77,15 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
       vibes,
       mustIncludePlaceIds,
       boardIds,
+      accommodation: showAccommodation && (accommodationName || accommodationAddress) ? {
+        name: accommodationName || undefined,
+        address: accommodationAddress || undefined,
+      } : undefined,
+      flightDetails: showFlightDetails && (outboundFlight || returnFlight || flightPrice) ? {
+        outbound: outboundFlight || undefined,
+        returnFlight: returnFlight || undefined,
+        price: flightPrice ? parseFloat(flightPrice) : undefined,
+      } : undefined,
     });
   };
 
@@ -82,6 +101,17 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
           Back to Itineraries
         </button>
       )}
+      {/* Trip Name */}
+      <section className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Trip Name</label>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Summer in Tokyo"
+          className="rounded-2xl px-4 py-3.5 h-auto bg-card border-border"
+        />
+      </section>
+
       {/* Destination */}
       <section className="space-y-2">
         <label className="text-sm font-medium text-foreground">Destination</label>
@@ -255,7 +285,75 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
         onBoardIdsChange={setBoardIds}
       />
 
-      {/* Generate Button */}
+      {/* Accommodation (Optional) */}
+      <section className="space-y-2">
+        <button
+          onClick={() => setShowAccommodation(!showAccommodation)}
+          className="flex items-center gap-2 text-sm font-medium text-foreground"
+        >
+          <Home className="w-4 h-4 text-primary" />
+          Where are you staying?
+          <span className="text-xs text-muted-foreground">(optional)</span>
+          {showAccommodation ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+        </button>
+        {showAccommodation && (
+          <div className="space-y-2 pl-6">
+            <Input
+              value={accommodationName}
+              onChange={(e) => setAccommodationName(e.target.value)}
+              placeholder="Hotel / Airbnb name"
+              className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
+            />
+            <Input
+              value={accommodationAddress}
+              onChange={(e) => setAccommodationAddress(e.target.value)}
+              placeholder="Address"
+              className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
+            />
+          </div>
+        )}
+      </section>
+
+      {/* Flight Details (Optional) */}
+      <section className="space-y-2">
+        <button
+          onClick={() => setShowFlightDetails(!showFlightDetails)}
+          className="flex items-center gap-2 text-sm font-medium text-foreground"
+        >
+          <Plane className="w-4 h-4 text-primary" />
+          Flight Details
+          <span className="text-xs text-muted-foreground">(optional)</span>
+          {showFlightDetails ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+        </button>
+        {showFlightDetails && (
+          <div className="space-y-2 pl-6">
+            <Input
+              value={outboundFlight}
+              onChange={(e) => setOutboundFlight(e.target.value)}
+              placeholder="Outbound flight (e.g. SQ22, 10:30 AM)"
+              className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
+            />
+            <Input
+              value={returnFlight}
+              onChange={(e) => setReturnFlight(e.target.value)}
+              placeholder="Return flight (e.g. SQ21, 6:00 PM)"
+              className="rounded-2xl px-4 py-3 h-auto bg-card border-border"
+            />
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border">
+              <DollarSign className="w-4 h-4 text-primary flex-shrink-0" />
+              <input
+                type="number"
+                value={flightPrice}
+                onChange={(e) => setFlightPrice(e.target.value)}
+                placeholder="Total flight cost"
+                className="flex-1 text-sm bg-transparent outline-none text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-xs text-muted-foreground">USD</span>
+            </div>
+          </div>
+        )}
+      </section>
+
       <button
         onClick={handleSubmit}
         disabled={!canGenerate || isGenerating}
