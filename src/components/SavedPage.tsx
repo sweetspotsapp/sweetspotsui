@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, User, SortAsc, Loader2 } from "lucide-react";
+import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useNavigate, useLocation as useRouterLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -55,7 +56,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [showSortMenu, setShowSortMenu] = useState(false);
-
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   // Handle openBoard state from navigation (e.g., when returning from place details)
   useEffect(() => {
     const state = routerLocation.state as { openBoard?: string | "all" } | null;
@@ -299,7 +300,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
             </div>
             
             <button 
-              onClick={() => onNavigateToProfile?.()}
+              onClick={() => setIsProfileMenuOpen(true)}
               className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors"
             >
               <User className="w-6 h-6 text-foreground" />
@@ -446,6 +447,16 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
           savedPlaces={savedPlaces}
         />
       )}
+
+      {/* Profile Slide Menu */}
+      <ProfileSlideMenu 
+        isOpen={isProfileMenuOpen} 
+        onClose={() => setIsProfileMenuOpen(false)}
+        onNavigateToProfile={() => {
+          setIsProfileMenuOpen(false);
+          onNavigateToProfile?.();
+        }}
+      />
     </>
   );
 };
