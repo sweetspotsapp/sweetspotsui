@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
+import ItineraryPage from "@/components/ItineraryPage";
 import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
@@ -25,7 +26,7 @@ const Index = () => {
     toggleSave
   } = useApp();
   
-  const [activeTab, setActiveTab] = useState<"home" | "saved" | "profile">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "saved" | "itinerary" | "profile">("home");
   const [appState, setAppState] = useState<AppState>(
     hasCompletedOnboarding ? "main" : "onboarding"
   );
@@ -86,7 +87,7 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "saved" | "profile") => {
+  const handleTabChange = (tab: "home" | "saved" | "itinerary" | "profile") => {
     setActiveTab(tab);
   };
 
@@ -115,6 +116,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {activeTab === "home" && <HomePage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "saved" && <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />}
+      {activeTab === "itinerary" && <ItineraryPage />}
       {activeTab === "profile" && <ProfilePage />}
       
       <BottomNav 

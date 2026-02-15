@@ -1,15 +1,16 @@
-import { Home, Heart, User } from "lucide-react";
+import { Home, Heart, CalendarDays, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BottomNavProps {
-  activeTab: "home" | "saved" | "profile";
-  onTabChange: (tab: "home" | "saved" | "profile") => void;
+  activeTab: "home" | "saved" | "itinerary" | "profile";
+  onTabChange: (tab: "home" | "saved" | "itinerary" | "profile") => void;
 }
 
 const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "saved" as const, label: "Saved", icon: Heart },
+    { id: "itinerary" as const, label: "Itinerary", icon: CalendarDays },
     { id: "profile" as const, label: "Profile", icon: User },
   ];
 
