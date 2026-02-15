@@ -287,7 +287,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
               headers: {
                 "Content-Type": "application/json",
                 "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
-                "X-Goog-FieldMask": "places.displayName,places.photos,places.location,places.formattedAddress",
+                "X-Goog-FieldMask": "places.name,places.displayName,places.photos,places.location,places.formattedAddress",
               },
               body: JSON.stringify({ textQuery: searchQuery, maxResultCount: 1 }),
             });
@@ -296,10 +296,37 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
               const gData = await gRes.json();
               const place = gData.places?.[0];
               if (place) {
-                act.photoName = place.photos?.[0]?.name || null;
-                act.lat = place.location?.latitude || null;
-                act.lng = place.location?.longitude || null;
-                act.address = place.formattedAddress || null;
+                const photoName = place.photos?.[0]?.name || null;
+                const lat = place.location?.latitude || null;
+                const lng = place.location?.longitude || null;
+                const addr = place.formattedAddress || null;
+                const displayName = place.displayName?.text || act.name;
+
+                // Extract Google place ID from resource name (format: places/PLACE_ID)
+                const resourceName = place.name as string | undefined;
+                const googlePlaceId = resourceName?.startsWith("places/") ? resourceName.slice(7) : null;
+
+                act.photoName = photoName;
+                act.lat = lat;
+                act.lng = lng;
+                act.address = addr;
+
+                // Upsert into places table so the user can click through to details
+                if (googlePlaceId) {
+                  act.placeId = googlePlaceId;
+                  try {
+                    await sb.from("places").upsert({
+                      place_id: googlePlaceId,
+                      name: displayName,
+                      photo_name: photoName,
+                      lat, lng,
+                      address: addr,
+                      categories: [act.category],
+                    }, { onConflict: "place_id", ignoreDuplicates: true });
+                  } catch (upsertErr) {
+                    console.error(`Upsert failed for "${act.name}":`, upsertErr);
+                  }
+                }
               }
             }
           } catch (err) {
