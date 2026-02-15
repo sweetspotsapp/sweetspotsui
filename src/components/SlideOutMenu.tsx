@@ -25,29 +25,29 @@ const FILTER_SECTIONS = [
     ],
   },
   {
-    title: "Occasion",
+    title: "Dietary",
     filters: [
-      { id: "friends", label: "With Friends" },
-      { id: "romantic", label: "Romantic Date" },
-      { id: "family", label: "Family-Friendly" },
-      { id: "solo", label: "Solo" },
+      { id: "halal", label: "Halal" },
+      { id: "vegetarian", label: "Vegetarian / Vegan" },
+      { id: "gluten_free", label: "Gluten-Free" },
     ],
   },
   {
-    title: "Vibe",
+    title: "Amenities",
     filters: [
-      { id: "chill", label: "Chill & Quiet" },
-      { id: "lively", label: "Fun & Lively" },
-      { id: "hidden", label: "Hidden Gems" },
-      { id: "scenic", label: "Scenic / Nice View" },
-    ],
-  },
-  {
-    title: "Other",
-    filters: [
-      { id: "pet", label: "Pet-Friendly" },
-      { id: "late_night", label: "Late Night" },
+      { id: "wifi", label: "Free WiFi" },
       { id: "outdoor", label: "Outdoor Seating" },
+      { id: "parking", label: "Parking Available" },
+      { id: "wheelchair", label: "Wheelchair Accessible" },
+    ],
+  },
+  {
+    title: "Good For",
+    filters: [
+      { id: "dog_friendly", label: "Dog-Friendly" },
+      { id: "kid_friendly", label: "Kid-Friendly" },
+      { id: "late_night", label: "Late Night" },
+      { id: "large_groups", label: "Large Groups" },
     ],
   },
 ];

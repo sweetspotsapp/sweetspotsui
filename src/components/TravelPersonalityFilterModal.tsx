@@ -25,15 +25,15 @@ const BUDGET_OPTIONS = [
 ] as const;
 
 const VIBE_OPTIONS = [
-  "Historical & cultural",
-  "Iconic",
-  "Chill & relaxation",
-  "Food & local eats",
-  "Hidden gems",
-  "Adventure & outdoors",
-  "Fun With Friends",
-  "Family Time",
-  "Nights Life",
+  "Halal",
+  "Vegetarian / Vegan",
+  "Gluten-Free",
+  "Free WiFi",
+  "Dog-Friendly",
+  "Kid-Friendly",
+  "Late Night",
+  "Large Groups",
+  "Outdoor Seating",
 ];
 
 const PLACE_TYPE_OPTIONS = [

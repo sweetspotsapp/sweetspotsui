@@ -8,17 +8,17 @@ const corsHeaders = {
 
 // Valid filter tags that can be generated
 const VALID_FILTER_TAGS = [
-  'good-for-friends',
-  'romantic',
-  'family-friendly',
-  'good-for-solo',
-  'chill-vibe',
-  'lively-vibe',
-  'hidden-gem',
-  'scenic-view',
-  'pet-friendly',
-  'late-night',
+  'halal',
+  'vegetarian-vegan',
+  'gluten-free',
+  'free-wifi',
   'outdoor-seating',
+  'parking',
+  'wheelchair-accessible',
+  'pet-friendly',
+  'family-friendly',
+  'late-night',
+  'large-groups',
 ];
 
 interface PlaceData {
@@ -59,23 +59,23 @@ Reviews: ${reviewSnippets || 'None'}
 AI Description: ${p.ai_reason || 'None'}`;
     }).join('\n\n');
 
-    const systemPrompt = `You are a place categorization expert. Analyze each place and determine which filter tags apply based on the provided information. Be generous but reasonable - include tags that likely match based on the place type and context.
+    const systemPrompt = `You are a place categorization expert. Analyze each place and determine which filter tags apply based on the provided information. Be generous but reasonable.
 
 Valid tags and their meanings:
-- good-for-friends: Groups, social gatherings, fun atmosphere, shareable food, casual dining, bars, cafes
-- romantic: Intimate setting, date-worthy, couples, candlelit, quiet corners, fine dining
-- family-friendly: Kids welcome, family activities, casual atmosphere, kid-friendly food
-- good-for-solo: Work-friendly, quiet, comfortable alone, counter seating, wifi, cafes
-- chill-vibe: Relaxed, calm, peaceful, cozy, laid-back atmosphere, cafes, casual spots
-- lively-vibe: Energetic, loud, vibrant, buzzing, party atmosphere, bars, clubs
-- hidden-gem: Local secret, underrated, off-the-beaten-path, not touristy, unique
-- scenic-view: Rooftop, beach view, sunset views, panoramic, waterfront, gardens
+- halal: Halal-certified or serves halal food
+- vegetarian-vegan: Vegetarian or vegan options available
+- gluten-free: Gluten-free options available
+- free-wifi: Free WiFi available for customers
+- outdoor-seating: Patio, terrace, garden seating, alfresco dining, outdoor cafes
+- parking: Has parking lot, valet, or dedicated parking
+- wheelchair-accessible: Wheelchair accessible entrance and facilities
 - pet-friendly: Dogs allowed, pet-welcoming, outdoor pet area
+- family-friendly: Kids welcome, family activities, casual atmosphere, kid-friendly food
 - late-night: Open after 10pm, 24 hours, midnight operations, bars, clubs
-- outdoor-seating: Terrace, patio, garden seating, alfresco dining, outdoor cafes
+- large-groups: Can accommodate large groups, group dining, event space, banquet
 
 Respond with a JSON object where keys are the place indices (0, 1, 2...) and values are arrays of applicable tags.
-Example: {"0": ["good-for-friends", "lively-vibe"], "1": ["romantic", "chill-vibe"], "2": ["chill-vibe", "good-for-solo"]}`;
+Example: {"0": ["halal", "family-friendly"], "1": ["free-wifi", "outdoor-seating"], "2": ["pet-friendly", "large-groups"]}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
