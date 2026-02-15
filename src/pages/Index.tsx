@@ -27,11 +27,23 @@ const Index = () => {
   
   // Determine initial tab from route
   const getInitialTab = (): "home" | "saved" | "itinerary" | "profile" => {
+    const state = location.state as { openItinerary?: boolean } | null;
+    if (state?.openItinerary) return "itinerary";
     if (location.pathname === "/saved") return "saved";
     return "home";
   };
   
   const [activeTab, setActiveTab] = useState<"home" | "saved" | "itinerary" | "profile">(getInitialTab);
+
+  // Handle navigation state changes (e.g. returning from place details to itinerary)
+  useEffect(() => {
+    const state = location.state as { openItinerary?: boolean } | null;
+    if (state?.openItinerary) {
+      setActiveTab("itinerary");
+      // Clear the state to avoid re-triggering
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
   const [appState, setAppState] = useState<AppState>(
     hasCompletedOnboarding ? "main" : "onboarding"
   );
