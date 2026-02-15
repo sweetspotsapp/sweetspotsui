@@ -891,30 +891,21 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           </form>
         </div>
 
-        {/* Map/List Toggle & Active Filter Chips */}
-        <div className="px-4 pb-3 flex items-center gap-2">
-          <button
-            onClick={() => setIsMapView(!isMapView)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full text-xs font-medium whitespace-nowrap hover:bg-muted/80 transition-colors text-foreground"
-          >
-            {isMapView ? <List className="w-3.5 h-3.5" /> : <Map className="w-3.5 h-3.5" />}
-            {isMapView ? "List" : "Map"}
-          </button>
-          {activeFilters.size > 0 && (
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              {Array.from(activeFilters).map((filterId) => (
-                <button
-                  key={filterId}
-                  onClick={() => removeFilter(filterId)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors"
-                >
-                  {FILTER_LABELS[filterId] || filterId}
-                  <X className="w-3 h-3" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Active Filter Chips */}
+        {activeFilters.size > 0 && (
+          <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+            {Array.from(activeFilters).map((filterId) => (
+              <button
+                key={filterId}
+                onClick={() => removeFilter(filterId)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors"
+              >
+                {FILTER_LABELS[filterId] || filterId}
+                <X className="w-3 h-3" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Slide-out Menu */}
@@ -983,15 +974,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
               <Sparkles className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Ask me anything to discover amazing places!</p>
             </div>
-        ) : isMapView && mapPlaces.length > 0 ? (
-          <div className="h-[calc(100vh-200px)] relative">
-            <BoardMapView
-              places={mapPlaces}
-              userLocation={userLocation}
-              onPlaceClick={handleMapPlaceClick}
-              getPlaceImage={getPlaceImage}
-            />
-          </div>
         ) : (
           <>
             {/* AI Summary Card */}
@@ -1003,35 +985,61 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
               />
             )}
 
-            {/* Top Picks Section - Large vertical cards */}
-            {displaySections.find(s => s.featured) && (
-              <TopPicksSection
-                places={displaySections.find(s => s.featured)!.places}
-                onPlaceClick={handlePlaceClick}
-                toggleSave={handleSaveClick}
-                isSaved={isSaved}
-                showDistance={onboardingData?.explore_location === "nearby"}
-              />
+            {/* Map/List Toggle */}
+            {filteredResults.length > 0 && (
+              <div className="px-4 mb-4">
+                <button
+                  onClick={() => setIsMapView(!isMapView)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-foreground/90 text-background rounded-full text-sm font-medium shadow-md hover:bg-foreground transition-colors"
+                >
+                  {isMapView ? <List className="w-4 h-4" /> : <Map className="w-4 h-4" />}
+                  {isMapView ? "List" : "Map"}
+                </button>
+              </div>
             )}
 
-            {/* Other Sections - Horizontal scroll rows */}
-            {displaySections
-              .filter(section => !section.featured)
-              .map((section, index) => (
-                <SectionRow
-                  key={index}
-                  title={section.title}
-                  places={section.places}
-                  allPlaces={searchResults}
-                  onPlaceClick={handlePlaceClick}
-                  toggleSave={handleSaveClick}
-                  isSaved={isSaved}
-                  featured={false}
+            {isMapView && mapPlaces.length > 0 ? (
+              <div className="h-[calc(100vh-280px)] mx-4 rounded-xl overflow-hidden border border-border">
+                <BoardMapView
+                  places={mapPlaces}
                   userLocation={userLocation}
-                  onSeeAll={handleSeeAll}
-                  showDistance={onboardingData?.explore_location === "nearby"}
+                  onPlaceClick={handleMapPlaceClick}
+                  getPlaceImage={getPlaceImage}
                 />
-              ))}
+              </div>
+            ) : (
+              <>
+                {/* Top Picks Section - Large vertical cards */}
+                {displaySections.find(s => s.featured) && (
+                  <TopPicksSection
+                    places={displaySections.find(s => s.featured)!.places}
+                    onPlaceClick={handlePlaceClick}
+                    toggleSave={handleSaveClick}
+                    isSaved={isSaved}
+                    showDistance={onboardingData?.explore_location === "nearby"}
+                  />
+                )}
+
+                {/* Other Sections - Horizontal scroll rows */}
+                {displaySections
+                  .filter(section => !section.featured)
+                  .map((section, index) => (
+                    <SectionRow
+                      key={index}
+                      title={section.title}
+                      places={section.places}
+                      allPlaces={searchResults}
+                      onPlaceClick={handlePlaceClick}
+                      toggleSave={handleSaveClick}
+                      isSaved={isSaved}
+                      featured={false}
+                      userLocation={userLocation}
+                      onSeeAll={handleSeeAll}
+                      showDistance={onboardingData?.explore_location === "nearby"}
+                    />
+                  ))}
+              </>
+            )}
           </>
         )}
       </main>
