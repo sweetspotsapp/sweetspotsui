@@ -204,6 +204,7 @@ const ItineraryPage = () => {
       {phase === "view" && itinerary && (
         <ItineraryView
           itinerary={itinerary}
+          tripParams={tripParams}
           onBack={handleBackToList}
           onSwap={handleSwap}
           onReorder={handleReorder}

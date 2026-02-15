@@ -10,17 +10,18 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { destination, startDate, endDate, budget, groupSize, vibes, mustIncludePlaceIds } = await req.json();
+    const { destination, startDate, endDate, budget, groupSize, vibes, mustIncludePlaceIds, accommodations } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sb = createClient(supabaseUrl, serviceKey);
+
     // Fetch must-include place details
-    let mustIncludePlaces: { name: string; place_id: string; categories: string[] }[] = [];
+    let mustIncludePlaces: { name: string; place_id: string; categories: string[]; address: string; rating: number }[] = [];
     if (mustIncludePlaceIds && mustIncludePlaceIds.length > 0) {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const sb = createClient(supabaseUrl, serviceKey);
       const { data } = await sb
         .from("places")
         .select("place_id, name, categories, address, rating")
@@ -32,15 +33,26 @@ serve(async (req) => {
       ? `\n\nMUST INCLUDE these places (mark them as mustInclude: true):\n${mustIncludePlaces.map(p => `- ${p.name} (${(p.categories || []).join(", ")})`).join("\n")}`
       : "";
 
+    const accommodationSection = accommodations && accommodations.length > 0
+      ? `\n\nAccommodation(s):\n${accommodations.map((a: any, i: number) => `- Stay ${i + 1}: ${a.name || 'Unknown'} at ${a.address || 'Unknown address'}`).join("\n")}\nPlease consider proximity to accommodation when planning activities.`
+      : "";
+
     const prompt = `Create a detailed day-by-day travel itinerary for a trip to ${destination}.
 
 Trip details:
 - Dates: ${startDate} to ${endDate}
 - Budget level: ${budget} ($ = budget, $$ = moderate, $$$ = upscale, $$$$ = luxury)
 - Group size: ${groupSize} people
-- Vibes they want: ${vibes.join(", ")}${mustIncludeSection}
+- Vibes they want: ${vibes.join(", ")}${mustIncludeSection}${accommodationSection}
 
-Generate a structured itinerary with Morning, Afternoon, and Evening slots for each day. Each activity should have a realistic name of a place or activity, a brief description, a category, and an optional time.`;
+Generate a structured itinerary with Morning, Afternoon, and Evening slots for each day. Each activity should have:
+- A realistic name of a real place or activity
+- A brief description
+- A category
+- An optional time range
+- An estimated cost per person in USD (be realistic based on the budget level and destination)
+
+Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 for restaurants, $10-30 for museums, etc. Adjust for the destination's cost of living.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -51,7 +63,7 @@ Generate a structured itinerary with Morning, Afternoon, and Evening slots for e
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a travel planning expert. Return structured itineraries using the provided tool." },
+          { role: "system", content: "You are a travel planning expert. Return structured itineraries using the provided tool. Always include realistic cost estimates." },
           { role: "user", content: prompt },
         ],
         tools: [
@@ -59,7 +71,7 @@ Generate a structured itinerary with Morning, Afternoon, and Evening slots for e
             type: "function",
             function: {
               name: "create_itinerary",
-              description: "Return a structured travel itinerary",
+              description: "Return a structured travel itinerary with cost estimates",
               parameters: {
                 type: "object",
                 properties: {
@@ -86,8 +98,9 @@ Generate a structured itinerary with Morning, Afternoon, and Evening slots for e
                                     category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market"] },
                                     description: { type: "string", description: "1-2 sentences" },
                                     mustInclude: { type: "boolean" },
+                                    estimatedCost: { type: "number", description: "Estimated cost per person in USD. Use 0 for free activities." },
                                   },
-                                  required: ["name", "category", "description"],
+                                  required: ["name", "category", "description", "estimatedCost"],
                                   additionalProperties: false,
                                 },
                               },
@@ -133,6 +146,56 @@ Generate a structured itinerary with Morning, Afternoon, and Evening slots for e
     if (!toolCall) throw new Error("No tool call in response");
 
     const itinerary = JSON.parse(toolCall.function.arguments);
+
+    // Enrich activities with place data (photo_name, lat/lng) from the places table
+    const allActivityNames: string[] = [];
+    for (const day of itinerary.days) {
+      for (const slot of day.slots) {
+        for (const act of slot.activities) {
+          allActivityNames.push(act.name.toLowerCase().trim());
+        }
+      }
+    }
+
+    // Try to find matching places in the database
+    if (allActivityNames.length > 0) {
+      const { data: matchedPlaces } = await sb
+        .from("places")
+        .select("name, photo_name, lat, lng, address, photos")
+        .limit(200);
+
+      if (matchedPlaces && matchedPlaces.length > 0) {
+        const placeMap = new Map<string, typeof matchedPlaces[0]>();
+        for (const p of matchedPlaces) {
+          placeMap.set(p.name.toLowerCase().trim(), p);
+        }
+
+        for (const day of itinerary.days) {
+          for (const slot of day.slots) {
+            for (const act of slot.activities) {
+              const normalizedName = act.name.toLowerCase().trim();
+              // Exact match
+              let match = placeMap.get(normalizedName);
+              // Fuzzy match - check if place name contains activity name or vice versa
+              if (!match) {
+                for (const [key, val] of placeMap) {
+                  if (key.includes(normalizedName) || normalizedName.includes(key)) {
+                    match = val;
+                    break;
+                  }
+                }
+              }
+              if (match) {
+                act.photoName = match.photo_name || (match.photos && match.photos[0]) || null;
+                act.lat = match.lat;
+                act.lng = match.lng;
+                act.address = match.address;
+              }
+            }
+          }
+        }
+      }
+    }
 
     return new Response(JSON.stringify(itinerary), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
