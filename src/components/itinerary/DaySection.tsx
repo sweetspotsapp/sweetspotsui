@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ActivityCard from "./ActivityCard";
+import DistanceConnector from "./DistanceConnector";
 import type { ItineraryDay, SwapAlternative } from "@/hooks/useItinerary";
 
 interface DaySectionProps {
@@ -22,6 +23,11 @@ const TIME_ICONS: Record<string, string> = {
 const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
 
+  // Calculate day total cost
+  const dayTotal = day.slots.reduce((total, slot) => 
+    total + slot.activities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0), 0
+  );
+
   return (
     <div className="rounded-2xl bg-card border border-border overflow-hidden">
       {/* Day Header */}
@@ -36,6 +42,7 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
           <span className="text-sm font-semibold text-foreground">{day.label}</span>
           <span className="text-xs text-muted-foreground block">
             {day.slots.reduce((acc, s) => acc + s.activities.length, 0)} activities
+            {dayTotal > 0 && ` · ~$${dayTotal}/pp`}
           </span>
         </div>
         {isOpen ? (
@@ -57,18 +64,28 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
                 </span>
               </div>
 
-              {/* Activities */}
-              <div className="px-3 py-2 space-y-2">
+              {/* Activities with distance connectors */}
+              <div className="px-3 py-2 space-y-0">
                 {slot.activities.map((activity, activityIndex) => (
-                  <ActivityCard
-                    key={activityIndex}
-                    activity={activity}
-                    onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
-                    onMoveUp={activityIndex > 0 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex - 1) : undefined}
-                    onMoveDown={activityIndex < slot.activities.length - 1 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex + 1) : undefined}
-                    onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
-                    isSwapping={isSwapping}
-                  />
+                  <div key={activityIndex}>
+                    <ActivityCard
+                      activity={activity}
+                      onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
+                      onMoveUp={activityIndex > 0 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex - 1) : undefined}
+                      onMoveDown={activityIndex < slot.activities.length - 1 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex + 1) : undefined}
+                      onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
+                      isSwapping={isSwapping}
+                    />
+                    {/* Distance connector to next activity */}
+                    {activityIndex < slot.activities.length - 1 && (
+                      <DistanceConnector
+                        fromLat={activity.lat}
+                        fromLng={activity.lng}
+                        toLat={slot.activities[activityIndex + 1].lat}
+                        toLng={slot.activities[activityIndex + 1].lng}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

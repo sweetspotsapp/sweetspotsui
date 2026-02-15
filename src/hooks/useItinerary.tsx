@@ -9,6 +9,11 @@ export interface Activity {
   category: string;
   description: string;
   mustInclude?: boolean;
+  estimatedCost?: number;
+  photoName?: string;
+  lat?: number;
+  lng?: number;
+  address?: string;
 }
 
 export interface TimeSlot {
