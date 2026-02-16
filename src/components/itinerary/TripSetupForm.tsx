@@ -585,6 +585,22 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
         )}
       </button>
 
+      {!canGenerate && !isGenerating && (
+        <p className="text-xs text-muted-foreground text-center -mt-3">
+          {[
+            !destination && "a destination",
+            (!dateRange?.from || !dateRange?.to) && "travel dates",
+            vibes.length === 0 && "at least one trip vibe",
+          ].filter(Boolean).length > 0 && (
+            <>Still need: {[
+              !destination && "a destination",
+              (!dateRange?.from || !dateRange?.to) && "travel dates",
+              vibes.length === 0 && "at least one trip vibe",
+            ].filter(Boolean).join(", ")}</>
+          )}
+        </p>
+      )}
+
       {/* Location Picker Modal */}
       <LocationPickerModal
         isOpen={showLocationPicker}
