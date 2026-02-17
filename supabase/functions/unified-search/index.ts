@@ -308,22 +308,36 @@ Return ONLY a JSON object: { "keywords": "search terms", "intent": "what user wa
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
     
-    // Extract JSON
+    // Extract JSON with better error handling
     let jsonStr = content;
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       jsonStr = jsonMatch[0];
     }
     
-    const parsed = JSON.parse(jsonStr.trim());
-    const keywords = parsed.keywords || prompt;
-    const intent = parsed.intent || prompt;
-    
-    console.log(`Translated: "${prompt}" → "${keywords}"`);
-    const result = { keywords, intent };
-    // Cache async (fire and forget) - 2 hour TTL
-    setCacheValue(supabaseClient, cacheKey, result, 2 * 60 * 60 * 1000).then(() => {});
-    return result;
+    try {
+      // Clean up common JSON issues
+      const cleanedJson = jsonStr
+        .trim()
+        .replace(/,\s*}/g, '}')  // Remove trailing commas before }
+        .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
+        .replace(/\n/g, ' ')      // Remove newlines that might break strings
+        .replace(/\r/g, '');      // Remove carriage returns
+      
+      const parsed = JSON.parse(cleanedJson);
+      const keywords = parsed.keywords || prompt;
+      const intent = parsed.intent || prompt;
+      
+      console.log(`Translated: "${prompt}" → "${keywords}"`);
+      const result = { keywords, intent };
+      // Cache async (fire and forget) - 2 hour TTL
+      setCacheValue(supabaseClient, cacheKey, result, 2 * 60 * 60 * 1000).then(() => {});
+      return result;
+    } catch (parseError) {
+      console.error('Translation JSON parse error:', parseError);
+      console.error('Failed JSON string:', jsonStr.substring(0, 200));
+      return { keywords: prompt, intent: prompt };
+    }
     
   } catch (error) {
     console.error('Translation error:', error);
@@ -415,7 +429,7 @@ Only include places that have at least one tag. Use only tags from the valid lis
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
     
-    // Extract JSON from response
+    // Extract JSON from response with better error handling
     let jsonStr = content;
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
@@ -427,7 +441,23 @@ Only include places that have at least one tag. Use only tags from the valid lis
       jsonStr = objectMatch[0];
     }
     
-    const parsed = JSON.parse(jsonStr.trim());
+    let parsed;
+    try {
+      // Clean up common JSON issues
+      const cleanedJson = jsonStr
+        .trim()
+        .replace(/,\s*}/g, '}')  // Remove trailing commas before }
+        .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
+        .replace(/\n/g, ' ')      // Remove newlines that might break strings
+        .replace(/\r/g, '');      // Remove carriage returns
+      
+      parsed = JSON.parse(cleanedJson);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Failed JSON string:', jsonStr.substring(0, 500));
+      return tagsMap; // Return empty map on parse failure
+    }
+    
     const tagResults = parsed.tags || [];
     
     for (const item of tagResults) {
@@ -570,7 +600,7 @@ Respond with a JSON object:
     
     console.log('AI response length:', content.length);
     
-    // Extract JSON from response
+    // Extract JSON from response with better error handling
     let jsonStr = content;
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
@@ -584,7 +614,15 @@ Respond with a JSON object:
     }
     
     try {
-      const parsed = JSON.parse(jsonStr.trim());
+      // Clean up common JSON issues
+      const cleanedJson = jsonStr
+        .trim()
+        .replace(/,\s*}/g, '}')  // Remove trailing commas before }
+        .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
+        .replace(/\n/g, ' ')      // Remove newlines that might break strings
+        .replace(/\r/g, '');      // Remove carriage returns
+      
+      const parsed = JSON.parse(cleanedJson);
       
       // Extract scores
       const scores = parsed.scores || parsed.relevance || [];
