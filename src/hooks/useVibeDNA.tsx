@@ -270,12 +270,13 @@ export const useVibeDNA = (): VibeDNAData => {
 
           const filterTags = place.filter_tags || [];
           const categories = place.categories || [];
-          const allTagsLower = filterTags.map((t: string) => t.toLowerCase());
-          const allCatsLower = categories.map((c: string) => c.toLowerCase());
+          const allTagsLower = filterTags.map((t: string) => t.toLowerCase().replace(/-/g, '_'));
+          const allCatsLower = categories.map((c: string) => c.toLowerCase().replace(/-/g, '_'));
 
           // Score from filter_tags for vibe breakdown
           filterTags.forEach((tag: string) => {
-            const tagInfo = VIBE_TAG_MAP[tag.toLowerCase()];
+            const normalized = tag.toLowerCase().replace(/-/g, '_');
+            const tagInfo = VIBE_TAG_MAP[normalized];
             if (tagInfo) {
               vibeScores[tagInfo.category] = (vibeScores[tagInfo.category] || 0) + (tagInfo.weight * totalWeight);
             }
