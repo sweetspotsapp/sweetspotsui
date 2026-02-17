@@ -31,6 +31,9 @@ const Index = () => {
     const state = location.state as { openItinerary?: boolean } | null;
     if (state?.openItinerary) return "itinerary";
     if (location.pathname === "/saved") return "saved";
+    // If arriving with a search param, force home tab
+    const params = new URLSearchParams(location.search);
+    if (params.get('search')) return "home";
     return "home";
   };
   
@@ -42,7 +45,6 @@ const Index = () => {
     const state = location.state as { openItinerary?: boolean } | null;
     if (state?.openItinerary) {
       setActiveTab("itinerary");
-      // Check sessionStorage for the itinerary ID to resume
       const storedId = sessionStorage.getItem('sweetspots_resume_itinerary');
       if (storedId) {
         setResumeItineraryId(storedId);
@@ -50,7 +52,12 @@ const Index = () => {
       }
       window.history.replaceState({}, '');
     }
-  }, [location.state]);
+    // Switch to home tab when arriving with search param
+    const params = new URLSearchParams(location.search);
+    if (params.get('search')) {
+      setActiveTab("home");
+    }
+  }, [location.state, location.search]);
   const [appState, setAppState] = useState<AppState>(
     hasCompletedOnboarding ? "main" : "onboarding"
   );
