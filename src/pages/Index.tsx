@@ -8,6 +8,7 @@ import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
 
+
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import type { OnboardingData } from "@/context/AppContext";
@@ -116,7 +117,7 @@ const Index = () => {
 
   // Show onboarding wizard
   if (appState === "onboarding") {
-    return <EntryScreen onSubmit={handleMoodSubmit} onSkip={handleSkip} onOnboardingComplete={handleOnboardingComplete} />;
+    return <EntryScreen onComplete={handleOnboardingComplete} onSkip={handleSkip} />;
   }
 
   // Show loading transition
