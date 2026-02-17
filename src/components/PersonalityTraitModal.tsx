@@ -142,26 +142,26 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
         </div>
 
         {/* CTAs */}
-        <div className="px-6 pb-6 pt-2 flex gap-2.5">
+        <div className="px-5 pb-5 pt-2 flex gap-2">
           <Button
             variant="outline"
             onClick={() => onReset(trait)}
             disabled={isResetting}
-            className="flex-1 rounded-xl h-12 text-sm border-border/60 hover:bg-muted/60"
+            className="flex-1 rounded-xl h-10 text-xs border-border/60 hover:bg-muted/60"
           >
             {isResetting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
             ) : (
-              <RotateCcw className="w-4 h-4 mr-2" />
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
             )}
-            Reset this vibe
+            Reset
           </Button>
           <Button
             onClick={() => onExplore(trait)}
-            className="flex-1 rounded-xl h-12 text-sm bg-primary text-primary-foreground font-semibold transition-all"
+            className="flex-1 rounded-xl h-10 text-xs bg-primary text-primary-foreground font-semibold transition-all"
           >
-            Explore this vibe
-            <ArrowRight className="w-4 h-4 ml-2" />
+            Explore vibe
+            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
           </Button>
         </div>
       </div>
