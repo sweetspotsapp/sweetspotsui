@@ -605,13 +605,6 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 Based on {totalInteractions} interaction{totalInteractions !== 1 ? 's' : ''}
               </button>
             )}
-            <button
-              onClick={() => setShowVibeCard(true)}
-              className="p-1.5 rounded-full hover:bg-muted transition-colors ml-auto"
-              title="Share your Vibe"
-            >
-              <Share2 className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
-            </button>
           </div>
           
           <p className="text-xs text-muted-foreground">
@@ -650,6 +643,16 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 );
               })}
             </div>
+          )}
+
+          {totalInteractions > 0 && (
+            <button
+              onClick={() => setShowVibeCard(true)}
+              className="w-full mt-2 py-2.5 rounded-xl border border-primary/30 bg-primary/5 text-primary text-xs font-semibold flex items-center justify-center gap-2 hover:bg-primary/10 transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share your Vibe DNA
+            </button>
           )}
         </section>
 
