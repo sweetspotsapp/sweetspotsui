@@ -27,6 +27,10 @@ const PRESET_COVERS = [
   { src: coverTemple, label: "Ancient Temples" },
 ];
 
+const PRESET_COVER_MAP: Record<string, string> = Object.fromEntries(
+  PRESET_COVERS.map(c => [c.label, c.src])
+);
+
 interface ProfilePageProps {
   onNavigateToSaved?: () => void;
 }
@@ -263,7 +267,11 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
         .single();
       if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       if (data?.username) setUsername(data.username);
-      if (data?.cover_url) setCoverUrl(data.cover_url);
+      if (data?.cover_url) {
+        // Resolve preset labels to actual image imports, or use as URL for custom uploads
+        const resolved = PRESET_COVER_MAP[data.cover_url] || data.cover_url;
+        setCoverUrl(resolved);
+      }
     };
     loadProfile();
   }, [user]);
