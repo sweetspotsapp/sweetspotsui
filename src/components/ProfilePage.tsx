@@ -1,17 +1,110 @@
-import { useState } from "react";
-import { User, Sparkles, TrendingUp, Loader2, Settings } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, X } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
+import { format } from "date-fns";
 
-const ProfilePage = () => {
+interface ProfilePageProps {
+  onNavigateToSaved?: () => void;
+}
+
+interface SearchHistoryItem {
+  id: string;
+  prompt: string;
+  created_at: string;
+}
+
+interface PlaceHistoryItem {
+  place_id: string;
+  name: string;
+  action: string;
+  created_at: string;
+}
+
+const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const { savedPlaceIds, userVibes } = useApp();
+  const { user } = useAuth();
   const { vibeBreakdown, personalityTraits, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount } = useVibeDNA();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
+  const [showPlacesHistory, setShowPlacesHistory] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [placesHistory, setPlacesHistory] = useState<PlaceHistoryItem[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  // Total saved is directly from savedPlaceIds Set (synced with DB)
   const totalSaved = savedPlaceIds.size;
+
+  const loadSearchHistory = async () => {
+    if (!user) return;
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from("searches")
+        .select("id, prompt, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!error && data) setSearchHistory(data);
+    } catch (e) {
+      console.error("Error loading search history:", e);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const loadPlacesHistory = async () => {
+    if (!user) return;
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from("place_interactions")
+        .select("place_id, action, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!error && data) {
+        // Deduplicate by place_id, keep latest
+        const seen = new Set<string>();
+        const unique: typeof data = [];
+        for (const item of data) {
+          if (!seen.has(item.place_id)) {
+            seen.add(item.place_id);
+            unique.push(item);
+          }
+        }
+        // Fetch place names
+        const placeIds = unique.map(i => i.place_id);
+        const { data: places } = await supabase
+          .from("places")
+          .select("place_id, name")
+          .in("place_id", placeIds);
+        const nameMap = new Map(places?.map(p => [p.place_id, p.name]) || []);
+        setPlacesHistory(unique.map(i => ({
+          ...i,
+          name: nameMap.get(i.place_id) || i.place_id,
+        })));
+      }
+    } catch (e) {
+      console.error("Error loading places history:", e);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const handleOpenSearchHistory = () => {
+    setShowSearchHistory(true);
+    loadSearchHistory();
+  };
+
+  const handleOpenPlacesHistory = () => {
+    setShowPlacesHistory(true);
+    loadPlacesHistory();
+  };
 
   return (
     <>
@@ -54,20 +147,32 @@ const ProfilePage = () => {
           </div>
         </section>
 
-        {/* Stats */}
+        {/* Stats - Interactive */}
         <section className="grid grid-cols-3 gap-3 opacity-0 animate-fade-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
-          <div className="bg-card rounded-xl p-3 border border-border text-center">
+          <button 
+            onClick={onNavigateToSaved}
+            className="bg-card rounded-xl p-3 border border-border text-center hover:border-primary/30 hover:bg-primary/5 transition-all group"
+          >
             <div className="text-2xl font-bold text-primary">{totalSaved}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Saved spots</div>
-          </div>
-          <div className="bg-card rounded-xl p-3 border border-border text-center">
+            <div className="text-[10px] text-muted-foreground mt-0.5 group-hover:text-primary transition-colors">Saved spots</div>
+            <ChevronRight className="w-3 h-3 text-muted-foreground mx-auto mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+          <button 
+            onClick={handleOpenPlacesHistory}
+            className="bg-card rounded-xl p-3 border border-border text-center hover:border-primary/30 hover:bg-primary/5 transition-all group"
+          >
             <div className="text-2xl font-bold text-primary">{placesShownCount}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Places shown</div>
-          </div>
-          <div className="bg-card rounded-xl p-3 border border-border text-center">
+            <div className="text-[10px] text-muted-foreground mt-0.5 group-hover:text-primary transition-colors">Places shown</div>
+            <ChevronRight className="w-3 h-3 text-muted-foreground mx-auto mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+          <button 
+            onClick={handleOpenSearchHistory}
+            className="bg-card rounded-xl p-3 border border-border text-center hover:border-primary/30 hover:bg-primary/5 transition-all group"
+          >
             <div className="text-2xl font-bold text-primary">{searchCount || 0}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Mood searches</div>
-          </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5 group-hover:text-primary transition-colors">Mood searches</div>
+            <ChevronRight className="w-3 h-3 text-muted-foreground mx-auto mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
         </section>
 
         {/* Vibe Analysis */}
@@ -173,6 +278,86 @@ const ProfilePage = () => {
       isOpen={isProfileMenuOpen} 
       onClose={() => setIsProfileMenuOpen(false)}
     />
+
+    {/* Search History Sheet */}
+    <Sheet open={showSearchHistory} onOpenChange={setShowSearchHistory}>
+      <SheetContent side="bottom" className="max-h-[70vh] rounded-t-2xl">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-primary" />
+            Mood Search History
+          </SheetTitle>
+        </SheetHeader>
+        <div className="mt-4 overflow-y-auto max-h-[55vh] space-y-2">
+          {isLoadingHistory ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            </div>
+          ) : searchHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No searches yet. Start exploring!</p>
+          ) : (
+            searchHistory.map((item) => (
+              <div key={item.id} className="flex items-start gap-3 p-3 bg-card rounded-xl border border-border">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Search className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground font-medium truncate">{item.prompt}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    <Clock className="w-3 h-3 inline mr-1" />
+                    {format(new Date(item.created_at), "MMM d, yyyy · h:mm a")}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+
+    {/* Places History Sheet */}
+    <Sheet open={showPlacesHistory} onOpenChange={setShowPlacesHistory}>
+      <SheetContent side="bottom" className="max-h-[70vh] rounded-t-2xl">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-primary" />
+            Places You've Explored
+          </SheetTitle>
+        </SheetHeader>
+        <div className="mt-4 overflow-y-auto max-h-[55vh] space-y-2">
+          {isLoadingHistory ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            </div>
+          ) : placesHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No places explored yet. Start discovering!</p>
+          ) : (
+            placesHistory.map((item, index) => (
+              <div key={`${item.place_id}-${index}`} className="flex items-start gap-3 p-3 bg-card rounded-xl border border-border">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {item.action === "save" ? (
+                    <Heart className="w-4 h-4 text-primary" />
+                  ) : (
+                    <Eye className="w-4 h-4 text-primary" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground font-medium truncate">{item.name}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] text-muted-foreground capitalize px-1.5 py-0.5 bg-muted rounded-full">
+                      {item.action === "save" ? "Saved" : "Viewed"}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {format(new Date(item.created_at), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
     </>
   );
 };

@@ -131,7 +131,7 @@ const Index = () => {
       {activeTab === "home" && <HomePage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "saved" && <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "itinerary" && <ItineraryPage resumeItineraryId={resumeItineraryId} onResumed={() => setResumeItineraryId(null)} />}
-      {activeTab === "profile" && <ProfilePage />}
+      {activeTab === "profile" && <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />}
       
       <BottomNav 
         activeTab={activeTab} 
