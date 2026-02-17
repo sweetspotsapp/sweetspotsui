@@ -43,7 +43,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [exploreLocation, setExploreLocation] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { predictions } = usePlaceAutocomplete(showSuggestions ? locationInput : "");
+  const { predictions, isLoading } = usePlaceAutocomplete(showSuggestions ? locationInput : "");
 
   const handleMoodSubmit = (moodValue: string) => {
     setMood(moodValue);
@@ -195,6 +195,11 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
               </button>
             )}
 
+            {showSuggestions && !isLoading && predictions.length === 0 && locationInput.trim().length >= 2 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 p-4 text-center">
+                <p className="text-muted-foreground text-sm">No locations found. Try a different search term.</p>
+              </div>
+            )}
             {showSuggestions && predictions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 overflow-hidden max-h-56 overflow-y-auto">
                 {predictions.map((prediction) => (
