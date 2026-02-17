@@ -6,53 +6,59 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ============ IN-MEMORY CACHE ============
-interface CacheEntry<T> {
-  value: T;
-  expires: number;
-}
-
-class SimpleCache<T> {
-  private cache = new Map<string, CacheEntry<T>>();
-  
-  set(key: string, value: T, ttlMs: number): void {
-    this.cache.set(key, {
-      value,
-      expires: Date.now() + ttlMs
-    });
-  }
-  
-  get(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
+// ============ DATABASE-BACKED CACHE ============
+// Helper functions to get/set cache from Supabase
+async function getCacheValue<T>(supabaseClient: any, key: string): Promise<T | null> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('query_cache')
+      .select('cache_value, expires_at')
+      .eq('cache_key', key)
+      .single();
     
-    if (Date.now() > entry.expires) {
-      this.cache.delete(key);
+    if (error || !data) return null;
+    
+    // Check if expired
+    if (new Date(data.expires_at) < new Date()) {
+      // Delete expired entry asynchronously
+      supabaseClient.from('query_cache').delete().eq('cache_key', key).then(() => {});
       return null;
     }
     
-    return entry.value;
-  }
-  
-  // Periodic cleanup
-  cleanup(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (now > entry.expires) {
-        this.cache.delete(key);
-      }
-    }
+    return data.cache_value as T;
+  } catch (e) {
+    console.error('Cache read error:', e);
+    return null;
   }
 }
 
-const geocodeCache = new SimpleCache<{ lat: number; lng: number }>();
-const translationCache = new SimpleCache<{ keywords: string; intent: string }>();
+async function setCacheValue<T>(supabaseClient: any, key: string, value: T, ttlMs: number): Promise<void> {
+  try {
+    const expires_at = new Date(Date.now() + ttlMs).toISOString();
+    await supabaseClient
+      .from('query_cache')
+      .upsert({
+        cache_key: key,
+        cache_value: value,
+        expires_at,
+        created_at: new Date().toISOString()
+      }, { onConflict: 'cache_key' });
+  } catch (e) {
+    console.error('Cache write error:', e);
+  }
+}
 
-// Cleanup cache every 5 minutes
-setInterval(() => {
-  geocodeCache.cleanup();
-  translationCache.cleanup();
-}, 5 * 60 * 1000);
+// Clean up expired cache entries (fire and forget)
+async function cleanExpiredCache(supabaseClient: any): Promise<void> {
+  try {
+    const { data, error } = await supabaseClient.rpc('clean_expired_cache');
+    if (!error && data > 0) {
+      console.log(`Cleaned ${data} expired cache entries`);
+    }
+  } catch (e) {
+    // Silently fail - cache cleanup is not critical
+  }
+}
 
 interface RequestBody {
   prompt: string;
@@ -217,12 +223,13 @@ function generateWhyString(
 // Translate natural language prompts to Google-searchable keywords
 async function translatePromptToKeywords(
   prompt: string,
-  lovableApiKey: string
+  lovableApiKey: string,
+  supabaseClient: any
 ): Promise<{ keywords: string; intent: string }> {
   // Mood/vibe words that Google doesn't understand - these MUST be translated
   // Check cache first
-  const cacheKey = prompt.toLowerCase().trim();
-  const cached = translationCache.get(cacheKey);
+  const cacheKey = `translate:${prompt.toLowerCase().trim()}`;
+  const cached = await getCacheValue<{ keywords: string; intent: string }>(supabaseClient, cacheKey);
   if (cached) {
     console.log('Using cached translation');
     return cached;
@@ -256,7 +263,8 @@ async function translatePromptToKeywords(
   if (isAlreadyKeywords) {
     console.log('Prompt is already keyword-like, skipping translation');
     const result = { keywords: prompt, intent: prompt };
-    translationCache.set(cacheKey, result, 30 * 60 * 1000); // 30 min cache
+    // Cache async (fire and forget) - 2 hour TTL
+    setCacheValue(supabaseClient, cacheKey, result, 2 * 60 * 60 * 1000).then(() => {});
     return result;
   }
 
@@ -313,7 +321,8 @@ Return ONLY a JSON object: { "keywords": "search terms", "intent": "what user wa
     
     console.log(`Translated: "${prompt}" → "${keywords}"`);
     const result = { keywords, intent };
-    translationCache.set(cacheKey, result, 30 * 60 * 1000); // 30 min cache
+    // Cache async (fire and forget) - 2 hour TTL
+    setCacheValue(supabaseClient, cacheKey, result, 2 * 60 * 60 * 1000).then(() => {});
     return result;
     
   } catch (error) {
@@ -680,6 +689,11 @@ serve(async (req) => {
     // Admin client for database operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+    // Clean expired cache entries periodically (fire and forget, ~10% of requests)
+    if (Math.random() < 0.1) {
+      cleanExpiredCache(supabaseAdmin).then(() => {});
+    }
+
     // Get auth header for later parallel fetch
     const authHeader = req.headers.get('Authorization');
 
@@ -700,8 +714,8 @@ serve(async (req) => {
       console.log(`Geocoding location: ${location_name}`);
       
       // Check cache first
-      const geoCacheKey = location_name.toLowerCase().trim();
-      const cachedGeo = geocodeCache.get(geoCacheKey);
+      const geoCacheKey = `geocode:${location_name.toLowerCase().trim()}`;
+      const cachedGeo = await getCacheValue<{ lat: number; lng: number }>(supabaseAdmin, geoCacheKey);
       if (cachedGeo) {
         lat = cachedGeo.lat;
         lng = cachedGeo.lng;
@@ -752,9 +766,9 @@ serve(async (req) => {
           );
         }
         
-        // Cache the result for 1 hour (only if geocoding succeeded)
+        // Cache the result for 4 hours (only if geocoding succeeded, fire and forget)
         if (lat !== undefined && lng !== undefined) {
-          geocodeCache.set(geoCacheKey, { lat, lng }, 60 * 60 * 1000);
+          setCacheValue(supabaseAdmin, geoCacheKey, { lat, lng }, 4 * 60 * 60 * 1000).then(() => {});
         }
       }
     }
@@ -770,7 +784,7 @@ serve(async (req) => {
 
     // ============ STEP 0: Translate natural language to keywords ============
     const translationStartTime = Date.now();
-    const { keywords, intent } = await translatePromptToKeywords(prompt, lovableApiKey);
+    const { keywords, intent } = await translatePromptToKeywords(prompt, lovableApiKey, supabaseAdmin);
     console.log(`⏱️  Translation: ${Date.now() - translationStartTime}ms`);
 
     // ============ STEP 1: Google Places Text Search (fetch up to 40 places) ============
