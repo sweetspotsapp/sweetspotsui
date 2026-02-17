@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera } from "lucide-react";
+import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
+import VibeShareCard from "./VibeShareCard";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { format } from "date-fns";
 
@@ -39,6 +40,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showVibeCard, setShowVibeCard] = useState(false);
 
   const totalSaved = savedPlaceIds.size;
 
@@ -259,10 +261,17 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
             <Sparkles className="w-4 h-4 text-primary" />
             <h3 className="font-semibold text-foreground text-sm">Your Vibe DNA</h3>
             {totalInteractions > 0 && (
-              <span className="text-[10px] text-muted-foreground ml-auto">
+              <span className="text-[10px] text-muted-foreground ml-auto mr-2">
                 Based on {totalInteractions} interaction{totalInteractions !== 1 ? 's' : ''}
               </span>
             )}
+            <button
+              onClick={() => setShowVibeCard(true)}
+              className="p-1.5 rounded-full hover:bg-muted transition-colors ml-auto"
+              title="Share your Vibe"
+            >
+              <Share2 className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+            </button>
           </div>
           
           <p className="text-xs text-muted-foreground">
@@ -436,6 +445,14 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
         </div>
       </SheetContent>
     </Sheet>
+
+    <VibeShareCard
+      open={showVibeCard}
+      onClose={() => setShowVibeCard(false)}
+      vibeBreakdown={vibeBreakdown}
+      personalityTraits={personalityTraits}
+      userName={user?.email?.split("@")[0]}
+    />
     </>
   );
 };
