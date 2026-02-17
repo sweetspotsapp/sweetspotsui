@@ -158,7 +158,7 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
           </Button>
           <Button
             onClick={() => onExplore(trait)}
-            className="flex-[1.2] rounded-xl h-12 text-sm bg-primary text-primary-foreground font-semibold transition-all"
+            className="flex-1 rounded-xl h-12 text-sm bg-primary text-primary-foreground font-semibold transition-all"
           >
             Explore this vibe
             <ArrowRight className="w-4 h-4 ml-2" />
