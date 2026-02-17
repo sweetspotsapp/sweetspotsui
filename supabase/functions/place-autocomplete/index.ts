@@ -26,26 +26,43 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Use Google Places Autocomplete API (New) for detailed suggestions
-    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=geocode&key=${apiKey}`;
+    // Use Places API (New) - Autocomplete endpoint
+    const url = 'https://places.googleapis.com/v1/places:autocomplete';
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+      },
+      body: JSON.stringify({
+        input,
+        includedPrimaryTypes: ['locality', 'sublocality', 'neighborhood', 'administrative_area_level_1', 'route'],
+      }),
+    });
+
     const data = await response.json();
 
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.error('Google Autocomplete error:', data.status, data.error_message);
+    if (!response.ok) {
+      console.error('Google Autocomplete (New) error:', JSON.stringify(data));
       return new Response(
         JSON.stringify({ predictions: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const predictions = (data.predictions || []).slice(0, 8).map((p: any) => ({
-      description: p.description,
-      place_id: p.place_id,
-      main_text: p.structured_formatting?.main_text || p.description,
-      secondary_text: p.structured_formatting?.secondary_text || '',
-    }));
+    const predictions = (data.suggestions || [])
+      .filter((s: any) => s.placePrediction)
+      .slice(0, 8)
+      .map((s: any) => {
+        const p = s.placePrediction;
+        return {
+          description: p.text?.text || '',
+          place_id: p.placeId || '',
+          main_text: p.structuredFormat?.mainText?.text || p.text?.text || '',
+          secondary_text: p.structuredFormat?.secondaryText?.text || '',
+        };
+      });
 
     return new Response(
       JSON.stringify({ predictions }),
