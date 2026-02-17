@@ -6,6 +6,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============ IN-MEMORY CACHE ============
+interface CacheEntry<T> {
+  value: T;
+  expires: number;
+}
+
+class SimpleCache<T> {
+  private cache = new Map<string, CacheEntry<T>>();
+  
+  set(key: string, value: T, ttlMs: number): void {
+    this.cache.set(key, {
+      value,
+      expires: Date.now() + ttlMs
+    });
+  }
+  
+  get(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    
+    if (Date.now() > entry.expires) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.value;
+  }
+  
+  // Periodic cleanup
+  cleanup(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expires) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+const geocodeCache = new SimpleCache<{ lat: number; lng: number }>();
+const translationCache = new SimpleCache<{ keywords: string; intent: string }>();
+
+// Cleanup cache every 5 minutes
+setInterval(() => {
+  geocodeCache.cleanup();
+  translationCache.cleanup();
+}, 5 * 60 * 1000);
+
 interface RequestBody {
   prompt: string;
   lat?: number;
@@ -172,6 +220,17 @@ async function translatePromptToKeywords(
   lovableApiKey: string
 ): Promise<{ keywords: string; intent: string }> {
   // Mood/vibe words that Google doesn't understand - these MUST be translated
+  // Check cache first
+  const cacheKey = prompt.toLowerCase().trim();
+  const cached = translationCache.get(cacheKey);
+  if (cached) {
+    console.log('Using cached translation');
+    return cached;
+  }
+
+  // Common search keywords that don't need translation
+  const commonKeywords = /\b(restaurant|cafe|coffee|bar|food|pizza|sushi|burger|breakfast|lunch|dinner|brunch|hotel|park|museum|gym|spa|beach|shopping|mall)\b/i;
+  
   const moodWords = /\b(chill|vibes?|cozy|relaxing|romantic|fun|lively|trendy|quiet|peaceful|aesthetic|cute|fancy|casual|hipster|artsy|authentic|hidden|local|cool|nice|good|great|amazing|awesome|perfect|best|moody|intimate|upscale|lowkey|energetic|buzzing|serene|charming)\b/i;
   
   // Conversational patterns indicating natural language
@@ -182,21 +241,23 @@ async function translatePromptToKeywords(
   
   // Check if prompt contains mood words that Google can't understand
   const containsMoodWords = moodWords.test(prompt);
+  const hasCommonKeywords = commonKeywords.test(prompt);
   
-  // Skip translation only if:
-  // 1. Very short (2 words or less) AND
-  // 2. No mood words AND
-  // 3. No conversational patterns AND
-  // 4. No personal pronouns
+  // Skip translation if:
+  // 1. Has common keywords (e.g. "coffee", "restaurant") OR
+  // 2. (Very short (3 words or less) AND no mood words AND no conversational patterns AND no personal pronouns)
   const isAlreadyKeywords = 
-    prompt.split(' ').length <= 2 &&
+    hasCommonKeywords ||
+    (prompt.split(' ').length <= 3 &&
     !containsMoodWords &&
     !conversationalPatterns.test(prompt) &&
-    !personalPronouns.test(prompt);
+    !personalPronouns.test(prompt));
   
   if (isAlreadyKeywords) {
     console.log('Prompt is already keyword-like, skipping translation');
-    return { keywords: prompt, intent: prompt };
+    const result = { keywords: prompt, intent: prompt };
+    translationCache.set(cacheKey, result, 30 * 60 * 1000); // 30 min cache
+    return result;
   }
 
   try {
@@ -251,7 +312,9 @@ Return ONLY a JSON object: { "keywords": "search terms", "intent": "what user wa
     const intent = parsed.intent || prompt;
     
     console.log(`Translated: "${prompt}" → "${keywords}"`);
-    return { keywords, intent };
+    const result = { keywords, intent };
+    translationCache.set(cacheKey, result, 30 * 60 * 1000); // 30 min cache
+    return result;
     
   } catch (error) {
     console.error('Translation error:', error);
@@ -617,19 +680,8 @@ serve(async (req) => {
     // Admin client for database operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Optional: Get user if auth header provided (for personalization)
-    let userId: string | null = null;
+    // Get auth header for later parallel fetch
     const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-      const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      userId = user?.id || null;
-    }
-
-    console.log('User:', userId || 'anonymous');
 
     // Parse request
     const body: RequestBody = await req.json();
@@ -647,49 +699,63 @@ serve(async (req) => {
     if (location_name && (lat === undefined || lng === undefined || (lat === 0 && lng === 0))) {
       console.log(`Geocoding location: ${location_name}`);
       
-      let geocoded = false;
+      // Check cache first
+      const geoCacheKey = location_name.toLowerCase().trim();
+      const cachedGeo = geocodeCache.get(geoCacheKey);
+      if (cachedGeo) {
+        lat = cachedGeo.lat;
+        lng = cachedGeo.lng;
+        console.log(`Using cached geocode for "${location_name}": ${lat}, ${lng}`);
+      } else {
+        let geocoded = false;
 
-      // Try Geoapify first
-      try {
-        const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location_name)}&limit=1&apiKey=${geoapifyApiKey}`;
-        const geoResponse = await fetch(geocodeUrl);
-        const geoData = await geoResponse.json();
-        
-        if (geoData.features && geoData.features.length > 0) {
-          const [geoLng, geoLat] = geoData.features[0].geometry.coordinates;
-          lat = geoLat;
-          lng = geoLng;
-          geocoded = true;
-          console.log(`Geoapify geocoded "${location_name}" to: ${lat}, ${lng}`);
-        }
-      } catch (e) {
-        console.error('Geoapify geocoding error:', e);
-      }
-
-      // Fallback to Google Geocoding if Geoapify failed
-      if (!geocoded) {
+        // Try Geoapify first
         try {
-          const googleGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location_name)}&key=${googleMapsApiKey}`;
-          const googleGeoResponse = await fetch(googleGeoUrl);
-          const googleGeoData = await googleGeoResponse.json();
+          const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location_name)}&limit=1&apiKey=${geoapifyApiKey}`;
+          const geoResponse = await fetch(geocodeUrl);
+          const geoData = await geoResponse.json();
           
-          if (googleGeoData.results && googleGeoData.results.length > 0) {
-            const loc = googleGeoData.results[0].geometry.location;
-            lat = loc.lat;
-            lng = loc.lng;
+          if (geoData.features && geoData.features.length > 0) {
+            const [geoLng, geoLat] = geoData.features[0].geometry.coordinates;
+            lat = geoLat;
+            lng = geoLng;
             geocoded = true;
-            console.log(`Google geocoded "${location_name}" to: ${lat}, ${lng}`);
+            console.log(`Geoapify geocoded "${location_name}" to: ${lat}, ${lng}`);
           }
         } catch (e) {
-          console.error('Google geocoding error:', e);
+          console.error('Geoapify geocoding error:', e);
         }
-      }
 
-      if (!geocoded) {
-        return new Response(
-          JSON.stringify({ error: `Could not find location: ${location_name}` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        // Fallback to Google Geocoding if Geoapify failed
+        if (!geocoded) {
+          try {
+            const googleGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location_name)}&key=${googleMapsApiKey}`;
+            const googleGeoResponse = await fetch(googleGeoUrl);
+            const googleGeoData = await googleGeoResponse.json();
+            
+            if (googleGeoData.results && googleGeoData.results.length > 0) {
+              const loc = googleGeoData.results[0].geometry.location;
+              lat = loc.lat;
+              lng = loc.lng;
+              geocoded = true;
+              console.log(`Google geocoded "${location_name}" to: ${lat}, ${lng}`);
+            }
+          } catch (e) {
+            console.error('Google geocoding error:', e);
+          }
+        }
+
+        if (!geocoded) {
+          return new Response(
+            JSON.stringify({ error: `Could not find location: ${location_name}` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // Cache the result for 1 hour (only if geocoding succeeded)
+        if (lat !== undefined && lng !== undefined) {
+          geocodeCache.set(geoCacheKey, { lat, lng }, 60 * 60 * 1000);
+        }
       }
     }
 
@@ -703,15 +769,17 @@ serve(async (req) => {
     console.log('Search:', { prompt, lat: lat.toFixed(4), lng: lng.toFixed(4), radius_m, mode });
 
     // ============ STEP 0: Translate natural language to keywords ============
+    const translationStartTime = Date.now();
     const { keywords, intent } = await translatePromptToKeywords(prompt, lovableApiKey);
+    console.log(`⏱️  Translation: ${Date.now() - translationStartTime}ms`);
 
-    // ============ STEP 1: Google Places Text Search (fetch up to 60 places) ============
+    // ============ STEP 1: Google Places Text Search (fetch up to 40 places) ============
     const googleStartTime = Date.now();
     const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
     
     let allGooglePlaces: any[] = [];
     let nextPageToken: string | null = null;
-    const maxPages = 3;
+    const maxPages = 2; // Reduced from 3 to 2 for faster response
 
     // Note: searchText only supports locationBias, not locationRestriction
     // We enforce distance limits via post-filtering with haversine
@@ -762,14 +830,14 @@ serve(async (req) => {
       allGooglePlaces = allGooglePlaces.concat(places);
       nextPageToken = data.nextPageToken || null;
 
-      if (!nextPageToken || allGooglePlaces.length >= 60) break;
+      if (!nextPageToken || allGooglePlaces.length >= 40) break;
       
       if (nextPageToken) {
         await new Promise(resolve => setTimeout(resolve, 150));
       }
     }
 
-    console.log(`Google Places: ${allGooglePlaces.length} places in ${Date.now() - googleStartTime}ms`);
+    console.log(`⏱️  Google Places: ${allGooglePlaces.length} places in ${Date.now() - googleStartTime}ms`);
 
     if (allGooglePlaces.length === 0) {
       return new Response(
@@ -850,6 +918,8 @@ serve(async (req) => {
 
     console.log(`Category filter: ${allGooglePlaces.length} → ${filteredGooglePlaces.length} places (removed ${allGooglePlaces.length - filteredGooglePlaces.length} irrelevant)`);
 
+    const dbFetchStartTime = Date.now();
+
     // Transform to candidates (initial transform without filter_tags)
     const baseCandidates: PlaceCandidate[] = filteredGooglePlaces.map((place: any) => {
       const firstPhoto = place.photos?.[0];
@@ -892,38 +962,16 @@ serve(async (req) => {
       return !dbData?.filter_tags || dbData.filter_tags.length === 0;
     });
     
-    console.log(`Found ${dbPlaceMap.size} places in DB, ${placesNeedingTags.length} need filter_tags`);
+    console.log(`⏱️  DB fetch: ${Date.now() - dbFetchStartTime}ms - Found ${dbPlaceMap.size} places in DB, ${placesNeedingTags.length} need filter_tags`);
 
-    // Generate filter_tags for places that don't have them using AI
-    let generatedTagsMap = new Map<string, string[]>();
-    if (placesNeedingTags.length > 0 && lovableApiKey) {
-      generatedTagsMap = await generateFilterTagsWithAI(placesNeedingTags, lovableApiKey);
-      console.log(`AI generated tags for ${generatedTagsMap.size} places`);
-      
-      // Save generated tags to database (fire and forget)
-      const tagsToUpdate = Array.from(generatedTagsMap.entries()).map(([place_id, filter_tags]) => ({
-        place_id,
-        filter_tags,
-      }));
-      
-      if (tagsToUpdate.length > 0) {
-        supabaseAdmin.from('places').upsert(tagsToUpdate, { onConflict: 'place_id' })
-          .then(({ error }) => {
-            if (error) console.error('Failed to save generated tags:', error);
-            else console.log(`Saved filter_tags for ${tagsToUpdate.length} places`);
-          });
-      }
-    }
-
-    // Merge filter_tags from DB or AI-generated into candidates
+    // Merge existing filter_tags from DB into candidates (don't wait for AI generation)
     const candidates: PlaceCandidate[] = baseCandidates.map(c => {
       const dbData = dbPlaceMap.get(c.place_id);
       const existingTags = dbData?.filter_tags;
-      const generatedTags = generatedTagsMap.get(c.place_id);
       
       return {
         ...c,
-        filter_tags: (existingTags && existingTags.length > 0) ? existingTags : (generatedTags || null),
+        filter_tags: (existingTags && existingTags.length > 0) ? existingTags : null,
         // Use DB price_level if Google didn't provide one
         price_level: c.price_level ?? dbData?.price_level ?? null,
         // Include unique_vibes from DB
@@ -931,21 +979,43 @@ serve(async (req) => {
       };
     });
 
-    // ============ PARALLEL STEP 2: Fetch travel times + AI scoring + user data ============
+    // ============ PARALLEL STEP 2: Fetch travel times + AI scoring + user data + auth + filter tags ============
     const parallelStartTime = Date.now();
 
     // Filter candidates with valid coordinates
     const validCandidates = candidates.filter(p => p.lat !== 0 && p.lng !== 0);
+    
+    // Helper function to calculate haversine distance
+    const haversineDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+      const R = 6371000; // Earth radius in meters
+      const toRad = (deg: number) => (deg * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+    
+    // Calculate straight-line distances and sort
+    const candidatesWithDistance = validCandidates.map(p => ({
+      ...p,
+      straightLineDistance: haversineDistance(lat, lng, p.lat, p.lng)
+    })).sort((a, b) => a.straightLineDistance - b.straightLineDistance);
+    
+    // Only calculate route matrix for closest 30 places (major optimization)
+    const candidatesForRouting = candidatesWithDistance.slice(0, 30);
+    console.log(`Routing optimization: ${validCandidates.length} → ${candidatesForRouting.length} candidates`);
 
-    // Parallel operations
-    const [travelTimeResult, aiResult, profileResult, savedPlacesResult] = await Promise.all([
-      // 2a: Geoapify travel times
+    // Parallel operations (including auth fetch now)
+    const [travelTimeResult, aiResult, authDataResult, filterTagsResult] = await Promise.all([
+      // 2a: Geoapify travel times (only for top 30 nearest candidates)
       (async () => {
         const travelData = new Map<string, { eta: number | null; distance: number | null }>();
         
         try {
           const sources = [{ location: [lng, lat] }];
-          const targets = validCandidates.map(p => ({ location: [p.lng, p.lat] }));
+          const targets = candidatesForRouting.map(p => ({ location: [p.lng, p.lat] }));
           
           const matrixResponse = await fetch(
             `https://api.geoapify.com/v1/routematrix?apiKey=${geoapifyApiKey}`,
@@ -964,7 +1034,7 @@ serve(async (req) => {
             const matrixData = await matrixResponse.json();
             if (matrixData.sources_to_targets?.[0]) {
               const results = matrixData.sources_to_targets[0];
-              validCandidates.forEach((place, index) => {
+              candidatesForRouting.forEach((place, index) => {
                 const result = results[index];
                 travelData.set(place.place_id, {
                   eta: result?.time ?? null,
@@ -973,6 +1043,17 @@ serve(async (req) => {
               });
             }
           }
+          
+          // For places beyond top 30, estimate using straight-line distance
+          candidatesWithDistance.slice(30).forEach(place => {
+            // Rough estimate: 50 km/h average speed for driving
+            const speedMps = mode === 'walk' ? 1.4 : mode === 'bike' ? 5.5 : 13.9;
+            const estimatedEta = Math.round(place.straightLineDistance / speedMps);
+            travelData.set(place.place_id, {
+              eta: estimatedEta,
+              distance: Math.round(place.straightLineDistance),
+            });
+          });
         } catch (e) {
           console.error('Geoapify error:', e);
         }
@@ -983,23 +1064,85 @@ serve(async (req) => {
       // 2b: AI relevance scoring + summary (use intent for better context)
       getAIRelevanceAndSummary(intent || prompt, validCandidates, lovableApiKey),
 
-      // 2c: User profile (only if authenticated)
-      userId 
-        ? supabaseAdmin.from('profiles').select('*').eq('id', userId).maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-
-      // 2d: Saved places (only if authenticated)
-      userId
-        ? supabaseAdmin.from('saved_places').select('place_id').eq('user_id', userId)
-        : Promise.resolve({ data: [], error: null }),
+      // 2c: Get authenticated user ID + fetch profile + saved places (moved from earlier sequential code)
+      (async () => {
+        let userId: string | null = null;
+        if (authHeader) {
+          try {
+            const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+            const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+              global: { headers: { Authorization: authHeader } },
+            });
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            userId = user?.id || null;
+          } catch (e) {
+            console.error('Auth error:', e);
+          }
+        }
+        
+        // Fetch profile and saved places in parallel if user authenticated
+        if (userId) {
+          const [profileResult, savedPlacesResult] = await Promise.all([
+            supabaseAdmin.from('profiles').select('*').eq('id', userId).maybeSingle(),
+            supabaseAdmin.from('saved_places').select('place_id').eq('user_id', userId),
+          ]);
+          return { userId, profile: profileResult.data, savedPlaces: savedPlacesResult.data || [] };
+        }
+        
+        return { userId: null, profile: null, savedPlaces: [] };
+      })(),
+      
+      // 2f: Generate filter_tags for places that need them (non-blocking)
+      (async () => {
+        const generatedTagsMap = new Map<string, string[]>();
+        if (placesNeedingTags.length > 0 && lovableApiKey) {
+          try {
+            const tags = await generateFilterTagsWithAI(placesNeedingTags, lovableApiKey);
+            console.log(`AI generated tags for ${tags.size} places`);
+            
+            // Save generated tags to database (fire and forget)
+            if (tags.size > 0) {
+              const tagsToUpdate = Array.from(tags.entries()).map(([place_id, filter_tags]) => ({
+                place_id,
+                filter_tags,
+              }));
+              
+              supabaseAdmin.from('places').upsert(tagsToUpdate, { onConflict: 'place_id' })
+                .then(({ error }) => {
+                  if (error) console.error('Failed to save generated tags:', error);
+                  else console.log(`Saved filter_tags for ${tagsToUpdate.length} places`);
+                });
+            }
+            
+            return tags;
+          } catch (e) {
+            console.error('Filter tags generation error:', e);
+          }
+        }
+        return generatedTagsMap;
+      })(),
     ]);
 
-    console.log(`Parallel operations completed in ${Date.now() - parallelStartTime}ms`);
+    console.log(`⏱️  Parallel operations completed in ${Date.now() - parallelStartTime}ms`);
 
     const travelData = travelTimeResult;
     const { relevanceMap, summary } = aiResult;
-    const profile = profileResult.data;
-    const savedPlaces: { place_id: string }[] = savedPlacesResult.data || [];
+    const { userId: authenticatedUserId, profile, savedPlaces } = authDataResult;
+    const generatedTagsMap = filterTagsResult;
+    
+    console.log('User:', authenticatedUserId || 'anonymous');
+    
+    // Merge generated tags into candidates that didn't have them
+    if (generatedTagsMap.size > 0) {
+      candidates.forEach((c, idx) => {
+        if (!c.filter_tags || c.filter_tags.length === 0) {
+          const generated = generatedTagsMap.get(c.place_id);
+          if (generated) {
+            candidates[idx].filter_tags = generated;
+          }
+        }
+      });
+    }
 
     // ============ STEP 3: Score and rank places ============
     const relevantCandidates = validCandidates.filter(p => relevanceMap.has(p.place_id));
@@ -1103,9 +1246,9 @@ serve(async (req) => {
       });
 
     // Log search (fire and forget) - only for authenticated users
-    if (userId) {
+    if (authenticatedUserId) {
       supabaseAdmin.from('searches').insert({
-        user_id: userId,
+        user_id: authenticatedUserId,
         prompt,
         lat,
         lng,
@@ -1117,7 +1260,7 @@ serve(async (req) => {
     }
 
     const totalTime = Date.now() - startTime;
-    console.log(`Total: ${topPlaces.length} places in ${totalTime}ms`);
+    console.log(`⏱️  Total: ${topPlaces.length} places in ${totalTime}ms`);
 
     return new Response(
       JSON.stringify({ places: topPlaces, summary }),
