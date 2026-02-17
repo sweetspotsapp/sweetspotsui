@@ -95,6 +95,21 @@ interface SwapParams {
   category: string;
 }
 
+const LOCAL_STORAGE_KEY = "sweetspots_local_itineraries";
+
+const loadLocalItineraries = (): SavedItinerary[] => {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+};
+
+const saveLocalItineraries = (items: SavedItinerary[]) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
+  } catch { /* storage full – silently fail */ }
+};
+
 export const useItinerary = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -104,7 +119,11 @@ export const useItinerary = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const loadItineraries = useCallback(async () => {
-    if (!user) { setSavedItineraries([]); return; }
+    if (!user) {
+      // Load from localStorage for unauthenticated users
+      setSavedItineraries(loadLocalItineraries());
+      return;
+    }
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -129,7 +148,62 @@ export const useItinerary = () => {
   useEffect(() => { loadItineraries(); }, [loadItineraries]);
 
   const saveItinerary = async (params: TripParams, itineraryData: ItineraryData, existingId?: string): Promise<string | null> => {
-    if (!user) { toast({ title: "Login required", description: "Please log in to save itineraries.", variant: "destructive" }); return null; }
+    if (!user) {
+      // Save to localStorage for unauthenticated users
+      const now = new Date().toISOString();
+      const localItems = loadLocalItineraries();
+
+      if (existingId) {
+        const updated = localItems.map(item =>
+          item.id === existingId
+            ? {
+                ...item,
+                name: params.name || null,
+                destination: params.destination,
+                start_date: params.startDate,
+                end_date: params.endDate,
+                budget: params.budget,
+                group_size: params.groupSize,
+                vibes: params.vibes,
+                must_include_place_ids: params.mustIncludePlaceIds,
+                board_ids: params.boardIds,
+                itinerary_data: itineraryData,
+                accommodation: params.accommodations || null,
+                flight_details: params.flightDetails || null,
+                updated_at: now,
+              }
+            : item
+        );
+        saveLocalItineraries(updated);
+        setSavedItineraries(updated);
+        toast({ title: "Itinerary updated" });
+        return existingId;
+      } else {
+        const newId = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const newItem: SavedItinerary = {
+          id: newId,
+          name: params.name || null,
+          destination: params.destination,
+          start_date: params.startDate,
+          end_date: params.endDate,
+          budget: params.budget,
+          group_size: params.groupSize,
+          vibes: params.vibes,
+          must_include_place_ids: params.mustIncludePlaceIds,
+          board_ids: params.boardIds,
+          itinerary_data: itineraryData,
+          accommodation: params.accommodations || null,
+          flight_details: params.flightDetails || null,
+          created_at: now,
+          updated_at: now,
+        };
+        const updated = [newItem, ...localItems];
+        saveLocalItineraries(updated);
+        setSavedItineraries(updated);
+        toast({ title: "Itinerary saved locally" });
+        return newId;
+      }
+    }
     try {
       const record: any = {
         user_id: user.id,
@@ -168,7 +242,14 @@ export const useItinerary = () => {
   };
 
   const deleteItinerary = async (id: string) => {
-    if (!user) return;
+    if (!user) {
+      // Delete from localStorage
+      const updated = loadLocalItineraries().filter(i => i.id !== id);
+      saveLocalItineraries(updated);
+      setSavedItineraries(updated);
+      toast({ title: "Itinerary deleted" });
+      return;
+    }
     try {
       const { error } = await supabase.from("itineraries").delete().eq("id", id).eq("user_id", user.id);
       if (error) throw error;
