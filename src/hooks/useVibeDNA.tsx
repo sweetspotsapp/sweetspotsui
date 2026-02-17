@@ -37,10 +37,14 @@ const VIBE_TAG_MAP: Record<string, { category: string; weight: number }> = {
   'intimate': { category: 'Chill', weight: 1 },
   'reading_friendly': { category: 'Chill', weight: 1 },
   'wifi_work': { category: 'Chill', weight: 0.5 },
+  'chill_vibe': { category: 'Chill', weight: 2 },
+  'good_for_solo': { category: 'Chill', weight: 1.5 },
+  'free_wifi': { category: 'Chill', weight: 0.5 },
   
   // Aesthetic vibes
   'instagrammable': { category: 'Aesthetic', weight: 2 },
   'scenic': { category: 'Aesthetic', weight: 2 },
+  'scenic_view': { category: 'Aesthetic', weight: 2 },
   'rooftop': { category: 'Aesthetic', weight: 1.5 },
   'waterfront': { category: 'Aesthetic', weight: 1.5 },
   'artsy': { category: 'Aesthetic', weight: 1.5 },
@@ -50,13 +54,17 @@ const VIBE_TAG_MAP: Record<string, { category: string; weight: number }> = {
   
   // Social vibes
   'lively': { category: 'Social', weight: 2 },
+  'lively_vibe': { category: 'Social', weight: 2 },
   'group_friendly': { category: 'Social', weight: 2 },
+  'good_for_friends': { category: 'Social', weight: 2 },
+  'large_groups': { category: 'Social', weight: 1.5 },
   'nightlife': { category: 'Social', weight: 1.5 },
   'sports_bar': { category: 'Social', weight: 1.5 },
   'live_music': { category: 'Social', weight: 1.5 },
   'dancing': { category: 'Social', weight: 1.5 },
   'karaoke': { category: 'Social', weight: 1 },
   'games': { category: 'Social', weight: 1 },
+  'pet_friendly': { category: 'Social', weight: 0.5 },
   
   // Foodie vibes
   'fine_dining': { category: 'Foodie', weight: 2 },
@@ -67,13 +75,19 @@ const VIBE_TAG_MAP: Record<string, { category: string; weight: number }> = {
   'cocktails': { category: 'Foodie', weight: 1 },
   'wine': { category: 'Foodie', weight: 1 },
   'craft_beer': { category: 'Foodie', weight: 1 },
+  'vegetarian_vegan': { category: 'Foodie', weight: 1 },
   
   // Adventure vibes
   'outdoor': { category: 'Adventure', weight: 2 },
+  'outdoor_seating': { category: 'Adventure', weight: 1 },
   'hidden_gem': { category: 'Adventure', weight: 1.5 },
   'off_beaten_path': { category: 'Adventure', weight: 1.5 },
   'local_favorite': { category: 'Adventure', weight: 1 },
   'late_night': { category: 'Adventure', weight: 1 },
+  
+  // Family vibes → maps to Social
+  'family_friendly': { category: 'Social', weight: 1 },
+  'romantic': { category: 'Aesthetic', weight: 1.5 },
 };
 
 // Action weights for scoring
