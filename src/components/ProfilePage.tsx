@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
 import VibeShareCard from "./VibeShareCard";
+import PersonalityTraitModal from "./PersonalityTraitModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -61,6 +62,32 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const [selectedTrait, setSelectedTrait] = useState<typeof personalityTraits[0] | null>(null);
+  const [isResettingTrait, setIsResettingTrait] = useState(false);
+
+  const handleResetTrait = async (trait: typeof personalityTraits[0]) => {
+    if (!user) return;
+    setIsResettingTrait(true);
+    try {
+      // Delete interactions for places matching this trait's categories/tags
+      const { error } = await supabase
+        .from('place_interactions')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      toast({ title: `"${trait.label}" has been reset`, description: "Your vibe DNA will update shortly." });
+      setSelectedTrait(null);
+      // Reload page to recalculate vibe DNA
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to reset trait:", err);
+      toast({ title: "Failed to reset", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setIsResettingTrait(false);
+    }
+  };
 
   const fetchCharacterMatch = async (existingPool: CharacterMatch[] = []) => {
     setIsLoadingCharacter(true);
@@ -443,7 +470,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 return (
                   <button 
                     key={index}
-                    onClick={() => navigate(`/?search=${encodeURIComponent(`best spots for a ${trait.label.toLowerCase()}`)}`)}
+                    onClick={() => setSelectedTrait(trait)}
                     className="flex gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all group w-full text-left"
                   >
                     <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
@@ -638,6 +665,17 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
       personalityTraits={personalityTraits}
       userName={user?.email?.split("@")[0]}
       characterMatch={characterMatch}
+    />
+
+    <PersonalityTraitModal
+      trait={selectedTrait}
+      onClose={() => setSelectedTrait(null)}
+      onExplore={(trait) => {
+        setSelectedTrait(null);
+        navigate(`/?search=${encodeURIComponent(`best spots for a ${trait.label.toLowerCase()}`)}`);
+      }}
+      onReset={handleResetTrait}
+      isResetting={isResettingTrait}
     />
     </>
   );
