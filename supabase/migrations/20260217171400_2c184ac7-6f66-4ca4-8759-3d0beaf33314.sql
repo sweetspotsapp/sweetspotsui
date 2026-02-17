@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN username TEXT DEFAULT 'Explorer';
