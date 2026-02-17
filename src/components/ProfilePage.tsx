@@ -69,10 +69,77 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [newVibeLabel, setNewVibeLabel] = useState("");
   const [newVibeDescription, setNewVibeDescription] = useState("");
 
-  const handleResetTrait = (trait: typeof personalityTraits[0]) => {
-    setHiddenTraits(prev => new Set(prev).add(trait.label));
-    toast({ title: `"${trait.label}" removed`, description: "This trait won't show on your profile anymore." });
-    setSelectedTrait(null);
+  const [isResettingTrait, setIsResettingTrait] = useState(false);
+
+  const handleResetTrait = async (trait: typeof personalityTraits[0]) => {
+    if (!user) return;
+    setIsResettingTrait(true);
+    try {
+      // Find the personality definition to get trigger tags/categories
+      const { PERSONALITY_DEFINITIONS } = await import("@/hooks/useVibeDNA");
+      const definition = PERSONALITY_DEFINITIONS.find(d => d.label === trait.label);
+      
+      if (!definition) {
+        // Custom vibe — just hide it
+        setHiddenTraits(prev => new Set(prev).add(trait.label));
+        toast({ title: `"${trait.label}" removed` });
+        setSelectedTrait(null);
+        setIsResettingTrait(false);
+        return;
+      }
+
+      const triggerTags = definition.triggers.tags || [];
+      const triggerCategories = definition.triggers.categories || [];
+
+      // Fetch user's interactions with place data
+      const { data: interactions } = await supabase
+        .from('place_interactions')
+        .select('id, place_id')
+        .eq('user_id', user.id);
+
+      if (interactions && interactions.length > 0) {
+        const placeIds = [...new Set(interactions.map(i => i.place_id))];
+        const { data: places } = await supabase
+          .from('places')
+          .select('place_id, filter_tags, categories')
+          .in('place_id', placeIds);
+
+        // Find place_ids that match this trait's triggers
+        const matchingPlaceIds = new Set<string>();
+        places?.forEach(place => {
+          const tags = place.filter_tags || [];
+          const cats = place.categories || [];
+          const hasMatchingTag = tags.some((t: string) => triggerTags.includes(t));
+          const hasMatchingCat = cats.some((c: string) => triggerCategories.some(tc => c.toLowerCase().includes(tc)));
+          if (hasMatchingTag || hasMatchingCat) {
+            matchingPlaceIds.add(place.place_id);
+          }
+        });
+
+        // Delete interactions for matching places
+        const idsToDelete = interactions
+          .filter(i => matchingPlaceIds.has(i.place_id))
+          .map(i => i.id);
+
+        if (idsToDelete.length > 0) {
+          const { error } = await supabase
+            .from('place_interactions')
+            .delete()
+            .in('id', idsToDelete);
+          if (error) throw error;
+        }
+      }
+
+      // Also hide the trait immediately
+      setHiddenTraits(prev => new Set(prev).add(trait.label));
+      toast({ title: `"${trait.label}" reset`, description: `Removed ${trait.label.toLowerCase()} signals from your vibe analysis.` });
+      setSelectedTrait(null);
+    } catch (err) {
+      console.error("Failed to reset trait:", err);
+      toast({ title: "Failed to reset", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setIsResettingTrait(false);
+    }
   };
 
   const visibleTraits = personalityTraits.filter(t => !hiddenTraits.has(t.label));
@@ -744,7 +811,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
         navigate(`/?search=${encodeURIComponent(`best spots for a ${trait.label.toLowerCase()}`)}`);
       }}
       onReset={handleResetTrait}
-      isResetting={false}
+      isResetting={isResettingTrait}
     />
     </>
   );
