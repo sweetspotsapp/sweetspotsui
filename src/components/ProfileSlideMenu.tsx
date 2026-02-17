@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   User, 
   Settings, 
@@ -27,6 +29,21 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("profiles")
+      .select("avatar_url, username")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        if (data?.username && data.username !== "Explorer") setUsername(data.username);
+      });
+  }, [user?.id]);
 
   const handleLogout = async () => {
     await signOut();
@@ -133,12 +150,16 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
               onClick={handleViewProfile}
               className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-muted/50 transition-colors -mx-3"
             >
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-6 h-6 text-primary" />
+                )}
               </div>
               <div className="flex-1 text-left">
                 <p className="font-medium text-foreground">
-                  {user?.email?.split("@")[0] || "User"}
+                  {username || user?.email?.split("@")[0] || "User"}
                 </p>
                 <p className="text-sm text-muted-foreground truncate max-w-[180px]">
                   {user?.email || "No email"}
