@@ -248,6 +248,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           budget: string | null
           created_at: string
           dietary: Json | null
@@ -258,6 +259,7 @@ export type Database = {
           vibe: Json | null
         }
         Insert: {
+          avatar_url?: string | null
           budget?: string | null
           created_at?: string
           dietary?: Json | null
@@ -268,6 +270,7 @@ export type Database = {
           vibe?: Json | null
         }
         Update: {
+          avatar_url?: string | null
           budget?: string | null
           created_at?: string
           dietary?: Json | null

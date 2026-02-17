@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,8 +36,62 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [placesHistory, setPlacesHistory] = useState<PlaceHistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const totalSaved = savedPlaceIds.size;
+
+  // Load avatar on mount
+  useEffect(() => {
+    if (!user) return;
+    const loadAvatar = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .single();
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+    };
+    loadAvatar();
+  }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 5 * 1024 * 1024) return; // 5MB max
+
+    setIsUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+
+      setAvatarUrl(publicUrl);
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const loadSearchHistory = async () => {
     if (!user) return;
@@ -138,9 +192,33 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
       <div className="p-4 space-y-5">
         {/* Profile Header */}
         <section className="flex items-center gap-4 opacity-0 animate-fade-up" style={{ animationFillMode: 'forwards' }}>
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="w-8 h-8 text-primary" />
-          </div>
+          <button 
+            onClick={() => user && fileInputRef.current?.click()}
+            className="relative w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group overflow-hidden"
+            disabled={!user || isUploadingAvatar}
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <User className="w-8 h-8 text-primary" />
+            )}
+            {user && (
+              <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                {isUploadingAvatar ? (
+                  <Loader2 className="w-5 h-5 text-background animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5 text-background" />
+                )}
+              </div>
+            )}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
           <div>
             <h2 className="font-semibold text-foreground">Explorer</h2>
             <p className="text-sm text-muted-foreground">Finding your sweetspots since today</p>
