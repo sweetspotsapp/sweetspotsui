@@ -541,9 +541,9 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       setSearchResults(result.places.map(unifiedToMockPlace));
       setAiSummary(result.summary || null);
       toast.success(`Found ${result.places.length} spots for you!`);
-      // Show feedback every 5th search
+      // Show feedback on 1st search, then every 5th after that
       searchCountRef.current += 1;
-      if (searchCountRef.current % 5 === 0) {
+      if (searchCountRef.current === 1 || searchCountRef.current % 5 === 0) {
         setTimeout(() => setShowFeedback(true), 2000);
       }
     } else if (result && result.places.length === 0) {
