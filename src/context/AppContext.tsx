@@ -150,7 +150,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [rankedPlaces, setRankedPlaces] = useState<RankedPlace[]>([]);
   const [userMood, setUserMood] = useState("");
   const [userVibes, setUserVibes] = useState<string[]>([]);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(() => {
+    try {
+      return localStorage.getItem('sweetspots_onboarding_done') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [travelMode, setTravelMode] = useState<"drive" | "walk" | "bike">("drive");
   const [categories, setCategories] = useState<PlaceCategory[]>([]);
   const [onboardingData, setOnboardingDataState] = useState<OnboardingData | null>(null);
@@ -210,10 +216,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUserVibes(extractVibes(mood));
     setRankedPlaces(places);
     setHasCompletedOnboarding(true);
+    try { localStorage.setItem('sweetspots_onboarding_done', 'true'); } catch {}
   }, []);
 
   const resetOnboarding = useCallback(() => {
     setHasCompletedOnboarding(false);
+    try { localStorage.removeItem('sweetspots_onboarding_done'); } catch {}
     setUserMood("");
     setUserVibes([]);
     setRankedPlaces([]);
