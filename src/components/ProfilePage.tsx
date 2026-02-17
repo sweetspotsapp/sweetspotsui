@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2 } from "lucide-react";
+import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,7 @@ import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
 import VibeShareCard from "./VibeShareCard";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
+import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 interface ProfilePageProps {
@@ -27,6 +28,14 @@ interface PlaceHistoryItem {
   created_at: string;
 }
 
+interface CharacterMatch {
+  character_name: string;
+  source: string;
+  match_reason: string;
+  emoji: string;
+  match_percentage: number;
+}
+
 const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const { savedPlaceIds, userVibes } = useApp();
   const { user } = useAuth();
@@ -41,6 +50,25 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showVibeCard, setShowVibeCard] = useState(false);
+  const [characterMatch, setCharacterMatch] = useState<CharacterMatch | null>(null);
+  const [isLoadingCharacter, setIsLoadingCharacter] = useState(false);
+
+  const fetchCharacterMatch = async () => {
+    setIsLoadingCharacter(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("character-match", {
+        body: { vibeBreakdown, personalityTraits: personalityTraits.map(t => ({ label: t.label, description: t.description })) },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setCharacterMatch(data);
+    } catch (err) {
+      console.error("Character match error:", err);
+      toast({ title: "Couldn't find your match", description: "Try again in a moment.", variant: "destructive" });
+    } finally {
+      setIsLoadingCharacter(false);
+    }
+  };
 
   const totalSaved = savedPlaceIds.size;
 
@@ -344,7 +372,58 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
           )}
         </section>
 
-        {/* Current preferences */}
+        {/* Character Match */}
+        <section className="bg-card rounded-xl p-4 border border-border shadow-soft space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: '350ms', animationFillMode: 'forwards' }}>
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-foreground text-sm">Your Character Match</h3>
+          </div>
+
+          {characterMatch ? (
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="text-3xl">{characterMatch.emoji}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-foreground">{characterMatch.character_name}</h4>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                      {characterMatch.match_percentage}% match
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{characterMatch.source}</p>
+                  <p className="text-sm text-foreground mt-1.5">{characterMatch.match_reason}</p>
+                </div>
+              </div>
+              <button
+                onClick={fetchCharacterMatch}
+                disabled={isLoadingCharacter}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoadingCharacter ? 'animate-spin' : ''}`} />
+                Try another match
+              </button>
+            </div>
+          ) : (
+            <div className="text-center py-3">
+              <p className="text-sm text-muted-foreground mb-3">
+                Discover which famous character matches your vibe
+              </p>
+              <button
+                onClick={fetchCharacterMatch}
+                disabled={isLoadingCharacter}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {isLoadingCharacter ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4" />
+                )}
+                Find my match
+              </button>
+            </div>
+          )}
+        </section>
+
         <section className="bg-warm-cream rounded-xl p-4 space-y-2 opacity-0 animate-fade-up" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
           <h3 className="font-semibold text-foreground text-sm">Current mood preferences</h3>
           <div className="flex flex-wrap gap-1.5">
@@ -452,6 +531,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
       vibeBreakdown={vibeBreakdown}
       personalityTraits={personalityTraits}
       userName={user?.email?.split("@")[0]}
+      characterMatch={characterMatch}
     />
     </>
   );

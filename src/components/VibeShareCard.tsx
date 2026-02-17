@@ -5,15 +5,24 @@ import { Button } from "./ui/button";
 import { toast } from "@/hooks/use-toast";
 import type { PersonalityTrait } from "@/hooks/useVibeDNA";
 
+interface CharacterMatch {
+  character_name: string;
+  source: string;
+  match_reason: string;
+  emoji: string;
+  match_percentage: number;
+}
+
 interface VibeShareCardProps {
   open: boolean;
   onClose: () => void;
   vibeBreakdown: { label: string; percentage: number; color: string }[];
   personalityTraits: PersonalityTrait[];
   userName?: string;
+  characterMatch?: CharacterMatch | null;
 }
 
-const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userName }: VibeShareCardProps) => {
+const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userName, characterMatch }: VibeShareCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -175,6 +184,26 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Character Match */}
+            {characterMatch && (
+              <div style={{ marginTop: "16px", padding: "12px", borderRadius: "12px", background: "hsl(25, 10%, 16%)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "20px" }}>{characterMatch.emoji}</span>
+                  <div>
+                    <span style={{ color: "hsl(40, 20%, 92%)", fontSize: "13px", fontWeight: 600 }}>
+                      {characterMatch.character_name}
+                    </span>
+                    <span style={{ color: "hsl(15, 60%, 65%)", fontSize: "11px", marginLeft: "6px" }}>
+                      {characterMatch.match_percentage}% match
+                    </span>
+                  </div>
+                </div>
+                <p style={{ color: "hsl(30, 15%, 55%)", fontSize: "11px", margin: 0 }}>
+                  {characterMatch.match_reason}
+                </p>
               </div>
             )}
 

@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.import-from-link]
 verify_jwt = false
+
+[functions.character-match]
+verify_jwt = false
