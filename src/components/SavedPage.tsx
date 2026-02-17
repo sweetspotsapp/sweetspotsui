@@ -141,21 +141,28 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
         setSavedPlaces(places);
 
-        // Build photo map - convert photo paths to URLs using the place-photo edge function
+        // Build photo map - prioritize photo_name (most reliable), then photos array
         const photoMap: Record<string, string[]> = {};
         
         for (const place of data || []) {
-          // Check for photos array first (contains paths like "places/ChIJ.../photos/...")
+          const urls: string[] = [];
+          
+          // photo_name is the most reliable reference - always use it first
+          if (place.photo_name) {
+            urls.push(`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`);
+          }
+          
+          // Add photos array entries that differ from photo_name
           if (place.photos && place.photos.length > 0) {
-            // Convert paths to edge function URLs
-            const photoUrls = place.photos.slice(0, 3).map((photoPath: string) => 
-              `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`
-            );
-            photoMap[place.place_id] = photoUrls;
-          } else if (place.photo_name) {
-            // Use photo_name if no photos array
-            const photoUrl = `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`;
-            photoMap[place.place_id] = [photoUrl];
+            for (const photoPath of place.photos.slice(0, 3)) {
+              if (photoPath !== place.photo_name) {
+                urls.push(`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`);
+              }
+            }
+          }
+          
+          if (urls.length > 0) {
+            photoMap[place.place_id] = urls.slice(0, 3);
           }
         }
         
