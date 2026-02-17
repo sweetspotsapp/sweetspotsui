@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { vibeBreakdown, personalityTraits } = await req.json();
+    const { vibeBreakdown, personalityTraits, excludeNames = [] } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -39,6 +39,7 @@ CRITICAL RULES:
 - NO obscure actors, niche TV hosts, or lesser-known figures. If you have to explain who they are, they're not famous enough.
 - Mix from movies, TV, music, sports, history — but they must be ICONIC.
 - Be creative, fun, and surprising in your reasoning.
+${excludeNames.length > 0 ? `\n- DO NOT pick any of these characters (already matched): ${excludeNames.join(", ")}. Pick someone COMPLETELY DIFFERENT.` : ""}
 
 You MUST respond using the tool provided.`,
           },
