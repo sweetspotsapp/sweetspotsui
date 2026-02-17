@@ -19,7 +19,7 @@ interface UseBoardsReturn {
   isLoading: boolean;
   createBoard: (name: string, color: string, placeIds?: string[]) => Promise<Board | null>;
   updateBoard: (id: string, name: string, color: string) => Promise<void>;
-  deleteBoard: (id: string) => Promise<void>;
+  deleteBoard: (id: string) => Promise<string[]>;
   addPlaceToBoard: (boardId: string, placeId: string) => Promise<void>;
   removePlaceFromBoard: (boardId: string, placeId: string) => Promise<void>;
   getBoardPlaceIds: (boardId: string) => string[];
@@ -207,6 +207,16 @@ export const useBoards = (): UseBoardsReturn => {
     if (!user) return;
 
     try {
+      // Find the board being deleted and its places
+      const boardToDelete = boards.find(b => b.id === id);
+      const placesInBoard = boardToDelete?.placeIds || [];
+
+      // Find places that are ONLY in this board (not in any other board)
+      const otherBoards = boards.filter(b => b.id !== id);
+      const placesInOtherBoards = new Set(otherBoards.flatMap(b => b.placeIds));
+      const placesOnlyInThisBoard = placesInBoard.filter(p => !placesInOtherBoards.has(p));
+
+      // Delete the board (board_places cascade via FK)
       const { error } = await supabase
         .from('boards')
         .delete()
@@ -215,12 +225,27 @@ export const useBoards = (): UseBoardsReturn => {
 
       if (error) throw error;
 
+      // Remove places that were only in this board from saved_places
+      if (placesOnlyInThisBoard.length > 0) {
+        const { error: unsaveError } = await supabase
+          .from('saved_places')
+          .delete()
+          .eq('user_id', user.id)
+          .in('place_id', placesOnlyInThisBoard);
+
+        if (unsaveError) {
+          console.error('Error removing saved places:', unsaveError);
+        }
+      }
+
       setBoards(prev => prev.filter(b => b.id !== id));
       
       toast({
         title: 'Board deleted',
-        description: 'Board has been removed',
+        description: 'Board and its unique spots have been removed',
       });
+
+      return placesOnlyInThisBoard;
     } catch (err) {
       console.error('Error deleting board:', err);
       toast({
@@ -228,8 +253,9 @@ export const useBoards = (): UseBoardsReturn => {
         description: 'Failed to delete board',
         variant: 'destructive',
       });
+      return [];
     }
-  }, [user, toast]);
+  }, [user, boards, toast]);
 
   const addPlaceToBoard = useCallback(async (boardId: string, placeId: string) => {
     if (!user) return;
