@@ -52,26 +52,44 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showVibeCard, setShowVibeCard] = useState(false);
   const [characterMatch, setCharacterMatch] = useState<CharacterMatch | null>(null);
+  const [characterPool, setCharacterPool] = useState<CharacterMatch[]>([]);
+  const [characterIndex, setCharacterIndex] = useState(0);
   const [isLoadingCharacter, setIsLoadingCharacter] = useState(false);
   const [username, setUsername] = useState("Explorer");
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchCharacterMatch = async () => {
+  const fetchCharacterMatch = async (existingPool: CharacterMatch[] = []) => {
     setIsLoadingCharacter(true);
     try {
+      const excludeNames = existingPool.map(c => c.character_name);
       const { data, error } = await supabase.functions.invoke("character-match", {
-        body: { vibeBreakdown, personalityTraits: personalityTraits.map(t => ({ label: t.label, description: t.description })) },
+        body: { vibeBreakdown, personalityTraits: personalityTraits.map(t => ({ label: t.label, description: t.description })), excludeNames },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      const newPool = [...existingPool, data];
+      setCharacterPool(newPool);
       setCharacterMatch(data);
+      setCharacterIndex(newPool.length - 1);
     } catch (err) {
       console.error("Character match error:", err);
       toast({ title: "Couldn't find your match", description: "Try again in a moment.", variant: "destructive" });
     } finally {
       setIsLoadingCharacter(false);
+    }
+  };
+
+  const handleTryAnother = () => {
+    if (characterPool.length < 3) {
+      // Fetch a new unique character
+      fetchCharacterMatch(characterPool);
+    } else {
+      // Cycle through existing 3
+      const nextIndex = (characterIndex + 1) % characterPool.length;
+      setCharacterIndex(nextIndex);
+      setCharacterMatch(characterPool[nextIndex]);
     }
   };
 
@@ -449,7 +467,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 </div>
               </div>
               <button
-                onClick={fetchCharacterMatch}
+                onClick={handleTryAnother}
                 disabled={isLoadingCharacter}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
               >
@@ -463,7 +481,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 Discover which famous character matches your vibe
               </p>
               <button
-                onClick={fetchCharacterMatch}
+                onClick={() => fetchCharacterMatch()}
                 disabled={isLoadingCharacter}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
