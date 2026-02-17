@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw } from "lucide-react";
+import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw, Pencil, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 import { useAuth } from "@/hooks/useAuth";
@@ -53,6 +53,10 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [showVibeCard, setShowVibeCard] = useState(false);
   const [characterMatch, setCharacterMatch] = useState<CharacterMatch | null>(null);
   const [isLoadingCharacter, setIsLoadingCharacter] = useState(false);
+  const [username, setUsername] = useState("Explorer");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const fetchCharacterMatch = async () => {
     setIsLoadingCharacter(true);
@@ -76,15 +80,16 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   // Load avatar on mount
   useEffect(() => {
     if (!user) return;
-    const loadAvatar = async () => {
+    const loadProfile = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("avatar_url")
+        .select("avatar_url, username")
         .eq("id", user.id)
         .single();
       if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+      if (data?.username) setUsername(data.username);
     };
-    loadAvatar();
+    loadProfile();
   }, [user]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,9 +255,56 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
             className="hidden"
             onChange={handleAvatarUpload}
           />
-          <div>
-            <h2 className="font-semibold text-foreground">Explorer</h2>
-            <p className="text-sm text-muted-foreground">Finding your sweetspots since today</p>
+          <div className="flex-1 min-w-0">
+            {isEditingName ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  ref={nameInputRef}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const trimmed = editName.trim();
+                      if (trimmed && user) {
+                        setUsername(trimmed);
+                        setIsEditingName(false);
+                        supabase.from("profiles").update({ username: trimmed }).eq("id", user.id).then();
+                      }
+                    }
+                    if (e.key === 'Escape') setIsEditingName(false);
+                  }}
+                  className="bg-transparent border-b border-primary text-foreground font-semibold outline-none w-full max-w-[160px] text-sm"
+                  maxLength={24}
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    const trimmed = editName.trim();
+                    if (trimmed && user) {
+                      setUsername(trimmed);
+                      setIsEditingName(false);
+                      supabase.from("profiles").update({ username: trimmed }).eq("id", user.id).then();
+                    }
+                  }}
+                  className="p-1 text-primary"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setEditName(username); setIsEditingName(true); }}
+                className="flex items-center gap-1.5 group"
+              >
+                <h2 className="font-semibold text-foreground truncate">{username}</h2>
+                <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </button>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {vibeBreakdown.length > 0
+                ? `${vibeBreakdown[0]?.label} soul · ${personalityTraits[0]?.label || 'Curious explorer'}`
+                : "Finding your sweetspots since today"}
+            </p>
           </div>
         </section>
 
