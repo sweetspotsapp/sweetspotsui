@@ -107,10 +107,10 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
         // Find place_ids that match this trait's triggers
         const matchingPlaceIds = new Set<string>();
         places?.forEach(place => {
-          const tags = place.filter_tags || [];
-          const cats = place.categories || [];
-          const hasMatchingTag = tags.some((t: string) => triggerTags.includes(t));
-          const hasMatchingCat = cats.some((c: string) => triggerCategories.some(tc => c.toLowerCase().includes(tc)));
+          const tags = (place.filter_tags || []).map((t: string) => t.toLowerCase().replace(/-/g, '_'));
+          const cats = (place.categories || []).map((c: string) => c.toLowerCase().replace(/-/g, '_'));
+          const hasMatchingTag = tags.some((t: string) => triggerTags.some(tt => t.includes(tt) || tt.includes(t)));
+          const hasMatchingCat = cats.some((c: string) => triggerCategories.some(tc => c.includes(tc) || tc.includes(c)));
           if (hasMatchingTag || hasMatchingCat) {
             matchingPlaceIds.add(place.place_id);
           }
