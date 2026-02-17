@@ -150,9 +150,9 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
               onClick={handleViewProfile}
               className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-muted/50 transition-colors -mx-3"
             >
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={avatarUrl} alt="Profile" className="w-12 h-12 rounded-full object-cover" />
                 ) : (
                   <User className="w-6 h-6 text-primary" />
                 )}
