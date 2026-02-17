@@ -32,7 +32,13 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You match people to famous characters (fictional and real) based on their personality and vibe preferences. Return exactly 1 match. Be creative, fun, and surprising. Mix from movies, TV, books, music, history, sports, etc.
+            content: `You match people to famous characters based on their personality and vibe preferences. Return exactly 1 match.
+
+CRITICAL RULES:
+- ONLY pick characters that are UNIVERSALLY recognizable — household names that almost anyone on the planet would know. Think: Leonardo DiCaprio, Beyoncé, Harry Potter, James Bond, Oprah, Batman, Gordon Ramsay, Taylor Swift, Indiana Jones, Frida Kahlo, etc.
+- NO obscure actors, niche TV hosts, or lesser-known figures. If you have to explain who they are, they're not famous enough.
+- Mix from movies, TV, music, sports, history — but they must be ICONIC.
+- Be creative, fun, and surprising in your reasoning.
 
 You MUST respond using the tool provided.`,
           },
@@ -52,11 +58,15 @@ You MUST respond using the tool provided.`,
                 properties: {
                   character_name: {
                     type: "string",
-                    description: "Full name of the character (e.g. 'Anthony Bourdain', 'Amelie Poulain')",
+                    description: "Full name of the character (e.g. 'Beyoncé', 'James Bond', 'Gordon Ramsay')",
+                  },
+                  known_for: {
+                    type: "string",
+                    description: "A short 1-line description of who they are so anyone would recognize them (e.g. 'Legendary chef and TV host known for fiery passion', 'The world's most iconic secret agent')",
                   },
                   source: {
                     type: "string",
-                    description: "Where they're from (e.g. 'Parts Unknown', 'Amélie (2001)', 'Real life')",
+                    description: "Where they're from (e.g. 'Music / Real Life', 'James Bond franchise', 'Hell's Kitchen / Real Life')",
                   },
                   match_reason: {
                     type: "string",
@@ -71,7 +81,7 @@ You MUST respond using the tool provided.`,
                     description: "A match percentage between 75 and 98",
                   },
                 },
-                required: ["character_name", "source", "match_reason", "emoji", "match_percentage"],
+                required: ["character_name", "known_for", "source", "match_reason", "emoji", "match_percentage"],
                 additionalProperties: false,
               },
             },

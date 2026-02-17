@@ -7,6 +7,7 @@ import type { PersonalityTrait } from "@/hooks/useVibeDNA";
 
 interface CharacterMatch {
   character_name: string;
+  known_for: string;
   source: string;
   match_reason: string;
   emoji: string;
@@ -190,15 +191,20 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
             {/* Character Match */}
             {characterMatch && (
               <div style={{ marginTop: "16px", padding: "12px", borderRadius: "12px", background: "hsl(25, 10%, 16%)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
                   <span style={{ fontSize: "20px" }}>{characterMatch.emoji}</span>
                   <div>
-                    <span style={{ color: "hsl(40, 20%, 92%)", fontSize: "13px", fontWeight: 600 }}>
-                      {characterMatch.character_name}
-                    </span>
-                    <span style={{ color: "hsl(15, 60%, 65%)", fontSize: "11px", marginLeft: "6px" }}>
-                      {characterMatch.match_percentage}% match
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                      <span style={{ color: "hsl(40, 20%, 92%)", fontSize: "13px", fontWeight: 600 }}>
+                        {characterMatch.character_name}
+                      </span>
+                      <span style={{ color: "hsl(15, 60%, 65%)", fontSize: "10px" }}>
+                        {characterMatch.match_percentage}% match
+                      </span>
+                    </div>
+                    <p style={{ color: "hsl(15, 55%, 60%)", fontSize: "10px", fontWeight: 500, margin: 0 }}>
+                      {characterMatch.known_for}
+                    </p>
                   </div>
                 </div>
                 <p style={{ color: "hsl(30, 15%, 55%)", fontSize: "11px", margin: 0 }}>
