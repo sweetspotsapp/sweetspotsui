@@ -64,6 +64,10 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [selectedTrait, setSelectedTrait] = useState<typeof personalityTraits[0] | null>(null);
   const [hiddenTraits, setHiddenTraits] = useState<Set<string>>(new Set());
+  const [customVibes, setCustomVibes] = useState<Array<{ label: string; description: string }>>([]);
+  const [isAddingVibe, setIsAddingVibe] = useState(false);
+  const [newVibeLabel, setNewVibeLabel] = useState("");
+  const [newVibeDescription, setNewVibeDescription] = useState("");
 
   const handleResetTrait = (trait: typeof personalityTraits[0]) => {
     setHiddenTraits(prev => new Set(prev).add(trait.label));
@@ -480,20 +484,75 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 );
               })}
 
-              {/* Add your own vibe placeholder */}
-              <button 
-                onClick={() => {
-                  toast({ title: "Coming soon!", description: "Custom vibes will be available in a future update." });
-                }}
-                className="flex gap-3 p-3 bg-card/50 rounded-xl border border-dashed border-border hover:border-primary/30 hover:bg-primary/5 transition-all group w-full text-left"
-              >
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg text-muted-foreground">+</span>
+              {/* Custom vibes */}
+              {customVibes.map((vibe, index) => (
+                <button
+                  key={`custom-${index}`}
+                  onClick={() => setSelectedTrait({ icon: Sparkles, label: vibe.label, description: vibe.description, score: 0 })}
+                  className="flex gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all group w-full text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-secondary-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-foreground">{vibe.label}</h4>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{vibe.description}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground self-center flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              ))}
+
+              {/* Add your own vibe */}
+              {isAddingVibe ? (
+                <div className="p-3 bg-card rounded-xl border border-primary/30 space-y-2">
+                  <input
+                    autoFocus
+                    placeholder="Vibe name (e.g. Rooftop lover)"
+                    value={newVibeLabel}
+                    onChange={(e) => setNewVibeLabel(e.target.value)}
+                    className="w-full bg-muted rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <input
+                    placeholder="Short description"
+                    value={newVibeDescription}
+                    onChange={(e) => setNewVibeDescription(e.target.value)}
+                    className="w-full bg-muted rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => { setIsAddingVibe(false); setNewVibeLabel(""); setNewVibeDescription(""); }}
+                      className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (newVibeLabel.trim()) {
+                          setCustomVibes(prev => [...prev, { label: newVibeLabel.trim(), description: newVibeDescription.trim() || `You identify as a ${newVibeLabel.trim().toLowerCase()}` }]);
+                          setNewVibeLabel(""); setNewVibeDescription(""); setIsAddingVibe(false);
+                          toast({ title: `"${newVibeLabel.trim()}" added!` });
+                        }
+                      }}
+                      disabled={!newVibeLabel.trim()}
+                      className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-medium disabled:opacity-50 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0 self-center">
-                  <h4 className="text-sm font-medium text-muted-foreground">Add your own vibe</h4>
-                </div>
-              </button>
+              ) : (
+                <button 
+                  onClick={() => setIsAddingVibe(true)}
+                  className="flex gap-3 p-3 bg-card/50 rounded-xl border border-dashed border-border hover:border-primary/30 hover:bg-primary/5 transition-all group w-full text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <span className="text-lg text-muted-foreground">+</span>
+                  </div>
+                  <div className="flex-1 min-w-0 self-center">
+                    <h4 className="text-sm font-medium text-muted-foreground">Add your own vibe</h4>
+                  </div>
+                </button>
+              )}
             </div>
           )}
         </section>
