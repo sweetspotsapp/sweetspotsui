@@ -9,6 +9,7 @@ interface UseSavedPlacesReturn {
   toggleSave: (placeId: string) => Promise<void>;
   isSaved: (placeId: string) => boolean;
   logInteraction: (placeId: string, action: string, weight: number) => Promise<void>;
+  removePlaceIds: (placeIds: string[]) => void;
 }
 
 export const useSavedPlaces = (): UseSavedPlacesReturn => {
@@ -161,11 +162,21 @@ export const useSavedPlaces = (): UseSavedPlacesReturn => {
 
   const isSaved = useCallback((placeId: string) => savedPlaceIds.has(placeId), [savedPlaceIds]);
 
+  const removePlaceIds = useCallback((placeIds: string[]) => {
+    if (placeIds.length === 0) return;
+    setSavedPlaceIds(prev => {
+      const next = new Set(prev);
+      placeIds.forEach(id => next.delete(id));
+      return next;
+    });
+  }, []);
+
   return {
     savedPlaceIds,
     isLoading,
     toggleSave,
     isSaved,
     logInteraction,
+    removePlaceIds,
   };
 };

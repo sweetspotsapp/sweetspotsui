@@ -36,6 +36,7 @@ interface AppContextType {
   savedPlaceIds: Set<string>;
   toggleSave: (placeId: string) => Promise<void>;
   isSaved: (placeId: string) => boolean;
+  removeSavedPlaceIds: (placeIds: string[]) => void;
   isLoadingSavedPlaces: boolean;
   
   // Auth dialog for saving
@@ -145,7 +146,7 @@ const generateSections = (data: OnboardingData | null): SectionConfig[] => {
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const { savedPlaceIds, toggleSave: originalToggleSave, isSaved, isLoading: isLoadingSavedPlaces } = useSavedPlaces();
+  const { savedPlaceIds, toggleSave: originalToggleSave, isSaved, isLoading: isLoadingSavedPlaces, removePlaceIds } = useSavedPlaces();
 
   const [rankedPlaces, setRankedPlaces] = useState<RankedPlace[]>([]);
   const [userMood, setUserMood] = useState("");
@@ -265,6 +266,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       savedPlaceIds,
       toggleSave, 
       isSaved,
+      removeSavedPlaceIds: removePlaceIds,
       isLoadingSavedPlaces,
       showAuthDialog,
       setShowAuthDialog,

@@ -45,7 +45,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const { user } = useAuth();
   const { location: userLocation } = useLocation();
   const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, updateBoard, refetch: refetchBoards } = useBoards();
-  const { savedPlaceIds, isLoadingSavedPlaces, toggleSave } = useApp();
+  const { savedPlaceIds, isLoadingSavedPlaces, toggleSave, removeSavedPlaceIds } = useApp();
   const { toast } = useToast();
   const [savedPlaces, setSavedPlaces] = useState<RankedPlace[]>([]);
   const [placeImages, setPlaceImages] = useState<Record<string, string[]>>({});
@@ -215,7 +215,11 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   };
 
   const handleDeleteBoard = async (board: Board) => {
-    await deleteBoard(board.id);
+    const removedPlaceIds = await deleteBoard(board.id);
+    if (removedPlaceIds && removedPlaceIds.length > 0) {
+      removeSavedPlaceIds(removedPlaceIds);
+      setSavedPlaces(prev => prev.filter(p => !removedPlaceIds.includes(p.place_id)));
+    }
     setSelectedBoard(null);
   };
 
