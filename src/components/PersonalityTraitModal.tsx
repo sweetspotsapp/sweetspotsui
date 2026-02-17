@@ -94,7 +94,7 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-[400px] mx-4 mb-4 bg-card rounded-2xl border border-border shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+      <div className="relative w-full max-w-[400px] mx-4 mb-4 bg-card rounded-2xl border border-border shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
         {/* Close button */}
         <button
           onClick={onClose}
