@@ -76,7 +76,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     "live music",
   ];
 
-  const { predictions } = usePlaceAutocomplete(showSuggestions ? locationInput : "");
+  const { predictions, isLoading } = usePlaceAutocomplete(showSuggestions ? locationInput : "");
 
   const handleSelectCity = (description: string) => {
     setLocationInput(description);
@@ -236,6 +236,11 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                 )}
                 
                 {/* City suggestions dropdown */}
+                {showSuggestions && !isLoading && predictions.length === 0 && locationInput.trim().length >= 2 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 p-4 text-center">
+                    <p className="text-muted-foreground text-sm">No locations found. Try a different search term.</p>
+                  </div>
+                )}
                 {showSuggestions && predictions.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 overflow-hidden max-h-56 overflow-y-auto">
                     {predictions.map((prediction) => (

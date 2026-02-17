@@ -37,7 +37,6 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         input,
-        includedPrimaryTypes: ['locality', 'sublocality', 'neighborhood', 'administrative_area_level_1', 'route'],
       }),
     });
 
