@@ -120,17 +120,15 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
     const result = await generate(params);
     if (result) {
       setItinerary(result);
-      // Auto-save
-      if (user) {
-        const id = await saveItinerary(params, result, editingId || undefined);
-        if (id) setEditingId(id);
-      }
+      // Auto-save (works for both authenticated and unauthenticated users)
+      const id = await saveItinerary(params, result, editingId || undefined);
+      if (id) setEditingId(id);
       setPhase("view");
     }
   };
 
   const handleSave = async () => {
-    if (itinerary && tripParams && user) {
+    if (itinerary && tripParams) {
       const id = await saveItinerary(tripParams, itinerary, editingId || undefined);
       if (id) setEditingId(id);
     }
