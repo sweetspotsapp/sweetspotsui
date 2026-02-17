@@ -1151,21 +1151,6 @@ serve(async (req) => {
           try {
             const tags = await generateFilterTagsWithAI(placesNeedingTags, lovableApiKey);
             console.log(`AI generated tags for ${tags.size} places`);
-            
-            // Save generated tags to database (fire and forget)
-            if (tags.size > 0) {
-              const tagsToUpdate = Array.from(tags.entries()).map(([place_id, filter_tags]) => ({
-                place_id,
-                filter_tags,
-              }));
-              
-              supabaseAdmin.from('places').upsert(tagsToUpdate, { onConflict: 'place_id' })
-                .then(({ error }) => {
-                  if (error) console.error('Failed to save generated tags:', error);
-                  else console.log(`Saved filter_tags for ${tagsToUpdate.length} places`);
-                });
-            }
-            
             return tags;
           } catch (e) {
             console.error('Filter tags generation error:', e);
@@ -1253,7 +1238,7 @@ serve(async (req) => {
     const topPlaces = rankedPlaces.slice(0, limit);
 
     // ============ STEP 4: Upsert places to database (async, don't wait) ============
-    const placesToUpsert = allGooglePlaces.map((place: any) => {
+    const placesToUpsert = filteredGooglePlaces.map((place: any) => {
       const firstPhoto = place.photos?.[0];
       const priceLevel = place.priceLevel ? 
         ['FREE', 'INEXPENSIVE', 'MODERATE', 'EXPENSIVE', 'VERY_EXPENSIVE'].indexOf(place.priceLevel) : null;
@@ -1294,7 +1279,26 @@ serve(async (req) => {
     supabaseAdmin.from('places').upsert(placesToUpsert, { onConflict: 'place_id' })
       .then(({ error }) => {
         if (error) console.error('Upsert error:', error);
-        else console.log(`Upserted ${placesToUpsert.length} places`);
+        else {
+          console.log(`Upserted ${placesToUpsert.length} places`);
+          
+          // Save generated filter_tags AFTER places are upserted
+          if (generatedTagsMap.size > 0) {
+            Promise.all(
+              Array.from(generatedTagsMap.entries()).map(([place_id, filter_tags]) =>
+                supabaseAdmin
+                  .from('places')
+                  .update({ filter_tags })
+                  .eq('place_id', place_id)
+              )
+            ).then((results) => {
+              const successCount = results.filter(r => !r.error).length;
+              const errorCount = results.filter(r => r.error).length;
+              if (successCount > 0) console.log(`Saved filter_tags for ${successCount} places`);
+              if (errorCount > 0) console.error(`Failed to save tags for ${errorCount} places`);
+            });
+          }
+        }
       });
 
     // Log search (fire and forget) - only for authenticated users
