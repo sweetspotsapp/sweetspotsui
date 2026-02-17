@@ -409,7 +409,9 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
                     board={board}
                     coverImages={getBoardCoverImages(board)}
                     onClick={() => setSelectedBoard(board)}
-                    onOptions={() => handleEditBoard(board)}
+                    onRename={() => handleEditBoard(board)}
+                    onEdit={() => setSelectedBoard(board)}
+                    onDelete={() => handleDeleteBoard(board)}
                     animationDelay={(index + 1) * 50}
                   />
                 ))}
