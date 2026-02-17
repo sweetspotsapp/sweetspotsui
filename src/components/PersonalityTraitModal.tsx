@@ -83,8 +83,8 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
     why: trait.description,
     based_on: "Your browsing and saving patterns across the app.",
   }) : {
-    why: trait.description || `You identify as a ${trait.label.toLowerCase()} — this vibe is uniquely yours.`,
-    based_on: "You added this vibe to your profile.",
+    why: `You're all about that ${trait.label.toLowerCase()} energy — places with this vibe just hit different for you.`,
+    based_on: `You added "${trait.label}" as a personal vibe.`,
   };
   const Icon = trait.icon;
 
@@ -160,7 +160,7 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
             onClick={() => onExplore(trait)}
             className="flex-1 rounded-xl h-11 text-sm"
           >
-            Explore more
+            Explore this vibe
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
