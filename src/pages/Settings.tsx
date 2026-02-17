@@ -54,6 +54,8 @@ const Settings = () => {
   
   const [notifications, setNotifications] = useState<NotificationSettings>(defaultNotifications);
   const [privacy, setPrivacy] = useState<PrivacySettings>(defaultPrivacy);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [username, setUsername] = useState<string>("Explorer");
 
   // Load settings from database
   useEffect(() => {
@@ -66,7 +68,7 @@ const Settings = () => {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("notification_settings, privacy_settings")
+          .select("notification_settings, privacy_settings, avatar_url, username")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -82,6 +84,8 @@ const Settings = () => {
           if (data.privacy_settings) {
             setPrivacy(data.privacy_settings as unknown as PrivacySettings);
           }
+          if (data.avatar_url) setAvatarUrl(data.avatar_url);
+          if (data.username) setUsername(data.username);
         }
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -184,12 +188,16 @@ const Settings = () => {
           </h2>
           <div className="space-y-1 bg-card rounded-xl border border-border overflow-hidden">
             <button className="flex items-center gap-4 w-full p-4 hover:bg-muted/50 transition-colors">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-5 h-5 text-primary" />
+                )}
               </div>
               <div className="flex-1 text-left">
-                <p className="font-medium text-foreground">Profile Information</p>
-                <p className="text-sm text-muted-foreground">Update your name and photo</p>
+                <p className="font-medium text-foreground">{username}</p>
+                <p className="text-sm text-muted-foreground truncate max-w-[200px]">{user?.email || "Not set"}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
