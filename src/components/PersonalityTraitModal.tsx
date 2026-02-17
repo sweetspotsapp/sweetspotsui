@@ -77,10 +77,14 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
 }) => {
   if (!trait) return null;
 
-  const traitId = TRAIT_LABEL_TO_ID[trait.label] || "foodie";
-  const insight = TRAIT_INSIGHTS[traitId] || {
+  const traitId = TRAIT_LABEL_TO_ID[trait.label];
+  const isCustomVibe = !traitId;
+  const insight = traitId ? (TRAIT_INSIGHTS[traitId] || {
     why: trait.description,
     based_on: "Your browsing and saving patterns across the app.",
+  }) : {
+    why: trait.description || `You identify as a ${trait.label.toLowerCase()} — this vibe is uniquely yours.`,
+    based_on: "You added this vibe to your profile.",
   };
   const Icon = trait.icon;
 
