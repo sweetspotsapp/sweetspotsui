@@ -376,24 +376,17 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
 
         <LoginReminderBanner />
 
-        {/* Page Title */}
-        <div className="px-4 pt-6 pb-4">
-          <h1 className="text-2xl font-bold text-foreground">Your Profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">What Sweetspots knows about you</p>
-        </div>
-
-      <div className="p-4 space-y-5">
-        {/* Profile Header */}
-        <section className="flex items-center gap-4 opacity-0 animate-fade-up" style={{ animationFillMode: 'forwards' }}>
+        {/* Profile Hero */}
+        <div className="flex flex-col items-center pt-8 pb-6 px-4">
           <button 
             onClick={() => user && fileInputRef.current?.click()}
-            className="relative w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group overflow-hidden"
+            className="relative w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center group overflow-hidden mb-4 ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
             disabled={!user || isUploadingAvatar}
           >
             {avatarUrl ? (
               <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover rounded-full" />
             ) : (
-              <User className="w-8 h-8 text-primary" />
+              <User className="w-10 h-10 text-primary" />
             )}
             {user && (
               <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
@@ -412,58 +405,58 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
             className="hidden"
             onChange={handleAvatarUpload}
           />
-          <div className="flex-1 min-w-0">
-            {isEditingName ? (
-              <div className="flex items-center gap-1.5">
-                <input
-                  ref={nameInputRef}
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const trimmed = editName.trim();
-                      if (trimmed && user) {
-                        setUsername(trimmed);
-                        setIsEditingName(false);
-                        supabase.from("profiles").update({ username: trimmed }).eq("id", user.id).then();
-                      }
-                    }
-                    if (e.key === 'Escape') setIsEditingName(false);
-                  }}
-                  className="bg-transparent border-b border-primary text-foreground font-semibold outline-none w-full max-w-[160px] text-sm"
-                  maxLength={24}
-                  autoFocus
-                />
-                <button
-                  onClick={() => {
+
+          {isEditingName ? (
+            <div className="flex items-center gap-1.5 mb-1">
+              <input
+                ref={nameInputRef}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
                     const trimmed = editName.trim();
                     if (trimmed && user) {
                       setUsername(trimmed);
                       setIsEditingName(false);
                       supabase.from("profiles").update({ username: trimmed }).eq("id", user.id).then();
                     }
-                  }}
-                  className="p-1 text-primary"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
+                  }
+                  if (e.key === 'Escape') setIsEditingName(false);
+                }}
+                className="bg-transparent border-b border-primary text-foreground font-bold text-xl outline-none text-center max-w-[200px]"
+                maxLength={24}
+                autoFocus
+              />
               <button
-                onClick={() => { setEditName(username); setIsEditingName(true); }}
-                className="flex items-center gap-1.5 group"
+                onClick={() => {
+                  const trimmed = editName.trim();
+                  if (trimmed && user) {
+                    setUsername(trimmed);
+                    setIsEditingName(false);
+                    supabase.from("profiles").update({ username: trimmed }).eq("id", user.id).then();
+                  }
+                }}
+                className="p-1 text-primary"
               >
-                <h2 className="font-semibold text-foreground truncate">{username}</h2>
-                <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                <Check className="w-4 h-4" />
               </button>
-            )}
-            <p className="text-sm text-muted-foreground">
-              {vibeBreakdown.length > 0
-                ? `${vibeBreakdown[0]?.label} soul · ${personalityTraits[0]?.label || 'Curious explorer'}`
-                : "Finding your sweetspots since today"}
-            </p>
-          </div>
-        </section>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setEditName(username); setIsEditingName(true); }}
+              className="flex items-center gap-1.5 group mb-1"
+            >
+              <h1 className="text-xl font-bold text-foreground">{username}</h1>
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+            </button>
+          )}
+
+          <p className="text-sm text-muted-foreground">
+            True traveller since {user?.created_at ? new Date(user.created_at).getFullYear() : new Date().getFullYear()}
+          </p>
+        </div>
+
+      <div className="p-4 space-y-5">
 
         {/* Stats - Interactive */}
         <section className="grid grid-cols-3 gap-3 opacity-0 animate-fade-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
