@@ -1027,7 +1027,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                     onPlaceClick={handlePlaceClick}
                     toggleSave={handleSaveClick}
                     isSaved={isSaved}
-                    showDistance={onboardingData?.explore_location === "nearby"}
+                    showDistance={true}
                   />
                 )}
 
@@ -1046,7 +1046,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                       featured={false}
                       userLocation={userLocation}
                       onSeeAll={handleSeeAll}
-                      showDistance={onboardingData?.explore_location === "nearby"}
+                      showDistance={true}
                     />
                   ))}
               </>
