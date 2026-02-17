@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw, Pencil, Check, RotateCcw } from "lucide-react";
+import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw, Pencil, Check, RotateCcw, ImageIcon } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,7 @@ import PersonalityTraitModal from "./PersonalityTraitModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import defaultCover from "@/assets/default-cover.jpg";
 
 interface ProfilePageProps {
   onNavigateToSaved?: () => void;
@@ -52,7 +53,10 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [showVibeCard, setShowVibeCard] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [interactionDetails, setInteractionDetails] = useState<Array<{ place_id: string; name: string; action: string; created_at: string; weight: number }>>([]);
@@ -238,13 +242,14 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   useEffect(() => {
     if (!user) return;
     const loadProfile = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("avatar_url, username")
+      const { data } = await (supabase
+        .from("profiles") as any)
+        .select("avatar_url, username, cover_url")
         .eq("id", user.id)
         .single();
       if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       if (data?.username) setUsername(data.username);
+      if (data?.cover_url) setCoverUrl(data.cover_url);
     };
     loadProfile();
   }, [user]);
@@ -284,6 +289,44 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
     } finally {
       setIsUploadingAvatar(false);
     }
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 5 * 1024 * 1024) return;
+
+    setIsUploadingCover(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/cover.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      
+      await (supabase
+        .from("profiles") as any)
+        .update({ cover_url: publicUrl })
+        .eq("id", user.id);
+
+      setCoverUrl(publicUrl);
+      toast({ title: "Cover photo updated!" });
+    } catch (err) {
+      console.error("Cover upload failed:", err);
+      toast({ title: "Upload failed", variant: "destructive" });
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
   };
 
   const loadSearchHistory = async () => {
@@ -376,84 +419,126 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
 
         <LoginReminderBanner />
 
-        {/* Profile Hero */}
-        <div className="flex flex-col items-center pt-8 pb-6 px-4">
-          <button 
-            onClick={() => user && fileInputRef.current?.click()}
-            className="relative w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center group overflow-hidden mb-4 ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
-            disabled={!user || isUploadingAvatar}
-          >
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <User className="w-10 h-10 text-primary" />
-            )}
+        {/* Profile Hero with Cover Banner */}
+        <div className="relative">
+          {/* Cover Banner */}
+          <div className="relative h-36 overflow-hidden">
+            <img 
+              src={coverUrl || defaultCover} 
+              alt="Cover" 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
+            
+            {/* Cover Edit Button */}
             {user && (
-              <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                {isUploadingAvatar ? (
-                  <Loader2 className="w-5 h-5 text-background animate-spin" />
+              <button
+                onClick={() => coverInputRef.current?.click()}
+                disabled={isUploadingCover}
+                className="absolute top-3 right-3 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+              >
+                {isUploadingCover ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Camera className="w-5 h-5 text-background" />
+                  <ImageIcon className="w-4 h-4" />
                 )}
-              </div>
+              </button>
             )}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleAvatarUpload}
-          />
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleCoverUpload}
+            />
+          </div>
 
-          {isEditingName ? (
-            <div className="flex items-center gap-1.5 mb-1">
-              <input
-                ref={nameInputRef}
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+          {/* Avatar overlapping the cover */}
+          <div className="flex flex-col items-center -mt-14 relative z-10 pb-4 px-4">
+            <button 
+              onClick={() => user && fileInputRef.current?.click()}
+              className="relative w-24 h-24 rounded-full bg-background flex items-center justify-center group overflow-hidden mb-3 ring-4 ring-background shadow-lg"
+              disabled={!user || isUploadingAvatar}
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-10 h-10 text-primary" />
+                </div>
+              )}
+              {user && (
+                <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                  {isUploadingAvatar ? (
+                    <Loader2 className="w-5 h-5 text-background animate-spin" />
+                  ) : (
+                    <Camera className="w-5 h-5 text-background" />
+                  )}
+                </div>
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+
+            {isEditingName ? (
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <input
+                  ref={nameInputRef}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const trimmed = editName.trim();
+                      if (trimmed && user) {
+                        setUsername(trimmed);
+                        setIsEditingName(false);
+                        supabase.from("profiles").update({ username: trimmed }).eq("id", user.id).then();
+                      }
+                    }
+                    if (e.key === 'Escape') setIsEditingName(false);
+                  }}
+                  className="bg-transparent border-b border-primary text-foreground font-bold text-lg outline-none text-center max-w-[200px]"
+                  maxLength={24}
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
                     const trimmed = editName.trim();
                     if (trimmed && user) {
                       setUsername(trimmed);
                       setIsEditingName(false);
                       supabase.from("profiles").update({ username: trimmed }).eq("id", user.id).then();
                     }
-                  }
-                  if (e.key === 'Escape') setIsEditingName(false);
-                }}
-                className="bg-transparent border-b border-primary text-foreground font-bold text-xl outline-none text-center max-w-[200px]"
-                maxLength={24}
-                autoFocus
-              />
+                  }}
+                  className="p-1 text-primary"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={() => {
-                  const trimmed = editName.trim();
-                  if (trimmed && user) {
-                    setUsername(trimmed);
-                    setIsEditingName(false);
-                    supabase.from("profiles").update({ username: trimmed }).eq("id", user.id).then();
-                  }
-                }}
-                className="p-1 text-primary"
+                onClick={() => { setEditName(username); setIsEditingName(true); }}
+                className="flex items-center gap-1.5 group mb-0.5"
               >
-                <Check className="w-4 h-4" />
+                <h1 className="text-lg font-bold text-foreground">{username}</h1>
+                <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => { setEditName(username); setIsEditingName(true); }}
-              className="flex items-center gap-1.5 group mb-1"
-            >
-              <h1 className="text-xl font-bold text-foreground">{username}</h1>
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-            </button>
-          )}
+            )}
 
-          <p className="text-sm text-muted-foreground">
-            True traveller since {user?.created_at ? new Date(user.created_at).getFullYear() : new Date().getFullYear()}
-          </p>
+            <p className="text-xs text-muted-foreground">
+              {vibeBreakdown.length > 0
+                ? `${vibeBreakdown[0]?.label} soul · ${personalityTraits[0]?.label || 'Curious explorer'}`
+                : "Curious explorer"}
+            </p>
+            <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+              Traveller since {user?.created_at ? new Date(user.created_at).getFullYear() : new Date().getFullYear()}
+            </p>
+          </div>
         </div>
 
       <div className="p-4 space-y-5">
