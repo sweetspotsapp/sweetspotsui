@@ -1034,12 +1034,12 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
 
     {/* Cover Picker Sheet */}
     <Sheet open={showCoverPicker} onOpenChange={setShowCoverPicker}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh]">
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[60vh]">
         <SheetHeader>
           <SheetTitle>Choose cover photo</SheetTitle>
         </SheetHeader>
-        <div className="mt-4 space-y-4 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="mt-4 overflow-y-auto max-h-[calc(60vh-80px)] pb-20">
+          <div className="grid grid-cols-3 gap-2">
             {PRESET_COVERS.map((cover) => (
               <button
                 key={cover.label}
@@ -1053,11 +1053,11 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                   }
                   toast({ title: "Cover updated!" });
                 }}
-                className="relative rounded-xl overflow-hidden aspect-video group border border-border hover:border-primary/50 transition-all"
+                className="relative rounded-lg overflow-hidden aspect-[3/2] group border border-border hover:border-primary/50 transition-all"
               >
                 <img src={cover.src} alt={cover.label} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="absolute bottom-1.5 left-2 text-[11px] font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-1 left-1.5 text-[10px] font-medium text-white/90">
                   {cover.label}
                 </span>
               </button>
@@ -1069,10 +1069,10 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 setShowCoverPicker(false);
                 setTimeout(() => coverInputRef.current?.click(), 200);
               }}
-              className="relative rounded-xl overflow-hidden aspect-video border-2 border-dashed border-border hover:border-primary/50 transition-all flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground"
+              className="relative rounded-lg overflow-hidden aspect-[3/2] border-2 border-dashed border-border hover:border-primary/50 transition-all flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground"
             >
-              <Upload className="w-5 h-5" />
-              <span className="text-xs font-medium">Upload yours</span>
+              <Upload className="w-4 h-4" />
+              <span className="text-[10px] font-medium">Upload yours</span>
             </button>
           </div>
         </div>
