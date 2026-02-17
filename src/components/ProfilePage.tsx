@@ -54,6 +54,9 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showVibeCard, setShowVibeCard] = useState(false);
+  const [showInteractionDetails, setShowInteractionDetails] = useState(false);
+  const [interactionDetails, setInteractionDetails] = useState<Array<{ place_id: string; name: string; action: string; created_at: string; weight: number }>>([]);
+  const [isLoadingInteractions, setIsLoadingInteractions] = useState(false);
   const [characterMatch, setCharacterMatch] = useState<CharacterMatch | null>(null);
   const [characterPool, setCharacterPool] = useState<CharacterMatch[]>([]);
   const [characterIndex, setCharacterIndex] = useState(0);
@@ -192,6 +195,40 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
       const nextIndex = (characterIndex + 1) % characterPool.length;
       setCharacterIndex(nextIndex);
       setCharacterMatch(characterPool[nextIndex]);
+    }
+  };
+
+  const handleOpenInteractionDetails = async () => {
+    if (!user) return;
+    setShowInteractionDetails(true);
+    setIsLoadingInteractions(true);
+    try {
+      const { data } = await supabase
+        .from("place_interactions")
+        .select("place_id, action, created_at, weight")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (data && data.length > 0) {
+        const placeIds = [...new Set(data.map(d => d.place_id))];
+        const { data: places } = await supabase
+          .from("places")
+          .select("place_id, name")
+          .in("place_id", placeIds);
+
+        const nameMap = new Map(places?.map(p => [p.place_id, p.name]) || []);
+        setInteractionDetails(data.map(d => ({
+          ...d,
+          name: nameMap.get(d.place_id) || d.place_id,
+          weight: d.weight || 1,
+        })));
+      } else {
+        setInteractionDetails([]);
+      }
+    } catch (err) {
+      console.error("Failed to load interactions:", err);
+    } finally {
+      setIsLoadingInteractions(false);
     }
   };
 
@@ -462,9 +499,12 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
             <Sparkles className="w-4 h-4 text-primary" />
             <h3 className="font-semibold text-foreground text-sm">Your Vibe DNA</h3>
             {totalInteractions > 0 && (
-              <span className="text-[10px] text-muted-foreground ml-auto mr-2">
+              <button 
+                onClick={handleOpenInteractionDetails}
+                className="text-[10px] text-muted-foreground ml-auto mr-2 hover:text-primary transition-colors underline decoration-dotted underline-offset-2"
+              >
                 Based on {totalInteractions} interaction{totalInteractions !== 1 ? 's' : ''}
-              </span>
+              </button>
             )}
             <button
               onClick={() => setShowVibeCard(true)}
@@ -816,6 +856,62 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] text-muted-foreground capitalize px-1.5 py-0.5 bg-muted rounded-full">
                       {item.action === "save" ? "Saved" : "Viewed"}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {format(new Date(item.created_at), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+
+    {/* Interaction Details Sheet */}
+    <Sheet open={showInteractionDetails} onOpenChange={setShowInteractionDetails}>
+      <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-primary" />
+            Your Interactions
+            <span className="text-xs text-muted-foreground font-normal ml-auto">
+              {interactionDetails.length} total
+            </span>
+          </SheetTitle>
+        </SheetHeader>
+        <p className="text-xs text-muted-foreground mt-1 mb-3">
+          These are the places you've clicked and saved — they shape your Vibe DNA.
+        </p>
+        <div className="overflow-y-auto space-y-2 pr-1" style={{ maxHeight: 'calc(70vh - 120px)' }}>
+          {isLoadingInteractions ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            </div>
+          ) : interactionDetails.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No interactions yet</p>
+          ) : (
+            interactionDetails.map((item, idx) => (
+              <div key={idx} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 border border-border/50">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  item.action === 'save' ? 'bg-rose-500/10' : 'bg-primary/10'
+                }`}>
+                  {item.action === 'save' ? (
+                    <Heart className="w-3.5 h-3.5 text-rose-500" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5 text-primary" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground font-medium truncate">{item.name}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                      item.action === 'save' 
+                        ? 'bg-rose-500/10 text-rose-500' 
+                        : 'bg-primary/10 text-primary'
+                    }`}>
+                      {item.action === 'save' ? `Saved (×${item.weight})` : `Viewed (×${item.weight})`}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
                       {format(new Date(item.created_at), "MMM d, yyyy")}
