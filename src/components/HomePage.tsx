@@ -20,7 +20,7 @@ import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 import LocationPickerModal from "./LocationPickerModal";
 import BoardMapView from "./saved/BoardMapView";
-import SearchFeedbackDialog from "./SearchFeedbackDialog";
+import { useFeedback } from "@/context/FeedbackContext";
 import type { RankedPlace } from "@/hooks/useSearch";
 // Extended MockPlace with lat/lng for map view
 interface MockPlaceWithCoords extends MockPlace {
@@ -317,9 +317,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   // Map view toggle state
   const [isMapView, setIsMapView] = useState(false);
 
-  // Feedback dialog state
-  const [showFeedback, setShowFeedback] = useState(false);
-  const searchCountRef = useRef(0);
+  const { trackSearch } = useFeedback();
 
   // Client-side filtering - instant results
   const filteredResults = useClientFilters(
@@ -541,11 +539,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       setSearchResults(result.places.map(unifiedToMockPlace));
       setAiSummary(result.summary || null);
       toast.success(`Found ${result.places.length} spots for you!`);
-      // Show feedback on 1st search, then every 5th after that
-      searchCountRef.current += 1;
-      if (searchCountRef.current === 1 || searchCountRef.current % 5 === 0) {
-        setTimeout(() => setShowFeedback(true), 2000);
-      }
+      trackSearch(searchValue.trim());
     } else if (result && result.places.length === 0) {
       toast.info("No places found. Try a different search.");
       setSearchResults([]);
@@ -1110,13 +1104,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         currentLocation={onboardingData?.explore_location}
       />
 
-      {/* Search Feedback Dialog */}
-      <SearchFeedbackDialog
-        open={showFeedback}
-        onClose={() => setShowFeedback(false)}
-        searchPrompt={searchValue || userMood || undefined}
-        userId={user?.id}
-      />
 
     </div>
   );
