@@ -447,7 +447,9 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
         <section className="bg-card rounded-xl p-4 border border-border shadow-soft space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: '350ms', animationFillMode: 'forwards' }}>
           <div className="flex items-center gap-2">
             <Wand2 className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-foreground text-sm">Your Character Match</h3>
+            <h3 className="font-semibold text-foreground text-sm">
+              {characterMatch ? "With this travel style, you remind us of..." : "Your Character Match"}
+            </h3>
           </div>
 
           {characterMatch ? (
