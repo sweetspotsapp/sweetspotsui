@@ -188,9 +188,9 @@ const Settings = () => {
           </h2>
           <div className="space-y-1 bg-card rounded-xl border border-border overflow-hidden">
             <button className="flex items-center gap-4 w-full p-4 hover:bg-muted/50 transition-colors">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={avatarUrl} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
                 ) : (
                   <User className="w-5 h-5 text-primary" />
                 )}
