@@ -42,10 +42,21 @@ serve(async (req) => {
     
     if (!response.ok) {
       console.error('Photo fetch failed:', response.status);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch photo' }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Return a 1x1 transparent pixel so the browser doesn't show a broken image icon
+      const pixel = new Uint8Array([
+        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00,
+        0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x21,
+        0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00,
+        0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x01, 0x44,
+        0x00, 0x3b
+      ]);
+      return new Response(pixel, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'image/gif',
+          'Cache-Control': 'no-cache',
+        },
+      });
     }
 
     // Get the image data and content type
