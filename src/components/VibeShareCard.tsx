@@ -136,7 +136,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
               {userName ? `${userName}'s` : "My"} Vibe DNA 🍯
             </h2>
             <p style={{ color: "hsl(30, 15%, 55%)", fontSize: "12px", marginBottom: "20px" }}>
-              Here's what I'm drawn to
+              Here's what I vibe with
             </p>
 
             {/* Vibe Bars */}
@@ -216,7 +216,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
             {/* Footer */}
             <div style={{ marginTop: "20px", paddingTop: "12px", borderTop: "1px solid hsl(25, 10%, 20%)" }}>
               <span style={{ color: "hsl(30, 15%, 40%)", fontSize: "10px" }}>
-                sweetspots.app · Find your sweet spot
+                findyoursweetspots.com · Discover spots that match your vibe
               </span>
             </div>
           </div>

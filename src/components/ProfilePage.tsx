@@ -1025,7 +1025,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
       onClose={() => setShowVibeCard(false)}
       vibeBreakdown={vibeBreakdown}
       personalityTraits={personalityTraits}
-      userName={user?.email?.split("@")[0]}
+      userName={username}
       characterMatch={characterMatch}
     />
 
