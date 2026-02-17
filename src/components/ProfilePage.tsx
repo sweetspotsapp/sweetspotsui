@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw, Pencil, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
@@ -38,6 +39,7 @@ interface CharacterMatch {
 }
 
 const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
+  const navigate = useNavigate();
   const { savedPlaceIds, userVibes } = useApp();
   const { user } = useAuth();
   const { vibeBreakdown, personalityTraits, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount } = useVibeDNA();
@@ -401,6 +403,20 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
               ))}
             </div>
           )}
+
+          {/* Explore CTA for Vibe DNA */}
+          {vibeBreakdown.length > 0 && (
+            <button
+              onClick={() => navigate(`/?search=${encodeURIComponent(`${vibeBreakdown[0].label} spots near me`)}`)}
+              className="w-full flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary/10 hover:bg-primary/15 transition-colors group"
+            >
+              <Search className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="text-sm font-medium text-primary truncate">
+                Explore {vibeBreakdown[0].label} spots near you
+              </span>
+              <ChevronRight className="w-4 h-4 text-primary/60 ml-auto flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          )}
         </section>
 
         {/* Personality Traits */}
@@ -425,18 +441,20 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
               {personalityTraits.map((trait, index) => {
                 const Icon = trait.icon;
                 return (
-                  <div 
+                  <button 
                     key={index}
-                    className="flex gap-3 p-3 bg-card rounded-xl border border-border"
+                    onClick={() => navigate(`/?search=${encodeURIComponent(`best spots for a ${trait.label.toLowerCase()}`)}`)}
+                    className="flex gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all group w-full text-left"
                   >
                     <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                       <Icon className="w-5 h-5 text-secondary-foreground" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium text-foreground">{trait.label}</h4>
                       <p className="text-[11px] text-muted-foreground mt-0.5">{trait.description}</p>
                     </div>
-                  </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground self-center flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
                 );
               })}
             </div>
@@ -468,13 +486,27 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                   <p className="text-sm text-foreground mt-1.5">{characterMatch.match_reason}</p>
                 </div>
               </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={handleTryAnother}
+                  disabled={isLoadingCharacter}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isLoadingCharacter ? 'animate-spin' : ''}`} />
+                  Try another match
+                </button>
+              </div>
+
+              {/* Explore CTA for Character Match */}
               <button
-                onClick={handleTryAnother}
-                disabled={isLoadingCharacter}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => navigate(`/?search=${encodeURIComponent(`explore spots ${characterMatch.character_name} would love`)}`)}
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary/10 hover:bg-primary/15 transition-colors group"
               >
-                <RefreshCw className={`w-3 h-3 ${isLoadingCharacter ? 'animate-spin' : ''}`} />
-                Try another match
+                <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="text-sm font-medium text-primary truncate">
+                  Explore spots {characterMatch.character_name} would love
+                </span>
+                <ChevronRight className="w-4 h-4 text-primary/60 ml-auto flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
           ) : (

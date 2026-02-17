@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import LoginReminderBanner from "./LoginReminderBanner";
 import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone, Map, List } from "lucide-react";
@@ -209,11 +209,13 @@ interface HomePageProps {
 
 const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, onboardingData, setOnboardingData } = useApp();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation, setManualLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
+  const hasConsumedSearchParam = useRef(false);
 
   // Check cache version and clear if outdated
   const getCachedResults = (): MockPlace[] => {
@@ -262,6 +264,23 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       setSearchValue(userMood);
     }
   }, [userMood]);
+
+  // Consume ?search= URL param (from profile explore CTAs)
+  useEffect(() => {
+    if (hasConsumedSearchParam.current) return;
+    const searchQuery = searchParams.get('search');
+    if (searchQuery) {
+      hasConsumedSearchParam.current = true;
+      setSearchValue(searchQuery);
+      setUserMood(searchQuery);
+      // Clear the URL param
+      setSearchParams({}, { replace: true });
+      // Clear cached results so new search fires
+      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+      sessionStorage.removeItem(CACHED_MOOD_KEY);
+    }
+  }, [searchParams, setSearchParams, setUserMood]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(() => {
     if (wasSkipMode.current) return null;
