@@ -538,12 +538,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 return (
                   <div key={index} className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <div>
-                        <span className="text-foreground font-medium">{vibe.label}</span>
-                        <span className="text-muted-foreground ml-1.5 text-[10px]">
-                          {vibeDescriptions[vibe.label] || ''}
-                        </span>
-                      </div>
+                    <span className="text-foreground font-medium">{vibe.label}</span>
                       <span className="text-muted-foreground flex-shrink-0 ml-2">{vibe.percentage}%</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
