@@ -130,6 +130,23 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
         }
       }
 
+      // Also delete related searches based on trigger keywords
+      const searchKeywords = [...triggerTags, ...triggerCategories].map(k => k.replace(/_/g, ' '));
+      if (searchKeywords.length > 0 && user) {
+        const { data: searches } = await supabase
+          .from('searches')
+          .select('id, prompt')
+          .eq('user_id', user.id);
+        
+        const searchIdsToDelete = searches?.filter(s => 
+          searchKeywords.some(kw => s.prompt.toLowerCase().includes(kw))
+        ).map(s => s.id) || [];
+
+        if (searchIdsToDelete.length > 0) {
+          await supabase.from('searches').delete().in('id', searchIdsToDelete);
+        }
+      }
+
       // Hide the trait and refresh Vibe DNA
       setHiddenTraits(prev => new Set(prev).add(trait.label));
       refreshVibeDNA();
@@ -719,9 +736,26 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
     <Sheet open={showSearchHistory} onOpenChange={setShowSearchHistory}>
       <SheetContent side="bottom" className="max-h-[70vh] rounded-t-2xl">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-primary" />
-            Mood Search History
+          <SheetTitle className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-primary" />
+              Mood Search History
+            </div>
+            {searchHistory.length > 0 && (
+              <button
+                onClick={async () => {
+                  if (!user) return;
+                  await supabase.from('searches').delete().eq('user_id', user.id);
+                  setSearchHistory([]);
+                  refreshVibeDNA();
+                  toast({ title: "Search history cleared", description: "Your mood searches have been reset." });
+                }}
+                className="text-xs text-destructive hover:text-destructive/80 flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Clear all
+              </button>
+            )}
           </SheetTitle>
         </SheetHeader>
         <div className="mt-4 overflow-y-auto max-h-[55vh] space-y-2">
