@@ -797,6 +797,29 @@ serve(async (req) => {
           }
         }
 
+        // If full name failed, retry with simplified name (last 2-3 parts which are usually city/region/country)
+        if (!geocoded) {
+          const parts = location_name.split(',').map((p: string) => p.trim());
+          if (parts.length > 2) {
+            const simplified = parts.slice(-3).join(', ');
+            console.log(`Retrying geocode with simplified name: ${simplified}`);
+            try {
+              const simplifiedUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(simplified)}&limit=1&apiKey=${geoapifyApiKey}`;
+              const simplifiedResponse = await fetch(simplifiedUrl);
+              const simplifiedData = await simplifiedResponse.json();
+              if (simplifiedData.features && simplifiedData.features.length > 0) {
+                const [geoLng, geoLat] = simplifiedData.features[0].geometry.coordinates;
+                lat = geoLat;
+                lng = geoLng;
+                geocoded = true;
+                console.log(`Simplified geocoded "${simplified}" to: ${lat}, ${lng}`);
+              }
+            } catch (e) {
+              console.error('Simplified geocoding error:', e);
+            }
+          }
+        }
+
         if (!geocoded) {
           return new Response(
             JSON.stringify({ error: `Could not find location: ${location_name}` }),
