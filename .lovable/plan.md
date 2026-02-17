@@ -1,50 +1,51 @@
 
 
-## Calm Entry Screen — "The Hype Friend"
+## Add "Explore" CTA Buttons to Profile Sections
 
-A warm, inviting mood-collection screen that appears **before** the onboarding wizard.
+Turn each profile section into a discovery launchpad by adding contextual search buttons that navigate users to the home page with a pre-filled, relevant search query.
 
-### Screen Design
+### What Changes
 
-- **Headline**: "Let's find your sweet spot" (with a honey emoji accent)
-- **Subtext**: "Tell us what you're craving and we'll do the rest"
-- **Input placeholder**: "Rooftop drinks, cozy cafes, street tacos…"
-- **Button**: "Show me the goods" (with arrow icon)
-- **Skip link**: "Just browsing" (skips to onboarding wizard)
+**3 sections get an "Explore" button:**
 
-### Visual Style
+1. **Vibe DNA section** -- Below the vibe bars, add a button like "Explore [top vibe] spots near you" (e.g., "Explore Foodie spots near you"). Tapping navigates to home and triggers a search for that vibe.
 
-- Centered layout with generous vertical spacing
-- SweetSpots logo at the top
-- Subtle gradient or warm background tint
-- Large, friendly typography
-- Smooth fade-in animations on load (staggered: logo, headline, subtext, input)
-- Rounded input field with focus glow effect
+2. **Personality Traits section** -- Each trait card gets a small arrow/button. Tapping a trait like "Flavor Chaser" navigates to home with search query "best spots for a flavor chaser".
 
-### Technical Changes
+3. **Character Match section** -- After showing the match, add an "Explore spots [character] would love" button that searches based on the character's vibe.
 
-**`src/components/EntryScreen.tsx`** — Full rewrite
-- Add a `moodCollected` state to toggle between the new mood screen and the existing `OnboardingWizard`
-- When user submits a mood, store it and transition to the onboarding wizard
-- "Just browsing" skips straight to the onboarding wizard with empty mood
-- Use CSS keyframe animations for the staggered fade-in
-
-**`src/components/MoodInput.tsx`** — Minor updates
-- Update placeholder text to match the new copy
-- Change button label from "Let's go" to "Show me the goods"
-- Update skip button text from "Skip to home" to "Just browsing"
-
-**`src/index.css`** — Add fade-in keyframes
-- Add `animate-fade-in-up` keyframe for the staggered entrance animation
-
-### Flow
+### How It Works
 
 ```text
-Entry Screen (mood input)
-  |
-  |-- submits mood --> Onboarding Wizard --> Home (with mood context)
-  |-- "Just browsing" --> Onboarding Wizard --> Home
+User taps "Explore Foodie spots" on Profile
+  --> navigates to "/" 
+  --> passes search query via URL params or app context
+  --> HomePage auto-triggers unified search with that query
 ```
 
-No database or backend changes needed — the mood string is passed through existing props.
+### Technical Details
+
+**`src/components/ProfilePage.tsx`**
+- Import `useNavigate` from react-router-dom
+- Add an `onExploreVibe` handler that navigates to `/?search=rooftop+bars+foodie+vibes` (using the top vibe label)
+- Add a styled button below the Vibe DNA bars: "Explore {topVibe} spots near you" with a Search icon and ChevronRight
+- Add a tappable area on each personality trait card that navigates with a trait-specific query
+- Add an "Explore spots {character} would love" button in the character match section
+
+**`src/components/HomePage.tsx`**
+- On mount, read `search` param from URL (`useSearchParams`)
+- If present, auto-populate the search input and trigger the unified search
+- Clear the URL param after consuming it so back-navigation doesn't re-trigger
+
+**`src/pages/Index.tsx`** (if needed)
+- Ensure the tab switches to "home" when arriving with a search param
+
+### Button Design
+- Rounded pill style, subtle background (`bg-primary/10`)
+- Icon on the left (Search or Sparkles), ChevronRight on the right
+- Text like "Explore Foodie spots near you" or "Find spots for Night Owls"
+- Smooth hover/tap animation
+
+### No backend changes needed
+All data (vibe labels, trait names, character names) is already available client-side. The search query is simply passed as a URL parameter.
 
