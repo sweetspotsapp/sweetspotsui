@@ -23,6 +23,7 @@ interface VibeDNAData {
   totalInteractions: number;
   searchCount: number;
   placesShownCount: number;
+  refresh: () => void;
 }
 
 // Map filter_tags to vibe categories with weights
@@ -179,6 +180,8 @@ export const useVibeDNA = (): VibeDNAData => {
   const [totalInteractions, setTotalInteractions] = useState(0);
   const [searchCount, setSearchCount] = useState(0);
   const [placesShownCount, setPlacesShownCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = () => setRefreshKey(k => k + 1);
 
   useEffect(() => {
     if (!user) {
@@ -382,7 +385,7 @@ export const useVibeDNA = (): VibeDNAData => {
     };
 
     calculateVibeDNA();
-  }, [user]);
+  }, [user, refreshKey]);
 
-  return { vibeBreakdown, personalityTraits, isLoading, totalInteractions, searchCount, placesShownCount };
+  return { vibeBreakdown, personalityTraits, isLoading, totalInteractions, searchCount, placesShownCount, refresh };
 };

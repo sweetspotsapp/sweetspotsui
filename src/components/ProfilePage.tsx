@@ -43,7 +43,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const navigate = useNavigate();
   const { savedPlaceIds, userVibes } = useApp();
   const { user } = useAuth();
-  const { vibeBreakdown, personalityTraits, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount } = useVibeDNA();
+  const { vibeBreakdown, personalityTraits, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount, refresh: refreshVibeDNA } = useVibeDNA();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [showPlacesHistory, setShowPlacesHistory] = useState(false);
@@ -130,8 +130,9 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
         }
       }
 
-      // Also hide the trait immediately
+      // Hide the trait and refresh Vibe DNA
       setHiddenTraits(prev => new Set(prev).add(trait.label));
+      refreshVibeDNA();
       toast({ title: `"${trait.label}" reset`, description: `Removed ${trait.label.toLowerCase()} signals from your vibe analysis.` });
       setSelectedTrait(null);
     } catch (err) {
