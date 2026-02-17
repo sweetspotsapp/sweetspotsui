@@ -63,31 +63,15 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [editName, setEditName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [selectedTrait, setSelectedTrait] = useState<typeof personalityTraits[0] | null>(null);
-  const [isResettingTrait, setIsResettingTrait] = useState(false);
+  const [hiddenTraits, setHiddenTraits] = useState<Set<string>>(new Set());
 
-  const handleResetTrait = async (trait: typeof personalityTraits[0]) => {
-    if (!user) return;
-    setIsResettingTrait(true);
-    try {
-      // Delete interactions for places matching this trait's categories/tags
-      const { error } = await supabase
-        .from('place_interactions')
-        .delete()
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      toast({ title: `"${trait.label}" has been reset`, description: "Your vibe DNA will update shortly." });
-      setSelectedTrait(null);
-      // Reload page to recalculate vibe DNA
-      window.location.reload();
-    } catch (err) {
-      console.error("Failed to reset trait:", err);
-      toast({ title: "Failed to reset", description: "Please try again.", variant: "destructive" });
-    } finally {
-      setIsResettingTrait(false);
-    }
+  const handleResetTrait = (trait: typeof personalityTraits[0]) => {
+    setHiddenTraits(prev => new Set(prev).add(trait.label));
+    toast({ title: `"${trait.label}" removed`, description: "This trait won't show on your profile anymore." });
+    setSelectedTrait(null);
   };
+
+  const visibleTraits = personalityTraits.filter(t => !hiddenTraits.has(t.label));
 
   const fetchCharacterMatch = async (existingPool: CharacterMatch[] = []) => {
     setIsLoadingCharacter(true);
@@ -457,7 +441,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
             <div className="flex items-center justify-center py-4">
               <Loader2 className="w-5 h-5 text-primary animate-spin" />
             </div>
-          ) : personalityTraits.length === 0 ? (
+          ) : visibleTraits.length === 0 ? (
             <div className="p-4 bg-card rounded-xl border border-border text-center">
               <p className="text-sm text-muted-foreground">
                 Start saving and exploring places to discover your personality traits!
@@ -465,7 +449,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
             </div>
           ) : (
             <div className="space-y-2">
-              {personalityTraits.map((trait, index) => {
+              {visibleTraits.map((trait, index) => {
                 const Icon = trait.icon;
                 return (
                   <button 
@@ -675,7 +659,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
         navigate(`/?search=${encodeURIComponent(`best spots for a ${trait.label.toLowerCase()}`)}`);
       }}
       onReset={handleResetTrait}
-      isResetting={isResettingTrait}
+      isResetting={false}
     />
     </>
   );
