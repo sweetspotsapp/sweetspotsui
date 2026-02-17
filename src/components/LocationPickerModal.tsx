@@ -1,7 +1,14 @@
-import { useState, useMemo } from "react";
-import { X, MapPin, Navigation, ArrowRight, Check } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, MapPin, Navigation, ArrowRight, Check, Loader2 } from "lucide-react";
 import { Input } from "./ui/input";
-import { WORLD_CITIES } from "@/data/worldCities";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Prediction {
+  description: string;
+  place_id: string;
+  main_text: string;
+  secondary_text: string;
+}
 
 interface LocationPickerModalProps {
   isOpen: boolean;
@@ -17,28 +24,50 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   currentLocation,
 }) => {
   const [locationInput, setLocationInput] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Filter cities based on input
-  const filteredCities = useMemo(() => {
-    if (!locationInput.trim() || locationInput.length < 2) return [];
-    const searchTerm = locationInput.toLowerCase();
-    return WORLD_CITIES.filter(city => 
-      city.name.toLowerCase().includes(searchTerm) ||
-      city.country.toLowerCase().includes(searchTerm) ||
-      `${city.name}, ${city.country}`.toLowerCase().includes(searchTerm)
-    ).slice(0, 8);
+  // Debounced autocomplete fetch
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (locationInput.trim().length < 2) {
+      setPredictions([]);
+      return;
+    }
+
+    setIsLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("place-autocomplete", {
+          body: { input: locationInput.trim() },
+        });
+        if (!error && data?.predictions) {
+          setPredictions(data.predictions);
+        }
+      } catch (e) {
+        console.error("Autocomplete error:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [locationInput]);
 
-  const handleSelectCity = (cityName: string) => {
-    setLocationInput(cityName);
-    setShowSuggestions(false);
+  const handleSelectPrediction = (prediction: Prediction) => {
+    setLocationInput(prediction.description);
+    setPredictions([]);
   };
 
   const handleConfirmCity = () => {
     if (locationInput.trim()) {
       onSelectLocation(locationInput.trim());
       setLocationInput("");
+      setPredictions([]);
       onClose();
     }
   };
@@ -46,12 +75,8 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   const handleSelectNearby = () => {
     onSelectLocation("nearby");
     setLocationInput("");
+    setPredictions([]);
     onClose();
-  };
-
-  const handleLocationInputChange = (value: string) => {
-    setLocationInput(value);
-    setShowSuggestions(value.length >= 2);
   };
 
   if (!isOpen) return null;
@@ -77,7 +102,7 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
             <div>
               <h2 className="text-xl font-bold text-foreground">Change Location</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Search for a different city or area
+                Search for a city, suburb, or address
               </p>
             </div>
             <button
@@ -96,41 +121,52 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
               <Input
                 type="text"
                 value={locationInput}
-                onChange={(e) => handleLocationInputChange(e.target.value)}
-                placeholder="Enter a city or area"
+                onChange={(e) => setLocationInput(e.target.value)}
+                placeholder="Search city, suburb, or address..."
                 className="pl-12 pr-14 h-14 rounded-2xl text-base"
                 autoFocus
               />
               
-              {/* Confirm button */}
+              {/* Confirm / Loading button */}
               {locationInput.trim() && (
                 <button
                   onClick={handleConfirmCity}
+                  disabled={isLoading}
                   className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-primary text-primary-foreground"
                 >
-                  <ArrowRight className="w-5 h-5" />
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-5 h-5" />
+                  )}
                 </button>
               )}
 
-              {/* City suggestions dropdown */}
-              {showSuggestions && filteredCities.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-20 max-h-48 overflow-y-auto">
-                  {filteredCities.map((city) => {
-                    const displayName = `${city.name}, ${city.country}`;
-                    return (
-                      <button
-                        key={displayName}
-                        onClick={() => handleSelectCity(displayName)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left first:rounded-t-xl last:rounded-b-xl"
-                      >
-                        <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-foreground text-sm">{displayName}</span>
-                        {currentLocation === displayName && (
-                          <Check className="w-4 h-4 text-primary ml-auto" />
+              {/* Autocomplete suggestions */}
+              {predictions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-20 max-h-56 overflow-y-auto">
+                  {predictions.map((prediction) => (
+                    <button
+                      key={prediction.place_id}
+                      onClick={() => handleSelectPrediction(prediction)}
+                      className="w-full flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left first:rounded-t-xl last:rounded-b-xl"
+                    >
+                      <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-foreground text-sm font-medium block truncate">
+                          {prediction.main_text}
+                        </span>
+                        {prediction.secondary_text && (
+                          <span className="text-muted-foreground text-xs block truncate">
+                            {prediction.secondary_text}
+                          </span>
                         )}
-                      </button>
-                    );
-                  })}
+                      </div>
+                      {currentLocation === prediction.description && (
+                        <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      )}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
