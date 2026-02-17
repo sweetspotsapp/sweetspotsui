@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw, Pencil, Check, RotateCcw, ImageIcon } from "lucide-react";
+import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw, Pencil, Check, RotateCcw, ImageIcon, Upload } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,19 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import defaultCover from "@/assets/default-cover.jpg";
+import coverBeach from "@/assets/covers/cover-beach.jpg";
+import coverMountains from "@/assets/covers/cover-mountains.jpg";
+import coverCity from "@/assets/covers/cover-city.jpg";
+import coverDesert from "@/assets/covers/cover-desert.jpg";
+import coverTemple from "@/assets/covers/cover-temple.jpg";
+
+const PRESET_COVERS = [
+  { src: coverBeach, label: "Beach Paradise" },
+  { src: coverMountains, label: "Mountain Roads" },
+  { src: coverCity, label: "City Nights" },
+  { src: coverDesert, label: "Desert Sunset" },
+  { src: coverTemple, label: "Ancient Temples" },
+];
 
 interface ProfilePageProps {
   onNavigateToSaved?: () => void;
@@ -57,6 +70,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const [showCoverPicker, setShowCoverPicker] = useState(false);
   const [showVibeCard, setShowVibeCard] = useState(false);
   const [showInteractionDetails, setShowInteractionDetails] = useState(false);
   const [interactionDetails, setInteractionDetails] = useState<Array<{ place_id: string; name: string; action: string; created_at: string; weight: number }>>([]);
@@ -429,17 +443,17 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
             />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
             
-            {/* Cover Edit Button */}
+            {/* Subtle Cover Edit Button */}
             {user && (
               <button
-                onClick={() => coverInputRef.current?.click()}
+                onClick={() => setShowCoverPicker(true)}
                 disabled={isUploadingCover}
-                className="absolute top-3 right-3 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white/60 hover:text-white/90 hover:bg-white/25 transition-all"
               >
                 {isUploadingCover ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <ImageIcon className="w-4 h-4" />
+                  <Pencil className="w-3.5 h-3.5" />
                 )}
               </button>
             )}
@@ -1017,7 +1031,55 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
       onReset={handleResetTrait}
       isResetting={isResettingTrait}
     />
+
+    {/* Cover Picker Sheet */}
+    <Sheet open={showCoverPicker} onOpenChange={setShowCoverPicker}>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh]">
+        <SheetHeader>
+          <SheetTitle>Choose cover photo</SheetTitle>
+        </SheetHeader>
+        <div className="mt-4 space-y-4 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3">
+            {PRESET_COVERS.map((cover) => (
+              <button
+                key={cover.label}
+                onClick={async () => {
+                  setCoverUrl(cover.src);
+                  setShowCoverPicker(false);
+                  if (user) {
+                    await (supabase.from("profiles") as any)
+                      .update({ cover_url: cover.label })
+                      .eq("id", user.id);
+                  }
+                  toast({ title: "Cover updated!" });
+                }}
+                className="relative rounded-xl overflow-hidden aspect-video group border border-border hover:border-primary/50 transition-all"
+              >
+                <img src={cover.src} alt={cover.label} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="absolute bottom-1.5 left-2 text-[11px] font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  {cover.label}
+                </span>
+              </button>
+            ))}
+
+            {/* Upload your own */}
+            <button
+              onClick={() => {
+                setShowCoverPicker(false);
+                setTimeout(() => coverInputRef.current?.click(), 200);
+              }}
+              className="relative rounded-xl overflow-hidden aspect-video border-2 border-dashed border-border hover:border-primary/50 transition-all flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <Upload className="w-5 h-5" />
+              <span className="text-xs font-medium">Upload yours</span>
+            </button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
     </>
+
   );
 };
 
