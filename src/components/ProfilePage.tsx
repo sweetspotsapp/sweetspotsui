@@ -470,35 +470,35 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
             </div>
           ) : (
             <div className="space-y-2">
-              {vibeBreakdown.map((vibe, index) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-foreground font-medium">{vibe.label}</span>
-                    <span className="text-muted-foreground">{vibe.percentage}%</span>
+              {vibeBreakdown.map((vibe, index) => {
+                const vibeDescriptions: Record<string, string> = {
+                  'Chill': 'Quiet cafes, peaceful spots, cozy corners',
+                  'Aesthetic': 'Scenic views, Insta-worthy, artsy spaces',
+                  'Social': 'Group hangouts, lively bars, nightlife',
+                  'Foodie': 'Great food spots, street food, fine dining',
+                  'Adventure': 'Hidden gems, outdoor spots, off-the-beaten-path',
+                };
+                return (
+                  <div key={index} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <div>
+                        <span className="text-foreground font-medium">{vibe.label}</span>
+                        <span className="text-muted-foreground ml-1.5 text-[10px]">
+                          {vibeDescriptions[vibe.label] || ''}
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground flex-shrink-0 ml-2">{vibe.percentage}%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${vibe.color} rounded-full transition-all duration-500`}
+                        style={{ width: `${vibe.percentage}%`, animationDelay: `${index * 100}ms` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${vibe.color} rounded-full transition-all duration-500`}
-                      style={{ width: `${vibe.percentage}%`, animationDelay: `${index * 100}ms` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          )}
-
-          {/* Explore CTA for Vibe DNA */}
-          {vibeBreakdown.length > 0 && (
-            <button
-              onClick={() => navigate(`/?search=${encodeURIComponent(`${vibeBreakdown[0].label} spots near me`)}`)}
-              className="w-full flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary/10 hover:bg-primary/15 transition-colors group"
-            >
-              <Search className="w-4 h-4 text-primary flex-shrink-0" />
-              <span className="text-sm font-medium text-primary truncate">
-                Explore {vibeBreakdown[0].label} spots near you
-              </span>
-              <ChevronRight className="w-4 h-4 text-primary/60 ml-auto flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
-            </button>
           )}
         </section>
 
