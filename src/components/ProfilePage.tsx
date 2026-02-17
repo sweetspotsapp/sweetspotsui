@@ -30,6 +30,7 @@ interface PlaceHistoryItem {
 
 interface CharacterMatch {
   character_name: string;
+  known_for: string;
   source: string;
   match_reason: string;
   emoji: string;
@@ -384,13 +385,14 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
               <div className="flex items-start gap-3">
                 <div className="text-3xl">{characterMatch.emoji}</div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-semibold text-foreground">{characterMatch.character_name}</h4>
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                       {characterMatch.match_percentage}% match
                     </span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">{characterMatch.source}</p>
+                  <p className="text-[11px] text-primary/80 font-medium">{characterMatch.known_for}</p>
+                  <p className="text-[10px] text-muted-foreground">{characterMatch.source}</p>
                   <p className="text-sm text-foreground mt-1.5">{characterMatch.match_reason}</p>
                 </div>
               </div>
