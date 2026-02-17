@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Settings } from "lucide-react";
+import LoginReminderBanner from "./LoginReminderBanner";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -199,6 +200,10 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
             <Settings className="w-6 h-6" />
           </button>
         </div>
+      </div>
+
+      <div className="max-w-md mx-auto">
+        <LoginReminderBanner />
       </div>
 
       {phase === "list" && (

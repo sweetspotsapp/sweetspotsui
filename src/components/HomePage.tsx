@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import AuthDialog from "./AuthDialog";
+import LoginReminderBanner from "./LoginReminderBanner";
 import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone, Map, List } from "lucide-react";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
@@ -210,7 +210,6 @@ interface HomePageProps {
 const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, onboardingData, setOnboardingData } = useApp();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation, setManualLocation } = useLocation();
@@ -912,26 +911,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         )}
       </div>
 
-      {/* Login Reminder Banner for unauthenticated users */}
-      {!user && (
-        <div className="mx-4 mt-3 p-3 rounded-xl bg-primary/5 border border-primary/15 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-4 h-4 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-foreground font-medium">Sign in to save your spots</p>
-            <p className="text-xs text-muted-foreground">Your saves & itineraries will sync across devices</p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-shrink-0 rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs px-3"
-            onClick={() => setShowAuthDialog(true)}
-          >
-            Sign in
-          </Button>
-        </div>
-      )}
+      <LoginReminderBanner />
 
       <SlideOutMenu
         isOpen={isMenuOpen}
@@ -1101,8 +1081,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         currentLocation={onboardingData?.explore_location}
       />
 
-      {/* Auth Dialog */}
-      <AuthDialog open={showAuthDialog} onOpenChange={setShowAuthDialog} />
     </div>
   );
 };
