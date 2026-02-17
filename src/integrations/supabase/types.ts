@@ -279,6 +279,27 @@ export type Database = {
         }
         Relationships: []
       }
+      query_cache: {
+        Row: {
+          cache_key: string
+          cache_value: Json
+          created_at: string
+          expires_at: string
+        }
+        Insert: {
+          cache_key: string
+          cache_value: Json
+          created_at?: string
+          expires_at: string
+        }
+        Update: {
+          cache_key?: string
+          cache_value?: Json
+          created_at?: string
+          expires_at?: string
+        }
+        Relationships: []
+      }
       saved_places: {
         Row: {
           created_at: string
@@ -343,7 +364,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      clean_expired_cache: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
