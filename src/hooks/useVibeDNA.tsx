@@ -92,7 +92,7 @@ const VIBE_COLORS: Record<string, string> = {
 };
 
 // Personality trait definitions based on behavior patterns
-const PERSONALITY_DEFINITIONS: Array<{
+export const PERSONALITY_DEFINITIONS: Array<{
   id: string;
   icon: LucideIcon;
   label: string;
