@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw, Pencil, Check } from "lucide-react";
+import { User, Sparkles, TrendingUp, Loader2, Settings, ChevronRight, Search, Eye, Heart, Clock, Camera, Share2, Wand2, RefreshCw, Pencil, Check, RotateCcw } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 import { useAuth } from "@/hooks/useAuth";
@@ -432,16 +432,27 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
 
         {/* Personality Traits */}
         <section className="space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
-          <div className="flex items-center gap-2 px-1">
-            <TrendingUp className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-foreground text-sm">What we've learned</h3>
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-foreground text-sm">What we've learned</h3>
+            </div>
+            {hiddenTraits.size > 0 && (
+              <button
+                onClick={() => setHiddenTraits(new Set())}
+                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Undo ({hiddenTraits.size})
+              </button>
+            )}
           </div>
           
           {isVibeLoading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="w-5 h-5 text-primary animate-spin" />
             </div>
-          ) : visibleTraits.length === 0 ? (
+          ) : visibleTraits.length === 0 && hiddenTraits.size === 0 ? (
             <div className="p-4 bg-card rounded-xl border border-border text-center">
               <p className="text-sm text-muted-foreground">
                 Start saving and exploring places to discover your personality traits!
@@ -468,6 +479,21 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                   </button>
                 );
               })}
+
+              {/* Add your own vibe placeholder */}
+              <button 
+                onClick={() => {
+                  toast({ title: "Coming soon!", description: "Custom vibes will be available in a future update." });
+                }}
+                className="flex gap-3 p-3 bg-card/50 rounded-xl border border-dashed border-border hover:border-primary/30 hover:bg-primary/5 transition-all group w-full text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg text-muted-foreground">+</span>
+                </div>
+                <div className="flex-1 min-w-0 self-center">
+                  <h4 className="text-sm font-medium text-muted-foreground">Add your own vibe</h4>
+                </div>
+              </button>
             </div>
           )}
         </section>
