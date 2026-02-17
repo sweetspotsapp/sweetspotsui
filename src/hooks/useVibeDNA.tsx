@@ -199,11 +199,9 @@ export const useVibeDNA = (): VibeDNAData => {
 
   useEffect(() => {
     if (!user) {
-      setVibeBreakdown([
-        { label: 'Chill', percentage: 40, color: 'bg-gentle-sage' },
-        { label: 'Aesthetic', percentage: 30, color: 'bg-soft-coral' },
-        { label: 'Social', percentage: 30, color: 'bg-primary' },
-      ]);
+      setVibeBreakdown([]);
+      setPersonalityTraits([]);
+      setTotalInteractions(0);
       setIsLoading(false);
       return;
     }
@@ -239,12 +237,8 @@ export const useVibeDNA = (): VibeDNAData => {
         setPlacesShownCount(uniquePlaceIds.size);
 
         if (!interactions || interactions.length === 0) {
-          // Default vibes for new users
-          setVibeBreakdown([
-            { label: 'Chill', percentage: 40, color: 'bg-gentle-sage' },
-            { label: 'Aesthetic', percentage: 30, color: 'bg-soft-coral' },
-            { label: 'Social', percentage: 30, color: 'bg-primary' },
-          ]);
+          setVibeBreakdown([]);
+          setPersonalityTraits([]);
           setTotalInteractions(0);
           setIsLoading(false);
           return;
@@ -362,12 +356,7 @@ export const useVibeDNA = (): VibeDNAData => {
         const totalScore = Object.values(vibeScores).reduce((a, b) => a + b, 0);
         
         if (totalScore === 0) {
-          // No meaningful data yet
-          setVibeBreakdown([
-            { label: 'Chill', percentage: 40, color: 'bg-gentle-sage' },
-            { label: 'Aesthetic', percentage: 30, color: 'bg-soft-coral' },
-            { label: 'Social', percentage: 30, color: 'bg-primary' },
-          ]);
+          setVibeBreakdown([]);
         } else {
           // Sort by score and take top 3-5
           const sortedVibes = Object.entries(vibeScores)
@@ -389,11 +378,8 @@ export const useVibeDNA = (): VibeDNAData => {
         }
       } catch (error) {
         console.error('Error calculating Vibe DNA:', error);
-        setVibeBreakdown([
-          { label: 'Chill', percentage: 40, color: 'bg-gentle-sage' },
-          { label: 'Aesthetic', percentage: 30, color: 'bg-soft-coral' },
-          { label: 'Social', percentage: 30, color: 'bg-primary' },
-        ]);
+        setVibeBreakdown([]);
+        setPersonalityTraits([]);
       } finally {
         setIsLoading(false);
       }
