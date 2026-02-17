@@ -3,6 +3,7 @@ import { User, Sparkles, TrendingUp, Loader2, Settings } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useVibeDNA } from "@/hooks/useVibeDNA";
 import ProfileSlideMenu from "./ProfileSlideMenu";
+import LoginReminderBanner from "./LoginReminderBanner";
 
 const ProfilePage = () => {
   const { savedPlaceIds, userVibes } = useApp();
@@ -32,6 +33,8 @@ const ProfilePage = () => {
             </button>
           </div>
         </header>
+
+        <LoginReminderBanner />
 
         {/* Page Title */}
         <div className="px-4 pt-6 pb-4">
