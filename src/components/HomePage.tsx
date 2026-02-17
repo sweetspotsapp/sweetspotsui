@@ -20,6 +20,7 @@ import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 import LocationPickerModal from "./LocationPickerModal";
 import BoardMapView from "./saved/BoardMapView";
+import SearchFeedbackDialog from "./SearchFeedbackDialog";
 import type { RankedPlace } from "@/hooks/useSearch";
 // Extended MockPlace with lat/lng for map view
 interface MockPlaceWithCoords extends MockPlace {
@@ -316,6 +317,10 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   // Map view toggle state
   const [isMapView, setIsMapView] = useState(false);
 
+  // Feedback dialog state
+  const [showFeedback, setShowFeedback] = useState(false);
+  const searchCountRef = useRef(0);
+
   // Client-side filtering - instant results
   const filteredResults = useClientFilters(
     searchResults as ExtendedMockPlace[],
@@ -536,6 +541,11 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       setSearchResults(result.places.map(unifiedToMockPlace));
       setAiSummary(result.summary || null);
       toast.success(`Found ${result.places.length} spots for you!`);
+      // Show feedback every 5th search
+      searchCountRef.current += 1;
+      if (searchCountRef.current % 5 === 0) {
+        setTimeout(() => setShowFeedback(true), 2000);
+      }
     } else if (result && result.places.length === 0) {
       toast.info("No places found. Try a different search.");
       setSearchResults([]);
@@ -1098,6 +1108,14 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         onClose={() => setIsLocationPickerOpen(false)}
         onSelectLocation={handleLocationChange}
         currentLocation={onboardingData?.explore_location}
+      />
+
+      {/* Search Feedback Dialog */}
+      <SearchFeedbackDialog
+        open={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        searchPrompt={searchValue || userMood || undefined}
+        userId={user?.id}
       />
 
     </div>

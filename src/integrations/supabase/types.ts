@@ -335,6 +335,33 @@ export type Database = {
           },
         ]
       }
+      search_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          search_prompt: string | null
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          search_prompt?: string | null
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          search_prompt?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       searches: {
         Row: {
           created_at: string
