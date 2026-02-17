@@ -25,7 +25,7 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
     if (searchCountRef.current === 1 || searchCountRef.current % 5 === 0) {
       // Clear any pending timer
       if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setShowFeedback(true), 5000);
+      timerRef.current = setTimeout(() => setShowFeedback(true), 10000);
     }
   }, []);
 
