@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { ArrowRight, MapPin, Navigation } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import type { OnboardingData } from "@/context/AppContext";
-import { WORLD_CITIES } from "@/data/worldCities";
+import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 
 interface OnboardingWizardProps {
   onComplete: (data: OnboardingData) => void;
@@ -76,19 +76,11 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     "live music",
   ];
 
-  // Filter cities based on input
-  const filteredCities = useMemo(() => {
-    if (!locationInput.trim()) return [];
-    const query = locationInput.toLowerCase();
-    return WORLD_CITIES.filter(city => 
-      city.name.toLowerCase().includes(query) || 
-      city.country.toLowerCase().includes(query)
-    ).slice(0, 8); // Limit to 8 results
-  }, [locationInput]);
+  const { predictions } = usePlaceAutocomplete(showSuggestions ? locationInput : "");
 
-  const handleSelectCity = (cityName: string) => {
-    setLocationInput(cityName);
-    setData(prev => ({ ...prev, explore_location: cityName }));
+  const handleSelectCity = (description: string) => {
+    setLocationInput(description);
+    setData(prev => ({ ...prev, explore_location: description }));
     setShowSuggestions(false);
   };
 
@@ -210,7 +202,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                   type="text"
                   value={locationInput}
                   onChange={(e) => handleLocationInputChange(e.target.value)}
-                  placeholder="Enter a city or area"
+                  placeholder="Search city, suburb, or address..."
                   className={`pl-12 pr-14 h-16 rounded-2xl text-lg ${
                     isLocationConfirmed
                       ? 'border-primary ring-1 ring-primary'
@@ -244,16 +236,21 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                 )}
                 
                 {/* City suggestions dropdown */}
-                {showSuggestions && filteredCities.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 overflow-hidden">
-                    {filteredCities.map((city) => (
+                {showSuggestions && predictions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 overflow-hidden max-h-56 overflow-y-auto">
+                    {predictions.map((prediction) => (
                       <button
-                        key={`${city.name}-${city.country}`}
-                        onClick={() => handleSelectCity(city.name)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0"
+                        key={prediction.place_id}
+                        onClick={() => handleSelectCity(prediction.description)}
+                        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0"
                       >
-                        <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-foreground font-medium">{city.name}, <span className="text-muted-foreground font-normal">{city.country}</span></span>
+                        <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-foreground font-medium block truncate">{prediction.main_text}</span>
+                          {prediction.secondary_text && (
+                            <span className="text-muted-foreground text-xs block truncate">{prediction.secondary_text}</span>
+                          )}
+                        </div>
                       </button>
                     ))}
                   </div>
