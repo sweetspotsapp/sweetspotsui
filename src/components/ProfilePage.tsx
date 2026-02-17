@@ -327,7 +327,6 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
       setIsUploadingCover(false);
     }
   };
-  };
 
   const loadSearchHistory = async () => {
     if (!user) return;
