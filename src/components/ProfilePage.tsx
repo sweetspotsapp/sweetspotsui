@@ -781,9 +781,10 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
                 onClick={async () => {
                   if (!user) return;
                   await supabase.from('searches').delete().eq('user_id', user.id);
+                  await supabase.from('place_interactions').delete().eq('user_id', user.id);
                   setSearchHistory([]);
                   refreshVibeDNA();
-                  toast({ title: "Search history cleared", description: "Your mood searches have been reset." });
+                  toast({ title: "Search history cleared", description: "Your mood searches and interaction data have been reset." });
                 }}
                 className="text-xs text-destructive hover:text-destructive/80 flex items-center gap-1"
               >
