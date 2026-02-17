@@ -1,14 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { X, MapPin, Navigation, ArrowRight, Check, Loader2 } from "lucide-react";
 import { Input } from "./ui/input";
-import { supabase } from "@/integrations/supabase/client";
-
-interface Prediction {
-  description: string;
-  place_id: string;
-  main_text: string;
-  secondary_text: string;
-}
+import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 
 interface LocationPickerModalProps {
   isOpen: boolean;
@@ -24,50 +17,19 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   currentLocation,
 }) => {
   const [locationInput, setLocationInput] = useState("");
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const { predictions, isLoading } = usePlaceAutocomplete(showSuggestions ? locationInput : "");
 
-  // Debounced autocomplete fetch
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (locationInput.trim().length < 2) {
-      setPredictions([]);
-      return;
-    }
-
-    setIsLoading(true);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("place-autocomplete", {
-          body: { input: locationInput.trim() },
-        });
-        if (!error && data?.predictions) {
-          setPredictions(data.predictions);
-        }
-      } catch (e) {
-        console.error("Autocomplete error:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [locationInput]);
-
-  const handleSelectPrediction = (prediction: Prediction) => {
-    setLocationInput(prediction.description);
-    setPredictions([]);
+  const handleSelectPrediction = (description: string) => {
+    setLocationInput(description);
+    setShowSuggestions(false);
   };
 
   const handleConfirmCity = () => {
     if (locationInput.trim()) {
       onSelectLocation(locationInput.trim());
       setLocationInput("");
-      setPredictions([]);
+      setShowSuggestions(false);
       onClose();
     }
   };
@@ -75,7 +37,7 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   const handleSelectNearby = () => {
     onSelectLocation("nearby");
     setLocationInput("");
-    setPredictions([]);
+    setShowSuggestions(false);
     onClose();
   };
 
@@ -121,7 +83,10 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
               <Input
                 type="text"
                 value={locationInput}
-                onChange={(e) => setLocationInput(e.target.value)}
+                onChange={(e) => {
+                  setLocationInput(e.target.value);
+                  setShowSuggestions(e.target.value.trim().length >= 2);
+                }}
                 placeholder="Search city, suburb, or address..."
                 className="pl-12 pr-14 h-14 rounded-2xl text-base"
                 autoFocus
@@ -143,12 +108,12 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
               )}
 
               {/* Autocomplete suggestions */}
-              {predictions.length > 0 && (
+              {showSuggestions && predictions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-20 max-h-56 overflow-y-auto">
                   {predictions.map((prediction) => (
                     <button
                       key={prediction.place_id}
-                      onClick={() => handleSelectPrediction(prediction)}
+                      onClick={() => handleSelectPrediction(prediction.description)}
                       className="w-full flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left first:rounded-t-xl last:rounded-b-xl"
                     >
                       <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
