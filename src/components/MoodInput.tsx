@@ -63,7 +63,7 @@ const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Cheap eats, nice views, fun with friends…"
+          placeholder="Rooftop drinks, cozy cafes, street tacos…"
           className="
             w-full px-4 py-4 text-base rounded-2xl border-2 border-border 
             bg-card text-foreground placeholder:text-muted-foreground
@@ -101,7 +101,7 @@ const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
         className="w-full h-12 text-base rounded-xl"
         disabled={!hasInput}
       >
-        Let's go
+        Show me the goods
         <ArrowRight className="w-5 h-5 ml-1" />
       </Button>
 
@@ -111,7 +111,7 @@ const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
           onClick={onSkip}
           className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
         >
-          Skip to home
+          Just browsing
         </button>
       )}
     </form>
