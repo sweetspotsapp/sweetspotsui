@@ -1,36 +1,50 @@
 
-# Increase Minimum Search Results
 
-## Problem
-Sometimes searches return only ~10 places because:
-1. The backend `unified-search` function uses `pageSize: 20` per Google API page, and for some queries only one page of results comes back
-2. The frontend "More to Explore" section caps at 10 places, hiding additional results even when available
-3. The default `limit` parameter is 30, which is fine but could be higher
+## Calm Entry Screen — "The Hype Friend"
 
-## Changes
+A warm, inviting mood-collection screen that appears **before** the onboarding wizard.
 
-### 1. Backend: `supabase/functions/unified-search/index.ts`
-- Increase default `limit` from `30` to `50` (line 636)
-- This ensures we return more results when Google has them
+### Screen Design
 
-### 2. Backend: Ensure all 3 pages are fetched
-- The current code already fetches up to 3 pages (60 places max from Google) -- this is good
-- No change needed here, the pagination logic is correct
+- **Headline**: "Let's find your sweet spot" (with a honey emoji accent)
+- **Subtext**: "Tell us what you're craving and we'll do the rest"
+- **Input placeholder**: "Rooftop drinks, cozy cafes, street tacos…"
+- **Button**: "Show me the goods" (with arrow icon)
+- **Skip link**: "Just browsing" (skips to onboarding wizard)
 
-### 3. Frontend: `src/components/HomePage.tsx`
-- Increase "More to Explore" cap from `10` to `20` (line 762): change `.slice(0, 10)` to `.slice(0, 20)`
-- Increase each category section cap from `5` to `8` places (lines 717, 730, 745)
-- This allows more places to be visible across all sections
+### Visual Style
 
-### 4. Frontend: Top Picks section
-- Check `TopPicksSection` for any limits and increase if needed
+- Centered layout with generous vertical spacing
+- SweetSpots logo at the top
+- Subtle gradient or warm background tint
+- Large, friendly typography
+- Smooth fade-in animations on load (staggered: logo, headline, subtext, input)
+- Rounded input field with focus glow effect
 
-## Summary of numeric changes
+### Technical Changes
 
-| Location | Current | New |
-|---|---|---|
-| `unified-search` default limit | 30 | 50 |
-| Category section caps | 5 each | 8 each |
-| "More to Explore" cap | 10 | 20 |
+**`src/components/EntryScreen.tsx`** — Full rewrite
+- Add a `moodCollected` state to toggle between the new mood screen and the existing `OnboardingWizard`
+- When user submits a mood, store it and transition to the onboarding wizard
+- "Just browsing" skips straight to the onboarding wizard with empty mood
+- Use CSS keyframe animations for the staggered fade-in
 
-This means users will typically see 40-50+ places instead of sometimes just 10-15.
+**`src/components/MoodInput.tsx`** — Minor updates
+- Update placeholder text to match the new copy
+- Change button label from "Let's go" to "Show me the goods"
+- Update skip button text from "Skip to home" to "Just browsing"
+
+**`src/index.css`** — Add fade-in keyframes
+- Add `animate-fade-in-up` keyframe for the staggered entrance animation
+
+### Flow
+
+```text
+Entry Screen (mood input)
+  |
+  |-- submits mood --> Onboarding Wizard --> Home (with mood context)
+  |-- "Just browsing" --> Onboarding Wizard --> Home
+```
+
+No database or backend changes needed — the mood string is passed through existing props.
+
