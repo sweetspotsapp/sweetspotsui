@@ -128,16 +128,11 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
               </p>
             </div>
 
-            {/* Score indicator */}
+            {/* Interaction count */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Confidence:</span>
-              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${Math.min(trait.score * 20, 100)}%` }}
-                />
-              </div>
-              <span className="text-xs font-medium text-foreground">{Math.min(trait.score * 20, 100)}%</span>
+              <span className="text-xs text-muted-foreground">
+                You've explored <span className="font-medium text-foreground">{trait.score}</span> related {trait.score === 1 ? 'spot' : 'spots'} so far
+              </span>
             </div>
           </div>
         </div>
