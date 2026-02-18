@@ -133,10 +133,10 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
           </div>
           <div className="text-center space-y-2 opacity-0 animate-fade-up delay-200">
             <h1 className="text-3xl font-bold text-foreground tracking-tight">
-              Let's find your sweet spot 🍯
+              Let's find your SweetSpots! 🍯
             </h1>
             <p className="text-muted-foreground text-base">
-              Tell us what you're craving and we'll do the rest
+              Tell us whatever you feel right now. We'll find places that match your vibe.
             </p>
           </div>
           <div className="w-full opacity-0 animate-fade-up delay-400">
