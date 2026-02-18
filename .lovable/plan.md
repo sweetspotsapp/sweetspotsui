@@ -1,51 +1,36 @@
 
+# Welcome/Intro Screen Before Onboarding
 
-## Add "Explore" CTA Buttons to Profile Sections
+## What Changes
 
-Turn each profile section into a discovery launchpad by adding contextual search buttons that navigate users to the home page with a pre-filled, relevant search query.
+Add a new "welcome" step as the first screen in the `EntryScreen` component. The flow becomes:
 
-### What Changes
+1. **Welcome (NEW)** -- Introduction with value proposition + Login/Register buttons + "Continue as guest"
+2. **Location** -- Where should we look?
+3. **Mood** -- What are you in the mood for?
 
-**3 sections get an "Explore" button:**
+## Welcome Screen Design
 
-1. **Vibe DNA section** -- Below the vibe bars, add a button like "Explore [top vibe] spots near you" (e.g., "Explore Foodie spots near you"). Tapping navigates to home and triggers a search for that vibe.
+- SweetSpots logo at top
+- Headline: "Welcome to SweetSpots" (or similar engaging copy)
+- 2-3 short value proposition bullets (e.g., "Discover places that match your vibe", "Get personalized recommendations", "Save and share your favorites")
+- "Continue with Google" button (primary)
+- "Sign up with email" / "Sign in" buttons
+- "Continue as guest" link at the bottom (skips auth, proceeds to location step)
+- Step dots: 3 dots now (welcome / location / mood), first one active
 
-2. **Personality Traits section** -- Each trait card gets a small arrow/button. Tapping a trait like "Flavor Chaser" navigates to home with search query "best spots for a flavor chaser".
+## Technical Details
 
-3. **Character Match section** -- After showing the match, add an "Explore spots [character] would love" button that searches based on the character's vibe.
+**File: `src/components/EntryScreen.tsx`**
 
-### How It Works
+- Add `"welcome"` to the step union type: `useState<"welcome" | "location" | "mood">("welcome")`
+- Add a new conditional render block for `step === "welcome"` that shows:
+  - Logo, headline, value prop copy
+  - Google sign-in button (reusing `signInWithGoogle` from `useAuth`)
+  - Email auth via opening the existing `AuthDialog` component (import it)
+  - A "Continue as guest" button that sets step to `"location"`
+- On successful auth (Google redirect or dialog success), proceed to `"location"` step
+- Update step indicator dots from 2 to 3 across all steps
+- The `onSkip` ("Skip to home") link remains available on the welcome screen as well
 
-```text
-User taps "Explore Foodie spots" on Profile
-  --> navigates to "/" 
-  --> passes search query via URL params or app context
-  --> HomePage auto-triggers unified search with that query
-```
-
-### Technical Details
-
-**`src/components/ProfilePage.tsx`**
-- Import `useNavigate` from react-router-dom
-- Add an `onExploreVibe` handler that navigates to `/?search=rooftop+bars+foodie+vibes` (using the top vibe label)
-- Add a styled button below the Vibe DNA bars: "Explore {topVibe} spots near you" with a Search icon and ChevronRight
-- Add a tappable area on each personality trait card that navigates with a trait-specific query
-- Add an "Explore spots {character} would love" button in the character match section
-
-**`src/components/HomePage.tsx`**
-- On mount, read `search` param from URL (`useSearchParams`)
-- If present, auto-populate the search input and trigger the unified search
-- Clear the URL param after consuming it so back-navigation doesn't re-trigger
-
-**`src/pages/Index.tsx`** (if needed)
-- Ensure the tab switches to "home" when arriving with a search param
-
-### Button Design
-- Rounded pill style, subtle background (`bg-primary/10`)
-- Icon on the left (Search or Sparkles), ChevronRight on the right
-- Text like "Explore Foodie spots near you" or "Find spots for Night Owls"
-- Smooth hover/tap animation
-
-### No backend changes needed
-All data (vibe labels, trait names, character names) is already available client-side. The search query is simply passed as a URL parameter.
-
+**No new files needed** -- the existing `AuthDialog` component handles email sign-up/sign-in and will be opened as a dialog from the welcome screen.
