@@ -37,7 +37,7 @@ const SweetSpotsLogo = () => (
 
 const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
   const { user } = useAuth();
-  const [step, setStep] = useState<"mood" | "location">("mood");
+  const [step, setStep] = useState<"mood" | "location">("location");
   const [mood, setMood] = useState("");
   const [locationInput, setLocationInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -47,12 +47,16 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
 
   const handleMoodSubmit = (moodValue: string) => {
     setMood(moodValue);
-    setStep("location");
+    handleFinishWithMood(moodValue);
   };
 
   const handleMoodSkip = () => {
     setMood("");
-    setStep("location");
+    handleFinishWithMood("");
+  };
+
+  const handleLocationNext = () => {
+    setStep("mood");
   };
 
   const handleSelectCity = (description: string) => {
@@ -84,13 +88,13 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
 
   const isLocationConfirmed = exploreLocation && exploreLocation !== "nearby" && exploreLocation === locationInput;
 
-  const handleFinish = async () => {
+  const handleFinishWithMood = async (moodValue: string) => {
     const data: OnboardingData = {
       trip_intention: null,
       budget: null,
       travel_personality: [],
       explore_location: exploreLocation || "nearby",
-      mood: mood || undefined,
+      mood: moodValue || undefined,
     };
 
     if (user) {
@@ -99,7 +103,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
         const { error } = await supabase
           .from('profiles')
           .update({
-            vibe: { explore_location: data.explore_location, mood: mood },
+            vibe: { explore_location: data.explore_location, mood: moodValue },
           })
           .eq('id', user.id);
 
@@ -255,26 +259,17 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
       <div className="mt-8 space-y-4 opacity-0 animate-fade-up delay-300">
         {/* Step dots */}
         <div className="flex items-center justify-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-muted" />
           <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+          <div className="w-2.5 h-2.5 rounded-full bg-muted" />
         </div>
 
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setStep("mood")}
-            className="flex-1 h-12 rounded-xl border-border text-primary hover:bg-muted"
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handleFinish}
-            disabled={!canFinish || isSubmitting}
-            className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {isSubmitting ? 'Saving...' : "Let's go"}
-          </Button>
-        </div>
+        <Button
+          onClick={handleLocationNext}
+          disabled={!canFinish}
+          className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          Next
+        </Button>
 
         <button
           onClick={onSkip}
