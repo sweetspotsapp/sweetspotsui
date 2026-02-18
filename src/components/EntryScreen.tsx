@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, MapPin, Navigation } from "lucide-react";
+import { ArrowRight, MapPin, Navigation, Sparkles, Compass, Heart, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import type { OnboardingData } from "@/context/AppContext";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 import MoodInput from "./MoodInput";
+import AuthDialog from "./AuthDialog";
 
 interface EntryScreenProps {
   onComplete: (data: OnboardingData) => void;
@@ -36,8 +37,10 @@ const SweetSpotsLogo = () => (
 );
 
 const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
-  const { user } = useAuth();
-  const [step, setStep] = useState<"mood" | "location">("location");
+  const { user, signInWithGoogle } = useAuth();
+  const [step, setStep] = useState<"welcome" | "location" | "mood">("welcome");
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [mood, setMood] = useState("");
   const [locationInput, setLocationInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -125,9 +128,126 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
     onComplete(data);
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        toast({
+          title: "Google sign in failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setStep("location");
+  };
+
   const canFinish = exploreLocation !== null;
 
-  // Step 1: Mood input (The Hype Friend)
+  // Step 0: Welcome / Introduction
+  if (step === "welcome") {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center max-w-[420px] mx-auto px-6 py-8">
+        <div className="flex-1 flex flex-col items-center justify-center w-full gap-8">
+          <div className="opacity-0 animate-fade-up">
+            <SweetSpotsLogo />
+          </div>
+
+          <div className="text-center space-y-3 opacity-0 animate-fade-up delay-200">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">
+              Welcome to SweetSpots 🍯
+            </h1>
+            <p className="text-muted-foreground text-base max-w-xs mx-auto">
+              Your personal guide to places that actually match your vibe.
+            </p>
+          </div>
+
+          <div className="w-full space-y-3 opacity-0 animate-fade-up delay-300">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50">
+              <Compass className="w-5 h-5 text-primary flex-shrink-0" />
+              <span className="text-sm text-foreground">Discover places that match your mood</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50">
+              <Sparkles className="w-5 h-5 text-primary flex-shrink-0" />
+              <span className="text-sm text-foreground">Get personalized recommendations</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50">
+              <Heart className="w-5 h-5 text-primary flex-shrink-0" />
+              <span className="text-sm text-foreground">Save & share your favorites</span>
+            </div>
+          </div>
+
+          <div className="w-full space-y-3 opacity-0 animate-fade-up delay-400">
+            {/* Google Sign In */}
+            <Button
+              onClick={handleGoogleSignIn}
+              disabled={isGoogleLoading}
+              className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-base"
+            >
+              {isGoogleLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                    <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                  </svg>
+                  Continue with Google
+                </>
+              )}
+            </Button>
+
+            {/* Email sign up / sign in */}
+            <Button
+              variant="outline"
+              onClick={() => setShowAuthDialog(true)}
+              className="w-full h-12 rounded-xl text-base border-border"
+            >
+              Sign in with email
+            </Button>
+
+            {/* Continue as guest */}
+            <button
+              onClick={() => setStep("location")}
+              className="w-full text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors pt-2"
+            >
+              Continue as guest
+            </button>
+          </div>
+        </div>
+
+        {/* Step dots */}
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+          <div className="w-2.5 h-2.5 rounded-full bg-muted" />
+          <div className="w-2.5 h-2.5 rounded-full bg-muted" />
+        </div>
+
+        <button
+          onClick={onSkip}
+          className="mt-4 text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+        >
+          Skip to home
+        </button>
+
+        <AuthDialog
+          open={showAuthDialog}
+          onOpenChange={setShowAuthDialog}
+          onSuccess={handleAuthSuccess}
+        />
+      </div>
+    );
+  }
+
+  // Step 1: Mood input
   if (step === "mood") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-background">
@@ -259,6 +379,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
       <div className="mt-8 space-y-4 opacity-0 animate-fade-up delay-300">
         {/* Step dots */}
         <div className="flex items-center justify-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-muted" />
           <div className="w-2.5 h-2.5 rounded-full bg-primary" />
           <div className="w-2.5 h-2.5 rounded-full bg-muted" />
         </div>
