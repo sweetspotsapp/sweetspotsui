@@ -236,10 +236,10 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-background">
         <div className="w-full max-w-md flex flex-col items-center gap-8">
-          <div className="opacity-0 animate-fade-up">
+          <div>
             <SweetSpotsLogo />
           </div>
-          <div className="text-center space-y-2 opacity-0 animate-fade-up delay-200">
+          <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-foreground tracking-tight">
               Let's find your SweetSpots! 🍯
             </h1>
@@ -247,7 +247,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
               Tell us whatever you feel right now. We'll find places that match your vibe.
             </p>
           </div>
-          <div className="w-full opacity-0 animate-fade-up delay-400">
+          <div className="w-full">
             <MoodInput onSubmit={handleMoodSubmit} onSkip={handleMoodSkip} />
           </div>
         </div>
@@ -258,11 +258,11 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
   // Step 2: Location picker
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-[420px] mx-auto px-6 py-8">
-      <div className="mb-12 opacity-0 animate-fade-up">
+      <div className="mb-12">
         <SweetSpotsLogo />
       </div>
 
-      <div className="flex-1 opacity-0 animate-fade-up delay-200">
+      <div className="flex-1">
         <h1 className="text-3xl font-semibold text-foreground mb-2">
           Where should we look? 📍
         </h1>
@@ -360,7 +360,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
         </div>
       </div>
 
-      <div className="mt-8 space-y-4 opacity-0 animate-fade-up delay-300">
+      <div className="mt-8 space-y-4">
         {/* Step dots */}
         <div className="flex items-center justify-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-muted" />
