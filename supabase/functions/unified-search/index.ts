@@ -413,7 +413,7 @@ Only include places that have at least one tag. Use only tags from the valid lis
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-flash-lite',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -906,10 +906,6 @@ serve(async (req) => {
       nextPageToken = data.nextPageToken || null;
 
       if (!nextPageToken || allGooglePlaces.length >= 40) break;
-      
-      if (nextPageToken) {
-        await new Promise(resolve => setTimeout(resolve, 150));
-      }
     }
 
     console.log(`⏱️  Google Places: ${allGooglePlaces.length} places in ${Date.now() - googleStartTime}ms`);
@@ -1289,7 +1285,7 @@ serve(async (req) => {
         rating: place.rating || null,
         ratings_total: place.userRatingCount || null,
         provider: 'google',
-        raw: place,
+        raw: null,
         photo_name: firstPhoto?.name || null,
         price_level: priceLevel,
         opening_hours: openingHours,
@@ -1305,21 +1301,19 @@ serve(async (req) => {
         else {
           console.log(`Upserted ${placesToUpsert.length} places`);
           
-          // Save generated filter_tags AFTER places are upserted
+          // Save generated filter_tags AFTER places are upserted (single bulk upsert)
           if (generatedTagsMap.size > 0) {
-            Promise.all(
-              Array.from(generatedTagsMap.entries()).map(([place_id, filter_tags]) =>
-                supabaseAdmin
-                  .from('places')
-                  .update({ filter_tags })
-                  .eq('place_id', place_id)
-              )
-            ).then((results) => {
-              const successCount = results.filter(r => !r.error).length;
-              const errorCount = results.filter(r => r.error).length;
-              if (successCount > 0) console.log(`Saved filter_tags for ${successCount} places`);
-              if (errorCount > 0) console.error(`Failed to save tags for ${errorCount} places`);
-            });
+            const tagRows = Array.from(generatedTagsMap.entries()).map(([place_id, filter_tags]) => ({
+              place_id,
+              filter_tags,
+            }));
+            supabaseAdmin
+              .from('places')
+              .upsert(tagRows, { onConflict: 'place_id' })
+              .then(({ error }) => {
+                if (error) console.error(`Failed to save filter_tags:`, error);
+                else console.log(`Saved filter_tags for ${tagRows.length} places`);
+              });
           }
         }
       });
