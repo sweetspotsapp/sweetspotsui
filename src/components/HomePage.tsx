@@ -394,14 +394,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           console.log("Initial search with prompt:", searchPrompt, "location:", currentLocation);
         }
         
-        // Store the current mood and location in cache after search starts
-        if (currentMood) {
-          sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
-        }
-        if (currentLocation) {
-          sessionStorage.setItem(CACHED_LOCATION_KEY, currentLocation);
-        }
-        
         // Build search options based on onboarding location
         const searchOptions: { locationName?: string; skipCache?: boolean } = {
           skipCache: moodChanged || locationChanged, // Skip cache if anything changed
@@ -425,8 +417,18 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       }
     };
 
+    // Sync mood/location to cache synchronously before the async search starts.
+    // This ensures any subsequent effect re-run (e.g. from a state change) sees
+    // moodChanged=false and exits early, preventing a duplicate API call.
+    if (currentMood) {
+      sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
+    }
+    if (currentLocation) {
+      sessionStorage.setItem(CACHED_LOCATION_KEY, currentLocation);
+    }
+
     loadInitialPlaces();
-  }, [search, searchResults.length, userMood, onboardingData?.explore_location]);
+  }, [search, userMood, onboardingData?.explore_location]);
 
   // Show search errors as toast
   useEffect(() => {
@@ -516,7 +518,9 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     try {
       sessionStorage.removeItem(CACHE_KEY);
       sessionStorage.removeItem(SUMMARY_CACHE_KEY);
-      sessionStorage.removeItem(CACHED_MOOD_KEY); // Clear cached mood so new search takes effect
+      // Sync the new mood into cache BEFORE setUserMood triggers the initial load effect.
+      // This ensures the effect sees moodChanged=false and doesn't fire a second search.
+      sessionStorage.setItem(CACHED_MOOD_KEY, searchValue.trim());
     } catch (e) {
       console.error('Failed to clear cache:', e);
     }

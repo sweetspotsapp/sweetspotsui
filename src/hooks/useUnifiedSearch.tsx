@@ -36,6 +36,10 @@ interface CacheEntry {
 const searchCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+// In-flight request deduplication: prevents identical concurrent requests from
+// hitting the API twice (e.g. from cascading React effects or StrictMode).
+const pendingRequests = new Map<string, Promise<SearchResult | null>>();
+
 // Generate photo URL using the place-photo proxy
 const getPhotoUrl = (photoName: string | null): string | null => {
   if (!photoName) return null;
@@ -181,6 +185,14 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
           }
         }
 
+        // Deduplicate in-flight requests: if an identical request is already
+        // in progress, return the same promise instead of firing a second call.
+        if (pendingRequests.has(cacheKey)) {
+          console.log('Deduplicating in-flight request for:', prompt);
+          setIsSearching(false);
+          return pendingRequests.get(cacheKey)!;
+        }
+
         console.log('Searching:', { prompt, lat, lng, locationName, radiusM, mode });
 
         // Build request body - include location_name if provided
@@ -200,33 +212,44 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
           requestBody.location_name = locationName;
         }
 
-        // Call unified search endpoint
-        const { data, error: searchError } = await supabase.functions.invoke(
-          'unified-search',
-          {
-            body: requestBody,
+        // Wrap the network call in a tracked promise so the deduplication
+        // check above can return the same promise for concurrent identical requests.
+        const requestPromise = (async (): Promise<SearchResult> => {
+          // Call unified search endpoint
+          const { data, error: searchError } = await supabase.functions.invoke(
+            'unified-search',
+            { body: requestBody }
+          );
+
+          if (searchError) {
+            console.error('Search error:', searchError);
+            throw new Error(searchError.message || 'Search failed');
           }
-        );
 
-        if (searchError) {
-          console.error('Search error:', searchError);
-          throw new Error(searchError.message || 'Search failed');
+          if (!data) {
+            throw new Error('No response from search');
+          }
+
+          // Add photo URLs to places
+          const placesWithPhotos: UnifiedPlace[] = (data.places || []).map((place: UnifiedPlace) => ({
+            ...place,
+            photo_url: getPhotoUrl(place.photo_name),
+          }));
+
+          return {
+            places: placesWithPhotos,
+            summary: data.summary || '',
+          };
+        })();
+
+        pendingRequests.set(cacheKey, requestPromise);
+
+        let result: SearchResult;
+        try {
+          result = await requestPromise;
+        } finally {
+          pendingRequests.delete(cacheKey);
         }
-
-        if (!data) {
-          throw new Error('No response from search');
-        }
-
-        // Add photo URLs to places
-        const placesWithPhotos: UnifiedPlace[] = (data.places || []).map((place: UnifiedPlace) => ({
-          ...place,
-          photo_url: getPhotoUrl(place.photo_name),
-        }));
-
-        const result: SearchResult = {
-          places: placesWithPhotos,
-          summary: data.summary || '',
-        };
 
         // Update cache
         searchCache.set(cacheKey, {
@@ -235,10 +258,10 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
         });
 
         // Update state
-        setPlaces(placesWithPhotos);
+        setPlaces(result.places);
         setSummary(result.summary);
 
-        console.log(`Found ${placesWithPhotos.length} places`);
+        console.log(`Found ${result.places.length} places`);
 
         return result;
       } catch (err) {
