@@ -1,36 +1,18 @@
 
-# Welcome/Intro Screen Before Onboarding
 
-## What Changes
+# Fix Flickering on Step Transition
 
-Add a new "welcome" step as the first screen in the `EntryScreen` component. The flow becomes:
+## Problem
+When clicking "Continue as guest", the location screen elements all start at `opacity-0` and then animate in with staggered delays (`delay-200`, `delay-300`). This causes a visible flicker where the screen briefly appears blank before content fades in.
 
-1. **Welcome (NEW)** -- Introduction with value proposition + Login/Register buttons + "Continue as guest"
-2. **Location** -- Where should we look?
-3. **Mood** -- What are you in the mood for?
+## Solution
+Remove the `opacity-0 animate-fade-up` animation classes from the location step (and optionally the mood step) so content renders instantly when transitioning between steps. The fade-up animations make sense on the initial welcome screen (first thing users see), but feel jarring on subsequent steps where users expect an immediate transition.
 
-## Welcome Screen Design
-
-- SweetSpots logo at top
-- Headline: "Welcome to SweetSpots" (or similar engaging copy)
-- 2-3 short value proposition bullets (e.g., "Discover places that match your vibe", "Get personalized recommendations", "Save and share your favorites")
-- "Continue with Google" button (primary)
-- "Sign up with email" / "Sign in" buttons
-- "Continue as guest" link at the bottom (skips auth, proceeds to location step)
-- Step dots: 3 dots now (welcome / location / mood), first one active
-
-## Technical Details
+## Technical Changes
 
 **File: `src/components/EntryScreen.tsx`**
 
-- Add `"welcome"` to the step union type: `useState<"welcome" | "location" | "mood">("welcome")`
-- Add a new conditional render block for `step === "welcome"` that shows:
-  - Logo, headline, value prop copy
-  - Google sign-in button (reusing `signInWithGoogle` from `useAuth`)
-  - Email auth via opening the existing `AuthDialog` component (import it)
-  - A "Continue as guest" button that sets step to `"location"`
-- On successful auth (Google redirect or dialog success), proceed to `"location"` step
-- Update step indicator dots from 2 to 3 across all steps
-- The `onSkip` ("Skip to home") link remains available on the welcome screen as well
+1. **Location step (lines 261-263, 265, 363):** Remove `opacity-0 animate-fade-up` and delay classes from the three wrapper divs in the location step
+2. **Mood step (lines 239, 242, 250):** Similarly remove fade-up animations from the mood step wrappers
 
-**No new files needed** -- the existing `AuthDialog` component handles email sign-up/sign-in and will be opened as a dialog from the welcome screen.
+This keeps the welcome screen's entrance animations intact while making step-to-step transitions instant and flicker-free.
