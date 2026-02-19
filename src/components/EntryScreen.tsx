@@ -15,25 +15,9 @@ interface EntryScreenProps {
   onSkip: () => void;
 }
 
-// SweetSpots Logo SVG
+// SweetSpots Logo
 const SweetSpotsLogo = () => (
-  <svg
-    width="64"
-    height="48"
-    viewBox="0 0 64 48"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className="text-primary"
-  >
-    <path
-      d="M8 8C8 8 16 8 20 16C24 24 16 32 24 32C32 32 24 16 32 8C40 0 48 16 40 24C32 32 40 40 48 40C56 40 48 24 56 16"
-      stroke="currentColor"
-      strokeWidth="4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-    />
-  </svg>
+  <img src="/sweetspots-logo.svg" alt="SweetSpots" className="h-12 w-auto" />
 );
 
 const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
