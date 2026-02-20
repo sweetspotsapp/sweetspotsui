@@ -1,21 +1,132 @@
 
-# Fix: Google Map Not Rendering on Homepage
 
-## Problem
-When you tap the Map toggle on the homepage, the map container appears but is completely empty (no map tiles or pins visible). The Google Maps API key loads successfully, the scripts load, but the map has **zero rendered height**.
+# Google Cloud API Enhancements - Implementation Plan
 
-## Root Cause
-The `BoardMapView` component's inner wrapper uses `className="flex-1 relative"`, which only works inside a CSS flexbox parent. However, the parent container in `HomePage.tsx` is a regular block element with a fixed height (`h-[calc(100vh-280px)]`). Since `flex-1` has no effect without a flex parent, the map container collapses to 0 height, making the Google Map invisible.
+This plan covers four major improvements using Google Cloud APIs to enhance the app's functionality.
 
-## Solution
-Change the inner wrapper divs in `BoardMapView` to use `h-full w-full` instead of `flex-1`, so they inherit the explicit height from the parent container.
+---
 
-## Technical Changes
+## Phase 1: Routes API for Accurate Travel Times
 
-**File: `src/components/saved/BoardMapView.tsx`**
+**What it does:** Replace the current Haversine formula (straight-line distance estimates) with real driving/walking directions from Google's Routes API, giving users accurate travel times in itineraries.
 
-1. In the `MapLoader` component's success render (the `<div ref={ref} className="flex-1 relative">` wrapper around `MapContent`), change `flex-1` to `h-full w-full`
-2. In the loading/error state divs that use `flex-1 flex items-center justify-center`, also change `flex-1` to `h-full w-full` so they display properly too
-3. In the main `BoardMapView` component's loading/error states, apply the same fix
+**Current state:** The `DistanceConnector` component uses a basic Haversine formula that calculates "as the crow flies" distance, then estimates travel time using rough speed assumptions (5km/h walking, 30km/h driving). The `rank_with_travel_time` and `unified-search` edge functions use Geoapify for travel time estimates.
 
-This ensures the map container properly fills the parent's defined height regardless of whether the parent is a flex container or not. The fix is purely CSS class changes -- no logic changes needed.
+**Changes:**
+
+1. **New edge function: `supabase/functions/compute-routes/index.ts`**
+   - Accepts an array of origin/destination coordinate pairs and a travel mode
+   - Calls Google Routes API (`https://routes.googleapis.com/directions/v2:computeRoutes`)
+   - Returns actual duration and distance for each pair
+   - Uses the existing `GOOGLE_MAPS_API_KEY` secret (no new keys needed)
+   - Add entry to `supabase/config.toml` with `verify_jwt = false`
+
+2. **Update `src/components/itinerary/DistanceConnector.tsx`**
+   - Add optional props for pre-computed `durationText` and `distanceText` from the Routes API
+   - Fall back to Haversine calculation when Routes API data is not available
+
+3. **Update `src/components/itinerary/DaySection.tsx`**
+   - After itinerary loads, batch-call the `compute-routes` function for all consecutive activity pairs
+   - Pass the real travel data down to `DistanceConnector`
+
+4. **Update `src/hooks/useItinerary.tsx`**
+   - Add a `useEffect` that fetches route data after itinerary generation completes
+   - Store route data in state alongside itinerary data
+
+---
+
+## Phase 2: Google Geocoding API (Replace Geoapify)
+
+**What it does:** Switch from Geoapify to Google Geocoding API for all geocoding, unifying the provider and improving accuracy.
+
+**Current state:** The `unified-search` edge function uses Geoapify as the primary geocoder with Google as a fallback. The `GEOAPIFY_API_KEY` secret is configured.
+
+**Changes:**
+
+1. **Update `supabase/functions/unified-search/index.ts`**
+   - Make Google Geocoding the primary geocoder instead of Geoapify
+   - Keep Geoapify as a fallback (to not break anything if Google has issues)
+   - Swap the order: try Google first, then Geoapify
+
+2. **Update `supabase/functions/rank_with_travel_time/index.ts`**
+   - Replace Geoapify travel time calculations with Google Routes API calls
+   - This gives more accurate ETA and distance values for search results
+
+---
+
+## Phase 3: Place Popularity / Busy Times
+
+**What it does:** Show users when places are busiest so they can plan visits at quieter times. Display a simple "busy now" indicator and popular times chart.
+
+**Current state:** The `places` table has `opening_hours` and `is_open_now` fields but no popularity data. The `enrich-places` edge function fetches metadata from Google Places API.
+
+**Changes:**
+
+1. **Database migration**
+   - Add `popular_times` (jsonb, nullable) column to the `places` table -- stores the weekly popularity data from Google
+
+2. **Update `supabase/functions/enrich-places/index.ts`**
+   - When enriching places, also request the `populationDensity` / `currentPopularity` fields from the Places API (New) if available
+   - Store the data in the new `popular_times` column
+
+3. **New component: `src/components/place-detail/PopularTimesChart.tsx`**
+   - A small bar chart showing busy levels across hours of the day
+   - Highlight the current hour
+   - Uses simple CSS bars (no heavy chart library needed)
+
+4. **Update `src/pages/PlaceDetails.tsx`**
+   - Add the `PopularTimesChart` component to the place detail page
+   - Show a "Busy now" / "Not too busy" / "Usually quiet" badge on place cards
+
+5. **Update `src/components/PlaceCard.tsx` and `src/components/PlaceCardCompact.tsx`**
+   - Add a small busyness indicator when popularity data is available
+
+---
+
+## Phase 4: Street View Previews
+
+**What it does:** Add a Street View image to place detail pages so users can see the actual street-level view before visiting.
+
+**Current state:** Place detail pages show photo carousels from the Google Places Photo API but no street-level imagery.
+
+**Changes:**
+
+1. **New edge function: `supabase/functions/street-view/index.ts`**
+   - Accepts lat/lng or place_id
+   - Calls Google Street View Static API (`https://maps.googleapis.com/maps/api/streetview`) to check if Street View is available (metadata endpoint)
+   - If available, proxies the image back to the client (protects the API key)
+   - Uses existing `GOOGLE_MAPS_API_KEY` secret
+   - Add entry to `supabase/config.toml` with `verify_jwt = false`
+
+2. **New component: `src/components/place-detail/StreetViewPreview.tsx`**
+   - Displays a street-level preview image with a "Street View" label
+   - Shows a loading skeleton while the image loads
+   - Gracefully hides if no Street View is available for the location
+
+3. **Update `src/pages/PlaceDetails.tsx`**
+   - Add `StreetViewPreview` below the image carousel
+   - Only render when lat/lng coordinates are available
+
+---
+
+## Implementation Order
+
+I recommend implementing in this sequence to maximize impact while keeping each phase independent:
+
+1. **Street View Previews** -- Quickest win, visual impact, standalone feature
+2. **Routes API** -- High user value for itinerary planning
+3. **Google Geocoding** -- Backend improvement, minimal UI changes
+4. **Popular Times** -- Requires database migration and enrichment pipeline updates
+
+---
+
+## Technical Notes
+
+- All features use the existing `GOOGLE_MAPS_API_KEY` secret -- no new API keys needed
+- The Google Maps API key must have these additional APIs enabled in Google Cloud Console:
+  - **Routes API** (for Phase 1 and 2)
+  - **Street View Static API** (for Phase 4)
+  - **Geocoding API** (for Phase 2, likely already enabled)
+- The existing HTTP referrer restrictions on the API key protect client-side usage; server-side edge functions use the key directly which is unrestricted by referrer
+- Each phase is independent and can be implemented and tested separately
+
