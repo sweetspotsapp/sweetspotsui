@@ -1,0 +1,1 @@
+ALTER TABLE public.places ADD COLUMN IF NOT EXISTS popular_times jsonb DEFAULT NULL;

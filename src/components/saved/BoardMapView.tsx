@@ -255,7 +255,7 @@ const BoardMapView = forwardRef<HTMLDivElement, BoardMapViewProps>(
 
     if (isLoadingKey) {
       return (
-        <div ref={ref} className="flex-1 flex items-center justify-center bg-muted/30">
+        <div ref={ref} className="h-full w-full flex items-center justify-center bg-muted/30">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Loading map...</p>
@@ -266,7 +266,7 @@ const BoardMapView = forwardRef<HTMLDivElement, BoardMapViewProps>(
 
     if (keyError || !apiKey) {
       return (
-        <div ref={ref} className="flex-1 flex items-center justify-center bg-muted/30">
+        <div ref={ref} className="h-full w-full flex items-center justify-center bg-muted/30">
           <div className="flex flex-col items-center gap-3 text-center px-6">
             <MapPin className="w-12 h-12 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
@@ -317,7 +317,7 @@ const MapLoader = forwardRef<HTMLDivElement, MapLoaderProps>(
       const isRefererError = loadError.message?.toLowerCase().includes('referer') || 
                              loadError.message?.toLowerCase().includes('api key');
       return (
-        <div ref={ref} className="flex-1 flex items-center justify-center bg-muted/30">
+        <div ref={ref} className="h-full w-full flex items-center justify-center bg-muted/30">
           <div className="flex flex-col items-center gap-3 text-center px-6">
             <MapPin className="w-12 h-12 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
@@ -332,7 +332,7 @@ const MapLoader = forwardRef<HTMLDivElement, MapLoaderProps>(
 
     if (!isLoaded) {
       return (
-        <div ref={ref} className="flex-1 flex items-center justify-center bg-muted/30">
+        <div ref={ref} className="h-full w-full flex items-center justify-center bg-muted/30">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Initializing map...</p>
@@ -342,7 +342,7 @@ const MapLoader = forwardRef<HTMLDivElement, MapLoaderProps>(
     }
 
     return (
-      <div ref={ref} className="flex-1 relative">
+      <div ref={ref} className="h-full w-full relative">
         <MapContent
           places={places}
           userLocation={userLocation}

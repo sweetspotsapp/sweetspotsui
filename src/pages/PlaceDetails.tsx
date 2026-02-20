@@ -15,8 +15,10 @@ import WhyVisitSection from '@/components/place-detail/WhyVisitSection';
 import InsiderTipsSection from '@/components/place-detail/InsiderTipsSection';
 import SignatureItemsSection from '@/components/place-detail/SignatureItemsSection';
 import PerfectForSection from '@/components/place-detail/PerfectForSection';
+import PopularTimesChart from '@/components/place-detail/PopularTimesChart';
 import BottomNav from '@/components/BottomNav';
 import SaveToBoardDialog from '@/components/saved/SaveToBoardDialog';
+import StreetViewPreview from '@/components/place-detail/StreetViewPreview';
 import { useAuth } from '@/hooks/useAuth';
 interface OpeningHoursData {
   open_now: boolean;
@@ -49,6 +51,7 @@ interface PlaceDetails {
   unique_vibes: string | null;
   best_for: string[] | null;
   local_secrets: string | null;
+  popular_times: Record<string, number[]> | null;
 }
 interface RelatedPlace {
   id: string;
@@ -507,6 +510,7 @@ const PlaceDetailsPage = () => {
                     unique_vibes: (newData as any).unique_vibes ?? null,
                     best_for: (newData as any).best_for ?? null,
                     local_secrets: (newData as any).local_secrets ?? null,
+                    popular_times: (newData as any).popular_times ?? null,
                   };
                   setPlace(placeData);
                   await fetchRelatedPlaces(newData);
@@ -570,6 +574,7 @@ const PlaceDetailsPage = () => {
                   unique_vibes: (enrichedData as any).unique_vibes ?? null,
                   best_for: (enrichedData as any).best_for ?? null,
                   local_secrets: (enrichedData as any).local_secrets ?? null,
+                  popular_times: (enrichedData as any).popular_times ?? null,
                 };
                 setPlace(enrichedPlaceData);
                 await fetchRelatedPlaces(enrichedData);
@@ -603,6 +608,7 @@ const PlaceDetailsPage = () => {
           unique_vibes: (data as any).unique_vibes ?? null,
           best_for: (data as any).best_for ?? null,
           local_secrets: (data as any).local_secrets ?? null,
+          popular_times: (data as any).popular_times ?? null,
         };
         setPlace(placeData);
         await fetchRelatedPlaces(data);
@@ -812,7 +818,11 @@ const PlaceDetailsPage = () => {
         isToday: true
       }]} isOpen={place.is_open_now} />
 
-        {/* 4. Why You Should Visit - AI-powered personalized reason */}
+        {/* 4a. Popular Times Chart */}
+        {place.popular_times && (
+          <PopularTimesChart popularTimes={place.popular_times} />
+        )}
+
         <WhyVisitSection 
           placeName={place.name} 
           categories={place.categories || []} 
@@ -838,7 +848,12 @@ const PlaceDetailsPage = () => {
           <PerfectForSection occasions={place.best_for} />
         )}
 
-        {/* 8. Reviews Section - Now with real Google reviews */}
+        {/* 8. Street View Preview */}
+        {place.lat && place.lng && (
+          <StreetViewPreview lat={place.lat} lng={place.lng} />
+        )}
+
+        {/* 9. Reviews Section - Now with real Google reviews */}
         {formattedReviews.length > 0 && <ReviewsList reviews={formattedReviews} />}
 
         {/* 9. Similar Places - "You might also like" */}
