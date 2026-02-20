@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.character-match]
 verify_jwt = false
+
+[functions.street-view]
+verify_jwt = false
+
+[functions.compute-routes]
+verify_jwt = false

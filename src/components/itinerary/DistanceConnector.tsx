@@ -5,6 +5,8 @@ interface DistanceConnectorProps {
   fromLng?: number;
   toLat?: number;
   toLng?: number;
+  durationText?: string;
+  distanceText?: string;
 }
 
 // Haversine formula to calculate distance between two coordinates
@@ -20,14 +22,22 @@ const haversineDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c;
 };
 
-const DistanceConnector = ({ fromLat, fromLng, toLat, toLng }: DistanceConnectorProps) => {
+const DistanceConnector = ({ fromLat, fromLng, toLat, toLng, durationText, distanceText }: DistanceConnectorProps) => {
   if (!fromLat || !fromLng || !toLat || !toLng) return null;
 
+  // Use pre-computed Routes API data if available, otherwise fall back to Haversine
+  const hasRouteData = !!durationText && !!distanceText;
+  
   const distanceKm = haversineDistance(fromLat, fromLng, toLat, toLng);
-  const isWalkable = distanceKm < 1.5;
-  const travelMinutes = isWalkable 
-    ? Math.round(distanceKm / 0.08) // ~5km/h walking = 0.08km/min
-    : Math.round(distanceKm / 0.5); // ~30km/h city driving = 0.5km/min
+  const isWalkable = hasRouteData 
+    ? distanceText.includes('m') && !distanceText.includes('km') && parseInt(distanceText) < 1500
+    : distanceKm < 1.5;
+  const fallbackMinutes = isWalkable 
+    ? Math.round(distanceKm / 0.08)
+    : Math.round(distanceKm / 0.5);
+
+  const displayDistance = hasRouteData ? distanceText : (distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`);
+  const displayDuration = hasRouteData ? durationText : `${fallbackMinutes} min`;
 
   return (
     <div className="flex items-center gap-2 px-6 py-1">
@@ -45,9 +55,9 @@ const DistanceConnector = ({ fromLat, fromLng, toLat, toLng }: DistanceConnector
         ) : (
           <Car className="w-3 h-3" />
         )}
-        <span>{distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`}</span>
+        <span>{displayDistance}</span>
         <span className="text-border">·</span>
-        <span>{travelMinutes} min</span>
+        <span>{displayDuration}</span>
       </div>
     </div>
   );

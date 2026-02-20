@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ActivityCard from "./ActivityCard";
@@ -20,8 +20,86 @@ const TIME_ICONS: Record<string, string> = {
   Evening: "🌙",
 };
 
+interface RouteData {
+  durationText: string;
+  distanceText: string;
+}
+
 const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
+  const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
+
+  // Collect all consecutive activity pairs and fetch real travel data
+  useEffect(() => {
+    const pairs: Array<{ key: string; origin: { lat: number; lng: number }; destination: { lat: number; lng: number } }> = [];
+    const allActivities: Array<{ lat?: number; lng?: number }> = [];
+
+    for (const slot of day.slots) {
+      for (const activity of slot.activities) {
+        allActivities.push(activity);
+      }
+    }
+
+    for (let i = 0; i < allActivities.length - 1; i++) {
+      const from = allActivities[i];
+      const to = allActivities[i + 1];
+      if (from.lat && from.lng && to.lat && to.lng) {
+        pairs.push({
+          key: `${from.lat},${from.lng}->${to.lat},${to.lng}`,
+          origin: { lat: from.lat, lng: from.lng },
+          destination: { lat: to.lat, lng: to.lng },
+        });
+      }
+    }
+
+    if (pairs.length === 0) return;
+
+    const fetchRoutes = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/compute-routes`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              routes: pairs.map(p => ({ origin: p.origin, destination: p.destination })),
+              travelMode: 'DRIVE',
+            }),
+          }
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const newMap = new Map<string, RouteData>();
+        
+        if (data.results) {
+          pairs.forEach((pair, idx) => {
+            const result = data.results[idx];
+            if (result?.durationText) {
+              newMap.set(pair.key, {
+                durationText: result.durationText,
+                distanceText: result.distanceText,
+              });
+            }
+          });
+        }
+
+        if (newMap.size > 0) {
+          setRouteDataMap(newMap);
+        }
+      } catch (err) {
+        console.log('Routes API fallback to Haversine:', err);
+      }
+    };
+
+    fetchRoutes();
+  }, [day]);
+
+  const getRouteData = (fromLat?: number, fromLng?: number, toLat?: number, toLng?: number): RouteData | undefined => {
+    if (!fromLat || !fromLng || !toLat || !toLng) return undefined;
+    return routeDataMap.get(`${fromLat},${fromLng}->${toLat},${toLng}`);
+  };
 
   // Calculate day total cost
   const dayTotal = day.slots.reduce((total, slot) => 
@@ -61,6 +139,11 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
             const prevLastActivity = prevSlot?.activities?.[prevSlot.activities.length - 1];
             const firstActivity = slot.activities?.[0];
 
+            const crossSlotRoute = getRouteData(
+              prevLastActivity?.lat, prevLastActivity?.lng,
+              firstActivity?.lat, firstActivity?.lng
+            );
+
             return (
               <div key={slotIndex}>
                 {/* Cross-slot distance connector */}
@@ -71,6 +154,8 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
                       fromLng={prevLastActivity.lng}
                       toLat={firstActivity.lat}
                       toLng={firstActivity.lng}
+                      durationText={crossSlotRoute?.durationText}
+                      distanceText={crossSlotRoute?.distanceText}
                     />
                   </div>
                 )}
@@ -85,27 +170,37 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
 
                   {/* Activities with distance connectors */}
                   <div className="px-3 py-2 space-y-2">
-                    {slot.activities.map((activity, activityIndex) => (
-                      <div key={activityIndex}>
-                        <ActivityCard
-                          activity={activity}
-                          onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
-                          onMoveUp={activityIndex > 0 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex - 1) : undefined}
-                          onMoveDown={activityIndex < slot.activities.length - 1 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex + 1) : undefined}
-                          onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
-                          isSwapping={isSwapping}
-                        />
-                        {/* Distance connector to next activity */}
-                        {activityIndex < slot.activities.length - 1 && (
-                          <DistanceConnector
-                            fromLat={activity.lat}
-                            fromLng={activity.lng}
-                            toLat={slot.activities[activityIndex + 1].lat}
-                            toLng={slot.activities[activityIndex + 1].lng}
+                    {slot.activities.map((activity, activityIndex) => {
+                      const nextActivity = slot.activities[activityIndex + 1];
+                      const routeData = getRouteData(
+                        activity.lat, activity.lng,
+                        nextActivity?.lat, nextActivity?.lng
+                      );
+
+                      return (
+                        <div key={activityIndex}>
+                          <ActivityCard
+                            activity={activity}
+                            onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
+                            onMoveUp={activityIndex > 0 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex - 1) : undefined}
+                            onMoveDown={activityIndex < slot.activities.length - 1 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex + 1) : undefined}
+                            onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
+                            isSwapping={isSwapping}
                           />
-                        )}
-                      </div>
-                    ))}
+                          {/* Distance connector to next activity */}
+                          {activityIndex < slot.activities.length - 1 && (
+                            <DistanceConnector
+                              fromLat={activity.lat}
+                              fromLng={activity.lng}
+                              toLat={nextActivity.lat}
+                              toLng={nextActivity.lng}
+                              durationText={routeData?.durationText}
+                              distanceText={routeData?.distanceText}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

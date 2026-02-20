@@ -17,6 +17,7 @@ import SignatureItemsSection from '@/components/place-detail/SignatureItemsSecti
 import PerfectForSection from '@/components/place-detail/PerfectForSection';
 import BottomNav from '@/components/BottomNav';
 import SaveToBoardDialog from '@/components/saved/SaveToBoardDialog';
+import StreetViewPreview from '@/components/place-detail/StreetViewPreview';
 import { useAuth } from '@/hooks/useAuth';
 interface OpeningHoursData {
   open_now: boolean;
@@ -838,7 +839,12 @@ const PlaceDetailsPage = () => {
           <PerfectForSection occasions={place.best_for} />
         )}
 
-        {/* 8. Reviews Section - Now with real Google reviews */}
+        {/* 8. Street View Preview */}
+        {place.lat && place.lng && (
+          <StreetViewPreview lat={place.lat} lng={place.lng} />
+        )}
+
+        {/* 9. Reviews Section - Now with real Google reviews */}
         {formattedReviews.length > 0 && <ReviewsList reviews={formattedReviews} />}
 
         {/* 9. Similar Places - "You might also like" */}

@@ -761,39 +761,39 @@ serve(async (req) => {
       } else {
         let geocoded = false;
 
-        // Try Geoapify first
+        // Try Google Geocoding first (primary)
         try {
-          const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location_name)}&limit=1&apiKey=${geoapifyApiKey}`;
-          const geoResponse = await fetch(geocodeUrl);
-          const geoData = await geoResponse.json();
+          const googleGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location_name)}&key=${googleMapsApiKey}`;
+          const googleGeoResponse = await fetch(googleGeoUrl);
+          const googleGeoData = await googleGeoResponse.json();
           
-          if (geoData.features && geoData.features.length > 0) {
-            const [geoLng, geoLat] = geoData.features[0].geometry.coordinates;
-            lat = geoLat;
-            lng = geoLng;
+          if (googleGeoData.results && googleGeoData.results.length > 0) {
+            const loc = googleGeoData.results[0].geometry.location;
+            lat = loc.lat;
+            lng = loc.lng;
             geocoded = true;
-            console.log(`Geoapify geocoded "${location_name}" to: ${lat}, ${lng}`);
+            console.log(`Google geocoded "${location_name}" to: ${lat}, ${lng}`);
           }
         } catch (e) {
-          console.error('Geoapify geocoding error:', e);
+          console.error('Google geocoding error:', e);
         }
 
-        // Fallback to Google Geocoding if Geoapify failed
+        // Fallback to Geoapify if Google failed
         if (!geocoded) {
           try {
-            const googleGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location_name)}&key=${googleMapsApiKey}`;
-            const googleGeoResponse = await fetch(googleGeoUrl);
-            const googleGeoData = await googleGeoResponse.json();
+            const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location_name)}&limit=1&apiKey=${geoapifyApiKey}`;
+            const geoResponse = await fetch(geocodeUrl);
+            const geoData = await geoResponse.json();
             
-            if (googleGeoData.results && googleGeoData.results.length > 0) {
-              const loc = googleGeoData.results[0].geometry.location;
-              lat = loc.lat;
-              lng = loc.lng;
+            if (geoData.features && geoData.features.length > 0) {
+              const [geoLng, geoLat] = geoData.features[0].geometry.coordinates;
+              lat = geoLat;
+              lng = geoLng;
               geocoded = true;
-              console.log(`Google geocoded "${location_name}" to: ${lat}, ${lng}`);
+              console.log(`Geoapify geocoded "${location_name}" to: ${lat}, ${lng}`);
             }
           } catch (e) {
-            console.error('Google geocoding error:', e);
+            console.error('Geoapify geocoding error:', e);
           }
         }
 
@@ -804,18 +804,36 @@ serve(async (req) => {
             const simplified = parts.slice(-3).join(', ');
             console.log(`Retrying geocode with simplified name: ${simplified}`);
             try {
-              const simplifiedUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(simplified)}&limit=1&apiKey=${geoapifyApiKey}`;
-              const simplifiedResponse = await fetch(simplifiedUrl);
-              const simplifiedData = await simplifiedResponse.json();
-              if (simplifiedData.features && simplifiedData.features.length > 0) {
-                const [geoLng, geoLat] = simplifiedData.features[0].geometry.coordinates;
-                lat = geoLat;
-                lng = geoLng;
+              // Try Google first for simplified too
+              const simplifiedGoogleUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(simplified)}&key=${googleMapsApiKey}`;
+              const simplifiedGoogleRes = await fetch(simplifiedGoogleUrl);
+              const simplifiedGoogleData = await simplifiedGoogleRes.json();
+              if (simplifiedGoogleData.results && simplifiedGoogleData.results.length > 0) {
+                const loc = simplifiedGoogleData.results[0].geometry.location;
+                lat = loc.lat;
+                lng = loc.lng;
                 geocoded = true;
-                console.log(`Simplified geocoded "${simplified}" to: ${lat}, ${lng}`);
+                console.log(`Simplified Google geocoded "${simplified}" to: ${lat}, ${lng}`);
               }
             } catch (e) {
-              console.error('Simplified geocoding error:', e);
+              console.error('Simplified Google geocoding error:', e);
+            }
+
+            if (!geocoded) {
+              try {
+                const simplifiedUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(simplified)}&limit=1&apiKey=${geoapifyApiKey}`;
+                const simplifiedResponse = await fetch(simplifiedUrl);
+                const simplifiedData = await simplifiedResponse.json();
+                if (simplifiedData.features && simplifiedData.features.length > 0) {
+                  const [geoLng, geoLat] = simplifiedData.features[0].geometry.coordinates;
+                  lat = geoLat;
+                  lng = geoLng;
+                  geocoded = true;
+                  console.log(`Simplified Geoapify geocoded "${simplified}" to: ${lat}, ${lng}`);
+                }
+              } catch (e) {
+                console.error('Simplified Geoapify geocoding error:', e);
+              }
             }
           }
         }
