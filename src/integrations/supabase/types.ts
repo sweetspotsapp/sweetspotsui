@@ -183,6 +183,7 @@ export type Database = {
           photo_name: string | null
           photos: string[] | null
           place_id: string
+          popular_times: Json | null
           price_level: number | null
           provider: string | null
           rating: number | null
@@ -209,6 +210,7 @@ export type Database = {
           photo_name?: string | null
           photos?: string[] | null
           place_id: string
+          popular_times?: Json | null
           price_level?: number | null
           provider?: string | null
           rating?: number | null
@@ -235,6 +237,7 @@ export type Database = {
           photo_name?: string | null
           photos?: string[] | null
           place_id?: string
+          popular_times?: Json | null
           price_level?: number | null
           provider?: string | null
           rating?: number | null
