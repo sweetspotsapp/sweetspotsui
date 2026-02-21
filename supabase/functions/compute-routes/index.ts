@@ -26,7 +26,7 @@ serve(async (req) => {
   }
 
   try {
-    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY_BE');
     if (!GOOGLE_API_KEY) {
       return new Response(JSON.stringify({ error: 'API key not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

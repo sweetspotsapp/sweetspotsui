@@ -319,9 +319,9 @@ serve(async (req) => {
   try {
     const { places, lat, lng, placeId } = await req.json();
 
-    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY_BE');
     if (!GOOGLE_API_KEY) {
-      throw new Error('GOOGLE_MAPS_API_KEY not configured');
+      throw new Error('GOOGLE_MAPS_API_KEY_BE not configured');
     }
 
     // Initialize Supabase client for saving places

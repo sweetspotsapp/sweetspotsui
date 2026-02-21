@@ -263,8 +263,8 @@ async function translatePromptToKeywords(
   if (isAlreadyKeywords) {
     console.log('Prompt is already keyword-like, skipping translation');
     const result = { keywords: prompt, intent: prompt };
-    // Cache async (fire and forget) - 2 hour TTL
-    setCacheValue(supabaseClient, cacheKey, result, 2 * 60 * 60 * 1000).then(() => {});
+    // Cache async (fire and forget) - 12 hour TTL
+    setCacheValue(supabaseClient, cacheKey, result, 12 * 60 * 60 * 1000).then(() => {});
     return result;
   }
 
@@ -330,8 +330,8 @@ Return ONLY a JSON object: { "keywords": "search terms", "intent": "what user wa
       
       console.log(`Translated: "${prompt}" → "${keywords}"`);
       const result = { keywords, intent };
-      // Cache async (fire and forget) - 2 hour TTL
-      setCacheValue(supabaseClient, cacheKey, result, 2 * 60 * 60 * 1000).then(() => {});
+      // Cache async (fire and forget) - 6 hour TTL
+      setCacheValue(supabaseClient, cacheKey, result, 6 * 60 * 60 * 1000).then(() => {});
       return result;
     } catch (parseError) {
       console.error('Translation JSON parse error:', parseError);
@@ -699,10 +699,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY_BE')!;
     const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    const appUrl = Deno.env.get('APP_URL') || 'https://localhost';
 
     if (!googleMapsApiKey) {
       return new Response(
@@ -765,7 +764,7 @@ serve(async (req) => {
         // Try Google Geocoding first (primary)
         try {
           const googleGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location_name)}&key=${googleMapsApiKey}`;
-          const googleGeoResponse = await fetch(googleGeoUrl, { headers: { 'Referer': appUrl } });
+          const googleGeoResponse = await fetch(googleGeoUrl);
           const googleGeoData = await googleGeoResponse.json();
           
           if (googleGeoData.results && googleGeoData.results.length > 0) {
@@ -807,7 +806,7 @@ serve(async (req) => {
             try {
               // Try Google first for simplified too
               const simplifiedGoogleUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(simplified)}&key=${googleMapsApiKey}`;
-              const simplifiedGoogleRes = await fetch(simplifiedGoogleUrl, { headers: { 'Referer': appUrl } });
+              const simplifiedGoogleRes = await fetch(simplifiedGoogleUrl);
               const simplifiedGoogleData = await simplifiedGoogleRes.json();
               if (simplifiedGoogleData.results && simplifiedGoogleData.results.length > 0) {
                 const loc = simplifiedGoogleData.results[0].geometry.location;
@@ -901,7 +900,6 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Referer': appUrl,
           'X-Goog-Api-Key': googleMapsApiKey,
           'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos,places.priceLevel,places.currentOpeningHours,places.regularOpeningHours,nextPageToken'
         },

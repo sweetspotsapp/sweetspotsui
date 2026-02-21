@@ -123,8 +123,8 @@ async function searchGooglePlaces(
   placeName: string,
   city: string
 ): Promise<any | null> {
-  const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
-  if (!GOOGLE_MAPS_API_KEY) throw new Error("GOOGLE_MAPS_API_KEY not configured");
+  const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY_BE");
+  if (!GOOGLE_MAPS_API_KEY) throw new Error("GOOGLE_MAPS_API_KEY_BE not configured");
 
   const query = `${placeName} ${city}`;
   const res = await fetch("https://places.googleapis.com/v1/places:searchText", {

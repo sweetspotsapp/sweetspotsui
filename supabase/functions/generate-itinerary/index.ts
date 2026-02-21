@@ -235,7 +235,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
     const itinerary = JSON.parse(toolCall.function.arguments);
 
     // Enrich activities with real place data using Google Places API
-    const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
+    const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY_BE");
 
     // First try matching from DB cache
     const { data: cachedPlaces } = await sb

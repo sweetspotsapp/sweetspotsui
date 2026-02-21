@@ -122,11 +122,32 @@ I recommend implementing in this sequence to maximize impact while keeping each 
 
 ## Technical Notes
 
-- All features use the existing `GOOGLE_MAPS_API_KEY` secret -- no new API keys needed
-- The Google Maps API key must have these additional APIs enabled in Google Cloud Console:
-  - **Routes API** (for Phase 1 and 2)
-  - **Street View Static API** (for Phase 4)
-  - **Geocoding API** (for Phase 2, likely already enabled)
-- The existing HTTP referrer restrictions on the API key protect client-side usage; server-side edge functions use the key directly which is unrestricted by referrer
+### Two Google API Keys Architecture
+
+The project uses two separate Google Maps API keys to isolate frontend and backend usage:
+
+| Secret | Key type | Restriction | Used by |
+|--------|----------|-------------|---------|
+| `GOOGLE_MAPS_API_KEY` | Frontend key | HTTP referrer restricted to app domain | `get-maps-key` edge function (proxied to browser for Maps JS SDK + autocomplete) |
+| `GOOGLE_MAPS_API_KEY_BE` | Backend key | No HTTP referrer restriction (IP or unrestricted) | All other edge functions: `unified-search`, `discover_candidates`, `enrich-places`, `generate-itinerary`, `import-from-link`, `place-photo`, `get_place_photo_url`, `resolve_photos_for_places`, `street-view`, `compute-routes`, `place-autocomplete` |
+
+**Why two keys?** Server-side (Edge Function) requests have no browser `Referer` header. If the key has HTTP referrer restrictions, Google blocks the request with "Requests from referer <empty> are blocked". The backend key has no referrer restriction so it works server-side without workarounds.
+
+### Required APIs enabled in Google Cloud Console
+
+Both keys need:
+- **Places API (New)** — text search, autocomplete, place details, photos
+- **Geocoding API** — location name → lat/lng (backend key only)
+- **Routes API** — travel times for itineraries (backend key only)
+- **Street View Static API** — street view image proxy (backend key only)
+- **Maps JavaScript API** — interactive map rendering (frontend key only)
+
+### Setting secrets
+
+```bash
+supabase secrets set GOOGLE_MAPS_API_KEY=<frontend_key>
+supabase secrets set GOOGLE_MAPS_API_KEY_BE=<backend_key>
+```
+
 - Each phase is independent and can be implemented and tested separately
 
