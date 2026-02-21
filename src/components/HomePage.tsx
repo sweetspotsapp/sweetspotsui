@@ -820,7 +820,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           distance_meters: p.distance_km ? p.distance_km * 1000 : null,
           score: ext.ai_score || 0,
           why: p.ai_reason || "",
-          photo_name: null,
+          photo_name: p.image?.includes('place-photo') ? new URL(p.image).searchParams.get('photo_name') : null,
           photos: [],
           ai_reason: p.ai_reason,
           ai_category: p.ai_category,
@@ -831,8 +831,17 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   }, [filteredResults]);
 
   const getPlaceImage = useCallback((place: RankedPlace) => {
+    if (place.photo_name) {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`;
+    }
+    // Find original mock place to get its image
+    const original = filteredResults.find(p => p.id === place.place_id);
+    if (original?.image && !original.image.includes('unsplash')) {
+      return original.image;
+    }
     return `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`;
-  }, []);
+  }, [filteredResults]);
 
   const handleMapPlaceClick = useCallback((place: RankedPlace) => {
     navigate(`/place/${place.place_id}`, { state: { ai_reason: place.ai_reason } });
