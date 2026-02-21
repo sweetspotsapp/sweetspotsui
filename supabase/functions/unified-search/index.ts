@@ -702,6 +702,7 @@ serve(async (req) => {
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const appUrl = Deno.env.get('APP_URL') || 'https://localhost';
 
     if (!googleMapsApiKey) {
       return new Response(
@@ -764,7 +765,7 @@ serve(async (req) => {
         // Try Google Geocoding first (primary)
         try {
           const googleGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location_name)}&key=${googleMapsApiKey}`;
-          const googleGeoResponse = await fetch(googleGeoUrl);
+          const googleGeoResponse = await fetch(googleGeoUrl, { headers: { 'Referer': appUrl } });
           const googleGeoData = await googleGeoResponse.json();
           
           if (googleGeoData.results && googleGeoData.results.length > 0) {
@@ -806,7 +807,7 @@ serve(async (req) => {
             try {
               // Try Google first for simplified too
               const simplifiedGoogleUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(simplified)}&key=${googleMapsApiKey}`;
-              const simplifiedGoogleRes = await fetch(simplifiedGoogleUrl);
+              const simplifiedGoogleRes = await fetch(simplifiedGoogleUrl, { headers: { 'Referer': appUrl } });
               const simplifiedGoogleData = await simplifiedGoogleRes.json();
               if (simplifiedGoogleData.results && simplifiedGoogleData.results.length > 0) {
                 const loc = simplifiedGoogleData.results[0].geometry.location;
@@ -900,6 +901,7 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Referer': appUrl,
           'X-Goog-Api-Key': googleMapsApiKey,
           'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.rating,places.userRatingCount,places.photos,places.priceLevel,places.currentOpeningHours,places.regularOpeningHours,nextPageToken'
         },
