@@ -145,7 +145,11 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
                 <img 
                   src={getPlaceImage(selectedPlace)} 
                   alt={selectedPlace.name}
-                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0 bg-muted"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.src = `https://source.unsplash.com/400x300/?restaurant,cafe&${selectedPlace.name.slice(0, 3)}`;
+                  }}
                 />
                 <div className="flex flex-col justify-center min-w-0">
                   <h4 className="font-semibold text-sm text-gray-900 line-clamp-2">
