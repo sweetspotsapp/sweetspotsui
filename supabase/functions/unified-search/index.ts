@@ -872,7 +872,7 @@ serve(async (req) => {
     
     let allGooglePlaces: any[] = [];
     let nextPageToken: string | null = null;
-    const maxPages = 2; // Reduced from 3 to 2 for faster response
+    const maxPages = 2;
 
     // Note: searchText only supports locationBias, not locationRestriction
     // We enforce distance limits via post-filtering with haversine
