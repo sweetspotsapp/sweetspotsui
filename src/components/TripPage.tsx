@@ -237,7 +237,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
 
       {phase === "view" && tripData && (
         <TripView
-          itinerary={tripData}
+          tripData={tripData}
           tripParams={tripParams}
           onBack={handleBackToList}
           onSwap={handleSwap}

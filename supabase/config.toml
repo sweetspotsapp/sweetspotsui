@@ -39,10 +39,10 @@ verify_jwt = false
 [functions.unified-search]
 verify_jwt = false
 
-[functions.generate-itinerary]
+[functions.generate-trip]
 verify_jwt = false
 
-[functions.swap-itinerary-activity]
+[functions.swap-trip-activity]
 verify_jwt = false
 
 [functions.import-from-link]

@@ -9,7 +9,7 @@ import type { TripData, TripDay, SwapAlternative, TripParams } from "@/hooks/use
 import { cn } from "@/lib/utils";
 
 interface TripViewProps {
-  itinerary: TripData;
+  tripData: TripData;
   tripParams?: TripParams | null;
   onBack: () => void;
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
@@ -25,9 +25,9 @@ interface TripViewProps {
 }
 
 // Assign stable drag IDs to all activities
-function ensureDragIds(itinerary: TripData): TripData {
+function ensureDragIds(trip: TripData): TripData {
   let changed = false;
-  const updated = { ...itinerary, days: itinerary.days.map(day => ({
+  const updated = { ...trip, days: trip.days.map(day => ({
     ...day,
     slots: day.slots.map(slot => ({
       ...slot,
@@ -40,21 +40,21 @@ function ensureDragIds(itinerary: TripData): TripData {
       }),
     })),
   }))};
-  return changed ? updated : itinerary;
+  return changed ? updated : trip;
 }
 
-const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: TripViewProps) => {
+const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: TripViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
 
   // Ensure all activities have stable drag IDs
   useEffect(() => {
-    const withIds = ensureDragIds(itinerary);
-    if (withIds !== itinerary && onSaveEdits) {
+    const withIds = ensureDragIds(tripData);
+    if (withIds !== tripData && onSaveEdits) {
       onSaveEdits(withIds);
     }
-  }, [itinerary]);
+  }, [tripData]);
 
   // Monitor for drag-and-drop events globally with edge detection
   useEffect(() => {
@@ -75,7 +75,7 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
 
         if (destData.isSlot) {
           // Dropped on empty slot area — append to end
-          toActIdx = itinerary.days[destData.dayIdx]?.slots[destData.slotIdx]?.activities?.length || 0;
+          toActIdx = tripData.days[destData.dayIdx]?.slots[destData.slotIdx]?.activities?.length || 0;
         } else {
           // Use closest edge to determine insert position
           const edge = extractClosestEdge(dest.data);
@@ -85,7 +85,7 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
         onDragReorder(srcData.dayIdx, srcData.slotIdx, srcData.actIdx, destData.dayIdx, destData.slotIdx, toActIdx);
       },
     });
-  }, [isEditing, onDragReorder, itinerary]);
+  }, [isEditing, onDragReorder, tripData]);
 
   // Auto-scroll when dragging near edges
   useEffect(() => {
@@ -97,7 +97,7 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
   }, [isEditing]);
 
   const handleStartEditing = () => {
-    setEditSnapshot(JSON.parse(JSON.stringify(itinerary)));
+    setEditSnapshot(JSON.parse(JSON.stringify(tripData)));
     setIsEditing(true);
   };
 
@@ -112,19 +112,19 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
   const handleSaveEditing = () => {
     setIsEditing(false);
     setEditSnapshot(null);
-    onSaveEdits?.(itinerary);
+    onSaveEdits?.(tripData);
   };
 
   const handleMoveToDay = useCallback((fromDayIdx: number, fromSlotIdx: number, fromActIdx: number, targetDayIdx: number) => {
-    const targetSlotActivities = itinerary.days[targetDayIdx]?.slots[0]?.activities?.length || 0;
+    const targetSlotActivities = tripData.days[targetDayIdx]?.slots[0]?.activities?.length || 0;
     onDragReorder(fromDayIdx, fromSlotIdx, fromActIdx, targetDayIdx, 0, targetSlotActivities);
-  }, [itinerary, onDragReorder]);
+  }, [tripData, onDragReorder]);
 
   const budgetSummary = useMemo(() => {
     let activitiesTotal = 0;
     const perDay: number[] = [];
     
-    for (const day of itinerary.days) {
+    for (const day of tripData.days) {
       let dayTotal = 0;
       for (const slot of day.slots) {
         for (const act of slot.activities) {
@@ -149,11 +149,11 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
       perDay,
       groupSize,
     };
-  }, [itinerary, tripParams]);
+  }, [tripData, tripParams]);
 
   const mapActivities = useMemo(() => {
     const activities: Array<{ name: string; lat: number; lng: number; category: string; dayLabel: string; time: string }> = [];
-    for (const day of itinerary.days) {
+    for (const day of tripData.days) {
       for (const slot of day.slots) {
         for (const act of slot.activities) {
           if (act.lat && act.lng) {
@@ -170,7 +170,7 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
       }
     }
     return activities;
-  }, [itinerary]);
+  }, [tripData]);
 
   return (
     <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl px-4 md:px-6 lg:px-8 py-4 space-y-4 relative">
@@ -181,7 +181,7 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          All Itineraries
+          All Trips
         </button>
         <div className="flex items-center gap-2">
           {isEditing ? (
@@ -241,9 +241,9 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
       )}
 
       {/* Summary */}
-      {itinerary.summary && !isEditing && (
+      {tripData.summary && !isEditing && (
         <div className="px-4 py-3 rounded-2xl bg-primary/5 border border-primary/10">
-          <p className="text-sm text-foreground leading-relaxed">{itinerary.summary}</p>
+          <p className="text-sm text-foreground leading-relaxed">{tripData.summary}</p>
         </div>
       )}
 
@@ -313,7 +313,7 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
           <TripMapView activities={mapActivities} />
         </div>
       ) : (
-        itinerary.days.map((day, dayIndex) => (
+        tripData.days.map((day, dayIndex) => (
           <DaySection
             key={dayIndex}
             day={day}
@@ -325,7 +325,7 @@ const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveAc
             onRemoveActivity={onRemoveActivity}
             onAddActivity={onAddActivity}
             onMoveToDay={isEditing ? handleMoveToDay : undefined}
-            totalDays={isEditing ? itinerary.days : undefined}
+            totalDays={isEditing ? tripData.days : undefined}
           />
         ))
       )}
