@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Plus, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ActivityCard from "./ActivityCard";
 import DistanceConnector from "./DistanceConnector";
+import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 import type { ItineraryDay, Activity, SwapAlternative } from "@/hooks/useItinerary";
 
 interface DaySectionProps {
@@ -13,6 +14,8 @@ interface DaySectionProps {
   isSwapping: boolean;
   isEditing?: boolean;
   onMoveActivity?: (dayIndex: number, slotIndex: number, activityIndex: number, direction: 'up' | 'down') => void;
+  onRemoveActivity?: (dayIndex: number, slotIndex: number, activityIndex: number) => void;
+  onAddActivity?: (dayIndex: number, slotIndex: number, newActivity: { name: string; placeId?: string; category: string; description: string }) => void;
   isFirstDay?: boolean;
   isLastDay?: boolean;
 }
@@ -28,7 +31,71 @@ interface RouteData {
   distanceText: string;
 }
 
-const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onMoveActivity, isFirstDay, isLastDay }: DaySectionProps) => {
+const AddPlaceInput = ({ onAdd }: { onAdd: (place: { name: string; placeId?: string; category: string; description: string }) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const { predictions, isLoading, clearPredictions } = usePlaceAutocomplete(query);
+
+  const handleSelect = (prediction: { main_text: string; place_id: string }) => {
+    onAdd({
+      name: prediction.main_text,
+      placeId: prediction.place_id.startsWith("local_") ? undefined : prediction.place_id,
+      category: "place",
+      description: "",
+    });
+    setQuery("");
+    clearPredictions();
+    setIsOpen(false);
+  };
+
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-primary/30 text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
+      >
+        <Plus className="w-3.5 h-3.5" /> Add place
+      </button>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <div className="flex-1 relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search for a place..."
+            className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+        <button onClick={() => { setIsOpen(false); setQuery(""); clearPredictions(); }} className="p-1.5 text-muted-foreground hover:text-foreground">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      {predictions.length > 0 && (
+        <div className="rounded-lg border border-border bg-card shadow-sm max-h-40 overflow-y-auto">
+          {predictions.map((p) => (
+            <button
+              key={p.place_id}
+              onClick={() => handleSelect(p)}
+              className="w-full text-left px-3 py-2 text-xs hover:bg-muted/50 transition-colors border-b border-border/30 last:border-b-0"
+            >
+              <span className="font-medium text-foreground">{p.main_text}</span>
+              {p.secondary_text && <span className="text-muted-foreground ml-1">· {p.secondary_text}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+      {isLoading && <p className="text-[10px] text-muted-foreground px-1">Searching...</p>}
+    </div>
+  );
+};
+
+const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onMoveActivity, onRemoveActivity, onAddActivity, isFirstDay, isLastDay }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
 
@@ -190,6 +257,7 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                             onMoveDown={() => onMoveActivity?.(dayIndex, slotIndex, activityIndex, 'down')}
                             canMoveUp={!isFirstActivity(slotIndex, activityIndex)}
                             canMoveDown={!isLastActivity(slotIndex, activityIndex)}
+                            onRemove={() => onRemoveActivity?.(dayIndex, slotIndex, activityIndex)}
                           />
                           {!isEditing && activityIndex < slot.activities.length - 1 && (
                             <DistanceConnector
@@ -204,6 +272,9 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                         </div>
                       );
                     })}
+                    {isEditing && onAddActivity && (
+                      <AddPlaceInput onAdd={(place) => onAddActivity(dayIndex, slotIndex, place)} />
+                    )}
                   </div>
                 </div>
               </div>

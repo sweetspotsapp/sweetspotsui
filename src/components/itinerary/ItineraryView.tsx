@@ -12,6 +12,8 @@ interface ItineraryViewProps {
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
   onGlobalMove: (dayIndex: number, slotIndex: number, activityIndex: number, direction: 'up' | 'down') => void;
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
+  onRemoveActivity: (dayIndex: number, slotIndex: number, activityIndex: number) => void;
+  onAddActivity: (dayIndex: number, slotIndex: number, newActivity: { name: string; placeId?: string; category: string; description: string }) => void;
   isSwapping: boolean;
   isGenerating: boolean;
   onRegenerate: () => void;
@@ -19,7 +21,7 @@ interface ItineraryViewProps {
   onSaveEdits?: (editedItinerary: ItineraryData) => void;
 }
 
-const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onGlobalMove, onReplace, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: ItineraryViewProps) => {
+const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onGlobalMove, onReplace, onRemoveActivity, onAddActivity, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: ItineraryViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<ItineraryData | null>(null);
@@ -157,7 +159,7 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onGlobalMove, on
       {/* Editing banner */}
       {isEditing && (
         <div className="px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
-          <p className="text-xs text-muted-foreground">Use the arrows to rearrange activities across your itinerary.</p>
+          <p className="text-xs text-muted-foreground">Rearrange, add, or remove activities from your itinerary.</p>
         </div>
       )}
 
@@ -250,6 +252,8 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onGlobalMove, on
               isSwapping={isSwapping}
               isEditing={isEditing}
               onMoveActivity={onGlobalMove}
+              onRemoveActivity={onRemoveActivity}
+              onAddActivity={onAddActivity}
               isFirstDay={dayIndex === 0}
               isLastDay={dayIndex === itinerary.days.length - 1}
             />

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Loader2, ExternalLink, Heart, ChevronUp, ChevronDown } from "lucide-react";
+import { RefreshCw, Loader2, ExternalLink, Heart, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
@@ -15,9 +15,10 @@ interface ActivityCardProps {
   onMoveDown?: () => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+  onRemove?: () => void;
 }
 
-const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: ActivityCardProps) => {
+const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onMoveUp, onMoveDown, canMoveUp, canMoveDown, onRemove }: ActivityCardProps) => {
   const navigate = useNavigate();
   const [showSwap, setShowSwap] = useState(false);
   const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
@@ -96,20 +97,28 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onMo
             {categoryLabel}
           </div>
           {isEditing && (
-            <div className="absolute top-2 right-2 flex flex-col gap-1">
+            <div className="absolute top-2 right-2 flex items-start gap-1">
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
+                  disabled={!canMoveUp}
+                  className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-20 hover:bg-card active:scale-95 transition-all"
+                >
+                  <ChevronUp className="w-4 h-4 text-foreground" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
+                  disabled={!canMoveDown}
+                  className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-20 hover:bg-card active:scale-95 transition-all"
+                >
+                  <ChevronDown className="w-4 h-4 text-foreground" />
+                </button>
+              </div>
               <button
-                onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
-                disabled={!canMoveUp}
-                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-20 hover:bg-card active:scale-95 transition-all"
+                onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
+                className="bg-destructive/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-destructive active:scale-95 transition-all"
               >
-                <ChevronUp className="w-4 h-4 text-foreground" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
-                disabled={!canMoveDown}
-                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-20 hover:bg-card active:scale-95 transition-all"
-              >
-                <ChevronDown className="w-4 h-4 text-foreground" />
+                <Trash2 className="w-4 h-4 text-destructive-foreground" />
               </button>
             </div>
           )}

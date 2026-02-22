@@ -199,6 +199,25 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
     setItinerary(updated);
   };
 
+  const handleRemoveActivity = (dayIdx: number, slotIdx: number, actIdx: number) => {
+    if (!itinerary) return;
+    const updated = JSON.parse(JSON.stringify(itinerary)) as ItineraryData;
+    updated.days[dayIdx].slots[slotIdx].activities.splice(actIdx, 1);
+    setItinerary(updated);
+  };
+
+  const handleAddActivity = (dayIdx: number, slotIdx: number, newActivity: { name: string; placeId?: string; category: string; description: string }) => {
+    if (!itinerary) return;
+    const updated = JSON.parse(JSON.stringify(itinerary)) as ItineraryData;
+    updated.days[dayIdx].slots[slotIdx].activities.push({
+      name: newActivity.name,
+      description: newActivity.description,
+      category: newActivity.category,
+      placeId: newActivity.placeId,
+    } as any);
+    setItinerary(updated);
+  };
+
   const handleReplaceActivity = (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => {
     if (!itinerary) return;
     const updated = { ...itinerary };
@@ -254,6 +273,8 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
           onSwap={handleSwap}
           onGlobalMove={handleGlobalMove}
           onReplace={handleReplaceActivity}
+          onRemoveActivity={handleRemoveActivity}
+          onAddActivity={handleAddActivity}
           isSwapping={isSwapping}
           isGenerating={isGenerating}
           onRegenerate={() => tripParams && handleGenerate(tripParams)}
