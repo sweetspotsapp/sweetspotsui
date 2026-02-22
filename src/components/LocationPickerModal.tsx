@@ -52,15 +52,10 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
       />
 
       {/* Modal */}
-      <div className="fixed inset-x-0 bottom-0 z-50 max-w-[420px] mx-auto animate-fade-up pb-20">
-        <div className="bg-card rounded-t-3xl shadow-elevated max-h-[70vh] overflow-hidden flex flex-col">
-          {/* Handle bar */}
-          <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
-          </div>
-
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div className="bg-card rounded-3xl shadow-elevated w-full max-w-[420px] max-h-[80vh] flex flex-col">
           {/* Header */}
-          <div className="px-6 pt-2 pb-4 flex items-center justify-between">
+          <div className="px-6 pt-5 pb-4 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-foreground">Change Location</h2>
               <p className="text-sm text-muted-foreground mt-1">
