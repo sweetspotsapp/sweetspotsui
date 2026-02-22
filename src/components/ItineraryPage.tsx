@@ -6,6 +6,7 @@ import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import CreateItineraryModal from "./itinerary/CreateItineraryModal";
 import ItineraryView from "./itinerary/ItineraryView";
+import GeneratingOverlay from "./itinerary/GeneratingOverlay";
 import { useItinerary, type ItineraryData, type TripParams, type SavedItinerary } from "@/hooks/useItinerary";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -226,9 +227,16 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
           isGenerating={isGenerating}
           onRegenerate={() => tripParams && handleGenerate(tripParams)}
           onSave={handleSave}
-          onEdit={() => { setPrefillParams(tripParams); setShowCreateModal(true); }}
+          onSaveEdits={async (edited) => {
+            setItinerary(edited);
+            if (tripParams) {
+              await saveItinerary(tripParams, edited, editingId || undefined);
+            }
+          }}
         />
       )}
+
+      <GeneratingOverlay isVisible={isGenerating} />
     </div>
 
     {/* Create Itinerary Modal */}

@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane } from "lucide-react";
+import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X } from "lucide-react";
 import DaySection from "./DaySection";
 import ItineraryMapView from "./ItineraryMapView";
-import type { ItineraryData, SwapAlternative, TripParams } from "@/hooks/useItinerary";
+import type { ItineraryData, ItineraryDay, SwapAlternative, TripParams } from "@/hooks/useItinerary";
 import { cn } from "@/lib/utils";
 
 interface ItineraryViewProps {
@@ -16,11 +16,34 @@ interface ItineraryViewProps {
   isGenerating: boolean;
   onRegenerate: () => void;
   onSave?: () => void;
-  onEdit?: () => void;
+  onSaveEdits?: (editedItinerary: ItineraryData) => void;
 }
 
-const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onReplace, isSwapping, isGenerating, onRegenerate, onSave, onEdit }: ItineraryViewProps) => {
+const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onReplace, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: ItineraryViewProps) => {
   const [showMap, setShowMap] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editSnapshot, setEditSnapshot] = useState<ItineraryData | null>(null);
+
+  const handleStartEditing = () => {
+    // Deep clone current itinerary as snapshot for cancel
+    setEditSnapshot(JSON.parse(JSON.stringify(itinerary)));
+    setIsEditing(true);
+  };
+
+  const handleCancelEditing = () => {
+    // Revert to snapshot
+    if (editSnapshot && onSaveEdits) {
+      onSaveEdits(editSnapshot);
+    }
+    setIsEditing(false);
+    setEditSnapshot(null);
+  };
+
+  const handleSaveEditing = () => {
+    setIsEditing(false);
+    setEditSnapshot(null);
+    onSaveEdits?.(itinerary);
+  };
 
   // Calculate budget totals
   const budgetSummary = useMemo(() => {
@@ -54,7 +77,6 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onRep
     };
   }, [itinerary, tripParams]);
 
-  // Collect all activities with lat/lng for map
   const mapActivities = useMemo(() => {
     const activities: Array<{ name: string; lat: number; lng: number; category: string; dayLabel: string; time: string }> = [];
     for (const day of itinerary.days) {
@@ -88,47 +110,71 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onRep
           All Itineraries
         </button>
         <div className="flex items-center gap-2">
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Pencil className="w-3.5 h-3.5" /> Edit
-            </button>
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleCancelEditing}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-3.5 h-3.5" /> Cancel
+              </button>
+              <button
+                onClick={handleSaveEditing}
+                className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                <Save className="w-3.5 h-3.5" /> Save
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleStartEditing}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </button>
+              {onSave && (
+                <button
+                  onClick={onSave}
+                  className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save
+                </button>
+              )}
+              <button
+                onClick={onRegenerate}
+                disabled={isGenerating}
+                className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+              >
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                Regenerate
+              </button>
+            </>
           )}
-          {onSave && (
-            <button
-              onClick={onSave}
-              className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              <Save className="w-3.5 h-3.5" /> Save
-            </button>
-          )}
-          <button
-            onClick={onRegenerate}
-            disabled={isGenerating}
-            className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
-          >
-            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-            Regenerate
-          </button>
         </div>
       </div>
 
+      {/* Editing banner */}
+      {isEditing && (
+        <div className="px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
+          <p className="text-xs text-muted-foreground">Drag cards to reorder your itinerary.</p>
+        </div>
+      )}
+
       {/* Trip Name */}
-      {tripParams?.name && (
+      {tripParams?.name && !isEditing && (
         <h2 className="text-lg font-bold text-foreground">{tripParams.name}</h2>
       )}
 
       {/* Summary */}
-      {itinerary.summary && (
+      {itinerary.summary && !isEditing && (
         <div className="px-4 py-3 rounded-2xl bg-primary/5 border border-primary/10">
           <p className="text-sm text-foreground leading-relaxed">{itinerary.summary}</p>
         </div>
       )}
 
       {/* Budget Summary */}
-      {budgetSummary.activitiesTotal > 0 && (
+      {budgetSummary.activitiesTotal > 0 && !isEditing && (
         <div className="px-4 py-3 rounded-2xl bg-card border border-border space-y-2">
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-primary" />
@@ -164,7 +210,7 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onRep
       )}
 
       {/* Map/List Toggle */}
-      {mapActivities.length > 0 && (
+      {mapActivities.length > 0 && !isEditing && (
         <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
           <button
             onClick={() => setShowMap(false)}
@@ -188,7 +234,7 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onRep
       )}
 
       {/* Content */}
-      {showMap ? (
+      {showMap && !isEditing ? (
         <div className="rounded-2xl overflow-hidden border border-border" style={{ height: '400px' }}>
           <ItineraryMapView activities={mapActivities} />
         </div>
@@ -200,9 +246,10 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onRep
               day={day}
               dayIndex={dayIndex}
               onSwap={onSwap}
-              onReorder={onReorder}
               onReplace={onReplace}
               isSwapping={isSwapping}
+              isEditing={isEditing}
+              onDragReorder={onReorder}
             />
           ))}
         </>
