@@ -63,7 +63,6 @@ const SearchFeedbackDialog = ({ open, onClose, searchPrompt, userId }: SearchFee
 
         {submitted ? (
           <div className="text-center py-6">
-            <div className="text-3xl mb-2">🎉</div>
             <DialogTitle className="text-lg font-semibold text-foreground">Thanks for your feedback!</DialogTitle>
             <p className="text-sm text-muted-foreground mt-1">It helps us improve your experience.</p>
           </div>

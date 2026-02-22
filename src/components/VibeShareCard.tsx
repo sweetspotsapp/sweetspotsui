@@ -66,7 +66,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
     a.download = "my-sweetspots-vibe.png";
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: "Vibe Card saved! 🎉" });
+    toast({ title: "Vibe Card saved" });
   };
 
   const handleNativeShare = async () => {
@@ -77,7 +77,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
       try {
         await navigator.share({
           title: "My SweetSpots Vibe",
-          text: "Check out my vibe DNA on SweetSpots 🍯\nfindyoursweetspots.com",
+          text: "Check out my vibe DNA on SweetSpots\nfindyoursweetspots.com",
           files: [file],
         });
       } catch (err) {
@@ -90,7 +90,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
     }
   };
 
-  const shareText = `Check out my vibe DNA on SweetSpots 🍯`;
+  const shareText = `Check out my vibe DNA on SweetSpots`;
   const shareUrl = "https://findyoursweetspots.com";
 
   const handleShareWhatsApp = () => {
@@ -109,7 +109,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
         new ClipboardItem({ "image/png": blob }),
       ]);
       setCopied(true);
-      toast({ title: "Image copied to clipboard! 📋" });
+      toast({ title: "Image copied to clipboard" });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback: download instead
@@ -165,7 +165,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
             </div>
 
             <h2 style={{ color: "hsl(40, 20%, 95%)", fontSize: "22px", fontWeight: 700, marginBottom: "4px", lineHeight: 1.2 }}>
-              {userName ? `${userName}'s` : "My"} Vibe DNA 🍯
+              {userName ? `${userName}'s` : "My"} Vibe DNA
             </h2>
             <p style={{ color: "hsl(30, 15%, 55%)", fontSize: "12px", marginBottom: "20px" }}>
               Here's what I vibe with

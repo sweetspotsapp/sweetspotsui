@@ -127,7 +127,7 @@ const WhyVisitSection = ({ placeName, categories, rating, priceLevel, reviewCoun
         {/* AI Reason - personalized match explanation */}
         {aiReason && (
           <p className="text-sm text-foreground leading-relaxed">
-            ✨ {aiReason}
+            {aiReason}
           </p>
         )}
         
