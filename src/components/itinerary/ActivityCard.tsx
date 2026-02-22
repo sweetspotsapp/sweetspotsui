@@ -96,20 +96,20 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onMo
             {categoryLabel}
           </div>
           {isEditing && (
-            <div className="absolute top-2 right-2 flex flex-col gap-0.5">
+            <div className="absolute top-2 right-2 flex flex-col gap-1">
               <button
                 onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
                 disabled={!canMoveUp}
-                className="bg-card/90 backdrop-blur-sm p-1 rounded-full disabled:opacity-30 hover:bg-card transition-colors"
+                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-20 hover:bg-card active:scale-95 transition-all"
               >
-                <ChevronUp className="w-3.5 h-3.5 text-foreground" />
+                <ChevronUp className="w-4 h-4 text-foreground" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
                 disabled={!canMoveDown}
-                className="bg-card/90 backdrop-blur-sm p-1 rounded-full disabled:opacity-30 hover:bg-card transition-colors"
+                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-20 hover:bg-card active:scale-95 transition-all"
               >
-                <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+                <ChevronDown className="w-4 h-4 text-foreground" />
               </button>
             </div>
           )}

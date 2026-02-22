@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, X, MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, DollarSign, Home, Plane, ChevronDown, ChevronUp, Upload, Lock } from "lucide-react";
+import { ArrowLeft, X, MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, DollarSign, Home, Plane, ChevronDown, ChevronUp, Upload, Lock, Check } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -204,6 +204,8 @@ const CreateItineraryModal = ({
               setMustIncludePlaceIds={setMustIncludePlaceIds}
               boardIds={boardIds}
               setBoardIds={setBoardIds}
+              destination={destination}
+              onBrowse={() => { onClose(); }}
             />
           )}
         </div>
@@ -518,6 +520,8 @@ interface Step2Props {
   setMustIncludePlaceIds: (ids: string[]) => void;
   boardIds: string[];
   setBoardIds: (ids: string[]) => void;
+  destination?: string;
+  onBrowse?: () => void;
 }
 
 const Step2Content = ({
@@ -529,53 +533,46 @@ const Step2Content = ({
   groupSize, setGroupSize,
   mustIncludePlaceIds, setMustIncludePlaceIds,
   boardIds, setBoardIds,
+  destination, onBrowse,
 }: Step2Props) => (
   <div className="space-y-5">
     {/* Budget */}
     <div className="space-y-3">
       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Budget</label>
 
-      {/* Toggle */}
-      <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
-        <button
-          onClick={() => setUseTotalBudget(false)}
-          className={cn(
-            "flex-1 py-2 rounded-lg text-xs font-medium transition-all",
-            !useTotalBudget ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-          )}
-        >
-          Spending Tier
-        </button>
-        <button
-          onClick={() => setUseTotalBudget(true)}
-          className={cn(
-            "flex-1 py-2 rounded-lg text-xs font-medium transition-all",
-            useTotalBudget ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-          )}
-        >
-          Total Budget
-        </button>
-      </div>
-
       {!useTotalBudget ? (
-        <div className="grid grid-cols-4 gap-2">
-          {BUDGET_OPTIONS.map((b) => (
-            <button
-              key={b}
-              onClick={() => setBudget(b)}
-              className={cn(
-                "py-2.5 rounded-xl text-sm font-medium transition-all flex flex-col items-center gap-0.5",
-                budget === b
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <span>{b}</span>
-              <span className={cn("text-[10px]", budget === b ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
-                {BUDGET_LABELS[b]}
-              </span>
-            </button>
-          ))}
+        <div className="space-y-3">
+          <div className="space-y-2">
+            {BUDGET_OPTIONS.map((b) => (
+              <button
+                key={b}
+                onClick={() => setBudget(b)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left",
+                  budget === b
+                    ? "bg-primary/10 border border-primary/50"
+                    : "bg-card border border-border hover:bg-muted/30"
+                )}
+              >
+                <div className={cn(
+                  "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
+                  budget === b ? "bg-primary border-primary" : "border-border"
+                )}>
+                  {budget === b && <Check className="w-3 h-3 text-primary-foreground" />}
+                </div>
+                <span className={cn("flex-1", budget === b ? "text-foreground" : "text-muted-foreground")}>{b}</span>
+                <span className={cn("text-xs", budget === b ? "text-primary" : "text-muted-foreground/70")}>
+                  {BUDGET_LABELS[b]}
+                </span>
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setUseTotalBudget(true)}
+            className="text-xs text-primary font-medium hover:text-primary/80 transition-colors"
+          >
+            Or set a total budget
+          </button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -600,30 +597,14 @@ const Step2Content = ({
               )}
             </p>
           )}
+          <button
+            onClick={() => setUseTotalBudget(false)}
+            className="text-xs text-primary font-medium hover:text-primary/80 transition-colors"
+          >
+            Use spending tiers instead
+          </button>
         </div>
       )}
-
-      {/* Per person / Whole group */}
-      <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
-        <button
-          onClick={() => setBudgetIsPerPerson(true)}
-          className={cn(
-            "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
-            budgetIsPerPerson ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-          )}
-        >
-          Per Person
-        </button>
-        <button
-          onClick={() => setBudgetIsPerPerson(false)}
-          className={cn(
-            "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
-            !budgetIsPerPerson ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-          )}
-        >
-          Whole Group
-        </button>
-      </div>
     </div>
 
     {/* Group Size */}
@@ -655,6 +636,8 @@ const Step2Content = ({
       onPlaceIdsChange={setMustIncludePlaceIds}
       selectedBoardIds={boardIds}
       onBoardIdsChange={setBoardIds}
+      destination={destination}
+      onBrowse={onBrowse}
     />
   </div>
 );

@@ -99,7 +99,7 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onRep
   }, [itinerary]);
 
   return (
-    <div className="max-w-md mx-auto px-4 py-4 space-y-4 relative">
+    <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl px-4 md:px-6 lg:px-8 py-4 space-y-4 relative">
       {/* Back + Actions */}
       <div className="flex items-center justify-between">
         <button
