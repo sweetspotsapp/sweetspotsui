@@ -1,26 +1,21 @@
 
 
-## Make Entire Card Draggable (Remove Grip Handle)
+## Fix: Image Blocking Drag-and-Drop
 
-Remove the separate `GripVertical` drag handle button from the activity card and instead make the **entire card** the drag element. Users will hold anywhere on the card to initiate dragging in edit mode.
+The `<img>` tag inside the activity card has native browser drag behavior -- when you click/touch on an image and drag, the browser tries to drag the image itself instead of letting pragmatic-drag-and-drop handle the card drag. This is a well-known browser quirk.
 
-### Changes
+### Fix
 
-**1. `src/components/itinerary/ActivityCard.tsx`**
-- Remove the `dragHandleProps` prop entirely (no more separate handle ref).
-- Remove the `GripVertical` button from the edit-mode overlay.
-- Keep the `Trash2` delete button.
-- Keep the `isDragging` prop for visual feedback.
-- Remove `GripVertical` from the lucide imports.
+**`src/components/itinerary/ActivityCard.tsx`** (line 83-87)
 
-**2. `src/components/itinerary/DaySection.tsx`**
-- In `DraggableActivityCard`, remove the separate `handleRef` for the drag handle.
-- Instead, pass the entire card `ref` as both the `element` **and** the `dragHandle` to `draggable()` -- or simply omit `dragHandle` so the whole element is draggable.
-- Remove `dragHandleProps` from the `ActivityCard` render.
-- Everything else (drop targets, edge detection, indicators) stays the same.
+Add `draggable="false"` and `style={{ pointerEvents: isEditing ? 'none' : 'auto' }}` to the `<img>` element:
 
-### Result
-- No more grip icon button on activity cards in edit mode.
-- Users hold anywhere on the card to drag.
-- The delete button still works (its `stopPropagation` prevents accidental drags).
-- Drop indicators and edge detection remain unchanged.
+- `draggable="false"` prevents the browser's native image drag from intercepting
+- In edit mode, `pointerEvents: 'none'` on the image ensures all pointer events pass through to the parent card (the drag element), so the drag initiates correctly regardless of where you click
+
+The image click-to-navigate behavior is already disabled in edit mode (the `handleCardClick` guard checks `!isEditing`), so disabling pointer events on the image in edit mode has no side effect.
+
+### Technical Detail
+
+This is a single-line change on the `<img>` tag -- no architectural changes needed.
+
