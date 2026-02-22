@@ -278,7 +278,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
             />
             {locationInput.trim() && (
               <button
-                onClick={handleConfirmCity}
+                onClick={isLocationConfirmed ? handleLocationNext : handleConfirmCity}
                 className={`absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
                   isLocationConfirmed
                     ? 'bg-primary text-primary-foreground'
