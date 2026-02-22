@@ -25,6 +25,7 @@ interface PlaceCardCompactProps {
   featured?: boolean;
   savedTabRef?: React.RefObject<HTMLElement>;
   showDistance?: boolean;
+  isGridItem?: boolean;
 }
 
 // Get vibe tag from categories or AI category
@@ -52,7 +53,8 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
   onClick, 
   featured = false,
   savedTabRef,
-  showDistance = true
+  showDistance = true,
+  isGridItem = false,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -113,7 +115,7 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
   return (
     <div 
       ref={cardRef}
-      className={`flex-shrink-0 cursor-pointer group ${featured ? 'w-[200px]' : 'w-[160px]'}`}
+      className={`cursor-pointer group ${isGridItem ? 'w-full' : `flex-shrink-0 ${featured ? 'w-[200px]' : 'w-[160px]'}`}`}
       onClick={onClick}
     >
       {/* Flying clone portal - renders at body level for visibility */}
