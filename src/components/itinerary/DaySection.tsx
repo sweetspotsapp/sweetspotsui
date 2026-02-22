@@ -125,19 +125,16 @@ const DraggableActivityCard = ({
   onRemoveActivity?: DaySectionProps["onRemoveActivity"];
 }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const handleRef = useRef<HTMLButtonElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   useEffect(() => {
     const el = ref.current;
-    const handleEl = handleRef.current;
-    if (!el || !handleEl) return;
+    if (!el) return;
 
     return combine(
       draggable({
         element: el,
-        dragHandle: handleEl,
         getInitialData: () => ({ dayIdx: dayIndex, slotIdx: slotIndex, actIdx: activityIndex }),
         onDragStart: () => setIsDragging(true),
         onDrop: () => setIsDragging(false),
@@ -175,7 +172,6 @@ const DraggableActivityCard = ({
         isSwapping={isSwapping}
         isEditing
         onRemove={() => onRemoveActivity?.(dayIndex, slotIndex, activityIndex)}
-        dragHandleProps={{ ref: handleRef as any }}
         isDragging={isDragging}
       />
     </div>
