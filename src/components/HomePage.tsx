@@ -230,6 +230,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const { location: userLocation, setManualLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
   const hasConsumedSearchParam = useRef(false);
+  const homeContainerRef = useRef<HTMLDivElement>(null);
 
   // Check cache version and clear if outdated
   const getCachedResults = (): MockPlace[] => {
@@ -266,6 +267,29 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     return false;
   });
   const wasSkipMode = useRef(isSkipModeOnMount.current());
+  const isRestoringFromCache = useRef(!wasSkipMode.current && getCachedResults().length > 0);
+
+  // Restore scroll position after mount when coming back from place details
+  useEffect(() => {
+    if (isRestoringFromCache.current) {
+      const savedScroll = sessionStorage.getItem('sweetspots_scroll_position');
+      if (savedScroll) {
+        const scrollY = parseInt(savedScroll, 10);
+        // Use rAF to ensure DOM is painted before scrolling
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollY);
+          // Remove skip-animations class after scroll restore
+          setTimeout(() => {
+            isRestoringFromCache.current = false;
+            homeContainerRef.current?.classList.remove('skip-animations');
+          }, 50);
+        });
+        sessionStorage.removeItem('sweetspots_scroll_position');
+      } else {
+        isRestoringFromCache.current = false;
+      }
+    }
+  }, []);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -489,10 +513,13 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   );
 
   const handlePlaceClick = (place: MockPlace) => {
+    // Save scroll position before navigating away
+    try { sessionStorage.setItem('sweetspots_scroll_position', String(window.scrollY)); } catch {}
     navigate(`/place/${place.id}`, { state: { ai_reason: place.ai_reason } });
   };
 
   const handleSeeAll = (allPlaces: MockPlaceWithCoords[]) => {
+    try { sessionStorage.setItem('sweetspots_scroll_position', String(window.scrollY)); } catch {}
     navigate(`/see-all`, {
       state: { places: allPlaces, userLocation, searchQuery: searchValue || userMood },
     });
@@ -863,11 +890,12 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   }, [filteredResults]);
 
   const handleMapPlaceClick = useCallback((place: RankedPlace) => {
+    try { sessionStorage.setItem('sweetspots_scroll_position', String(window.scrollY)); } catch {}
     navigate(`/place/${place.place_id}`, { state: { ai_reason: place.ai_reason } });
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background max-w-[420px] lg:max-w-7xl mx-auto relative pb-24 lg:pb-8">
+    <div ref={homeContainerRef} className={`min-h-screen bg-background max-w-[420px] lg:max-w-7xl mx-auto relative pb-24 lg:pb-8 ${isRestoringFromCache.current ? 'skip-animations' : ''}`}>
       {/* Nav Bar */}
       <div className="sticky top-0 lg:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between px-4 lg:px-8 py-3">
