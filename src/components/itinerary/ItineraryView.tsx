@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X } from "lucide-react";
-import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
+import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import DaySection from "./DaySection";
 import ItineraryMapView from "./ItineraryMapView";
 import type { ItineraryData, ItineraryDay, SwapAlternative, TripParams } from "@/hooks/useItinerary";
@@ -22,48 +22,34 @@ interface ItineraryViewProps {
   onSaveEdits?: (editedItinerary: ItineraryData) => void;
 }
 
-function parseCompositeId(id: string): { dayIdx: number; slotIdx: number; actIdx: number } | null {
-  const match = id.match(/^d(\d+)-s(\d+)-a(\d+)$/);
-  if (!match) return null;
-  return { dayIdx: parseInt(match[1]), slotIdx: parseInt(match[2]), actIdx: parseInt(match[3]) };
-}
-
-function parseDroppableId(id: string): { dayIdx: number; slotIdx: number } | null {
-  const match = id.match(/^d(\d+)-s(\d+)$/);
-  if (!match) return null;
-  return { dayIdx: parseInt(match[1]), slotIdx: parseInt(match[2]) };
-}
-
 const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: ItineraryViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<ItineraryData | null>(null);
 
-  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 8 } });
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
-  const sensors = useSensors(pointerSensor, touchSensor);
+  // Monitor for drag-and-drop events globally
+  useEffect(() => {
+    if (!isEditing) return;
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    return monitorForElements({
+      onDrop({ source, location }) {
+        const dest = location.current.dropTargets[0];
+        if (!dest) return;
 
-    const from = parseCompositeId(active.id as string);
-    if (!from) return;
+        const srcData = source.data as { dayIdx: number; slotIdx: number; actIdx: number };
+        const destData = dest.data as { dayIdx: number; slotIdx: number; actIdx: number; isSlot?: boolean };
 
-    // Over could be another activity or a droppable slot
-    const to = parseCompositeId(over.id as string);
-    if (to) {
-      onDragReorder(from.dayIdx, from.slotIdx, from.actIdx, to.dayIdx, to.slotIdx, to.actIdx);
-      return;
-    }
+        // Don't reorder onto itself
+        if (srcData.dayIdx === destData.dayIdx && srcData.slotIdx === destData.slotIdx && srcData.actIdx === destData.actIdx) return;
 
-    // Dropped on an empty slot droppable
-    const slot = parseDroppableId(over.id as string);
-    if (slot) {
-      const targetSlotLen = itinerary.days[slot.dayIdx]?.slots[slot.slotIdx]?.activities?.length || 0;
-      onDragReorder(from.dayIdx, from.slotIdx, from.actIdx, slot.dayIdx, slot.slotIdx, targetSlotLen);
-    }
-  }, [onDragReorder, itinerary]);
+        const toActIdx = destData.isSlot
+          ? (itinerary.days[destData.dayIdx]?.slots[destData.slotIdx]?.activities?.length || 0)
+          : destData.actIdx;
+
+        onDragReorder(srcData.dayIdx, srcData.slotIdx, srcData.actIdx, destData.dayIdx, destData.slotIdx, toActIdx);
+      },
+    });
+  }, [isEditing, onDragReorder, itinerary]);
 
   const handleStartEditing = () => {
     setEditSnapshot(JSON.parse(JSON.stringify(itinerary)));
@@ -84,7 +70,6 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
     onSaveEdits?.(itinerary);
   };
 
-  // Calculate budget totals
   const budgetSummary = useMemo(() => {
     let activitiesTotal = 0;
     const perDay: number[] = [];
@@ -136,24 +121,6 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
     }
     return activities;
   }, [itinerary]);
-
-  const daysContent = (
-    <>
-      {itinerary.days.map((day, dayIndex) => (
-        <DaySection
-          key={dayIndex}
-          day={day}
-          dayIndex={dayIndex}
-          onSwap={onSwap}
-          onReplace={onReplace}
-          isSwapping={isSwapping}
-          isEditing={isEditing}
-          onRemoveActivity={onRemoveActivity}
-          onAddActivity={onAddActivity}
-        />
-      ))}
-    </>
-  );
 
   return (
     <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl px-4 md:px-6 lg:px-8 py-4 space-y-4 relative">
@@ -295,12 +262,20 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
         <div className="rounded-2xl overflow-hidden border border-border" style={{ height: '400px' }}>
           <ItineraryMapView activities={mapActivities} />
         </div>
-      ) : isEditing ? (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          {daysContent}
-        </DndContext>
       ) : (
-        daysContent
+        itinerary.days.map((day, dayIndex) => (
+          <DaySection
+            key={dayIndex}
+            day={day}
+            dayIndex={dayIndex}
+            onSwap={onSwap}
+            onReplace={onReplace}
+            isSwapping={isSwapping}
+            isEditing={isEditing}
+            onRemoveActivity={onRemoveActivity}
+            onAddActivity={onAddActivity}
+          />
+        ))
       )}
     </div>
   );
