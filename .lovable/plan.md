@@ -1,39 +1,40 @@
 
 
-## Inline Destination Autocomplete
+## Fix: Destination Field Overlap and Stale Form Data
 
-Replace the destination button (which opens a separate LocationPickerModal) with an inline text input that shows autocomplete suggestions directly within the itinerary creation modal.
+### Issue 1: Destination Icon/Text Overlap
+The Input element has conflicting padding classes: `pl-11` and `px-4`. The `px-4` shorthand overrides the left padding, causing text to render behind the MapPin icon.
 
-### Changes
+**Fix:** Change `px-4` to `pr-4` so the left padding (`pl-11`) is preserved.
 
-**File: `src/components/itinerary/CreateItineraryModal.tsx`**
+**File:** `src/components/itinerary/CreateItineraryModal.tsx` (line 349)
 
-1. Remove the `LocationPickerModal` import and its rendering at the bottom of the component.
-2. Remove the `showLocationPicker` state variable.
-3. Remove the `onOpenLocationPicker` prop passed to `Step1Content`.
-4. In `Step1Content`, replace the destination button with:
-   - An inline text input field (same styling as the Trip Name input) with a MapPin icon.
-   - Use the `usePlaceAutocomplete` hook with the destination input value.
-   - Show autocomplete predictions in a dropdown list directly below the input (positioned with `absolute`, matching the style from `LocationPickerModal`).
-   - When a prediction is selected, set the destination value and close the dropdown.
-   - Include a "Nearby places" option at the bottom of the dropdown using the Navigation icon.
-5. Update `Step1Props` interface: remove `onOpenLocationPicker`, add `setDestination` usage for direct typing.
+---
 
-**File: `src/components/itinerary/TripSetupForm.tsx`**
+### Issue 2: Form Fields Not Resetting for New Itinerary
+When opening the modal without `initialParams` (i.e., creating a new itinerary), the `useEffect` on lines 69-85 only resets fields when `initialParams` is truthy. This means all previous values remain in the form.
 
-Apply the same changes:
-1. Remove the `LocationPickerModal` import and rendering.
-2. Remove `showLocationPicker` state.
-3. Replace the destination button with an inline autocomplete input using `usePlaceAutocomplete`.
-4. Show predictions dropdown inline below the input field.
-5. Include "Nearby places" option.
+**Fix:** Add an `else` branch that resets all fields to their defaults when `initialParams` is null/undefined.
 
-### Technical Details
+**File:** `src/components/itinerary/CreateItineraryModal.tsx` (lines 69-85)
 
-- Import `usePlaceAutocomplete` from `@/hooks/usePlaceAutocomplete` in both files.
-- Add a local `showSuggestions` state to control dropdown visibility.
-- The predictions dropdown uses `absolute` positioning with `z-20`, rounded corners, and shadow matching existing UI patterns.
-- Clicking outside or selecting a prediction closes the dropdown.
-- The input field matches existing form field styling (rounded-xl, bg-card, border-border).
-- No new dependencies required -- reuses the existing `usePlaceAutocomplete` hook.
+Fields to reset:
+- name to ""
+- destination to ""
+- startDate to undefined
+- endDate to undefined
+- hasEndDate to false
+- vibes to []
+- customVibe to ""
+- budget to "$$"
+- totalBudget to ""
+- useTotalBudget to false
+- budgetCurrency to "USD"
+- budgetIsPerPerson to true
+- groupSize to 2
+- mustIncludePlaceIds to []
+- boardIds to []
+
+### Also fix in TripSetupForm.tsx
+Apply both fixes (padding and form reset) to `src/components/itinerary/TripSetupForm.tsx` if the same patterns exist there.
 
