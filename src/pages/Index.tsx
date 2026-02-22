@@ -124,10 +124,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background lg:pt-16">
-      {activeTab === "home" && <HomePage onNavigateToProfile={() => setActiveTab("profile")} />}
-      {activeTab === "saved" && <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />}
-      {activeTab === "trip" && <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} />}
-      {activeTab === "profile" && <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />}
+      <div style={{ display: activeTab === "home" ? "block" : "none" }}>
+        <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
+      </div>
+      <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
+        <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
+      </div>
+      <div style={{ display: activeTab === "trip" ? "block" : "none" }}>
+        <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} />
+      </div>
+      <div style={{ display: activeTab === "profile" ? "block" : "none" }}>
+        <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />
+      </div>
       
       <BottomNav 
         activeTab={activeTab} 
