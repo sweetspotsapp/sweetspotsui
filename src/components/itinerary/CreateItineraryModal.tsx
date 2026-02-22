@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, X, MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, DollarSign, Home, Plane, ChevronDown, ChevronUp, Upload, Lock, Check } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ArrowLeft, X, MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, DollarSign, Home, Plane, ChevronDown, ChevronUp, Upload, Lock, Check, Navigation } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import LocationPickerModal from "@/components/LocationPickerModal";
 import BoardPicker from "./BoardPicker";
 import CurrencyPicker, { CURRENCIES } from "./CurrencyPicker";
 import type { TripParams } from "@/hooks/useItinerary";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
+import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
@@ -52,7 +52,7 @@ const CreateItineraryModal = ({
   const [hasEndDate, setHasEndDate] = useState(!!initialParams?.endDate);
   const [vibes, setVibes] = useState<string[]>(initialParams?.vibes || []);
   const [customVibe, setCustomVibe] = useState("");
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  
   const [showUploadSection, setShowUploadSection] = useState(false);
 
   // Step 2: Planning Style
@@ -166,8 +166,7 @@ const CreateItineraryModal = ({
               name={name}
               setName={setName}
               destination={destination}
-              setDestination={(d) => setDestination(d)}
-              onOpenLocationPicker={() => setShowLocationPicker(true)}
+              setDestination={setDestination}
               startDate={startDate}
               setStartDate={setStartDate}
               endDate={endDate}
@@ -274,15 +273,6 @@ const CreateItineraryModal = ({
         </div>
       </div>
 
-      {/* Location Picker */}
-      <LocationPickerModal
-        isOpen={showLocationPicker}
-        onClose={() => setShowLocationPicker(false)}
-        onSelectLocation={(loc) => {
-          setDestination(loc === "nearby" ? "Nearby" : loc);
-        }}
-        currentLocation={destination || undefined}
-      />
     </div>
   );
 };
@@ -293,7 +283,6 @@ interface Step1Props {
   setName: (v: string) => void;
   destination: string;
   setDestination: (v: string) => void;
-  onOpenLocationPicker: () => void;
   startDate: Date | undefined;
   setStartDate: (d: Date | undefined) => void;
   endDate: Date | undefined;
@@ -311,12 +300,27 @@ interface Step1Props {
 }
 
 const Step1Content = ({
-  name, setName, destination, onOpenLocationPicker,
+  name, setName, destination, setDestination,
   startDate, setStartDate, endDate, setEndDate,
   hasEndDate, setHasEndDate, vibes, toggleVibe,
   customVibe, setCustomVibe, addCustomVibe,
   showUploadSection, setShowUploadSection, duration,
-}: Step1Props) => (
+}: Step1Props) => {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const { predictions, isLoading } = usePlaceAutocomplete(showSuggestions ? destination : "");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
   <div className="space-y-5">
     {/* Trip Name */}
     <div className="space-y-1.5">
@@ -330,17 +334,56 @@ const Step1Content = ({
     </div>
 
     {/* Destination */}
-    <div className="space-y-1.5">
+    <div className="space-y-1.5" ref={wrapperRef}>
       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Destination</label>
-      <button
-        onClick={onOpenLocationPicker}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border text-left transition-colors hover:bg-muted/50"
-      >
-        <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-        <span className={cn("text-sm", destination ? "text-foreground font-medium" : "text-muted-foreground")}>
-          {destination || "Where are you going?"}
-        </span>
-      </button>
+      <div className="relative">
+        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary z-10" />
+        <Input
+          value={destination}
+          onChange={(e) => {
+            setDestination(e.target.value);
+            setShowSuggestions(e.target.value.trim().length >= 2);
+          }}
+          onFocus={() => { if (destination.trim().length >= 2) setShowSuggestions(true); }}
+          placeholder="Where are you going?"
+          className="pl-11 rounded-xl px-4 py-3 h-auto bg-card border-border text-sm"
+        />
+        {showSuggestions && predictions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 max-h-56 overflow-y-auto">
+            {predictions.map((p) => (
+              <button
+                key={p.place_id}
+                onClick={() => { setDestination(p.description); setShowSuggestions(false); }}
+                className="w-full flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left first:rounded-t-xl last:rounded-b-xl"
+              >
+                <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-foreground text-sm font-medium block truncate">{p.main_text}</span>
+                  {p.secondary_text && <span className="text-muted-foreground text-xs block truncate">{p.secondary_text}</span>}
+                </div>
+              </button>
+            ))}
+            <button
+              onClick={() => { setDestination("Nearby"); setShowSuggestions(false); }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-t border-border rounded-b-xl"
+            >
+              <Navigation className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="text-foreground text-sm font-medium">Nearby places</span>
+            </button>
+          </div>
+        )}
+        {showSuggestions && !isLoading && predictions.length === 0 && destination.trim().length >= 2 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20">
+            <button
+              onClick={() => { setDestination("Nearby"); setShowSuggestions(false); }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left rounded-xl"
+            >
+              <Navigation className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="text-foreground text-sm font-medium">Nearby places</span>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
 
     {/* Dates */}
@@ -497,7 +540,8 @@ const Step1Content = ({
       )}
     </div>
   </div>
-);
+  );
+};
 
 // ─── Step 2: Planning Style ─────────────────────────────────
 interface Step2Props {

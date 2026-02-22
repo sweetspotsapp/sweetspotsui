@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
-import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft, DollarSign, Home, Plane, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft, DollarSign, Home, Plane, ChevronDown, ChevronUp, Navigation } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import LocationPickerModal from "@/components/LocationPickerModal";
 import BoardPicker from "./BoardPicker";
 import type { TripParams } from "@/hooks/useItinerary";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
+import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
@@ -74,7 +74,9 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
   const [customVibe, setCustomVibe] = useState("");
   const [mustIncludePlaceIds, setMustIncludePlaceIds] = useState<string[]>(initialParams?.mustIncludePlaceIds || []);
   const [boardIds, setBoardIds] = useState<string[]>(initialParams?.boardIds || []);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [showDestSuggestions, setShowDestSuggestions] = useState(false);
+  const { predictions: destPredictions, isLoading: destLoading } = usePlaceAutocomplete(showDestSuggestions ? destination : "");
+  const destWrapperRef = useRef<HTMLDivElement>(null);
   const [showAccommodation, setShowAccommodation] = useState(!!(initialParams?.accommodations && initialParams.accommodations.length > 0));
   const [accommodations, setAccommodations] = useState<Array<{ name: string; address: string; cost: string; currency: string }>>(
     initialParams?.accommodations?.map(a => ({
@@ -89,6 +91,16 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
   const [returnFlight, setReturnFlight] = useState(initialParams?.flightDetails?.returnFlight || "");
   const [flightPrice, setFlightPrice] = useState(initialParams?.flightDetails?.price?.toString() || "");
   const [flightCurrency, setFlightCurrency] = useState(initialParams?.flightDetails?.currency || "USD");
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (destWrapperRef.current && !destWrapperRef.current.contains(e.target as Node)) {
+        setShowDestSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const duration = dateRange?.from && dateRange?.to
     ? differenceInDays(dateRange.to, dateRange.from) + 1
@@ -166,17 +178,56 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
       </section>
 
       {/* Destination */}
-      <section className="space-y-2">
+      <section className="space-y-2" ref={destWrapperRef}>
         <label className="text-sm font-medium text-foreground">Destination</label>
-        <button
-          onClick={() => setShowLocationPicker(true)}
-          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border text-left transition-colors hover:bg-muted/50"
-        >
-          <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-          <span className={cn("text-base", destination ? "text-foreground" : "text-muted-foreground")}>
-            {destination || "Where are you going?"}
-          </span>
-        </button>
+        <div className="relative">
+          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary z-10" />
+          <Input
+            value={destination}
+            onChange={(e) => {
+              setDestination(e.target.value);
+              setShowDestSuggestions(e.target.value.trim().length >= 2);
+            }}
+            onFocus={() => { if (destination.trim().length >= 2) setShowDestSuggestions(true); }}
+            placeholder="Where are you going?"
+            className="pl-12 rounded-2xl px-4 py-3.5 h-auto bg-card border-border"
+          />
+          {showDestSuggestions && destPredictions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 max-h-56 overflow-y-auto">
+              {destPredictions.map((p) => (
+                <button
+                  key={p.place_id}
+                  onClick={() => { setDestination(p.description); setShowDestSuggestions(false); }}
+                  className="w-full flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left first:rounded-t-xl last:rounded-b-xl"
+                >
+                  <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-foreground text-sm font-medium block truncate">{p.main_text}</span>
+                    {p.secondary_text && <span className="text-muted-foreground text-xs block truncate">{p.secondary_text}</span>}
+                  </div>
+                </button>
+              ))}
+              <button
+                onClick={() => { setDestination("Nearby"); setShowDestSuggestions(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-t border-border rounded-b-xl"
+              >
+                <Navigation className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="text-foreground text-sm font-medium">Nearby places</span>
+              </button>
+            </div>
+          )}
+          {showDestSuggestions && !destLoading && destPredictions.length === 0 && destination.trim().length >= 2 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20">
+              <button
+                onClick={() => { setDestination("Nearby"); setShowDestSuggestions(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left rounded-xl"
+              >
+                <Navigation className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="text-foreground text-sm font-medium">Nearby places</span>
+              </button>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Dates */}
@@ -601,15 +652,6 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
         </p>
       )}
 
-      {/* Location Picker Modal */}
-      <LocationPickerModal
-        isOpen={showLocationPicker}
-        onClose={() => setShowLocationPicker(false)}
-        onSelectLocation={(loc) => {
-          setDestination(loc === "nearby" ? "Nearby" : loc);
-        }}
-        currentLocation={destination || undefined}
-      />
     </div>
   );
 };
