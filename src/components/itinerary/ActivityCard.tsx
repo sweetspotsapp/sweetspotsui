@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { RefreshCw, Loader2, ExternalLink, Heart, GripVertical, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ interface ActivityCardProps {
   isSwapping: boolean;
   isEditing?: boolean;
   onRemove?: () => void;
-  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  dragHandleProps?: { ref: React.Ref<HTMLButtonElement> };
   isDragging?: boolean;
 }
 
@@ -98,8 +98,8 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
           {isEditing && (
             <div className="absolute top-2 right-2 flex items-start gap-1">
               <button
-                {...dragHandleProps}
-                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all cursor-grab active:cursor-grabbing touch-none"
+                ref={dragHandleProps?.ref}
+                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all cursor-grab active:cursor-grabbing"
                 onClick={(e) => e.stopPropagation()}
               >
                 <GripVertical className="w-4 h-4 text-foreground" />

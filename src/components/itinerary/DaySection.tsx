@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, Plus, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
+import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import ActivityCard from "./ActivityCard";
 import DistanceConnector from "./DistanceConnector";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
@@ -96,11 +94,10 @@ const AddPlaceInput = ({ onAdd }: { onAdd: (place: { name: string; placeId?: str
   );
 };
 
-// Sortable wrapper for each activity
-const SortableActivityCard = ({
-  id, activity, dayIndex, slotIndex, activityIndex, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity,
+// Draggable + drop-target wrapper for each activity in edit mode
+const DraggableActivityCard = ({
+  activity, dayIndex, slotIndex, activityIndex, onSwap, onReplace, isSwapping, onRemoveActivity,
 }: {
-  id: string;
   activity: Activity;
   dayIndex: number;
   slotIndex: number;
@@ -108,26 +105,49 @@ const SortableActivityCard = ({
   onSwap: DaySectionProps["onSwap"];
   onReplace: DaySectionProps["onReplace"];
   isSwapping: boolean;
-  isEditing?: boolean;
   onRemoveActivity?: DaySectionProps["onRemoveActivity"];
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const ref = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLButtonElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isOver, setIsOver] = useState(false);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  useEffect(() => {
+    const el = ref.current;
+    const handleEl = handleRef.current;
+    if (!el || !handleEl) return;
+
+    return combine(
+      draggable({
+        element: el,
+        dragHandle: handleEl,
+        getInitialData: () => ({ dayIdx: dayIndex, slotIdx: slotIndex, actIdx: activityIndex }),
+        onDragStart: () => setIsDragging(true),
+        onDrop: () => setIsDragging(false),
+      }),
+      dropTargetForElements({
+        element: el,
+        getData: () => ({ dayIdx: dayIndex, slotIdx: slotIndex, actIdx: activityIndex }),
+        onDragEnter: () => setIsOver(true),
+        onDragLeave: () => setIsOver(false),
+        onDrop: () => setIsOver(false),
+      }),
+    );
+  }, [dayIndex, slotIndex, activityIndex]);
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={ref} className="relative">
+      {isOver && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full z-10" />
+      )}
       <ActivityCard
         activity={activity}
         onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
         onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
         isSwapping={isSwapping}
-        isEditing={isEditing}
+        isEditing
         onRemove={() => onRemoveActivity?.(dayIndex, slotIndex, activityIndex)}
-        dragHandleProps={{ ...attributes, ...listeners } as any}
+        dragHandleProps={{ ref: handleRef as any }}
         isDragging={isDragging}
       />
     </div>
@@ -135,10 +155,25 @@ const SortableActivityCard = ({
 };
 
 // Droppable zone for empty slots
-const DroppableSlot = ({ id, children }: { id: string; children: React.ReactNode }) => {
-  const { setNodeRef, isOver } = useDroppable({ id });
+const DroppableSlot = ({ dayIndex, slotIndex, children }: { dayIndex: number; slotIndex: number; children: React.ReactNode }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isOver, setIsOver] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    return dropTargetForElements({
+      element: el,
+      getData: () => ({ dayIdx: dayIndex, slotIdx: slotIndex, actIdx: -1, isSlot: true }),
+      onDragEnter: () => setIsOver(true),
+      onDragLeave: () => setIsOver(false),
+      onDrop: () => setIsOver(false),
+    });
+  }, [dayIndex, slotIndex]);
+
   return (
-    <div ref={setNodeRef} className={cn("px-3 py-2 space-y-2 min-h-[2rem] transition-colors", isOver && "bg-primary/5 rounded-lg")}>
+    <div ref={ref} className={cn("px-3 py-2 space-y-2 min-h-[2rem] transition-colors", isOver && "bg-primary/5 rounded-lg")}>
       {children}
     </div>
   );
@@ -258,9 +293,6 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
               firstActivity?.lat, firstActivity?.lng
             );
 
-            const sortableIds = slot.activities.map((_, actIdx) => `d${dayIndex}-s${slotIndex}-a${actIdx}`);
-            const droppableId = `d${dayIndex}-s${slotIndex}`;
-
             return (
               <div key={slotIndex}>
                 {prevLastActivity && firstActivity && !isEditing && (
@@ -284,24 +316,20 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                   </div>
 
                   {isEditing ? (
-                    <DroppableSlot id={droppableId}>
-                      <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-                        {slot.activities.map((activity, activityIndex) => (
-                          <SortableActivityCard
-                            key={`d${dayIndex}-s${slotIndex}-a${activityIndex}`}
-                            id={`d${dayIndex}-s${slotIndex}-a${activityIndex}`}
-                            activity={activity}
-                            dayIndex={dayIndex}
-                            slotIndex={slotIndex}
-                            activityIndex={activityIndex}
-                            onSwap={onSwap}
-                            onReplace={onReplace}
-                            isSwapping={isSwapping}
-                            isEditing={isEditing}
-                            onRemoveActivity={onRemoveActivity}
-                          />
-                        ))}
-                      </SortableContext>
+                    <DroppableSlot dayIndex={dayIndex} slotIndex={slotIndex}>
+                      {slot.activities.map((activity, activityIndex) => (
+                        <DraggableActivityCard
+                          key={activityIndex}
+                          activity={activity}
+                          dayIndex={dayIndex}
+                          slotIndex={slotIndex}
+                          activityIndex={activityIndex}
+                          onSwap={onSwap}
+                          onReplace={onReplace}
+                          isSwapping={isSwapping}
+                          onRemoveActivity={onRemoveActivity}
+                        />
+                      ))}
                       {onAddActivity && (
                         <AddPlaceInput onAdd={(place) => onAddActivity(dayIndex, slotIndex, place)} />
                       )}
