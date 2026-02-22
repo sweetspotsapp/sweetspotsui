@@ -1,30 +1,27 @@
 
 
-## Fix: Arrow button should navigate to next step after location is confirmed
+## Fix: Center the Location Picker Modal and Fix UI Overlapping
 
-### Problem
-On the location step of onboarding, after searching and selecting a place from the dropdown, the arrow button inside the input field only calls `handleConfirmCity()` which re-sets `exploreLocation` -- but never advances to the next step ("mood"). The user expects tapping the arrow to proceed.
+### Problems Identified
+1. The modal is positioned as a bottom sheet (`fixed inset-x-0 bottom-0`) with `pb-20` padding, which looks off-center and awkward especially on larger screens
+2. `overflow-hidden` on the modal container clips the autocomplete dropdown suggestions, causing the "weird UI overlapping" issue
+3. The autocomplete dropdown renders inside the `overflow-hidden` container, so it gets cut off
 
-### Solution
-Change the arrow button's `onClick` handler so that:
-- If the location is **not yet confirmed**, it confirms the city (current behavior)
-- If the location is **already confirmed**, it advances to the mood step
+### Changes
+
+**File: `src/components/LocationPickerModal.tsx`**
+
+1. **Center the modal vertically and horizontally** -- Replace the bottom-anchored positioning (`fixed inset-x-0 bottom-0 pb-20`) with a centered layout (`fixed inset-0 flex items-center justify-center`). Use `rounded-3xl` instead of `rounded-t-3xl` since it's no longer anchored to the bottom. Remove the drag handle bar since it's no longer a bottom sheet.
+
+2. **Fix overflow clipping** -- Change `overflow-hidden` on the modal container to `overflow-visible` so the autocomplete dropdown can render outside the container boundaries without being clipped. Move `overflow-y-auto` only to the content area that needs scrolling.
+
+3. **Remove the handle bar** -- Since the modal is now centered (not a swipeable bottom sheet), the top drag handle is unnecessary.
 
 ### Technical Details
 
-**File: `src/components/EntryScreen.tsx`**
-
-Update the arrow button's `onClick` (around line 281) from:
-
-```typescript
-onClick={handleConfirmCity}
-```
-
-to:
-
-```typescript
-onClick={isLocationConfirmed ? handleLocationNext : handleConfirmCity}
-```
-
-This is a one-line change. When `isLocationConfirmed` is `true` (meaning `exploreLocation` matches `locationInput`), clicking the arrow calls `handleLocationNext()` which sets `step` to `"mood"`. Otherwise it confirms the city as before.
+- Modal outer wrapper: `fixed inset-0 z-50 flex items-center justify-center p-4` (centered with padding)
+- Modal card: `bg-card rounded-3xl shadow-elevated w-full max-w-[420px] max-h-[80vh] flex flex-col` (remove `overflow-hidden`)
+- Content area: keep `overflow-y-auto` only on the scrollable content div
+- Autocomplete dropdown: already uses `absolute` + `z-20`, will now render correctly without being clipped
+- Animation: change from `animate-fade-up` to `animate-fade-in` to match centered appearance
 
