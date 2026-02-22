@@ -1,27 +1,30 @@
 
 
-## Fix: Center the Location Picker Modal and Fix UI Overlapping
+## Fix: Replace deprecated `google.maps.Marker` with custom `OverlayViewF` markers
 
-### Problems Identified
-1. The modal is positioned as a bottom sheet (`fixed inset-x-0 bottom-0`) with `pb-20` padding, which looks off-center and awkward especially on larger screens
-2. `overflow-hidden` on the modal container clips the autocomplete dropdown suggestions, causing the "weird UI overlapping" issue
-3. The autocomplete dropdown renders inside the `overflow-hidden` container, so it gets cut off
+### Problem
+Both `BoardMapView.tsx` and `TripMapView.tsx` use `Marker`/`MarkerF` from `@react-google-maps/api`, which internally uses the deprecated `google.maps.Marker` API.
 
-### Changes
-
-**File: `src/components/LocationPickerModal.tsx`**
-
-1. **Center the modal vertically and horizontally** -- Replace the bottom-anchored positioning (`fixed inset-x-0 bottom-0 pb-20`) with a centered layout (`fixed inset-0 flex items-center justify-center`). Use `rounded-3xl` instead of `rounded-t-3xl` since it's no longer anchored to the bottom. Remove the drag handle bar since it's no longer a bottom sheet.
-
-2. **Fix overflow clipping** -- Change `overflow-hidden` on the modal container to `overflow-visible` so the autocomplete dropdown can render outside the container boundaries without being clipped. Move `overflow-y-auto` only to the content area that needs scrolling.
-
-3. **Remove the handle bar** -- Since the modal is now centered (not a swipeable bottom sheet), the top drag handle is unnecessary.
+### Solution
+Replace all `Marker`/`MarkerF` usage with `OverlayViewF` from the same library, rendering custom styled div elements as markers. This avoids the deprecated API entirely without switching libraries.
 
 ### Technical Details
 
-- Modal outer wrapper: `fixed inset-0 z-50 flex items-center justify-center p-4` (centered with padding)
-- Modal card: `bg-card rounded-3xl shadow-elevated w-full max-w-[420px] max-h-[80vh] flex flex-col` (remove `overflow-hidden`)
-- Content area: keep `overflow-y-auto` only on the scrollable content div
-- Autocomplete dropdown: already uses `absolute` + `z-20`, will now render correctly without being clipped
-- Animation: change from `animate-fade-up` to `animate-fade-in` to match centered appearance
+**File: `src/components/trip/TripMapView.tsx`**
+- Replace `import { Marker, InfoWindow }` with `import { OverlayViewF, InfoWindowF }`
+- Replace each `<Marker>` with an `<OverlayViewF>` containing a styled div that shows the numbered circle with category color
+- Replace `<InfoWindow>` with `<InfoWindowF>` for consistency
+- The custom marker div will be a colored circle with a number label, matching the current appearance
+
+**File: `src/components/saved/BoardMapView.tsx`**
+- Replace `import { MarkerF, InfoWindowF }` with `import { OverlayViewF, InfoWindowF }`
+- Replace the user location `<MarkerF>` with an `<OverlayViewF>` containing a blue pulsing dot div
+- Replace the place `<MarkerF>` markers with `<OverlayViewF>` containing rose-colored circle divs
+- Keep `InfoWindowF` as-is (it doesn't use deprecated Marker)
+
+**Custom marker styling:**
+- Each marker will be a div with `border-radius: 50%`, appropriate background color, white border, and centered text
+- The `OverlayViewF` uses `mapPaneName="floatPane"` and `position` prop to place markers
+- A `getPixelPositionOffset` function centers the marker on its coordinate
+- Click handlers move from `<MarkerF onClick>` to the inner div's `onClick`
 
