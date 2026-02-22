@@ -33,7 +33,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/saved" element={<Index />} />
                 <Route path="/place/:placeId" element={<PlaceDetails />} />
-                <Route path="/itinerary" element={<Index />} />
+                <Route path="/trip" element={<Index />} />
                 <Route path="/see-all" element={<CategorySeeAll />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/help-support" element={<HelpSupport />} />

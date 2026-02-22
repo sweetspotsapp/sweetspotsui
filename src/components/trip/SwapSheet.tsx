@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type { SwapAlternative } from "@/hooks/useItinerary";
+import type { SwapAlternative } from "@/hooks/useTrip";
 
 interface SwapSheetProps {
   isOpen: boolean;

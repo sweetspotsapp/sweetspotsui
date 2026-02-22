@@ -12,7 +12,7 @@ interface MapActivity {
   time: string;
 }
 
-interface ItineraryMapViewProps {
+interface TripMapViewProps {
   activities: MapActivity[];
 }
 
@@ -34,7 +34,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 let cachedApiKey: string | null = null;
 
-const ItineraryMapView = ({ activities }: ItineraryMapViewProps) => {
+const TripMapView = ({ activities }: TripMapViewProps) => {
   const [apiKey, setApiKey] = useState<string | null>(cachedApiKey);
   const [isLoadingKey, setIsLoadingKey] = useState(!cachedApiKey);
   const [keyError, setKeyError] = useState(false);
@@ -181,4 +181,4 @@ const MapInner = ({ apiKey, activities }: { apiKey: string; activities: MapActiv
   );
 };
 
-export default ItineraryMapView;
+export default TripMapView;

@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
-import ItineraryPage from "@/components/ItineraryPage";
+import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
@@ -31,7 +31,7 @@ const Index = () => {
     const state = location.state as { openItinerary?: boolean } | null;
     if (state?.openItinerary) return "itinerary";
     if (location.pathname === "/saved") return "saved";
-    if (location.pathname === "/itinerary") return "itinerary";
+    if (location.pathname === "/trip") return "itinerary";
     // If arriving with a search param, force home tab
     const params = new URLSearchParams(location.search);
     if (params.get('search')) return "home";
@@ -139,7 +139,7 @@ const Index = () => {
     <div className="min-h-screen bg-background lg:pt-16">
       {activeTab === "home" && <HomePage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "saved" && <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />}
-      {activeTab === "itinerary" && <ItineraryPage resumeItineraryId={resumeItineraryId} onResumed={() => setResumeItineraryId(null)} />}
+      {activeTab === "itinerary" && <TripPage resumeItineraryId={resumeItineraryId} onResumed={() => setResumeItineraryId(null)} />}
       {activeTab === "profile" && <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />}
       
       <BottomNav 

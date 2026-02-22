@@ -8,7 +8,7 @@ import type { Edge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge
 import ActivityCard from "./ActivityCard";
 import DistanceConnector from "./DistanceConnector";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
-import type { ItineraryDay, Activity, SwapAlternative } from "@/hooks/useItinerary";
+import type { ItineraryDay, Activity, SwapAlternative } from "@/hooks/useTrip";
 
 interface DaySectionProps {
   day: ItineraryDay;

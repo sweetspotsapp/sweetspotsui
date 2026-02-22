@@ -6,8 +6,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import BoardPicker from "./BoardPicker";
 import CurrencyPicker, { CURRENCIES } from "./CurrencyPicker";
-import BrowseForItinerary from "./BrowseForItinerary";
-import type { TripParams } from "@/hooks/useItinerary";
+import BrowseForTrip from "./BrowseForTrip";
+import type { TripParams } from "@/hooks/useTrip";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
@@ -22,7 +22,7 @@ const BUDGET_LABELS: Record<string, string> = {
   "$$$$": "$300+/day",
 };
 
-interface CreateItineraryModalProps {
+interface CreateTripModalProps {
   isOpen: boolean;
   onClose: () => void;
   onGenerate: (params: TripParams) => void;
@@ -31,14 +31,14 @@ interface CreateItineraryModalProps {
   initialParams?: TripParams | null;
 }
 
-const CreateItineraryModal = ({
+const CreateTripModal = ({
   isOpen,
   onClose,
   onGenerate,
   onCreateOwn,
   isGenerating,
   initialParams,
-}: CreateItineraryModalProps) => {
+}: CreateTripModalProps) => {
   const [step, setStep] = useState(1);
 
   // Step 1: Trip Setup
@@ -295,7 +295,7 @@ const CreateItineraryModal = ({
 
     {/* Browse overlay */}
     {showBrowse && destination && (
-      <BrowseForItinerary
+      <BrowseForTrip
         destination={destination}
         selectedPlaceIds={mustIncludePlaceIds}
         onConfirm={(ids) => {
@@ -718,4 +718,4 @@ const Step2Content = ({
   </div>
 );
 
-export default CreateItineraryModal;
+export default CreateTripModal;

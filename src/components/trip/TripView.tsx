@@ -4,11 +4,11 @@ import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/ad
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
 import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import DaySection from "./DaySection";
-import ItineraryMapView from "./ItineraryMapView";
-import type { ItineraryData, ItineraryDay, SwapAlternative, TripParams } from "@/hooks/useItinerary";
+import TripMapView from "./TripMapView";
+import type { ItineraryData, ItineraryDay, SwapAlternative, TripParams } from "@/hooks/useTrip";
 import { cn } from "@/lib/utils";
 
-interface ItineraryViewProps {
+interface TripViewProps {
   itinerary: ItineraryData;
   tripParams?: TripParams | null;
   onBack: () => void;
@@ -43,7 +43,7 @@ function ensureDragIds(itinerary: ItineraryData): ItineraryData {
   return changed ? updated : itinerary;
 }
 
-const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: ItineraryViewProps) => {
+const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: TripViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<ItineraryData | null>(null);
@@ -310,7 +310,7 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
       {/* Content */}
       {showMap && !isEditing ? (
         <div className="rounded-2xl overflow-hidden border border-border" style={{ height: '400px' }}>
-          <ItineraryMapView activities={mapActivities} />
+          <TripMapView activities={mapActivities} />
         </div>
       ) : (
         itinerary.days.map((day, dayIndex) => (
@@ -333,4 +333,4 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
   );
 };
 
-export default ItineraryView;
+export default TripView;
