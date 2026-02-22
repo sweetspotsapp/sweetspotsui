@@ -18,7 +18,7 @@ const LoginReminderBanner = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm text-foreground font-medium">Sign in to save your spots</p>
-          <p className="text-xs text-muted-foreground">Your saves & itineraries will sync across devices</p>
+          <p className="text-xs text-muted-foreground">Your saves & trips will sync across devices</p>
         </div>
         <Button
           variant="outline"
