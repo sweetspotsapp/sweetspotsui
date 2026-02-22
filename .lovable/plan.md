@@ -1,40 +1,22 @@
 
 
-## 1. Disable Text Selection in Edit Mode
+## Fix: Move Menu Hidden Under Card Text
 
-Add `select-none` (CSS `user-select: none`) to the `ActivityCard` root `div` when `isEditing` is true. This prevents accidental text highlighting when users try to hold and drag.
+**Problem**: The "Move to" dropdown menu is rendered inside the hero image container which has `overflow-hidden`, causing the menu to be clipped and hidden behind the card's text area.
 
-**File: `src/components/itinerary/ActivityCard.tsx`**
-- Add `isEditing && "select-none"` to the root div's `cn()` class list.
+**Solution**: Remove `overflow-hidden` from the root card `div` and keep it only on the image container. Then move the `moveMenuRef` wrapper and the dropdown outside of the image `overflow-hidden` container, or simply change the dropdown to render with `position: fixed` so it escapes all overflow clipping.
 
-## 2. Add "..." Menu Button for Move-to-Day
+The simplest and most robust fix: change the root card `div` from `overflow-hidden` to `overflow-visible`, and keep `overflow-hidden` only on the image `div`. The dropdown menu's `z-50` will then properly overlay the text area below.
 
-Add a `MoreVertical` ("...") button on each activity card in edit mode. Tapping it opens a small popover/dropdown listing all days in the itinerary. Selecting a day moves the activity to that day's first slot.
+### File: `src/components/itinerary/ActivityCard.tsx`
 
-### Changes needed:
+1. **Line 90**: Remove `overflow-hidden` from the root card `div`'s className (the rounded corners will be preserved by the image container's own `overflow-hidden`).
+2. **Line 126**: The dropdown already has `z-50` and `bg-popover` -- no changes needed there.
 
-**File: `src/components/itinerary/ActivityCard.tsx`**
-- Add new props: `onMoveToDay?: (targetDayIndex: number) => void` and `availableDays?: Array<{ dayIndex: number; label: string }>`.
-- Import `MoreVertical` from lucide-react.
-- In edit mode, render a `MoreVertical` button next to the delete (Trash2) button in the top-right overlay.
-- On click, show a small dropdown menu (using a simple local state toggle) listing each day. Tapping a day calls `onMoveToDay(targetDayIndex)` and closes the menu.
-- The current day is shown but disabled/greyed out so the user knows which day the activity is already on.
+This single change lets the absolutely-positioned dropdown escape the image area and render on top of the text content below.
 
-**File: `src/components/itinerary/DaySection.tsx`**
-- Add new prop to `DaySectionProps`: `onMoveToDay?: (dayIndex: number, slotIndex: number, activityIndex: number, targetDayIndex: number) => void` and `totalDays: ItineraryDay[]`.
-- Pass `onMoveToDay` and `availableDays` (built from `totalDays`) down through `DraggableActivityCard` to `ActivityCard`.
+### Technical Detail
 
-**File: `src/components/itinerary/ItineraryView.tsx`**
-- Add a new `handleMoveToDay` callback that reuses `onDragReorder` -- it removes the activity from its current position and inserts it at the end of the target day's first slot.
-- Pass `onMoveToDay` and `totalDays={itinerary.days}` to each `DaySection`.
+- Root `div` (line 90): change `rounded-xl overflow-hidden` to `rounded-xl overflow-clip` or simply remove `overflow-hidden`. To preserve the rounded corners on the card, we use `overflow-clip` only on the image area (which already has its own `overflow-hidden`).
+- The dropdown already has proper z-index (`z-50`) and solid background (`bg-popover`), so once the overflow clipping is removed from the parent, it will display correctly.
 
-### Technical Details
-
-- The "..." menu will be a simple absolutely-positioned dropdown (no external library needed) that appears on click, with a click-outside handler to dismiss.
-- Moving to another day will call `onDragReorder(fromDay, fromSlot, fromAct, targetDay, 0, targetSlotActivitiesLength)` to append the activity to the first slot of the target day.
-- `e.stopPropagation()` on the "..." button prevents triggering drag.
-
-### Files Modified
-- `src/components/itinerary/ActivityCard.tsx` -- select-none + "..." move-to-day menu
-- `src/components/itinerary/DaySection.tsx` -- pass new props through
-- `src/components/itinerary/ItineraryView.tsx` -- handleMoveToDay callback + pass totalDays
