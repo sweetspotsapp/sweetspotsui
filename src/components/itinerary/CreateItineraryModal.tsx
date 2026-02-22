@@ -358,7 +358,7 @@ const Step1Content = ({
               </div>
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 z-[70]" align="start">
             <Calendar
               mode="single"
               selected={startDate}
@@ -386,7 +386,7 @@ const Step1Content = ({
                 </div>
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-[70]" align="start">
               <Calendar
                 mode="single"
                 selected={endDate}
