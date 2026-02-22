@@ -367,30 +367,19 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     const cachedLocation = sessionStorage.getItem(CACHED_LOCATION_KEY) || "";
     const currentMood = userMood?.trim() || "";
     const currentLocation = onboardingData?.explore_location || "";
-    const moodChanged = currentMood && currentMood !== cachedMood;
-    const locationChanged = currentLocation && currentLocation !== cachedLocation;
+    const moodChanged = currentMood !== "" && currentMood !== cachedMood;
+    const locationChanged = currentLocation !== "" && currentLocation !== cachedLocation;
     
     // Skip if already loaded and nothing has changed (but not if we're in skip mode)
     if (hasLoadedInitial.current && !moodChanged && !locationChanged && !wasSkipMode.current) return;
 
-    // Robust cache check: if sessionStorage still has valid results and nothing changed,
-    // restore from cache without making any API calls. This prevents reloads on
-    // back-and-forth navigation even when the component remounts.
-    if (!wasSkipMode.current && !moodChanged && !locationChanged) {
-      try {
-        const cachedResults = sessionStorage.getItem(CACHE_KEY);
-        if (cachedResults) {
-          const parsed = JSON.parse(cachedResults) as MockPlace[];
-          if (parsed.length > 0) {
-            setSearchResults(parsed);
-            setIsInitialLoading(false);
-            const cachedSummary = sessionStorage.getItem(SUMMARY_CACHE_KEY);
-            if (cachedSummary) setAiSummary(cachedSummary);
-            hasLoadedInitial.current = true;
-            return;
-          }
-        }
-      } catch {}
+    // If we already have results from cache (initialized in useState) or from a
+    // previous mount, and nothing has changed, just mark as loaded and bail out.
+    // This prevents unnecessary API calls when navigating back to the home tab.
+    if (!wasSkipMode.current && !moodChanged && !locationChanged && searchResults.length > 0) {
+      hasLoadedInitial.current = true;
+      setIsInitialLoading(false);
+      return;
     }
 
     hasLoadedInitial.current = true;
