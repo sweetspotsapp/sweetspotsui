@@ -158,44 +158,16 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
     });
   };
 
-  const handleGlobalMove = (dayIdx: number, slotIdx: number, actIdx: number, direction: 'up' | 'down') => {
+  const handleDragReorder = (fromDayIdx: number, fromSlotIdx: number, fromActIdx: number, toDayIdx: number, toSlotIdx: number, toActIdx: number) => {
     if (!itinerary) return;
     const updated = JSON.parse(JSON.stringify(itinerary)) as ItineraryData;
-    const days = updated.days;
-    const slot = days[dayIdx].slots[slotIdx];
-    const activity = slot.activities[actIdx];
-
-    if (direction === 'up') {
-      if (actIdx > 0) {
-        // Swap within same slot
-        slot.activities.splice(actIdx, 1);
-        slot.activities.splice(actIdx - 1, 0, activity);
-      } else if (slotIdx > 0) {
-        // Move to end of previous slot (same day)
-        slot.activities.splice(actIdx, 1);
-        days[dayIdx].slots[slotIdx - 1].activities.push(activity);
-      } else if (dayIdx > 0) {
-        // Move to end of last slot of previous day
-        slot.activities.splice(actIdx, 1);
-        const prevDay = days[dayIdx - 1];
-        prevDay.slots[prevDay.slots.length - 1].activities.push(activity);
-      }
-    } else {
-      if (actIdx < slot.activities.length - 1) {
-        // Swap within same slot
-        slot.activities.splice(actIdx, 1);
-        slot.activities.splice(actIdx + 1, 0, activity);
-      } else if (slotIdx < days[dayIdx].slots.length - 1) {
-        // Move to start of next slot (same day)
-        slot.activities.splice(actIdx, 1);
-        days[dayIdx].slots[slotIdx + 1].activities.unshift(activity);
-      } else if (dayIdx < days.length - 1) {
-        // Move to start of first slot of next day
-        slot.activities.splice(actIdx, 1);
-        days[dayIdx + 1].slots[0].activities.unshift(activity);
-      }
+    const [activity] = updated.days[fromDayIdx].slots[fromSlotIdx].activities.splice(fromActIdx, 1);
+    // Adjust target index if same slot and removing shifted indices
+    let adjustedIdx = toActIdx;
+    if (fromDayIdx === toDayIdx && fromSlotIdx === toSlotIdx && fromActIdx < toActIdx) {
+      adjustedIdx = Math.max(0, toActIdx - 1);
     }
-
+    updated.days[toDayIdx].slots[toSlotIdx].activities.splice(adjustedIdx, 0, activity);
     setItinerary(updated);
   };
 
@@ -271,10 +243,10 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
           tripParams={tripParams}
           onBack={handleBackToList}
           onSwap={handleSwap}
-          onGlobalMove={handleGlobalMove}
           onReplace={handleReplaceActivity}
           onRemoveActivity={handleRemoveActivity}
           onAddActivity={handleAddActivity}
+          onDragReorder={handleDragReorder}
           isSwapping={isSwapping}
           isGenerating={isGenerating}
           onRegenerate={() => tripParams && handleGenerate(tripParams)}
