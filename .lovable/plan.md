@@ -1,50 +1,58 @@
 
 
-## Add and Remove Activities in Itinerary Edit Mode
+## Drag-and-Drop Activity Reordering
 
-Enable users to add new places and remove existing ones from their itinerary while in edit mode.
+Replace the up/down arrow buttons with touch-friendly hold-and-drag reordering for itinerary activities in edit mode. Activities can be dragged between time slots and between days.
 
-### Remove Activity
+### Approach
 
-Add a delete/trash button to each `ActivityCard` when in edit mode (alongside the existing up/down arrows). Clicking it removes the activity from the itinerary data.
+Use the **@dnd-kit** library (lightweight, touch-friendly, accessible, built for React) to enable drag-and-drop reordering. A drag handle icon will appear on each activity card in edit mode. Users can press and hold the handle, then drag the activity to reorder it -- within the same slot, across slots, or across days.
 
-### Add Activity
-
-Add an "Add place" button at the end of each time slot (visible only in edit mode). Tapping it opens a small inline search input (similar to the destination autocomplete) that uses the existing `usePlaceAutocomplete` hook to search for places. Selecting a place inserts a new activity into that slot.
-
----
+The up/down arrow buttons will be removed in favor of the drag handle, keeping the UI cleaner. The trash button for removing activities remains.
 
 ### Changes by File
 
-**1. `src/components/itinerary/ActivityCard.tsx`**
-- Add `onRemove` optional prop and `Trash2` icon import.
-- In edit mode, render a delete button (red trash icon) next to the up/down arrows on the card image overlay.
-- Clicking it calls `onRemove()`.
+**1. Install `@dnd-kit/core` and `@dnd-kit/sortable` and `@dnd-kit/utilities`**
 
-**2. `src/components/itinerary/DaySection.tsx`**
-- Add `onRemoveActivity` and `onAddActivity` props.
-- Pass `onRemove` to each `ActivityCard`, wired to `onRemoveActivity(dayIndex, slotIndex, activityIndex)`.
-- After the activities list in each slot (when `isEditing`), render an "Add place" button.
-- When tapped, show an inline search input with autocomplete dropdown (using `usePlaceAutocomplete`).
-- On selection, call `onAddActivity(dayIndex, slotIndex, { name, placeId, category, description })`.
+These are the standard packages for sortable drag-and-drop in React.
 
-**3. `src/components/itinerary/ItineraryView.tsx`**
-- Add `onRemoveActivity` and `onAddActivity` props.
-- Pass them through to each `DaySection`.
-- Update the editing banner text to mention add/remove capability.
+**2. `src/components/itinerary/ItineraryView.tsx`**
 
-**4. `src/components/ItineraryPage.tsx`**
-- Add `handleRemoveActivity(dayIdx, slotIdx, actIdx)`:
-  - Deep clone itinerary, splice out the activity, update state.
-- Add `handleAddActivity(dayIdx, slotIdx, newActivity)`:
-  - Deep clone itinerary, push new activity to the slot, update state.
-- Pass both handlers to `ItineraryView`.
+- Wrap the days list in a `DndContext` provider (from @dnd-kit/core) when in edit mode
+- Flatten all activities into a single sortable list with composite IDs like `"day-0_slot-1_act-2"`
+- On `onDragEnd`, parse the source and destination IDs, remove the activity from its original position, and insert it at the new position
+- Update the editing banner text to: "Hold and drag activities to rearrange your itinerary."
+- Remove the `onGlobalMove` prop (no longer needed)
+
+**3. `src/components/itinerary/DaySection.tsx`**
+
+- Wrap each slot's activities list in a `SortableContext` (from @dnd-kit/sortable)
+- Each activity item becomes a `useSortable` draggable, using composite IDs
+- Add a droppable zone per slot so activities can be dropped between slots/days
+- Remove `onMoveActivity`, `canMoveUp`, `canMoveDown`, `isFirstDay`, `isLastDay` props
+
+**4. `src/components/itinerary/ActivityCard.tsx`**
+
+- Add a drag handle (GripVertical icon from lucide) visible only in edit mode
+- Remove the up/down ChevronUp/ChevronDown buttons
+- Accept `dragHandleProps` (attributes + listeners from useSortable) to attach to the handle element
+- The card gets a visual style change while being dragged (slight opacity, shadow lift)
+
+**5. `src/components/ItineraryPage.tsx`**
+
+- Remove `handleGlobalMove` function
+- Remove `onGlobalMove` from the ItineraryView props
+- Add a new `handleDragReorder(fromDayIdx, fromSlotIdx, fromActIdx, toDayIdx, toSlotIdx, toActIdx)` handler that:
+  - Deep clones the itinerary
+  - Removes the activity from the source position
+  - Inserts it at the destination position
+  - Updates state
 
 ### Technical Details
 
-- The "Add place" inline search reuses `usePlaceAutocomplete` with a local state toggle per slot.
-- New activities are added with default values: `{ name, description: "", category: "place", placeId }`.
-- Remove simply splices the activity from the slot's activities array.
-- No database or schema changes needed -- the itinerary data is saved as JSON.
-- The add-place input appears inline below the last activity in a slot, with the same autocomplete dropdown pattern used in the destination field.
+- **Composite IDs**: Each draggable activity gets an ID like `d0-s1-a2` encoding its day, slot, and activity index. On drag end, both active and over IDs are parsed to determine source and destination.
+- **Touch support**: @dnd-kit has built-in touch sensor with a 250ms press delay to distinguish scrolling from dragging.
+- **Drop indicators**: A visual placeholder line appears between activities to show where the dragged item will land.
+- **Accessibility**: @dnd-kit provides keyboard support out of the box as a fallback.
+- The existing add-place and remove buttons remain unchanged.
 
