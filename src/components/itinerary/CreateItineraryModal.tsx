@@ -6,6 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import BoardPicker from "./BoardPicker";
 import CurrencyPicker, { CURRENCIES } from "./CurrencyPicker";
+import BrowseForItinerary from "./BrowseForItinerary";
 import type { TripParams } from "@/hooks/useItinerary";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ const CreateItineraryModal = ({
   const [customVibe, setCustomVibe] = useState("");
   
   const [showUploadSection, setShowUploadSection] = useState(false);
+  const [showBrowse, setShowBrowse] = useState(false);
 
   // Step 2: Planning Style
   const [budget, setBudget] = useState(initialParams?.budget || "$$");
@@ -147,6 +149,7 @@ const CreateItineraryModal = ({
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} />
@@ -220,7 +223,7 @@ const CreateItineraryModal = ({
               boardIds={boardIds}
               setBoardIds={setBoardIds}
               destination={destination}
-              onBrowse={() => { onClose(); }}
+              onBrowse={() => setShowBrowse(true)}
             />
           )}
         </div>
@@ -288,8 +291,21 @@ const CreateItineraryModal = ({
           )}
         </div>
       </div>
-
     </div>
+
+    {/* Browse overlay */}
+    {showBrowse && destination && (
+      <BrowseForItinerary
+        destination={destination}
+        selectedPlaceIds={mustIncludePlaceIds}
+        onConfirm={(ids) => {
+          setMustIncludePlaceIds(ids);
+          setShowBrowse(false);
+        }}
+        onBack={() => setShowBrowse(false)}
+      />
+    )}
+    </>
   );
 };
 
