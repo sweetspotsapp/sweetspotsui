@@ -52,6 +52,7 @@ interface PlaceDetails {
   best_for: string[] | null;
   local_secrets: string | null;
   popular_times: Record<string, number[]> | null;
+  website: string | null;
 }
 interface RelatedPlace {
   id: string;
@@ -511,6 +512,7 @@ const PlaceDetailsPage = () => {
                     best_for: (newData as any).best_for ?? null,
                     local_secrets: (newData as any).local_secrets ?? null,
                     popular_times: (newData as any).popular_times ?? null,
+                    website: (newData as any).website ?? null,
                   };
                   setPlace(placeData);
                   await fetchRelatedPlaces(newData);
@@ -575,6 +577,7 @@ const PlaceDetailsPage = () => {
                   best_for: (enrichedData as any).best_for ?? null,
                   local_secrets: (enrichedData as any).local_secrets ?? null,
                   popular_times: (enrichedData as any).popular_times ?? null,
+                  website: (enrichedData as any).website ?? null,
                 };
                 setPlace(enrichedPlaceData);
                 await fetchRelatedPlaces(enrichedData);
@@ -609,6 +612,7 @@ const PlaceDetailsPage = () => {
           best_for: (data as any).best_for ?? null,
           local_secrets: (data as any).local_secrets ?? null,
           popular_times: (data as any).popular_times ?? null,
+          website: (data as any).website ?? null,
         };
         setPlace(placeData);
         await fetchRelatedPlaces(data);
@@ -816,7 +820,7 @@ const PlaceDetailsPage = () => {
         day: 'Hours',
         hours: 'Not available',
         isToday: true
-      }]} isOpen={place.is_open_now} />
+      }]} isOpen={place.is_open_now} website={place.website} />
 
         {/* 4a. Popular Times Chart */}
         {place.popular_times && (

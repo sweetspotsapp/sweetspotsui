@@ -27,7 +27,7 @@ const ReviewsList = ({ reviews }: ReviewsListProps) => {
         <span className="text-xs text-muted-foreground">{reviews.length} reviews</span>
       </div>
       
-      <div className="space-y-3 max-h-80 overflow-y-auto pr-1 scrollbar-thin">
+      <div className={`space-y-3 pr-1 scrollbar-thin transition-all duration-500 ${expanded ? '' : 'max-h-80 overflow-y-auto'}`}>
         {displayedReviews.map((review, index) => (
           <div 
             key={review.id} 

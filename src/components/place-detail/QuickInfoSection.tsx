@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigation, DollarSign, Clock, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Navigation, DollarSign, Clock, ChevronDown, ChevronUp, Info, ExternalLink } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -23,9 +23,10 @@ interface QuickInfoSectionProps {
   priceRange: string | PriceInfo;
   openingHours: OpeningHour[];
   isOpen?: boolean | null;
+  website?: string | null;
 }
 
-const QuickInfoSection = ({ distance, priceRange, openingHours, isOpen }: QuickInfoSectionProps) => {
+const QuickInfoSection = ({ distance, priceRange, openingHours, isOpen, website }: QuickInfoSectionProps) => {
   const [showAllHours, setShowAllHours] = useState(false);
   
   const todayHours = openingHours.find(h => h.isToday);
@@ -69,6 +70,19 @@ const QuickInfoSection = ({ distance, priceRange, openingHours, isOpen }: QuickI
           </span>
         </div>
       </div>
+
+      {/* Official Website */}
+      {website && (
+        <a
+          href={website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 bg-secondary/80 px-4 py-2.5 rounded-2xl text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+        >
+          <ExternalLink className="w-4 h-4 text-primary" />
+          <span className="truncate">{new URL(website).hostname.replace('www.', '')}</span>
+        </a>
+      )}
 
       {/* Opening Hours */}
       <div className="bg-secondary/50 rounded-2xl p-4 space-y-3">

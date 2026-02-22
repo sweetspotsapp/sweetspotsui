@@ -192,6 +192,7 @@ export type Database = {
           reviews: Json | null
           signature_items: string[] | null
           unique_vibes: string | null
+          website: string | null
         }
         Insert: {
           address?: string | null
@@ -219,6 +220,7 @@ export type Database = {
           reviews?: Json | null
           signature_items?: string[] | null
           unique_vibes?: string | null
+          website?: string | null
         }
         Update: {
           address?: string | null
@@ -246,6 +248,7 @@ export type Database = {
           reviews?: Json | null
           signature_items?: string[] | null
           unique_vibes?: string | null
+          website?: string | null
         }
         Relationships: []
       }

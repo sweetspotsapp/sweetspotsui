@@ -61,6 +61,7 @@ interface EnrichedPlace {
   unique_vibes: string | null;
   best_for: string[] | null;
   local_secrets: string | null;
+  website: string | null;
 }
 
 // Valid filter tags that can be generated
@@ -339,7 +340,8 @@ serve(async (req) => {
           'rating', 'userRatingCount', 'photos', 'priceLevel',
           'regularOpeningHours', 'reviews',
           'outdoorSeating', 'allowsDogs', 'goodForChildren',
-          'servesVegetarianFood', 'parkingOptions', 'accessibilityOptions'
+          'servesVegetarianFood', 'parkingOptions', 'accessibilityOptions',
+          'websiteUri'
         ].join(',');
 
         const detailsResponse = await fetch(
@@ -431,6 +433,7 @@ serve(async (req) => {
           unique_vibes: null,
           best_for: null,
           local_secrets: null,
+          website: googlePlace.websiteUri || null,
         };
 
         // Generate filter tags for this single place
@@ -488,6 +491,7 @@ serve(async (req) => {
             unique_vibes: enrichedPlace.unique_vibes,
             best_for: enrichedPlace.best_for,
             local_secrets: enrichedPlace.local_secrets,
+            website: enrichedPlace.website,
             last_enriched_at: new Date().toISOString(),
           }, { onConflict: 'place_id' });
 
@@ -602,6 +606,7 @@ serve(async (req) => {
             unique_vibes: cachedPlace.unique_vibes || null,
             best_for: cachedPlace.best_for || null,
             local_secrets: cachedPlace.local_secrets || null,
+            website: cachedPlace.website || null,
           };
           freshCachedPlaces.push(enrichedFromCache);
           foundCached = true;
@@ -668,7 +673,8 @@ serve(async (req) => {
                 'places.goodForChildren',
                 'places.servesVegetarianFood',
                 'places.parkingOptions',
-                'places.accessibilityOptions'
+                'places.accessibilityOptions',
+                'places.websiteUri'
               ].join(',');
 
               const searchResponse = await fetch(searchUrl, {
@@ -766,11 +772,12 @@ serve(async (req) => {
                 reviews: reviews,
                 is_open_now: isOpenNow,
                 filter_tags: extractGoogleFilterTags(googlePlace), // Google-verified tags, AI will add more
-                insider_tips: null, // Will be populated later
+                insider_tips: null,
                 signature_items: null,
                 unique_vibes: null,
                 best_for: null,
                 local_secrets: null,
+                website: googlePlace.websiteUri || null,
               } as EnrichedPlace;
 
             } catch (error) {
@@ -858,6 +865,7 @@ serve(async (req) => {
           unique_vibes: place.unique_vibes,
           best_for: place.best_for,
           local_secrets: place.local_secrets,
+          website: place.website,
           last_enriched_at: new Date().toISOString(),
         }));
 
