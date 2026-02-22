@@ -87,7 +87,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
   return (
     <>
       <div className={cn(
-        "rounded-xl overflow-hidden transition-all",
+        "rounded-xl transition-all",
         isEditing ? "bg-card border border-primary/20 shadow-sm select-none" : "bg-card border border-border/50 hover:border-border",
         isDragging && "opacity-30 border-dashed border-2 border-primary/40 shadow-none scale-[0.98]"
       )}>
