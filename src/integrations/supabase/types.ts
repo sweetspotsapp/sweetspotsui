@@ -73,63 +73,6 @@ export type Database = {
         }
         Relationships: []
       }
-      itineraries: {
-        Row: {
-          accommodation: Json | null
-          board_ids: string[] | null
-          budget: string
-          created_at: string
-          destination: string
-          end_date: string
-          flight_details: Json | null
-          group_size: number
-          id: string
-          itinerary_data: Json | null
-          must_include_place_ids: string[] | null
-          name: string | null
-          start_date: string
-          updated_at: string
-          user_id: string
-          vibes: string[] | null
-        }
-        Insert: {
-          accommodation?: Json | null
-          board_ids?: string[] | null
-          budget?: string
-          created_at?: string
-          destination: string
-          end_date: string
-          flight_details?: Json | null
-          group_size?: number
-          id?: string
-          itinerary_data?: Json | null
-          must_include_place_ids?: string[] | null
-          name?: string | null
-          start_date: string
-          updated_at?: string
-          user_id: string
-          vibes?: string[] | null
-        }
-        Update: {
-          accommodation?: Json | null
-          board_ids?: string[] | null
-          budget?: string
-          created_at?: string
-          destination?: string
-          end_date?: string
-          flight_details?: Json | null
-          group_size?: number
-          id?: string
-          itinerary_data?: Json | null
-          must_include_place_ids?: string[] | null
-          name?: string | null
-          start_date?: string
-          updated_at?: string
-          user_id?: string
-          vibes?: string[] | null
-        }
-        Relationships: []
-      }
       place_interactions: {
         Row: {
           action: string
@@ -398,6 +341,63 @@ export type Database = {
           mode?: string | null
           prompt?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      trips: {
+        Row: {
+          accommodation: Json | null
+          board_ids: string[] | null
+          budget: string
+          created_at: string
+          destination: string
+          end_date: string
+          flight_details: Json | null
+          group_size: number
+          id: string
+          must_include_place_ids: string[] | null
+          name: string | null
+          start_date: string
+          trip_data: Json | null
+          updated_at: string
+          user_id: string
+          vibes: string[] | null
+        }
+        Insert: {
+          accommodation?: Json | null
+          board_ids?: string[] | null
+          budget?: string
+          created_at?: string
+          destination: string
+          end_date: string
+          flight_details?: Json | null
+          group_size?: number
+          id?: string
+          must_include_place_ids?: string[] | null
+          name?: string | null
+          start_date: string
+          trip_data?: Json | null
+          updated_at?: string
+          user_id: string
+          vibes?: string[] | null
+        }
+        Update: {
+          accommodation?: Json | null
+          board_ids?: string[] | null
+          budget?: string
+          created_at?: string
+          destination?: string
+          end_date?: string
+          flight_details?: Json | null
+          group_size?: number
+          id?: string
+          must_include_place_ids?: string[] | null
+          name?: string | null
+          start_date?: string
+          trip_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          vibes?: string[] | null
         }
         Relationships: []
       }

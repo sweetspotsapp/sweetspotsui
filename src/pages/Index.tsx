@@ -26,34 +26,30 @@ const Index = () => {
   
   const location = useLocation();
   
-  // Determine initial tab from route
-  const getInitialTab = (): "home" | "saved" | "itinerary" | "profile" => {
-    const state = location.state as { openItinerary?: boolean } | null;
-    if (state?.openItinerary) return "itinerary";
+  const getInitialTab = (): "home" | "saved" | "trip" | "profile" => {
+    const state = location.state as { openTrip?: boolean } | null;
+    if (state?.openTrip) return "trip";
     if (location.pathname === "/saved") return "saved";
-    if (location.pathname === "/trip") return "itinerary";
-    // If arriving with a search param, force home tab
+    if (location.pathname === "/trip") return "trip";
     const params = new URLSearchParams(location.search);
     if (params.get('search')) return "home";
     return "home";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "saved" | "itinerary" | "profile">(getInitialTab);
-  const [resumeItineraryId, setResumeItineraryId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"home" | "saved" | "trip" | "profile">(getInitialTab);
+  const [resumeTripId, setResumeTripId] = useState<string | null>(null);
 
-  // Handle navigation state changes (e.g. returning from place details to itinerary)
   useEffect(() => {
-    const state = location.state as { openItinerary?: boolean } | null;
-    if (state?.openItinerary) {
-      setActiveTab("itinerary");
-      const storedId = sessionStorage.getItem('sweetspots_resume_itinerary');
+    const state = location.state as { openTrip?: boolean } | null;
+    if (state?.openTrip) {
+      setActiveTab("trip");
+      const storedId = sessionStorage.getItem('sweetspots_resume_trip');
       if (storedId) {
-        setResumeItineraryId(storedId);
-        sessionStorage.removeItem('sweetspots_resume_itinerary');
+        setResumeTripId(storedId);
+        sessionStorage.removeItem('sweetspots_resume_trip');
       }
       window.history.replaceState({}, '');
     }
-    // Switch to home tab when arriving with search param
     const params = new URLSearchParams(location.search);
     if (params.get('search')) {
       setActiveTab("home");
@@ -63,7 +59,6 @@ const Index = () => {
     hasCompletedOnboarding ? "main" : "onboarding"
   );
 
-  // Sync appState when onboarding status changes
   useEffect(() => {
     if (hasCompletedOnboarding && appState === "onboarding") {
       setAppState("main");
@@ -75,13 +70,11 @@ const Index = () => {
 
   const handleOnboardingComplete = (data: OnboardingData) => {
     setOnboardingData(data);
-    // Set the user mood from onboarding data if available
     if (data.mood) {
       setUserMood(data.mood);
     }
     setAppState("loading");
     
-    // Short loading transition
     setTimeout(() => {
       completeOnboarding(data.mood || "", []);
       setAppState("main");
@@ -92,7 +85,6 @@ const Index = () => {
     setUserMood(mood);
     setAppState("loading");
     
-    // Short loading transition
     setTimeout(() => {
       completeOnboarding(mood, []);
       setAppState("main");
@@ -100,7 +92,6 @@ const Index = () => {
   };
 
   const handleSkip = () => {
-    // Set skip mode flag for HomePage to detect
     sessionStorage.setItem('sweetspots_skip_mode', 'true');
     setAppState("loading");
     
@@ -110,11 +101,10 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "saved" | "itinerary" | "profile") => {
+  const handleTabChange = (tab: "home" | "saved" | "trip" | "profile") => {
     setActiveTab(tab);
   };
 
-  // Show loading while checking auth
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -123,23 +113,20 @@ const Index = () => {
     );
   }
 
-  // Show onboarding wizard
   if (appState === "onboarding") {
     return <EntryScreen onComplete={handleOnboardingComplete} onSkip={handleSkip} />;
   }
 
-  // Show loading transition
   if (appState === "loading") {
     const isSkipMode = sessionStorage.getItem('sweetspots_skip_mode') === 'true';
     return <LoadingTransition isSkipMode={isSkipMode} />;
   }
 
-  // Show main app
   return (
     <div className="min-h-screen bg-background lg:pt-16">
       {activeTab === "home" && <HomePage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "saved" && <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />}
-      {activeTab === "itinerary" && <TripPage resumeItineraryId={resumeItineraryId} onResumed={() => setResumeItineraryId(null)} />}
+      {activeTab === "trip" && <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} />}
       {activeTab === "profile" && <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />}
       
       <BottomNav 

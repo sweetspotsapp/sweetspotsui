@@ -2,15 +2,15 @@ import { Home, Heart, CalendarDays, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BottomNavProps {
-  activeTab: "home" | "saved" | "itinerary" | "profile";
-  onTabChange: (tab: "home" | "saved" | "itinerary" | "profile") => void;
+  activeTab: "home" | "saved" | "trip" | "profile";
+  onTabChange: (tab: "home" | "saved" | "trip" | "profile") => void;
 }
 
 const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "saved" as const, label: "Saved", icon: Heart },
-    { id: "itinerary" as const, label: "Trip", icon: CalendarDays },
+    { id: "trip" as const, label: "Trip", icon: CalendarDays },
     { id: "profile" as const, label: "Profile", icon: User },
   ];
 

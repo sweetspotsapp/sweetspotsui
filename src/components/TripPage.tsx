@@ -7,61 +7,61 @@ import { cn } from "@/lib/utils";
 import CreateTripModal from "./trip/CreateTripModal";
 import TripView from "./trip/TripView";
 import GeneratingOverlay from "./trip/GeneratingOverlay";
-import { useItinerary, type ItineraryData, type TripParams, type SavedItinerary } from "@/hooks/useTrip";
+import { useTrip, type TripData, type TripParams, type SavedTrip } from "@/hooks/useTrip";
 import { useAuth } from "@/hooks/useAuth";
 
 type Phase = "list" | "view";
 
 interface TripPageProps {
-  resumeItineraryId?: string | null;
+  resumeTripId?: string | null;
   onResumed?: () => void;
 }
 
-const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
+const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
-    savedItineraries, isLoading,
-    saveItinerary, deleteItinerary,
-  } = useItinerary();
+    savedTrips, isLoading,
+    saveTrip, deleteTrip,
+  } = useTrip();
 
   const [phase, setPhase] = useState<Phase>("list");
-  const [itinerary, setItinerary] = useState<ItineraryData | null>(null);
+  const [tripData, setTripData] = useState<TripData | null>(null);
   const [tripParams, setTripParams] = useState<TripParams | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [prefillParams, setPrefillParams] = useState<TripParams | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Resume a specific itinerary when returning from place details
+  // Resume a specific trip when returning from place details
   useEffect(() => {
-    if (resumeItineraryId && savedItineraries.length > 0 && !isLoading) {
-      const found = savedItineraries.find(it => it.id === resumeItineraryId);
-      if (found && found.itinerary_data) {
-        handleViewItinerary(found);
+    if (resumeTripId && savedTrips.length > 0 && !isLoading) {
+      const found = savedTrips.find(it => it.id === resumeTripId);
+      if (found && found.trip_data) {
+        handleViewTrip(found);
       }
       onResumed?.();
     }
-  }, [resumeItineraryId, savedItineraries, isLoading]);
+  }, [resumeTripId, savedTrips, isLoading]);
 
   // Store current editing ID so ActivityCard can reference it for back-navigation
   useEffect(() => {
     if (phase === "view" && editingId) {
-      sessionStorage.setItem('sweetspots_resume_itinerary', editingId);
+      sessionStorage.setItem('sweetspots_resume_trip', editingId);
     }
   }, [phase, editingId]);
 
-  const handleNewItinerary = () => {
+  const handleNewTrip = () => {
     setEditingId(null);
     setPrefillParams(null);
-    setItinerary(null);
+    setTripData(null);
     setTripParams(null);
     setShowCreateModal(true);
   };
 
-  const handleViewItinerary = (saved: SavedItinerary) => {
-    if (saved.itinerary_data) {
-      setItinerary(saved.itinerary_data);
+  const handleViewTrip = (saved: SavedTrip) => {
+    if (saved.trip_data) {
+      setTripData(saved.trip_data);
       setTripParams({
         name: saved.name || undefined,
         destination: saved.destination,
@@ -80,7 +80,7 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
     }
   };
 
-  const handleEditItinerary = (saved: SavedItinerary) => {
+  const handleEditTrip = (saved: SavedTrip) => {
     setPrefillParams({
       name: saved.name || undefined,
       destination: saved.destination,
@@ -95,11 +95,11 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
       flightDetails: saved.flight_details || undefined,
     });
     setEditingId(saved.id);
-    setItinerary(saved.itinerary_data);
+    setTripData(saved.trip_data);
     setShowCreateModal(true);
   };
 
-  const handleDuplicate = (saved: SavedItinerary) => {
+  const handleDuplicate = (saved: SavedTrip) => {
     setPrefillParams({
       name: saved.name ? `${saved.name} (copy)` : undefined,
       destination: saved.destination,
@@ -114,7 +114,7 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
       flightDetails: saved.flight_details || undefined,
     });
     setEditingId(null);
-    setItinerary(null);
+    setTripData(null);
     setShowCreateModal(true);
   };
 
@@ -123,8 +123,8 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
     setShowCreateModal(false);
     const result = await generate(params);
     if (result) {
-      setItinerary(result);
-      const id = await saveItinerary(params, result, editingId || undefined);
+      setTripData(result);
+      const id = await saveTrip(params, result, editingId || undefined);
       if (id) setEditingId(id);
       setPhase("view");
     }
@@ -132,19 +132,18 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
 
   const handleCreateOwn = () => {
     setShowCreateModal(false);
-    // Navigate to saved page — placeholder for now
   };
 
   const handleSave = async () => {
-    if (itinerary && tripParams) {
-      const id = await saveItinerary(tripParams, itinerary, editingId || undefined);
+    if (tripData && tripParams) {
+      const id = await saveTrip(tripParams, tripData, editingId || undefined);
       if (id) setEditingId(id);
     }
   };
 
   const handleSwap = async (dayIndex: number, slotIndex: number, activityIndex: number) => {
-    if (!itinerary || !tripParams) return;
-    const day = itinerary.days[dayIndex];
+    if (!tripData || !tripParams) return;
+    const day = tripData.days[dayIndex];
     const slot = day.slots[slotIndex];
     const activity = slot.activities[activityIndex];
     return await swap({
@@ -159,43 +158,42 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
   };
 
   const handleDragReorder = useCallback((fromDayIdx: number, fromSlotIdx: number, fromActIdx: number, toDayIdx: number, toSlotIdx: number, toActIdx: number) => {
-    if (!itinerary) return;
-    const updated = JSON.parse(JSON.stringify(itinerary)) as ItineraryData;
+    if (!tripData) return;
+    const updated = JSON.parse(JSON.stringify(tripData)) as TripData;
     const [activity] = updated.days[fromDayIdx].slots[fromSlotIdx].activities.splice(fromActIdx, 1);
-    // Adjust target index if same slot and removing shifted indices
     let adjustedIdx = toActIdx;
     if (fromDayIdx === toDayIdx && fromSlotIdx === toSlotIdx && fromActIdx < toActIdx) {
       adjustedIdx = Math.max(0, toActIdx - 1);
     }
     updated.days[toDayIdx].slots[toSlotIdx].activities.splice(adjustedIdx, 0, activity);
-    setItinerary(updated);
-  }, [itinerary]);
+    setTripData(updated);
+  }, [tripData]);
 
   const handleRemoveActivity = (dayIdx: number, slotIdx: number, actIdx: number) => {
-    if (!itinerary) return;
-    const updated = JSON.parse(JSON.stringify(itinerary)) as ItineraryData;
+    if (!tripData) return;
+    const updated = JSON.parse(JSON.stringify(tripData)) as TripData;
     updated.days[dayIdx].slots[slotIdx].activities.splice(actIdx, 1);
-    setItinerary(updated);
+    setTripData(updated);
   };
 
   const handleAddActivity = (dayIdx: number, slotIdx: number, newActivity: { name: string; placeId?: string; category: string; description: string }) => {
-    if (!itinerary) return;
-    const updated = JSON.parse(JSON.stringify(itinerary)) as ItineraryData;
+    if (!tripData) return;
+    const updated = JSON.parse(JSON.stringify(tripData)) as TripData;
     updated.days[dayIdx].slots[slotIdx].activities.push({
       name: newActivity.name,
       description: newActivity.description,
       category: newActivity.category,
       placeId: newActivity.placeId,
     } as any);
-    setItinerary(updated);
+    setTripData(updated);
   };
 
   const handleReplaceActivity = (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => {
-    if (!itinerary) return;
-    const updated = { ...itinerary };
+    if (!tripData) return;
+    const updated = { ...tripData };
     const act = updated.days[dayIndex].slots[slotIndex].activities[activityIndex];
     updated.days[dayIndex].slots[slotIndex].activities[activityIndex] = { ...act, ...newActivity };
-    setItinerary(updated);
+    setTripData(updated);
   };
 
   const handleBackToList = () => {
@@ -226,20 +224,20 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
       </div>
 
       {phase === "list" && (
-        <ItineraryList
-          itineraries={savedItineraries}
+        <TripList
+          trips={savedTrips}
           isLoading={isLoading}
-          onView={handleViewItinerary}
-          onEdit={handleEditItinerary}
+          onView={handleViewTrip}
+          onEdit={handleEditTrip}
           onDuplicate={handleDuplicate}
-          onDelete={deleteItinerary}
-          onCreateNew={handleNewItinerary}
+          onDelete={deleteTrip}
+          onCreateNew={handleNewTrip}
         />
       )}
 
-      {phase === "view" && itinerary && (
+      {phase === "view" && tripData && (
         <TripView
-          itinerary={itinerary}
+          itinerary={tripData}
           tripParams={tripParams}
           onBack={handleBackToList}
           onSwap={handleSwap}
@@ -252,9 +250,9 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
           onRegenerate={() => tripParams && handleGenerate(tripParams)}
           onSave={handleSave}
           onSaveEdits={async (edited) => {
-            setItinerary(edited);
+            setTripData(edited);
             if (tripParams) {
-              await saveItinerary(tripParams, edited, editingId || undefined);
+              await saveTrip(tripParams, edited, editingId || undefined);
             }
           }}
         />
@@ -263,7 +261,7 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
       <GeneratingOverlay isVisible={isGenerating} />
     </div>
 
-    {/* Create Itinerary Modal */}
+    {/* Create Trip Modal */}
     <CreateTripModal
       isOpen={showCreateModal}
       onClose={() => setShowCreateModal(false)}
@@ -281,18 +279,18 @@ const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
   );
 };
 
-// ─── Itinerary List Component ─────────────────────────────────
-interface ItineraryListProps {
-  itineraries: SavedItinerary[];
+// ─── Trip List Component ─────────────────────────────────
+interface TripListProps {
+  trips: SavedTrip[];
   isLoading: boolean;
-  onView: (it: SavedItinerary) => void;
-  onEdit: (it: SavedItinerary) => void;
-  onDuplicate: (it: SavedItinerary) => void;
+  onView: (it: SavedTrip) => void;
+  onEdit: (it: SavedTrip) => void;
+  onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
   onCreateNew: () => void;
 }
 
-const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, onDelete, onCreateNew }: ItineraryListProps) => {
+const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onCreateNew }: TripListProps) => {
   if (isLoading) {
     return (
       <div className="max-w-md mx-auto lg:max-w-4xl px-4 py-12 flex items-center justify-center">
@@ -301,7 +299,7 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
     );
   }
 
-  if (itineraries.length === 0) {
+  if (trips.length === 0) {
     return (
       <div className="max-w-md mx-auto lg:max-w-4xl px-4 py-16 text-center space-y-4">
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
@@ -335,10 +333,10 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {itineraries.map((it, i) => {
+        {trips.map((it, i) => {
           const startDate = it.start_date ? format(parseISO(it.start_date), "MMM d") : "";
           const endDate = it.end_date ? format(parseISO(it.end_date), "MMM d, yyyy") : "";
-          const totalActivities = it.itinerary_data?.days?.reduce(
+          const totalActivities = it.trip_data?.days?.reduce(
             (acc, d) => acc + d.slots.reduce((a, s) => a + s.activities.length, 0), 0
           ) || 0;
 
@@ -349,7 +347,7 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
               style={{ animationDelay: `${i * 60}ms`, animationFillMode: "forwards" }}
             >
               <button
-                onClick={() => it.itinerary_data ? onView(it) : onEdit(it)}
+                onClick={() => it.trip_data ? onView(it) : onEdit(it)}
                 className="w-full text-left px-4 py-3.5 hover:bg-muted/30 transition-colors"
               >
                 <div className="flex items-center gap-3">

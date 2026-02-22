@@ -22,14 +22,14 @@ export interface TimeSlot {
   activities: Activity[];
 }
 
-export interface ItineraryDay {
+export interface TripDay {
   label: string;
   slots: TimeSlot[];
 }
 
-export interface ItineraryData {
+export interface TripData {
   summary?: string;
-  days: ItineraryDay[];
+  days: TripDay[];
 }
 
 export interface AccommodationEntry {
@@ -60,7 +60,7 @@ export interface TripParams {
   };
 }
 
-export interface SavedItinerary {
+export interface SavedTrip {
   id: string;
   name: string | null;
   destination: string;
@@ -71,7 +71,7 @@ export interface SavedItinerary {
   vibes: string[];
   must_include_place_ids: string[];
   board_ids: string[];
-  itinerary_data: ItineraryData | null;
+  trip_data: TripData | null;
   accommodation: AccommodationEntry[] | null;
   flight_details: { outbound?: string; returnFlight?: string; price?: number; currency?: string } | null;
   created_at: string;
@@ -95,63 +95,76 @@ interface SwapParams {
   category: string;
 }
 
-const LOCAL_STORAGE_KEY = "sweetspots_local_itineraries";
+const LOCAL_STORAGE_KEY = "sweetspots_local_trips";
 
-const loadLocalItineraries = (): SavedItinerary[] => {
+const loadLocalTrips = (): SavedTrip[] => {
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    // Try new key first, fall back to old key for migration
+    let raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) {
+      raw = localStorage.getItem("sweetspots_local_itineraries");
+      if (raw) {
+        // Migrate old data
+        localStorage.setItem(LOCAL_STORAGE_KEY, raw);
+        localStorage.removeItem("sweetspots_local_itineraries");
+      }
+    }
+    if (!raw) return [];
+    // Map old itinerary_data field to trip_data
+    const parsed = JSON.parse(raw);
+    return parsed.map((item: any) => ({
+      ...item,
+      trip_data: item.trip_data || item.itinerary_data || null,
+    }));
   } catch { return []; }
 };
 
-const saveLocalItineraries = (items: SavedItinerary[]) => {
+const saveLocalTrips = (items: SavedTrip[]) => {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
   } catch { /* storage full – silently fail */ }
 };
 
-export const useItinerary = () => {
+export const useTrip = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
-  const [savedItineraries, setSavedItineraries] = useState<SavedItinerary[]>([]);
+  const [savedTrips, setSavedTrips] = useState<SavedTrip[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadItineraries = useCallback(async () => {
+  const loadTrips = useCallback(async () => {
     if (!user) {
-      // Load from localStorage for unauthenticated users
-      setSavedItineraries(loadLocalItineraries());
+      setSavedTrips(loadLocalTrips());
       return;
     }
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("itineraries")
+        .from("trips" as any)
         .select("*")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      setSavedItineraries((data || []).map(d => ({
+      setSavedTrips(((data as any[]) || []).map((d: any) => ({
         ...d,
-        itinerary_data: d.itinerary_data as unknown as ItineraryData | null,
-        accommodation: d.accommodation as unknown as SavedItinerary['accommodation'],
-        flight_details: d.flight_details as unknown as SavedItinerary['flight_details'],
+        trip_data: (d.trip_data || d.itinerary_data) as TripData | null,
+        accommodation: d.accommodation as SavedTrip['accommodation'],
+        flight_details: d.flight_details as SavedTrip['flight_details'],
       })));
     } catch (err) {
-      console.error("Error loading itineraries:", err);
+      console.error("Error loading trips:", err);
     } finally {
       setIsLoading(false);
     }
   }, [user]);
 
-  useEffect(() => { loadItineraries(); }, [loadItineraries]);
+  useEffect(() => { loadTrips(); }, [loadTrips]);
 
-  const saveItinerary = async (params: TripParams, itineraryData: ItineraryData, existingId?: string): Promise<string | null> => {
+  const saveTrip = async (params: TripParams, tripData: TripData, existingId?: string): Promise<string | null> => {
     if (!user) {
-      // Save to localStorage for unauthenticated users
       const now = new Date().toISOString();
-      const localItems = loadLocalItineraries();
+      const localItems = loadLocalTrips();
 
       if (existingId) {
         const updated = localItems.map(item =>
@@ -167,20 +180,20 @@ export const useItinerary = () => {
                 vibes: params.vibes,
                 must_include_place_ids: params.mustIncludePlaceIds,
                 board_ids: params.boardIds,
-                itinerary_data: itineraryData,
+                trip_data: tripData,
                 accommodation: params.accommodations || null,
                 flight_details: params.flightDetails || null,
                 updated_at: now,
               }
             : item
         );
-        saveLocalItineraries(updated);
-        setSavedItineraries(updated);
+        saveLocalTrips(updated);
+        setSavedTrips(updated);
         toast({ title: "Trip updated" });
         return existingId;
       } else {
         const newId = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const newItem: SavedItinerary = {
+        const newItem: SavedTrip = {
           id: newId,
           name: params.name || null,
           destination: params.destination,
@@ -191,15 +204,15 @@ export const useItinerary = () => {
           vibes: params.vibes,
           must_include_place_ids: params.mustIncludePlaceIds,
           board_ids: params.boardIds,
-          itinerary_data: itineraryData,
+          trip_data: tripData,
           accommodation: params.accommodations || null,
           flight_details: params.flightDetails || null,
           created_at: now,
           updated_at: now,
         };
         const updated = [newItem, ...localItems];
-        saveLocalItineraries(updated);
-        setSavedItineraries(updated);
+        saveLocalTrips(updated);
+        setSavedTrips(updated);
         toast({ title: "Trip saved locally" });
         return newId;
       }
@@ -216,55 +229,54 @@ export const useItinerary = () => {
         vibes: params.vibes,
         must_include_place_ids: params.mustIncludePlaceIds,
         board_ids: params.boardIds,
-        itinerary_data: JSON.parse(JSON.stringify(itineraryData)),
+        trip_data: JSON.parse(JSON.stringify(tripData)),
         accommodation: params.accommodations ? JSON.parse(JSON.stringify(params.accommodations)) : null,
         flight_details: params.flightDetails ? JSON.parse(JSON.stringify(params.flightDetails)) : null,
       };
 
       if (existingId) {
-        const { error } = await supabase.from("itineraries").update(record).eq("id", existingId).eq("user_id", user.id);
+        const { error } = await (supabase.from("trips" as any) as any).update(record).eq("id", existingId).eq("user_id", user.id);
         if (error) throw error;
         toast({ title: "Trip updated" });
-        await loadItineraries();
+        await loadTrips();
         return existingId;
       } else {
-        const { data, error } = await supabase.from("itineraries").insert(record).select("id").single();
+        const { data, error } = await (supabase.from("trips" as any) as any).insert(record).select("id").single();
         if (error) throw error;
         toast({ title: "Trip saved" });
-        await loadItineraries();
+        await loadTrips();
         return data.id;
       }
     } catch (err) {
-      console.error("Error saving itinerary:", err);
+      console.error("Error saving trip:", err);
       toast({ title: "Save failed", description: "Could not save trip.", variant: "destructive" });
       return null;
     }
   };
 
-  const deleteItinerary = async (id: string) => {
+  const deleteTrip = async (id: string) => {
     if (!user) {
-      // Delete from localStorage
-      const updated = loadLocalItineraries().filter(i => i.id !== id);
-      saveLocalItineraries(updated);
-      setSavedItineraries(updated);
+      const updated = loadLocalTrips().filter(i => i.id !== id);
+      saveLocalTrips(updated);
+      setSavedTrips(updated);
       toast({ title: "Trip deleted" });
       return;
     }
     try {
-      const { error } = await supabase.from("itineraries").delete().eq("id", id).eq("user_id", user.id);
+      const { error } = await (supabase.from("trips" as any) as any).delete().eq("id", id).eq("user_id", user.id);
       if (error) throw error;
-      setSavedItineraries(prev => prev.filter(i => i.id !== id));
+      setSavedTrips(prev => prev.filter(i => i.id !== id));
       toast({ title: "Trip deleted" });
     } catch (err) {
-      console.error("Error deleting itinerary:", err);
+      console.error("Error deleting trip:", err);
       toast({ title: "Delete failed", variant: "destructive" });
     }
   };
 
-  const generate = async (params: TripParams): Promise<ItineraryData | null> => {
+  const generate = async (params: TripParams): Promise<TripData | null> => {
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-itinerary", { body: params });
+      const { data, error } = await supabase.functions.invoke("generate-trip", { body: params });
       if (error) throw error;
       if (data?.error) {
         if (data.error.includes("Rate limit")) {
@@ -274,9 +286,9 @@ export const useItinerary = () => {
         } else { throw new Error(data.error); }
         return null;
       }
-      return data as ItineraryData;
+      return data as TripData;
     } catch (err) {
-      console.error("Error generating itinerary:", err);
+      console.error("Error generating trip:", err);
       toast({ title: "Generation failed", description: "Could not generate your trip. Please try again.", variant: "destructive" });
       return null;
     } finally { setIsGenerating(false); }
@@ -285,7 +297,7 @@ export const useItinerary = () => {
   const swap = async (params: SwapParams): Promise<SwapAlternative[]> => {
     setIsSwapping(true);
     try {
-      const { data, error } = await supabase.functions.invoke("swap-itinerary-activity", { body: params });
+      const { data, error } = await supabase.functions.invoke("swap-trip-activity", { body: params });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       return (data?.alternatives || []) as SwapAlternative[];
@@ -298,7 +310,7 @@ export const useItinerary = () => {
 
   return {
     generate, swap, isGenerating, isSwapping,
-    savedItineraries, isLoading, loadItineraries,
-    saveItinerary, deleteItinerary,
+    savedTrips, isLoading, loadTrips,
+    saveTrip, deleteTrip,
   };
 };
