@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Loader2, ExternalLink, Heart, GripVertical } from "lucide-react";
+import { RefreshCw, Loader2, ExternalLink, Heart, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
@@ -11,9 +11,13 @@ interface ActivityCardProps {
   onReplace: (newActivity: { name: string; description: string; category: string }) => void;
   isSwapping: boolean;
   isEditing?: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 }
 
-const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing }: ActivityCardProps) => {
+const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: ActivityCardProps) => {
   const navigate = useNavigate();
   const [showSwap, setShowSwap] = useState(false);
   const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
@@ -92,8 +96,21 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing }: Ac
             {categoryLabel}
           </div>
           {isEditing && (
-            <div className="absolute top-2 right-2 bg-card/80 backdrop-blur-sm p-1.5 rounded-full">
-              <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+            <div className="absolute top-2 right-2 flex flex-col gap-0.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
+                disabled={!canMoveUp}
+                className="bg-card/90 backdrop-blur-sm p-1 rounded-full disabled:opacity-30 hover:bg-card transition-colors"
+              >
+                <ChevronUp className="w-3.5 h-3.5 text-foreground" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
+                disabled={!canMoveDown}
+                className="bg-card/90 backdrop-blur-sm p-1 rounded-full disabled:opacity-30 hover:bg-card transition-colors"
+              >
+                <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+              </button>
             </div>
           )}
           {!isEditing && activity.placeId && (
