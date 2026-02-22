@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Settings } from "lucide-react";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -158,7 +158,7 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
     });
   };
 
-  const handleDragReorder = (fromDayIdx: number, fromSlotIdx: number, fromActIdx: number, toDayIdx: number, toSlotIdx: number, toActIdx: number) => {
+  const handleDragReorder = useCallback((fromDayIdx: number, fromSlotIdx: number, fromActIdx: number, toDayIdx: number, toSlotIdx: number, toActIdx: number) => {
     if (!itinerary) return;
     const updated = JSON.parse(JSON.stringify(itinerary)) as ItineraryData;
     const [activity] = updated.days[fromDayIdx].slots[fromSlotIdx].activities.splice(fromActIdx, 1);
@@ -169,7 +169,7 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
     }
     updated.days[toDayIdx].slots[toSlotIdx].activities.splice(adjustedIdx, 0, activity);
     setItinerary(updated);
-  };
+  }, [itinerary]);
 
   const handleRemoveActivity = (dayIdx: number, slotIdx: number, actIdx: number) => {
     if (!itinerary) return;

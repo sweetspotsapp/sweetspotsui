@@ -3,6 +3,8 @@ import { ChevronDown, ChevronUp, Plus, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
+import { attachClosestEdge, extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+import type { Edge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import ActivityCard from "./ActivityCard";
 import DistanceConnector from "./DistanceConnector";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
@@ -94,6 +96,21 @@ const AddPlaceInput = ({ onAdd }: { onAdd: (place: { name: string; placeId?: str
   );
 };
 
+// Drop indicator line
+const DropIndicator = ({ edge }: { edge: Edge }) => (
+  <div
+    className={cn(
+      "absolute left-2 right-2 h-0.5 bg-primary rounded-full z-20 pointer-events-none",
+      edge === "top" ? "-top-[1px]" : "-bottom-[1px]"
+    )}
+  >
+    <div className={cn(
+      "absolute w-2 h-2 rounded-full bg-primary -left-1",
+      edge === "top" ? "-top-[3px]" : "-top-[3px]"
+    )} />
+  </div>
+);
+
 // Draggable + drop-target wrapper for each activity in edit mode
 const DraggableActivityCard = ({
   activity, dayIndex, slotIndex, activityIndex, onSwap, onReplace, isSwapping, onRemoveActivity,
@@ -110,7 +127,7 @@ const DraggableActivityCard = ({
   const ref = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLButtonElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isOver, setIsOver] = useState(false);
+  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -127,19 +144,30 @@ const DraggableActivityCard = ({
       }),
       dropTargetForElements({
         element: el,
-        getData: () => ({ dayIdx: dayIndex, slotIdx: slotIndex, actIdx: activityIndex }),
-        onDragEnter: () => setIsOver(true),
-        onDragLeave: () => setIsOver(false),
-        onDrop: () => setIsOver(false),
+        getData: ({ input, element }) => {
+          return attachClosestEdge(
+            { dayIdx: dayIndex, slotIdx: slotIndex, actIdx: activityIndex },
+            { input, element, allowedEdges: ["top", "bottom"] }
+          );
+        },
+        getIsSticky: () => true,
+        onDrag: ({ self }) => {
+          const edge = extractClosestEdge(self.data);
+          setClosestEdge(edge);
+        },
+        onDragEnter: ({ self }) => {
+          const edge = extractClosestEdge(self.data);
+          setClosestEdge(edge);
+        },
+        onDragLeave: () => setClosestEdge(null),
+        onDrop: () => setClosestEdge(null),
       }),
     );
   }, [dayIndex, slotIndex, activityIndex]);
 
   return (
     <div ref={ref} className="relative">
-      {isOver && (
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full z-10" />
-      )}
+      {closestEdge && !isDragging && <DropIndicator edge={closestEdge} />}
       <ActivityCard
         activity={activity}
         onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
@@ -166,6 +194,10 @@ const DroppableSlot = ({ dayIndex, slotIndex, children }: { dayIndex: number; sl
     return dropTargetForElements({
       element: el,
       getData: () => ({ dayIdx: dayIndex, slotIdx: slotIndex, actIdx: -1, isSlot: true }),
+      canDrop: ({ source }) => {
+        // Only accept drops if this slot is empty or the drag isn't from within this exact slot
+        return true;
+      },
       onDragEnter: () => setIsOver(true),
       onDragLeave: () => setIsOver(false),
       onDrop: () => setIsOver(false),
@@ -319,7 +351,7 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                     <DroppableSlot dayIndex={dayIndex} slotIndex={slotIndex}>
                       {slot.activities.map((activity, activityIndex) => (
                         <DraggableActivityCard
-                          key={activityIndex}
+                          key={(activity as any)._dragId || `${dayIndex}-${slotIndex}-${activityIndex}`}
                           activity={activity}
                           dayIndex={dayIndex}
                           slotIndex={slotIndex}

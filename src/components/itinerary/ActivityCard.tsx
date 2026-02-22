@@ -73,7 +73,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
       <div className={cn(
         "rounded-xl overflow-hidden transition-all",
         isEditing ? "bg-card border border-primary/20 shadow-sm" : "bg-card border border-border/50 hover:border-border",
-        isDragging && "opacity-50 shadow-lg scale-[1.02]"
+        isDragging && "opacity-30 border-dashed border-2 border-primary/40 shadow-none scale-[0.98]"
       )}>
         {/* Hero Image */}
         <div
@@ -99,7 +99,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
             <div className="absolute top-2 right-2 flex items-start gap-1">
               <button
                 ref={dragHandleProps?.ref}
-                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all cursor-grab active:cursor-grabbing"
+                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card transition-all cursor-grab active:cursor-grabbing touch-none"
                 onClick={(e) => e.stopPropagation()}
               >
                 <GripVertical className="w-4 h-4 text-foreground" />

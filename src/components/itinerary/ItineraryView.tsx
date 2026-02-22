@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X } from "lucide-react";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
+import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import DaySection from "./DaySection";
 import ItineraryMapView from "./ItineraryMapView";
 import type { ItineraryData, ItineraryDay, SwapAlternative, TripParams } from "@/hooks/useItinerary";
@@ -22,12 +24,39 @@ interface ItineraryViewProps {
   onSaveEdits?: (editedItinerary: ItineraryData) => void;
 }
 
+// Assign stable drag IDs to all activities
+function ensureDragIds(itinerary: ItineraryData): ItineraryData {
+  let changed = false;
+  const updated = { ...itinerary, days: itinerary.days.map(day => ({
+    ...day,
+    slots: day.slots.map(slot => ({
+      ...slot,
+      activities: slot.activities.map(act => {
+        if (!(act as any)._dragId) {
+          changed = true;
+          return { ...act, _dragId: crypto.randomUUID() } as any;
+        }
+        return act;
+      }),
+    })),
+  }))};
+  return changed ? updated : itinerary;
+}
+
 const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: ItineraryViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<ItineraryData | null>(null);
 
-  // Monitor for drag-and-drop events globally
+  // Ensure all activities have stable drag IDs
+  useEffect(() => {
+    const withIds = ensureDragIds(itinerary);
+    if (withIds !== itinerary && onSaveEdits) {
+      onSaveEdits(withIds);
+    }
+  }, [itinerary]);
+
+  // Monitor for drag-and-drop events globally with edge detection
   useEffect(() => {
     if (!isEditing) return;
 
@@ -42,14 +71,30 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
         // Don't reorder onto itself
         if (srcData.dayIdx === destData.dayIdx && srcData.slotIdx === destData.slotIdx && srcData.actIdx === destData.actIdx) return;
 
-        const toActIdx = destData.isSlot
-          ? (itinerary.days[destData.dayIdx]?.slots[destData.slotIdx]?.activities?.length || 0)
-          : destData.actIdx;
+        let toActIdx: number;
+
+        if (destData.isSlot) {
+          // Dropped on empty slot area — append to end
+          toActIdx = itinerary.days[destData.dayIdx]?.slots[destData.slotIdx]?.activities?.length || 0;
+        } else {
+          // Use closest edge to determine insert position
+          const edge = extractClosestEdge(dest.data);
+          toActIdx = edge === "bottom" ? destData.actIdx + 1 : destData.actIdx;
+        }
 
         onDragReorder(srcData.dayIdx, srcData.slotIdx, srcData.actIdx, destData.dayIdx, destData.slotIdx, toActIdx);
       },
     });
   }, [isEditing, onDragReorder, itinerary]);
+
+  // Auto-scroll when dragging near edges
+  useEffect(() => {
+    if (!isEditing) return;
+
+    return autoScrollForElements({
+      element: document.documentElement,
+    });
+  }, [isEditing]);
 
   const handleStartEditing = () => {
     setEditSnapshot(JSON.parse(JSON.stringify(itinerary)));
