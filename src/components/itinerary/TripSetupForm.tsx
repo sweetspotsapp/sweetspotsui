@@ -190,7 +190,7 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
             }}
             onFocus={() => { if (destination.trim().length >= 2) setShowDestSuggestions(true); }}
             placeholder="Where are you going?"
-            className="pl-12 rounded-2xl px-4 py-3.5 h-auto bg-card border-border"
+            className="pl-12 pr-4 rounded-2xl py-3.5 h-auto bg-card border-border"
           />
           {showDestSuggestions && destPredictions.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 max-h-56 overflow-y-auto">

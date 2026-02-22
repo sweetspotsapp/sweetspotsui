@@ -80,6 +80,22 @@ const CreateItineraryModal = ({
         setGroupSize(initialParams.groupSize || 2);
         setMustIncludePlaceIds(initialParams.mustIncludePlaceIds || []);
         setBoardIds(initialParams.boardIds || []);
+      } else {
+        setName("");
+        setDestination("");
+        setStartDate(undefined);
+        setEndDate(undefined);
+        setHasEndDate(false);
+        setVibes([]);
+        setCustomVibe("");
+        setBudget("$$");
+        setTotalBudget("");
+        setUseTotalBudget(false);
+        setBudgetCurrency("USD");
+        setBudgetIsPerPerson(true);
+        setGroupSize(2);
+        setMustIncludePlaceIds([]);
+        setBoardIds([]);
       }
     }
   }, [isOpen, initialParams]);
@@ -346,7 +362,7 @@ const Step1Content = ({
           }}
           onFocus={() => { if (destination.trim().length >= 2) setShowSuggestions(true); }}
           placeholder="Where are you going?"
-          className="pl-11 rounded-xl px-4 py-3 h-auto bg-card border-border text-sm"
+          className="pl-11 pr-4 rounded-xl py-3 h-auto bg-card border-border text-sm"
         />
         {showSuggestions && predictions.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 max-h-56 overflow-y-auto">
