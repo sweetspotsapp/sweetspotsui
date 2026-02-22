@@ -56,12 +56,7 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
         <div className="bg-card rounded-3xl shadow-elevated w-full max-w-[420px] max-h-[80vh] flex flex-col overflow-visible">
           {/* Header */}
           <div className="px-6 pt-5 pb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-foreground">Change Location</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Search for a city, suburb, or address
-              </p>
-            </div>
+            <h2 className="text-xl font-bold text-foreground">Change Location</h2>
             <button
               onClick={onClose}
               className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -71,7 +66,7 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
+          <div className="flex-1 overflow-visible px-6 pb-6 space-y-4">
             {/* Location input */}
             <div className="relative">
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
