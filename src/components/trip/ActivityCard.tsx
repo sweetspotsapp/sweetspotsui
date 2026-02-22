@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { RefreshCw, Loader2, ExternalLink, Heart, Trash2, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
-import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
+import type { Activity, SwapAlternative } from "@/hooks/useTrip";
 
 interface ActivityCardProps {
   activity: Activity;

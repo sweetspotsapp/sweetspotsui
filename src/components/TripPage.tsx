@@ -4,20 +4,20 @@ import LoginReminderBanner from "./LoginReminderBanner";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import CreateItineraryModal from "./itinerary/CreateItineraryModal";
-import ItineraryView from "./itinerary/ItineraryView";
-import GeneratingOverlay from "./itinerary/GeneratingOverlay";
-import { useItinerary, type ItineraryData, type TripParams, type SavedItinerary } from "@/hooks/useItinerary";
+import CreateTripModal from "./trip/CreateTripModal";
+import TripView from "./trip/TripView";
+import GeneratingOverlay from "./trip/GeneratingOverlay";
+import { useItinerary, type ItineraryData, type TripParams, type SavedItinerary } from "@/hooks/useTrip";
 import { useAuth } from "@/hooks/useAuth";
 
 type Phase = "list" | "view";
 
-interface ItineraryPageProps {
+interface TripPageProps {
   resumeItineraryId?: string | null;
   onResumed?: () => void;
 }
 
-const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => {
+const TripPage = ({ resumeItineraryId, onResumed }: TripPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
@@ -238,7 +238,7 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
       )}
 
       {phase === "view" && itinerary && (
-        <ItineraryView
+        <TripView
           itinerary={itinerary}
           tripParams={tripParams}
           onBack={handleBackToList}
@@ -264,7 +264,7 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
     </div>
 
     {/* Create Itinerary Modal */}
-    <CreateItineraryModal
+    <CreateTripModal
       isOpen={showCreateModal}
       onClose={() => setShowCreateModal(false)}
       onGenerate={handleGenerate}
@@ -391,4 +391,4 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
   );
 };
 
-export default ItineraryPage;
+export default TripPage;

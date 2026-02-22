@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import BoardPicker from "./BoardPicker";
-import type { TripParams } from "@/hooks/useItinerary";
+import type { TripParams } from "@/hooks/useTrip";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";

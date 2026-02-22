@@ -13,14 +13,14 @@ interface BrowsePlace {
   address?: string;
 }
 
-interface BrowseForItineraryProps {
+interface BrowseForTripProps {
   destination: string;
   selectedPlaceIds: string[];
   onConfirm: (placeIds: string[]) => void;
   onBack: () => void;
 }
 
-const BrowseForItinerary = ({ destination, selectedPlaceIds: initialSelected, onConfirm, onBack }: BrowseForItineraryProps) => {
+const BrowseForTrip = ({ destination, selectedPlaceIds: initialSelected, onConfirm, onBack }: BrowseForTripProps) => {
   const { search, isSearching } = useUnifiedSearch();
   const [places, setPlaces] = useState<BrowsePlace[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSelected));
@@ -202,4 +202,4 @@ const toPlace = (p: UnifiedPlace): BrowsePlace => ({
   address: p.address || undefined,
 });
 
-export default BrowseForItinerary;
+export default BrowseForTrip;
