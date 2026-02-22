@@ -1,11 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { WORLD_CITIES } from "@/data/worldCities";
 
 export interface Prediction {
   description: string;
   place_id: string;
   main_text: string;
   secondary_text: string;
+}
+
+function getLocalCityMatches(query: string): Prediction[] {
+  const q = query.toLowerCase().trim();
+  if (q.length < 2) return [];
+  return WORLD_CITIES
+    .filter(c => c.name.toLowerCase().includes(q) || c.country.toLowerCase().includes(q))
+    .slice(0, 8)
+    .map(c => ({
+      description: `${c.name}, ${c.country}`,
+      place_id: `local_${c.name}_${c.country}`,
+      main_text: c.name,
+      secondary_text: c.country,
+    }));
 }
 
 // Cache the API key so we only fetch it once per session
@@ -63,8 +78,9 @@ export function usePlaceAutocomplete(input: string) {
         const data = await response.json();
 
         if (!response.ok) {
-          console.error("Google Autocomplete error:", data);
-          setPredictions([]);
+          console.error("Google Autocomplete error, falling back to local cities:", data);
+          setPredictions(getLocalCityMatches(input));
+          setIsLoading(false);
           return;
         }
 
@@ -83,8 +99,8 @@ export function usePlaceAutocomplete(input: string) {
 
         setPredictions(predictions);
       } catch (e) {
-        console.error("Autocomplete error:", e);
-        setPredictions([]);
+        console.error("Autocomplete error, falling back to local cities:", e);
+        setPredictions(getLocalCityMatches(input));
       } finally {
         setIsLoading(false);
       }

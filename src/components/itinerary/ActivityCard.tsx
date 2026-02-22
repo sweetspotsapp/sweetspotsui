@@ -113,7 +113,11 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
                 >
                   {activity.name}
                 </span>
-                {activity.mustInclude && <Lock className="w-3 h-3 text-primary flex-shrink-0" />}
+                {activity.mustInclude && (
+                  <span title="Must-include: this place was added from your saved boards and can't be swapped">
+                    <Lock className="w-3 h-3 text-primary flex-shrink-0" />
+                  </span>
+                )}
               </div>
               {activity.time && (
                 <span className="text-xs text-muted-foreground">{activity.time}</span>
