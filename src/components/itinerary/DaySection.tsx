@@ -29,8 +29,6 @@ interface RouteData {
 const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onDragReorder }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
-  const [dragIdx, setDragIdx] = useState<{ slot: number; idx: number } | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<{ slot: number; idx: number } | null>(null);
 
   useEffect(() => {
     const pairs: Array<{ key: string; origin: { lat: number; lng: number }; destination: { lat: number; lng: number } }> = [];
@@ -107,26 +105,17 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
     total + slot.activities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0), 0
   );
 
-  const handleDragStart = (slotIndex: number, activityIndex: number) => {
-    setDragIdx({ slot: slotIndex, idx: activityIndex });
-  };
-
-  const handleDragOver = (e: React.DragEvent, slotIndex: number, activityIndex: number) => {
-    e.preventDefault();
-    setDragOverIdx({ slot: slotIndex, idx: activityIndex });
-  };
-
-  const handleDrop = (slotIndex: number, activityIndex: number) => {
-    if (dragIdx && dragIdx.slot === slotIndex && dragIdx.idx !== activityIndex) {
-      onDragReorder?.(dayIndex, slotIndex, dragIdx.idx, activityIndex);
+  const handleMoveUp = (slotIndex: number, activityIndex: number) => {
+    if (activityIndex > 0) {
+      onDragReorder?.(dayIndex, slotIndex, activityIndex, activityIndex - 1);
     }
-    setDragIdx(null);
-    setDragOverIdx(null);
   };
 
-  const handleDragEnd = () => {
-    setDragIdx(null);
-    setDragOverIdx(null);
+  const handleMoveDown = (slotIndex: number, activityIndex: number) => {
+    const slot = day.slots[slotIndex];
+    if (activityIndex < slot.activities.length - 1) {
+      onDragReorder?.(dayIndex, slotIndex, activityIndex, activityIndex + 1);
+    }
   };
 
   return (
@@ -194,27 +183,18 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                         nextActivity?.lat, nextActivity?.lng
                       );
 
-                      const isDragOver = dragOverIdx?.slot === slotIndex && dragOverIdx?.idx === activityIndex;
-
                       return (
-                        <div
-                          key={activityIndex}
-                          draggable={isEditing}
-                          onDragStart={() => handleDragStart(slotIndex, activityIndex)}
-                          onDragOver={(e) => handleDragOver(e, slotIndex, activityIndex)}
-                          onDrop={() => handleDrop(slotIndex, activityIndex)}
-                          onDragEnd={handleDragEnd}
-                          className={cn(
-                            isEditing && "cursor-grab active:cursor-grabbing",
-                            isDragOver && isEditing && "ring-2 ring-primary/30 rounded-xl"
-                          )}
-                        >
+                        <div key={activityIndex}>
                           <ActivityCard
                             activity={activity}
                             onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
                             onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
                             isSwapping={isSwapping}
                             isEditing={isEditing}
+                            onMoveUp={() => handleMoveUp(slotIndex, activityIndex)}
+                            onMoveDown={() => handleMoveDown(slotIndex, activityIndex)}
+                            canMoveUp={activityIndex > 0}
+                            canMoveDown={activityIndex < slot.activities.length - 1}
                           />
                           {!isEditing && activityIndex < slot.activities.length - 1 && (
                             <DistanceConnector
