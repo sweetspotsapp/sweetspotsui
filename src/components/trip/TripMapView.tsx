@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindowF } from "@react-google-maps/api";
 import { Loader2, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -139,29 +139,37 @@ const MapInner = ({ apiKey, activities }: { apiKey: string; activities: MapActiv
       }}
     >
       {activities.map((act, i) => (
-        <Marker
+        <OverlayViewF
           key={`${act.name}-${i}`}
           position={{ lat: act.lat, lng: act.lng }}
-          onClick={() => setSelectedActivity(act)}
-          label={{
-            text: `${i + 1}`,
-            color: '#FFFFFF',
-            fontSize: '11px',
-            fontWeight: 'bold',
-          }}
-          icon={{
-            path: 0,
-            scale: 14,
-            fillColor: CATEGORY_COLORS[act.category] || '#E11D48',
-            fillOpacity: 1,
-            strokeColor: '#FFFFFF',
-            strokeWeight: 2,
-          }}
-        />
+          mapPaneName={OverlayView.FLOAT_PANE}
+          getPixelPositionOffset={() => ({ x: -14, y: -14 })}
+        >
+          <div
+            onClick={() => setSelectedActivity(act)}
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              backgroundColor: CATEGORY_COLORS[act.category] || '#E11D48',
+              border: '2px solid #FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#FFFFFF',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            }}
+          >
+            {i + 1}
+          </div>
+        </OverlayViewF>
       ))}
 
       {selectedActivity && (
-        <InfoWindow
+        <InfoWindowF
           position={{ lat: selectedActivity.lat, lng: selectedActivity.lng }}
           onCloseClick={() => setSelectedActivity(null)}
           options={{ pixelOffset: new google.maps.Size(0, -16) }}
@@ -175,7 +183,7 @@ const MapInner = ({ apiKey, activities }: { apiKey: string; activities: MapActiv
               {selectedActivity.category.replace(/_/g, ' ')}
             </span>
           </div>
-        </InfoWindow>
+        </InfoWindowF>
       )}
     </GoogleMap>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, forwardRef } from "react";
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindowF } from "@react-google-maps/api";
 import { Star, MapPin, Loader2, Navigation } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,25 +81,6 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
     ],
   }), []);
 
-  // Memoize marker icons to prevent recreation
-  const userLocationIcon = useMemo(() => ({
-    path: 0, // google.maps.SymbolPath.CIRCLE = 0
-    scale: 8,
-    fillColor: "#3B82F6",
-    fillOpacity: 1,
-    strokeColor: "#FFFFFF",
-    strokeWeight: 3,
-  }), []);
-
-  const placeIcon = useMemo(() => ({
-    path: 0, // google.maps.SymbolPath.CIRCLE = 0
-    scale: 10,
-    fillColor: "#E11D48",
-    fillOpacity: 1,
-    strokeColor: "#FFFFFF",
-    strokeWeight: 2,
-  }), []);
-
   return (
     <>
       <GoogleMap
@@ -112,22 +93,47 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
       >
         {/* User Location Marker */}
         {userLocation && (
-          <MarkerF
+          <OverlayViewF
             position={userLocation}
-            icon={userLocationIcon}
-            title="Your location"
-          />
+            mapPaneName={OverlayView.FLOAT_PANE}
+            getPixelPositionOffset={() => ({ x: -8, y: -8 })}
+          >
+            <div
+              style={{
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                backgroundColor: '#3B82F6',
+                border: '3px solid #FFFFFF',
+                boxShadow: '0 0 0 2px rgba(59,130,246,0.3), 0 2px 4px rgba(0,0,0,0.2)',
+              }}
+              title="Your location"
+            />
+          </OverlayViewF>
         )}
 
         {/* Place Markers */}
         {validPlaces.map((place) => (
-          <MarkerF
+          <OverlayViewF
             key={place.place_id}
             position={{ lat: place.lat!, lng: place.lng! }}
-            onClick={() => setSelectedPlace(place)}
-            icon={placeIcon}
-            title={place.name}
-          />
+            mapPaneName={OverlayView.FLOAT_PANE}
+            getPixelPositionOffset={() => ({ x: -10, y: -10 })}
+          >
+            <div
+              onClick={() => setSelectedPlace(place)}
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: '50%',
+                backgroundColor: '#E11D48',
+                border: '2px solid #FFFFFF',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+              }}
+              title={place.name}
+            />
+          </OverlayViewF>
         ))}
 
         {/* Info Window */}
