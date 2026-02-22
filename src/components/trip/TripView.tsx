@@ -5,11 +5,11 @@ import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-sc
 import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import DaySection from "./DaySection";
 import TripMapView from "./TripMapView";
-import type { ItineraryData, ItineraryDay, SwapAlternative, TripParams } from "@/hooks/useTrip";
+import type { TripData, TripDay, SwapAlternative, TripParams } from "@/hooks/useTrip";
 import { cn } from "@/lib/utils";
 
 interface TripViewProps {
-  itinerary: ItineraryData;
+  itinerary: TripData;
   tripParams?: TripParams | null;
   onBack: () => void;
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
@@ -21,11 +21,11 @@ interface TripViewProps {
   isGenerating: boolean;
   onRegenerate: () => void;
   onSave?: () => void;
-  onSaveEdits?: (editedItinerary: ItineraryData) => void;
+  onSaveEdits?: (editedTrip: TripData) => void;
 }
 
 // Assign stable drag IDs to all activities
-function ensureDragIds(itinerary: ItineraryData): ItineraryData {
+function ensureDragIds(itinerary: TripData): TripData {
   let changed = false;
   const updated = { ...itinerary, days: itinerary.days.map(day => ({
     ...day,
@@ -46,7 +46,7 @@ function ensureDragIds(itinerary: ItineraryData): ItineraryData {
 const TripView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: TripViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editSnapshot, setEditSnapshot] = useState<ItineraryData | null>(null);
+  const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
 
   // Ensure all activities have stable drag IDs
   useEffect(() => {

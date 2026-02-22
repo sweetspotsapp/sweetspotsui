@@ -37,7 +37,7 @@ serve(async (req) => {
       ? `\n\nAccommodation(s):\n${accommodations.map((a: any, i: number) => `- Stay ${i + 1}: ${a.name || 'Unknown'} at ${a.address || 'Unknown address'}`).join("\n")}\nPlease consider proximity to accommodation when planning activities.`
       : "";
 
-    const prompt = `Create a detailed day-by-day travel itinerary for a trip to ${destination}.
+    const prompt = `Create a detailed day-by-day travel plan for a trip to ${destination}.
 
 Trip details:
 - Dates: ${startDate} to ${endDate}
@@ -45,7 +45,7 @@ Trip details:
 - Group size: ${groupSize} people
 - Vibes they want: ${vibes.join(", ")}${mustIncludeSection}${accommodationSection}
 
-Generate a structured itinerary with Morning, Afternoon, and Evening slots for each day. Each activity should have:
+Generate a structured trip plan with Morning, Afternoon, and Evening slots for each day. Each activity should have:
 - A realistic name of a real place or activity
 - A brief description
 - A category
@@ -53,6 +53,60 @@ Generate a structured itinerary with Morning, Afternoon, and Evening slots for e
 - An estimated cost per person in USD (be realistic based on the budget level and destination)
 
 Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 for restaurants, $10-30 for museums, etc. Adjust for the destination's cost of living.`;
+
+    const toolDef = {
+      type: "function",
+      function: {
+        name: "create_trip",
+        description: "Return a structured travel trip plan with cost estimates",
+        parameters: {
+          type: "object",
+          properties: {
+            summary: { type: "string", description: "A 1-2 sentence overview of the trip" },
+            days: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  label: { type: "string", description: "e.g. Day 1 - Monday" },
+                  slots: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        time: { type: "string", enum: ["Morning", "Afternoon", "Evening"] },
+                        activities: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              name: { type: "string" },
+                              time: { type: "string", description: "e.g. 9:00 AM - 11:00 AM" },
+                              category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market"] },
+                              description: { type: "string", description: "1-2 sentences" },
+                              mustInclude: { type: "boolean" },
+                              estimatedCost: { type: "number", description: "Estimated cost per person in USD. Use 0 for free activities." },
+                            },
+                            required: ["name", "category", "description", "estimatedCost"],
+                            additionalProperties: false,
+                          },
+                        },
+                      },
+                      required: ["time", "activities"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["label", "slots"],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ["summary", "days"],
+          additionalProperties: false,
+        },
+      },
+    };
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -63,65 +117,11 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a travel planning expert. Return structured itineraries using the provided tool. Always include realistic cost estimates." },
+          { role: "system", content: "You are a travel planning expert. Return structured trip plans using the provided tool. Always include realistic cost estimates." },
           { role: "user", content: prompt },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "create_itinerary",
-              description: "Return a structured travel itinerary with cost estimates",
-              parameters: {
-                type: "object",
-                properties: {
-                  summary: { type: "string", description: "A 1-2 sentence overview of the trip" },
-                  days: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        label: { type: "string", description: "e.g. Day 1 - Monday" },
-                        slots: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              time: { type: "string", enum: ["Morning", "Afternoon", "Evening"] },
-                              activities: {
-                                type: "array",
-                                items: {
-                                  type: "object",
-                                  properties: {
-                                    name: { type: "string" },
-                                    time: { type: "string", description: "e.g. 9:00 AM - 11:00 AM" },
-                                    category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market"] },
-                                    description: { type: "string", description: "1-2 sentences" },
-                                    mustInclude: { type: "boolean" },
-                                    estimatedCost: { type: "number", description: "Estimated cost per person in USD. Use 0 for free activities." },
-                                  },
-                                  required: ["name", "category", "description", "estimatedCost"],
-                                  additionalProperties: false,
-                                },
-                              },
-                            },
-                            required: ["time", "activities"],
-                            additionalProperties: false,
-                          },
-                        },
-                      },
-                      required: ["label", "slots"],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                required: ["summary", "days"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "create_itinerary" } },
+        tools: [toolDef],
+        tool_choice: { type: "function", function: { name: "create_trip" } },
       }),
     });
 
@@ -156,83 +156,29 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: "You are a travel planning expert. You MUST use the create_itinerary tool to return your response. Do not respond with plain text." },
+            { role: "system", content: "You are a travel planning expert. You MUST use the create_trip tool to return your response. Do not respond with plain text." },
             { role: "user", content: prompt },
           ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "create_itinerary",
-                description: "Return a structured travel itinerary with cost estimates",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    summary: { type: "string", description: "A 1-2 sentence overview of the trip" },
-                    days: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          label: { type: "string" },
-                          slots: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                time: { type: "string", enum: ["Morning", "Afternoon", "Evening"] },
-                                activities: {
-                                  type: "array",
-                                  items: {
-                                    type: "object",
-                                    properties: {
-                                      name: { type: "string" },
-                                      time: { type: "string" },
-                                      category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market"] },
-                                      description: { type: "string" },
-                                      mustInclude: { type: "boolean" },
-                                      estimatedCost: { type: "number" },
-                                    },
-                                    required: ["name", "category", "description", "estimatedCost"],
-                                    additionalProperties: false,
-                                  },
-                                },
-                              },
-                              required: ["time", "activities"],
-                              additionalProperties: false,
-                            },
-                          },
-                        },
-                        required: ["label", "slots"],
-                        additionalProperties: false,
-                      },
-                    },
-                  },
-                  required: ["summary", "days"],
-                  additionalProperties: false,
-                },
-              },
-            },
-          ],
-          tool_choice: { type: "function", function: { name: "create_itinerary" } },
+          tools: [toolDef],
+          tool_choice: { type: "function", function: { name: "create_trip" } },
         }),
       });
 
       if (!retryResponse.ok) {
         const retryText = await retryResponse.text();
         console.error("Retry AI error:", retryResponse.status, retryText);
-        throw new Error("AI failed to generate itinerary after retry");
+        throw new Error("AI failed to generate trip after retry");
       }
 
       const retryData = await retryResponse.json();
       toolCall = retryData.choices?.[0]?.message?.tool_calls?.[0];
       if (!toolCall) {
         console.error("Retry response:", JSON.stringify(retryData));
-        throw new Error("AI did not return structured itinerary. Please try again.");
+        throw new Error("AI did not return structured trip. Please try again.");
       }
     }
 
-    const itinerary = JSON.parse(toolCall.function.arguments);
+    const tripPlan = JSON.parse(toolCall.function.arguments);
 
     // Enrich activities with real place data using Google Places API
     const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY_BE");
@@ -251,7 +197,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
     }
 
     // Enrich each activity - try DB cache first, then Google Places API
-    for (const day of itinerary.days) {
+    for (const day of tripPlan.days) {
       for (const slot of day.slots) {
         for (const act of slot.activities) {
           const normalizedName = act.name.toLowerCase().trim();
@@ -302,7 +248,6 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
                 const addr = place.formattedAddress || null;
                 const displayName = place.displayName?.text || act.name;
 
-                // Extract Google place ID from resource name (format: places/PLACE_ID)
                 const resourceName = place.name as string | undefined;
                 const googlePlaceId = resourceName?.startsWith("places/") ? resourceName.slice(7) : null;
 
@@ -311,7 +256,6 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
                 act.lng = lng;
                 act.address = addr;
 
-                // Upsert into places table so the user can click through to details
                 if (googlePlaceId) {
                   act.placeId = googlePlaceId;
                   try {
@@ -336,11 +280,11 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       }
     }
 
-    return new Response(JSON.stringify(itinerary), {
+    return new Response(JSON.stringify(tripPlan), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("generate-itinerary error:", e);
+    console.error("generate-trip error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

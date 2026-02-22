@@ -8,10 +8,10 @@ import type { Edge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge
 import ActivityCard from "./ActivityCard";
 import DistanceConnector from "./DistanceConnector";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
-import type { ItineraryDay, Activity, SwapAlternative } from "@/hooks/useTrip";
+import type { TripDay, Activity, SwapAlternative } from "@/hooks/useTrip";
 
 interface DaySectionProps {
-  day: ItineraryDay;
+  day: TripDay;
   dayIndex: number;
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
@@ -20,7 +20,7 @@ interface DaySectionProps {
   onRemoveActivity?: (dayIndex: number, slotIndex: number, activityIndex: number) => void;
   onAddActivity?: (dayIndex: number, slotIndex: number, newActivity: { name: string; placeId?: string; category: string; description: string }) => void;
   onMoveToDay?: (dayIndex: number, slotIndex: number, activityIndex: number, targetDayIndex: number) => void;
-  totalDays?: ItineraryDay[];
+  totalDays?: TripDay[];
 }
 
 const TIME_LABELS: Record<string, string> = {
