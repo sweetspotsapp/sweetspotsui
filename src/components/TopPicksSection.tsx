@@ -20,16 +20,16 @@ const TopPicksSection: React.FC<TopPicksSectionProps> = ({
   if (places.length === 0) return null;
 
   return (
-    <div className="mb-8 px-4">
+    <div className="mb-8 px-4 lg:px-8">
       {/* Section Header */}
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="w-5 h-5 text-primary" />
         <h2 className="text-lg font-bold text-foreground">Top Picks for You</h2>
       </div>
 
-      {/* Two large vertical cards side by side */}
-      <div className="flex gap-3">
-        {places.slice(0, 2).map((place) => (
+      {/* Cards — 2 on mobile, up to 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        {places.slice(0, 4).map((place) => (
           <TopPickCard
             key={place.id}
             place={place}

@@ -135,7 +135,7 @@ const Index = () => {
 
   // Show main app
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background lg:pt-16">
       {activeTab === "home" && <HomePage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "saved" && <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />}
       {activeTab === "itinerary" && <ItineraryPage resumeItineraryId={resumeItineraryId} onResumed={() => setResumeItineraryId(null)} />}

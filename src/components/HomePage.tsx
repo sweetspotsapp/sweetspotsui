@@ -123,7 +123,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
   return (
     <div className="mb-8 group/section">
       {/* Section Header */}
-      <div className="flex items-center justify-between px-4 mb-3">
+      <div className="flex items-center justify-between px-4 lg:px-8 mb-3">
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         <button 
           onClick={handleSeeAll}
@@ -134,8 +134,8 @@ const SectionRow: React.FC<SectionRowProps> = ({
         </button>
       </div>
 
-      <div className="relative">
-        {/* Left Arrow */}
+      {/* Mobile: Horizontal scroll */}
+      <div className="lg:hidden relative">
         {showLeftArrow && (
           <button
             onClick={() => scrollBy('left')}
@@ -144,8 +144,6 @@ const SectionRow: React.FC<SectionRowProps> = ({
             <ChevronLeft className="w-4 h-4 text-foreground" />
           </button>
         )}
-
-        {/* Right Arrow */}
         {showRightArrow && (
           <button
             onClick={() => scrollBy('right')}
@@ -154,7 +152,6 @@ const SectionRow: React.FC<SectionRowProps> = ({
             <ChevronRight className="w-4 h-4 text-foreground" />
           </button>
         )}
-
         <div 
           ref={scrollContainerRef}
           onScroll={handleScroll}
@@ -173,6 +170,22 @@ const SectionRow: React.FC<SectionRowProps> = ({
             />
           ))}
         </div>
+      </div>
+
+      {/* Desktop: Responsive grid */}
+      <div className="hidden lg:grid grid-cols-4 xl:grid-cols-5 gap-4 px-8">
+        {places.map((place) => (
+          <PlaceCardCompact
+            key={place.id}
+            place={place}
+            onSave={toggleSave}
+            isSaved={isSaved(place.id)}
+            onClick={() => onPlaceClick(place)}
+            featured={featured}
+            showDistance={showDistance}
+            isGridItem
+          />
+        ))}
       </div>
     </div>
   );
@@ -848,10 +861,10 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background max-w-[420px] mx-auto relative pb-24">
+    <div className="min-h-screen bg-background max-w-[420px] lg:max-w-7xl mx-auto relative pb-24 lg:pb-8">
       {/* Nav Bar */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <div className="flex items-center justify-between px-4 py-3">
+      <div className="sticky top-0 lg:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
+        <div className="flex items-center justify-between px-4 lg:px-8 py-3">
           {/* Filter Button - Top Left */}
           <button
             onClick={() => setIsMenuOpen(true)}
@@ -869,7 +882,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             )}
           </button>
 
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center lg:hidden">
             <h1 className="text-xl font-bold text-foreground tracking-tight">
               SweetSpots
             </h1>
@@ -886,17 +899,35 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             </button>
           </div>
 
+          {/* Desktop: location in header bar */}
+          <div className="hidden lg:flex items-center gap-4 flex-1 justify-center">
+            <button
+              onClick={() => setIsLocationPickerOpen(true)}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border rounded-full px-4 py-1.5"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{onboardingData?.explore_location 
+                ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
+                : "Set location"
+              }</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <button
             onClick={() => setIsProfileMenuOpen(true)}
-            className="p-2 -mr-2 text-foreground hover:text-primary transition-colors"
+            className="p-2 -mr-2 text-foreground hover:text-primary transition-colors lg:hidden"
           >
             <Settings className="w-6 h-6" />
           </button>
+
+          {/* Desktop: settings hidden (in top nav) */}
+          <div className="hidden lg:block w-10" />
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 pb-3">
-          <form onSubmit={handleSearchSubmit} className="relative">
+        <div className="px-4 lg:px-8 pb-3">
+          <form onSubmit={handleSearchSubmit} className="relative max-w-2xl lg:mx-auto">
             <div
               className={`relative flex items-center transition-all duration-200 ${
                 isSearchFocused ? "ring-2 ring-primary/50 rounded-full" : ""
@@ -914,7 +945,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 placeholder="Ask anything: rooftop bars, date spots..."
-                className="pl-9 pr-9 h-10 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
+                className="pl-9 pr-9 h-10 lg:h-12 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
                 disabled={isSearching}
               />
               {searchValue && !isSearching && (
@@ -932,7 +963,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
         {/* Active Filter Chips */}
         {activeFilters.size > 0 && (
-          <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+          <div className="px-4 lg:px-8 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
             {Array.from(activeFilters).map((filterId) => (
               <button
                 key={filterId}
@@ -1027,13 +1058,30 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
 
             {isMapView && mapPlaces.length > 0 ? (
-              <div className="h-[calc(100vh-280px)] mx-4 rounded-xl overflow-hidden border border-border">
-                <BoardMapView
-                  places={mapPlaces}
-                  userLocation={userLocation}
-                  onPlaceClick={handleMapPlaceClick}
-                  getPlaceImage={getPlaceImage}
-                />
+              <div className="lg:flex lg:gap-6 lg:px-8">
+                {/* Desktop: split view — map + list side by side */}
+                <div className="h-[calc(100vh-280px)] lg:h-[calc(100vh-200px)] mx-4 lg:mx-0 lg:flex-1 rounded-xl overflow-hidden border border-border">
+                  <BoardMapView
+                    places={mapPlaces}
+                    userLocation={userLocation}
+                    onPlaceClick={handleMapPlaceClick}
+                    getPlaceImage={getPlaceImage}
+                  />
+                </div>
+                {/* Desktop: show list alongside map */}
+                <div className="hidden lg:block lg:w-[380px] lg:h-[calc(100vh-200px)] overflow-y-auto space-y-3">
+                  {filteredResults.slice(0, 20).map((place) => (
+                    <PlaceCardCompact
+                      key={place.id}
+                      place={place}
+                      onSave={handleSaveClick}
+                      isSaved={isSaved(place.id)}
+                      onClick={() => handlePlaceClick(place)}
+                      showDistance={true}
+                      isGridItem
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
               <>
@@ -1048,7 +1096,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                   />
                 )}
 
-                {/* Other Sections - Horizontal scroll rows */}
+                {/* Other Sections - Horizontal scroll rows on mobile, grid on desktop */}
                 {displaySections
                   .filter(section => !section.featured)
                   .map((section, index) => (
@@ -1076,7 +1124,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       {filteredResults.length > 0 && !isSearching && !isInitialLoading && (
         <button
           onClick={() => setIsMapView(!isMapView)}
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-full text-sm font-semibold shadow-xl hover:bg-foreground/90 transition-all active:scale-95"
+          className="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-full text-sm font-semibold shadow-xl hover:bg-foreground/90 transition-all active:scale-95"
         >
           {isMapView ? <List className="w-4 h-4" /> : <Map className="w-4 h-4" />}
           {isMapView ? "List" : "Map"}
