@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ActivityCard from "./ActivityCard";
 import DistanceConnector from "./DistanceConnector";
-import type { ItineraryDay, SwapAlternative } from "@/hooks/useItinerary";
+import type { ItineraryDay, Activity, SwapAlternative } from "@/hooks/useItinerary";
 
 interface DaySectionProps {
   day: ItineraryDay;
   dayIndex: number;
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
-  onReorder: (dayIndex: number, slotIndex: number, fromIdx: number, toIdx: number) => void;
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
   isSwapping: boolean;
+  isEditing?: boolean;
+  onDragReorder?: (dayIndex: number, slotIndex: number, fromIdx: number, toIdx: number) => void;
 }
 
 const TIME_LABELS: Record<string, string> = {
@@ -25,11 +26,12 @@ interface RouteData {
   distanceText: string;
 }
 
-const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }: DaySectionProps) => {
+const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onDragReorder }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
+  const [dragIdx, setDragIdx] = useState<{ slot: number; idx: number } | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<{ slot: number; idx: number } | null>(null);
 
-  // Collect all consecutive activity pairs and fetch real travel data
   useEffect(() => {
     const pairs: Array<{ key: string; origin: { lat: number; lng: number }; destination: { lat: number; lng: number } }> = [];
     const allActivities: Array<{ lat?: number; lng?: number }> = [];
@@ -101,14 +103,34 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
     return routeDataMap.get(`${fromLat},${fromLng}->${toLat},${toLng}`);
   };
 
-  // Calculate day total cost
   const dayTotal = day.slots.reduce((total, slot) => 
     total + slot.activities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0), 0
   );
 
+  const handleDragStart = (slotIndex: number, activityIndex: number) => {
+    setDragIdx({ slot: slotIndex, idx: activityIndex });
+  };
+
+  const handleDragOver = (e: React.DragEvent, slotIndex: number, activityIndex: number) => {
+    e.preventDefault();
+    setDragOverIdx({ slot: slotIndex, idx: activityIndex });
+  };
+
+  const handleDrop = (slotIndex: number, activityIndex: number) => {
+    if (dragIdx && dragIdx.slot === slotIndex && dragIdx.idx !== activityIndex) {
+      onDragReorder?.(dayIndex, slotIndex, dragIdx.idx, activityIndex);
+    }
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
+
   return (
     <div className="rounded-2xl bg-card border border-border overflow-hidden">
-      {/* Day Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 transition-colors"
@@ -130,11 +152,9 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
         )}
       </button>
 
-      {/* Time Slots */}
       {isOpen && (
         <div className="border-t border-border">
           {day.slots.map((slot, slotIndex) => {
-            // Get the last activity of the previous slot for cross-slot distance
             const prevSlot = slotIndex > 0 ? day.slots[slotIndex - 1] : null;
             const prevLastActivity = prevSlot?.activities?.[prevSlot.activities.length - 1];
             const firstActivity = slot.activities?.[0];
@@ -146,8 +166,7 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
 
             return (
               <div key={slotIndex}>
-                {/* Cross-slot distance connector */}
-                {prevLastActivity && firstActivity && (
+                {prevLastActivity && firstActivity && !isEditing && (
                   <div className="border-t border-border/30">
                     <DistanceConnector
                       fromLat={prevLastActivity.lat}
@@ -161,14 +180,12 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
                 )}
 
                 <div className={cn(slotIndex > 0 && !prevLastActivity && "border-t border-border/50")}>
-                  {/* Slot Header */}
                   <div className="px-4 py-2 bg-muted/20">
                     <span className="text-xs font-medium text-muted-foreground">
                       {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
                   </div>
 
-                  {/* Activities with distance connectors */}
                   <div className="px-3 py-2 space-y-2">
                     {slot.activities.map((activity, activityIndex) => {
                       const nextActivity = slot.activities[activityIndex + 1];
@@ -177,18 +194,29 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
                         nextActivity?.lat, nextActivity?.lng
                       );
 
+                      const isDragOver = dragOverIdx?.slot === slotIndex && dragOverIdx?.idx === activityIndex;
+
                       return (
-                        <div key={activityIndex}>
+                        <div
+                          key={activityIndex}
+                          draggable={isEditing}
+                          onDragStart={() => handleDragStart(slotIndex, activityIndex)}
+                          onDragOver={(e) => handleDragOver(e, slotIndex, activityIndex)}
+                          onDrop={() => handleDrop(slotIndex, activityIndex)}
+                          onDragEnd={handleDragEnd}
+                          className={cn(
+                            isEditing && "cursor-grab active:cursor-grabbing",
+                            isDragOver && isEditing && "ring-2 ring-primary/30 rounded-xl"
+                          )}
+                        >
                           <ActivityCard
                             activity={activity}
                             onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
-                            onMoveUp={activityIndex > 0 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex - 1) : undefined}
-                            onMoveDown={activityIndex < slot.activities.length - 1 ? () => onReorder(dayIndex, slotIndex, activityIndex, activityIndex + 1) : undefined}
                             onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
                             isSwapping={isSwapping}
+                            isEditing={isEditing}
                           />
-                          {/* Distance connector to next activity */}
-                          {activityIndex < slot.activities.length - 1 && (
+                          {!isEditing && activityIndex < slot.activities.length - 1 && (
                             <DistanceConnector
                               fromLat={activity.lat}
                               fromLng={activity.lng}

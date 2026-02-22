@@ -1,22 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUp, ArrowDown, RefreshCw, Lock, Loader2, ExternalLink } from "lucide-react";
+import { RefreshCw, Loader2, ExternalLink, Heart, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
 
-// No emoji icons — use text labels only
-
 interface ActivityCardProps {
   activity: Activity;
   onSwap: () => Promise<SwapAlternative[] | undefined>;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
   onReplace: (newActivity: { name: string; description: string; category: string }) => void;
   isSwapping: boolean;
+  isEditing?: boolean;
 }
 
-const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwapping }: ActivityCardProps) => {
+const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing }: ActivityCardProps) => {
   const navigate = useNavigate();
   const [showSwap, setShowSwap] = useState(false);
   const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
@@ -24,7 +21,7 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
   const [imageError, setImageError] = useState(false);
 
   const handleCardClick = () => {
-    if (activity.placeId) {
+    if (!isEditing && activity.placeId) {
       navigate(`/place/${activity.placeId}`, { state: { fromItinerary: true } });
     }
   };
@@ -46,12 +43,10 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
 
   const categoryLabel = activity.category ? activity.category.charAt(0).toUpperCase() + activity.category.slice(1) : "Place";
 
-  // Build larger image URL
   const largeImageUrl = activity.photoName && !imageError
     ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(activity.photoName)}&maxWidthPx=400&maxHeightPx=250`
     : null;
 
-  // Category-based gradient fallbacks when no photo available
   const CATEGORY_GRADIENTS: Record<string, string> = {
     food: "from-orange-800/60 to-amber-900/60",
     cafe: "from-amber-800/60 to-yellow-900/60",
@@ -74,11 +69,11 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
     <>
       <div className={cn(
         "rounded-xl overflow-hidden transition-colors",
-        activity.mustInclude ? "bg-primary/5 border border-primary/15" : "bg-card border border-border/50 hover:border-border"
+        isEditing ? "bg-card border border-primary/20 shadow-sm" : "bg-card border border-border/50 hover:border-border"
       )}>
-        {/* Hero Image - clickable to place detail */}
+        {/* Hero Image */}
         <div
-          className={cn("relative w-full h-32 bg-muted overflow-hidden", activity.placeId && "cursor-pointer")}
+          className={cn("relative w-full h-32 bg-muted overflow-hidden", !isEditing && activity.placeId && "cursor-pointer")}
           onClick={handleCardClick}
         >
           {largeImageUrl ? (
@@ -96,7 +91,12 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
           <div className="absolute top-2 left-2 bg-card/80 backdrop-blur-sm text-xs font-medium px-2 py-0.5 rounded-full text-foreground capitalize">
             {categoryLabel}
           </div>
-          {activity.placeId && (
+          {isEditing && (
+            <div className="absolute top-2 right-2 bg-card/80 backdrop-blur-sm p-1.5 rounded-full">
+              <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+          )}
+          {!isEditing && activity.placeId && (
             <div className="absolute top-2 right-2 bg-card/80 backdrop-blur-sm p-1 rounded-full">
               <ExternalLink className="w-3 h-3 text-muted-foreground" />
             </div>
@@ -108,15 +108,13 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <span
-                  className={cn("text-sm font-semibold text-foreground truncate", activity.placeId && "cursor-pointer hover:text-primary transition-colors")}
+                  className={cn("text-sm font-semibold text-foreground truncate", !isEditing && activity.placeId && "cursor-pointer hover:text-primary transition-colors")}
                   onClick={handleCardClick}
                 >
                   {activity.name}
                 </span>
                 {activity.mustInclude && (
-                  <span title="Must-include: this place was added from your saved boards and can't be swapped">
-                    <Lock className="w-3 h-3 text-primary flex-shrink-0" />
-                  </span>
+                  <Heart className="w-3 h-3 text-primary fill-primary flex-shrink-0" />
                 )}
               </div>
               {activity.time && (
@@ -133,19 +131,9 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-col gap-1 flex-shrink-0">
-              {onMoveUp && (
-                <button onClick={onMoveUp} className="p-1 rounded-md hover:bg-muted transition-colors">
-                  <ArrowUp className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              )}
-              {onMoveDown && (
-                <button onClick={onMoveDown} className="p-1 rounded-md hover:bg-muted transition-colors">
-                  <ArrowDown className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              )}
-              {!activity.mustInclude && (
+            {/* Actions — only show swap when not editing */}
+            {!isEditing && (
+              <div className="flex flex-col gap-1 flex-shrink-0">
                 <button
                   onClick={handleSwapClick}
                   disabled={loading}
@@ -157,8 +145,8 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
                     <RefreshCw className="w-3.5 h-3.5 text-primary" />
                   )}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
