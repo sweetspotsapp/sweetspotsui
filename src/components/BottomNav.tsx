@@ -58,9 +58,9 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
       <nav className="hidden lg:block fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-8 h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <button onClick={() => onTabChange("home")} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
             <img src="/sweetspots-logo.svg" alt="SweetSpots" className="h-8 w-auto" />
-          </div>
+          </button>
 
           {/* Nav Links */}
           <div className="flex items-center gap-1">
