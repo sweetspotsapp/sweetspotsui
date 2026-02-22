@@ -157,7 +157,7 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReorder, onRep
       {/* Editing banner */}
       {isEditing && (
         <div className="px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
-          <p className="text-xs text-muted-foreground">Drag cards to reorder your itinerary.</p>
+          <p className="text-xs text-muted-foreground">Use the arrows to reorder your itinerary.</p>
         </div>
       )}
 
