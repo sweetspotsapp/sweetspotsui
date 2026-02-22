@@ -176,7 +176,7 @@ export const useItinerary = () => {
         );
         saveLocalItineraries(updated);
         setSavedItineraries(updated);
-        toast({ title: "Itinerary updated" });
+        toast({ title: "Trip updated" });
         return existingId;
       } else {
         const newId = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -200,7 +200,7 @@ export const useItinerary = () => {
         const updated = [newItem, ...localItems];
         saveLocalItineraries(updated);
         setSavedItineraries(updated);
-        toast({ title: "Itinerary saved locally" });
+        toast({ title: "Trip saved locally" });
         return newId;
       }
     }
@@ -224,19 +224,19 @@ export const useItinerary = () => {
       if (existingId) {
         const { error } = await supabase.from("itineraries").update(record).eq("id", existingId).eq("user_id", user.id);
         if (error) throw error;
-        toast({ title: "Itinerary updated" });
+        toast({ title: "Trip updated" });
         await loadItineraries();
         return existingId;
       } else {
         const { data, error } = await supabase.from("itineraries").insert(record).select("id").single();
         if (error) throw error;
-        toast({ title: "Itinerary saved" });
+        toast({ title: "Trip saved" });
         await loadItineraries();
         return data.id;
       }
     } catch (err) {
       console.error("Error saving itinerary:", err);
-      toast({ title: "Save failed", description: "Could not save itinerary.", variant: "destructive" });
+      toast({ title: "Save failed", description: "Could not save trip.", variant: "destructive" });
       return null;
     }
   };
@@ -247,14 +247,14 @@ export const useItinerary = () => {
       const updated = loadLocalItineraries().filter(i => i.id !== id);
       saveLocalItineraries(updated);
       setSavedItineraries(updated);
-      toast({ title: "Itinerary deleted" });
+      toast({ title: "Trip deleted" });
       return;
     }
     try {
       const { error } = await supabase.from("itineraries").delete().eq("id", id).eq("user_id", user.id);
       if (error) throw error;
       setSavedItineraries(prev => prev.filter(i => i.id !== id));
-      toast({ title: "Itinerary deleted" });
+      toast({ title: "Trip deleted" });
     } catch (err) {
       console.error("Error deleting itinerary:", err);
       toast({ title: "Delete failed", variant: "destructive" });
@@ -277,7 +277,7 @@ export const useItinerary = () => {
       return data as ItineraryData;
     } catch (err) {
       console.error("Error generating itinerary:", err);
-      toast({ title: "Generation failed", description: "Could not generate your itinerary. Please try again.", variant: "destructive" });
+      toast({ title: "Generation failed", description: "Could not generate your trip. Please try again.", variant: "destructive" });
       return null;
     } finally { setIsGenerating(false); }
   };

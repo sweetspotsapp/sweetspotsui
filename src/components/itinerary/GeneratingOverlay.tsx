@@ -20,7 +20,7 @@ const GeneratingOverlay = ({ isVisible }: GeneratingOverlayProps) => {
         </div>
 
         <p className="text-base font-medium text-foreground tracking-tight">
-          Generating your itinerary...
+          Generating your trip...
         </p>
       </div>
     </div>

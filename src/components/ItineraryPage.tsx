@@ -308,9 +308,9 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
           <CalendarDays className="w-8 h-8 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">No itineraries yet</h2>
+          <h2 className="text-lg font-semibold text-foreground">No trips yet</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Plan your perfect trip with AI-powered itineraries
+            Plan your perfect trip with AI-powered trip plans
           </p>
         </div>
         <button
@@ -318,7 +318,7 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
           className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-5 h-5" />
-          Create Your First Itinerary
+          Create Your First Trip
         </button>
       </div>
     );
@@ -331,7 +331,7 @@ const ItineraryList = ({ itineraries, isLoading, onView, onEdit, onDuplicate, on
         className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl border-2 border-dashed border-primary/30 text-primary font-medium hover:bg-primary/5 transition-colors"
       >
         <Plus className="w-5 h-5" />
-        New Itinerary
+        New Trip
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

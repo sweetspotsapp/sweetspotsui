@@ -231,7 +231,7 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
       {/* Editing banner */}
       {isEditing && (
         <div className="px-4 py-3 rounded-xl bg-primary/10 border-2 border-primary/20">
-          <p className="text-xs font-medium text-primary">Editing Mode — Hold and drag activities to rearrange your itinerary.</p>
+          <p className="text-xs font-medium text-primary">Editing Mode — Hold and drag activities to rearrange your trip.</p>
         </div>
       )}
 
