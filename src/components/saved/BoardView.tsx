@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Filter, DollarSign, Heart, Sparkles, Loader2, Map, List } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
 import BoardMapView from "./BoardMapView";
@@ -39,15 +39,14 @@ interface BoardViewProps {
 }
 
 type SortOption = "recent" | "name" | "rating" | "distance";
-type FilterOption = "all" | "$$" | "$$$" | "nearby";
+type FilterOption = "all";
 
 const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete, onPlaceClick, onManagePlace }: BoardViewProps) => {
   const navigate = useNavigate();
   const { location: userLocation } = useLocation();
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
-  const [filterBy, setFilterBy] = useState<FilterOption>("all");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterBy] = useState<FilterOption>("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places); // Local state to keep All Saved in sync
   
@@ -191,13 +190,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   }, [boardPlaceIds.length, boardName]);
   
   // Filter places
-  const filteredPlaces = boardPlaces.filter(place => {
-    if (filterBy === "all") return true;
-    if (filterBy === "nearby") return (place.distance_meters || 0) < 2000;
-    if (filterBy === "$$") return (place.rating || 0) < 4.6;
-    if (filterBy === "$$$") return (place.rating || 0) >= 4.6;
-    return true;
-  });
+  const filteredPlaces = boardPlaces;
   
   // Sort places
   const sortedPlaces = [...filteredPlaces].sort((a, b) => {
@@ -309,7 +302,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           </div>
         </div>
 
-        {/* Sort & Filter Bar */}
+        {/* Sort & Map Bar */}
         <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border/50">
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
             <SortAsc className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -329,51 +322,21 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
             ))}
           </div>
           
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(
-              "p-2 rounded-full transition-colors flex-shrink-0",
-              filterBy !== "all" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-            )}
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-          
-          {/* Map/List Toggle */}
+          {/* Map/List Toggle - More dominant */}
           <button
             onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
             className={cn(
-              "p-2 rounded-full transition-colors flex-shrink-0",
-              viewMode === "map" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all flex-shrink-0",
+              viewMode === "map" 
+                ? "bg-primary text-primary-foreground shadow-md" 
+                : "bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20"
             )}
             title={viewMode === "list" ? "View on map" : "View as list"}
           >
             {viewMode === "list" ? <Map className="w-4 h-4" /> : <List className="w-4 h-4" />}
+            {viewMode === "list" ? "Map" : "List"}
           </button>
         </div>
-        
-        {/* Filter Pills */}
-        {showFilters && (
-          <div className="flex gap-2 px-4 py-2 border-b border-border/50 overflow-x-auto scrollbar-hide">
-            {(["all", "nearby", "$$", "$$$"] as FilterOption[]).map((option) => (
-              <button
-                key={option}
-                onClick={() => setFilterBy(option)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex items-center gap-1",
-                  filterBy === option 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                {option === "nearby" && <MapPin className="w-3 h-3" />}
-                {option === "$$" && <DollarSign className="w-3 h-3" />}
-                {option === "$$$" && <><DollarSign className="w-3 h-3" /><DollarSign className="w-3 h-3 -ml-2" /></>}
-                {option === "all" ? "All" : option === "nearby" ? "< 2km" : option}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Content */}
         {viewMode === "map" ? (
