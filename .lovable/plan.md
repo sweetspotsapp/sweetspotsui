@@ -1,53 +1,56 @@
 
 
-## Three Fixes
+## Rename "Itinerary" to "Trip" (User-Facing Text Only)
 
-### 1. Logo Click -- Navigate to Home (Desktop)
+This is a text-only change across multiple files. No file renames, no variable renames -- just updating the labels and strings users see in the UI.
 
-**File:** `src/components/BottomNav.tsx`
+### Changes by File
 
-- Wrap the logo `<img>` in a clickable element (button or anchor) that calls `onTabChange("home")`.
-- Add `cursor-pointer` and a subtle hover state (`opacity-80` or `hover:scale-105` transition).
-- No new dependencies needed.
+**1. `src/components/BottomNav.tsx`**
+- Bottom nav label: "Itinerary" --> "Trip"
 
-### 2. Official Website Link on Place Detail
+**2. `src/components/ItineraryPage.tsx`**
+- Empty state heading: "No itineraries yet" --> "No trips yet"
+- Empty state subtext: "AI-powered itineraries" --> "AI-powered trip plans"
+- Empty state button: "Create Your First Itinerary" --> "Create Your First Trip"
+- New button: "New Itinerary" --> "New Trip"
 
-This requires both a database change and code updates since the `places` table has no `website` column.
+**3. `src/hooks/useItinerary.tsx`**
+- Toast messages:
+  - "Itinerary updated" --> "Trip updated"
+  - "Itinerary saved locally" --> "Trip saved locally"
+  - "Itinerary saved" --> "Trip saved"
+  - "Could not save itinerary." --> "Could not save trip."
+  - "Itinerary deleted" --> "Trip deleted"
+  - "Could not generate your itinerary." --> "Could not generate your trip."
 
-**Step A -- Database migration:**
-- Add a `website` column (nullable text) to the `places` table.
+**4. `src/components/itinerary/GeneratingOverlay.tsx`**
+- Loading text: "Generating your itinerary..." --> "Generating your trip..."
 
-**Step B -- Edge function update (`supabase/functions/enrich-places/index.ts`):**
-- Add `websiteUri` to the Google Places API `fieldMask` in both the direct placeId lookup path and the batch enrichment path.
-- Store `googlePlace.websiteUri` into the new `website` field when upserting.
-- Add `website` to the `EnrichedPlace` interface.
+**5. `src/components/itinerary/ItineraryView.tsx`**
+- Editing mode banner: "...rearrange your itinerary." --> "...rearrange your trip."
 
-**Step C -- Frontend (`src/pages/PlaceDetails.tsx`):**
-- Add `website` to the `PlaceDetails` interface.
-- Read it from the fetched data.
+**6. `src/components/itinerary/BrowseForItinerary.tsx`**
+- Button text: "Add X Spots to Itinerary" --> "Add X Spots to Trip"
 
-**Step D -- New UI section (`src/components/place-detail/QuickInfoSection.tsx` or inline in PlaceDetails):**
-- Below the address line, render a clickable link with an `ExternalLink` icon showing the website domain.
-- Opens in a new tab (`target="_blank" rel="noopener noreferrer"`).
-- Only shown when `website` is not null.
+**7. `src/components/itinerary/TripSetupForm.tsx`**
+- Generate button text: "Generate Itinerary" --> "Generate Trip"
 
-### 3. Reviews "See All" Bug Fix
-
-**File:** `src/components/place-detail/ReviewsList.tsx`
-
-The expand/collapse state logic is correct, but the container has `max-h-80 overflow-y-auto` which limits the visible area even when expanded. Fix:
-
-- Remove the fixed `max-h-80` from the reviews container, or make it conditional -- only apply it when collapsed.
-- When expanded, allow the container to grow to full height with a smooth `transition-all` animation.
-- The button toggle logic (`expanded` state) already works; the issue is purely the constrained container height.
+### What stays unchanged
+- All file names (e.g. `ItineraryPage.tsx`, `useItinerary.tsx`)
+- All variable/type/interface names (e.g. `ItineraryData`, `savedItineraries`)
+- All route paths (e.g. `/itinerary`)
+- Internal tab ID value (`"itinerary"`)
+- Database table name (`itineraries`)
 
 ### Technical Details
 
-| Area | Files Changed |
-|------|--------------|
-| Logo click | `src/components/BottomNav.tsx` |
-| Website column | New SQL migration |
-| Website enrichment | `supabase/functions/enrich-places/index.ts` |
-| Website display | `src/pages/PlaceDetails.tsx`, `src/components/place-detail/QuickInfoSection.tsx` |
-| Reviews expand | `src/components/place-detail/ReviewsList.tsx` |
-
+| File | Type of change |
+|------|---------------|
+| `src/components/BottomNav.tsx` | 1 label string |
+| `src/components/ItineraryPage.tsx` | 4 UI strings |
+| `src/hooks/useItinerary.tsx` | 6 toast message strings |
+| `src/components/itinerary/GeneratingOverlay.tsx` | 1 loading string |
+| `src/components/itinerary/ItineraryView.tsx` | 1 banner string |
+| `src/components/itinerary/BrowseForItinerary.tsx` | 1 button string |
+| `src/components/itinerary/TripSetupForm.tsx` | 1 button string |
