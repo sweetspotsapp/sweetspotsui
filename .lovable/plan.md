@@ -1,61 +1,50 @@
 
 
-## Cross-Day Activity Reordering
+## Add and Remove Activities in Itinerary Edit Mode
 
-Currently, the up/down arrows only move activities within the same time slot. This plan enables moving activities freely between slots and between days.
+Enable users to add new places and remove existing ones from their itinerary while in edit mode.
 
-### Approach
+### Remove Activity
 
-Replace the current within-slot reorder with a **global move** system. Each activity gets up/down arrows that move it through a flattened list of all activities across all days and slots. Moving past the first item in a slot moves the activity to the previous slot (or previous day's last slot). Moving past the last item moves it to the next slot (or next day's first slot).
+Add a delete/trash button to each `ActivityCard` when in edit mode (alongside the existing up/down arrows). Clicking it removes the activity from the itinerary data.
 
-### Changes
+### Add Activity
 
-**1. ItineraryView.tsx** -- Replace `onReorder` with a new `onGlobalMove` handler
+Add an "Add place" button at the end of each time slot (visible only in edit mode). Tapping it opens a small inline search input (similar to the destination autocomplete) that uses the existing `usePlaceAutocomplete` hook to search for places. Selecting a place inserts a new activity into that slot.
 
-- Add a `handleGlobalMove(dayIndex, slotIndex, activityIndex, direction: 'up' | 'down')` function that:
-  - Removes the activity from its current position
-  - If moving up from position 0 in a slot: moves to end of previous slot (same day), or end of last slot of previous day
-  - If moving down from last position in a slot: moves to start of next slot (same day), or start of first slot of next day
-  - Otherwise: swaps within the same slot
-- Pass this handler down to DaySection instead of `onDragReorder`
-- Update the editing banner text to: "Use the arrows to rearrange activities across your itinerary."
+---
 
-**2. DaySection.tsx** -- Update props and arrow logic
+### Changes by File
 
-- Change `onDragReorder` prop to `onMoveActivity: (dayIndex: number, slotIndex: number, activityIndex: number, direction: 'up' | 'down') => void`
-- Remove local `handleMoveUp` / `handleMoveDown` functions
-- Update `canMoveUp` / `canMoveDown` on ActivityCard:
-  - `canMoveUp`: false only if this is the first activity of the first slot of the first day
-  - `canMoveDown`: false only if this is the last activity of the last slot of the last day
-- Pass `totalDays`, `dayIndex`, `slotIndex`, `activityIndex` context to determine boundaries
+**1. `src/components/itinerary/ActivityCard.tsx`**
+- Add `onRemove` optional prop and `Trash2` icon import.
+- In edit mode, render a delete button (red trash icon) next to the up/down arrows on the card image overlay.
+- Clicking it calls `onRemove()`.
 
-**3. ItineraryView.tsx** -- Pass total day count info to DaySection
+**2. `src/components/itinerary/DaySection.tsx`**
+- Add `onRemoveActivity` and `onAddActivity` props.
+- Pass `onRemove` to each `ActivityCard`, wired to `onRemoveActivity(dayIndex, slotIndex, activityIndex)`.
+- After the activities list in each slot (when `isEditing`), render an "Add place" button.
+- When tapped, show an inline search input with autocomplete dropdown (using `usePlaceAutocomplete`).
+- On selection, call `onAddActivity(dayIndex, slotIndex, { name, placeId, category, description })`.
 
-- Pass `isFirstDay` and `isLastDay` props to each DaySection so it can compute arrow boundaries
+**3. `src/components/itinerary/ItineraryView.tsx`**
+- Add `onRemoveActivity` and `onAddActivity` props.
+- Pass them through to each `DaySection`.
+- Update the editing banner text to mention add/remove capability.
 
-**4. ItineraryPage.tsx** -- Update `handleReorder` signature
-
-- Replace the old `handleReorder(dayIndex, slotIndex, fromIdx, toIdx)` with the new `handleGlobalMove(dayIndex, slotIndex, activityIndex, direction)` that mutates the itinerary data directly (remove from source, insert at target)
+**4. `src/components/ItineraryPage.tsx`**
+- Add `handleRemoveActivity(dayIdx, slotIdx, actIdx)`:
+  - Deep clone itinerary, splice out the activity, update state.
+- Add `handleAddActivity(dayIdx, slotIdx, newActivity)`:
+  - Deep clone itinerary, push new activity to the slot, update state.
+- Pass both handlers to `ItineraryView`.
 
 ### Technical Details
 
-The global move logic in ItineraryPage.tsx (or ItineraryView.tsx):
+- The "Add place" inline search reuses `usePlaceAutocomplete` with a local state toggle per slot.
+- New activities are added with default values: `{ name, description: "", category: "place", placeId }`.
+- Remove simply splices the activity from the slot's activities array.
+- No database or schema changes needed -- the itinerary data is saved as JSON.
+- The add-place input appears inline below the last activity in a slot, with the same autocomplete dropdown pattern used in the destination field.
 
-```text
-function handleGlobalMove(dayIdx, slotIdx, actIdx, direction):
-  1. Remove activity from days[dayIdx].slots[slotIdx].activities[actIdx]
-  2. Compute target:
-     - UP: if actIdx > 0 -> same slot, actIdx - 1
-            else if slotIdx > 0 -> previous slot, end
-            else if dayIdx > 0 -> previous day, last slot, end
-            else -> no-op
-     - DOWN: if actIdx < last -> same slot, actIdx + 1
-             else if slotIdx < lastSlot -> next slot, position 0
-             else if dayIdx < lastDay -> next day, first slot, position 0
-             else -> no-op
-  3. Insert activity at target position
-  4. Clean up empty slots (optional -- keep slots even if empty)
-  5. Update itinerary state
-```
-
-No new dependencies, no database changes, no new files needed.
