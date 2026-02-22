@@ -91,6 +91,7 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
   const [returnFlight, setReturnFlight] = useState(initialParams?.flightDetails?.returnFlight || "");
   const [flightPrice, setFlightPrice] = useState(initialParams?.flightDetails?.price?.toString() || "");
   const [flightCurrency, setFlightCurrency] = useState(initialParams?.flightDetails?.currency || "USD");
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -233,7 +234,7 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
       {/* Dates */}
       <section className="space-y-2">
         <label className="text-sm font-medium text-foreground">Dates</label>
-        <Popover>
+        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
           <PopoverTrigger asChild>
             <button className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border text-left transition-colors hover:bg-muted/50">
               <CalendarDays className="w-5 h-5 text-primary flex-shrink-0" />
@@ -255,7 +256,13 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
             <Calendar
               mode="range"
               selected={dateRange}
-              onSelect={setDateRange}
+              onSelect={(range) => {
+                setDateRange(range);
+                // Auto-close when both dates are selected
+                if (range?.from && range?.to) {
+                  setTimeout(() => setDatePickerOpen(false), 250);
+                }
+              }}
               numberOfMonths={1}
               disabled={(date) => date < new Date()}
               className="p-3 pointer-events-auto"
