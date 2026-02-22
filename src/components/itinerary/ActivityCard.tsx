@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Loader2, ExternalLink, Heart, GripVertical, Trash2 } from "lucide-react";
+import { RefreshCw, Loader2, ExternalLink, Heart, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
@@ -12,11 +12,10 @@ interface ActivityCardProps {
   isSwapping: boolean;
   isEditing?: boolean;
   onRemove?: () => void;
-  dragHandleProps?: { ref: React.Ref<HTMLButtonElement> };
   isDragging?: boolean;
 }
 
-const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, dragHandleProps, isDragging }: ActivityCardProps) => {
+const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, isDragging }: ActivityCardProps) => {
   const navigate = useNavigate();
   const [showSwap, setShowSwap] = useState(false);
   const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
@@ -96,14 +95,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
             {categoryLabel}
           </div>
           {isEditing && (
-            <div className="absolute top-2 right-2 flex items-start gap-1">
-              <button
-                ref={dragHandleProps?.ref}
-                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card transition-all cursor-grab active:cursor-grabbing touch-none"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <GripVertical className="w-4 h-4 text-foreground" />
-              </button>
+            <div className="absolute top-2 right-2">
               <button
                 onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
                 className="bg-destructive/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-destructive active:scale-95 transition-all"
