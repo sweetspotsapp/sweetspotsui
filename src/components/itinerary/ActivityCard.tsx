@@ -84,6 +84,8 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
               src={largeImageUrl}
               alt={activity.name}
               className="w-full h-full object-cover"
+              draggable="false"
+              style={{ pointerEvents: isEditing ? 'none' : 'auto' }}
               onError={() => setImageError(true)}
             />
           ) : (
