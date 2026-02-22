@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Plus, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
 import ActivityCard from "./ActivityCard";
 import DistanceConnector from "./DistanceConnector";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
@@ -13,11 +17,8 @@ interface DaySectionProps {
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
   isSwapping: boolean;
   isEditing?: boolean;
-  onMoveActivity?: (dayIndex: number, slotIndex: number, activityIndex: number, direction: 'up' | 'down') => void;
   onRemoveActivity?: (dayIndex: number, slotIndex: number, activityIndex: number) => void;
   onAddActivity?: (dayIndex: number, slotIndex: number, newActivity: { name: string; placeId?: string; category: string; description: string }) => void;
-  isFirstDay?: boolean;
-  isLastDay?: boolean;
 }
 
 const TIME_LABELS: Record<string, string> = {
@@ -95,7 +96,55 @@ const AddPlaceInput = ({ onAdd }: { onAdd: (place: { name: string; placeId?: str
   );
 };
 
-const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onMoveActivity, onRemoveActivity, onAddActivity, isFirstDay, isLastDay }: DaySectionProps) => {
+// Sortable wrapper for each activity
+const SortableActivityCard = ({
+  id, activity, dayIndex, slotIndex, activityIndex, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity,
+}: {
+  id: string;
+  activity: Activity;
+  dayIndex: number;
+  slotIndex: number;
+  activityIndex: number;
+  onSwap: DaySectionProps["onSwap"];
+  onReplace: DaySectionProps["onReplace"];
+  isSwapping: boolean;
+  isEditing?: boolean;
+  onRemoveActivity?: DaySectionProps["onRemoveActivity"];
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ActivityCard
+        activity={activity}
+        onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
+        onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
+        isSwapping={isSwapping}
+        isEditing={isEditing}
+        onRemove={() => onRemoveActivity?.(dayIndex, slotIndex, activityIndex)}
+        dragHandleProps={{ ...attributes, ...listeners } as any}
+        isDragging={isDragging}
+      />
+    </div>
+  );
+};
+
+// Droppable zone for empty slots
+const DroppableSlot = ({ id, children }: { id: string; children: React.ReactNode }) => {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={cn("px-3 py-2 space-y-2 min-h-[2rem] transition-colors", isOver && "bg-primary/5 rounded-lg")}>
+      {children}
+    </div>
+  );
+};
+
+const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity, onAddActivity }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
 
@@ -174,12 +223,6 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
     total + slot.activities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0), 0
   );
 
-  const isFirstActivity = (slotIndex: number, activityIndex: number) =>
-    isFirstDay && slotIndex === 0 && activityIndex === 0;
-
-  const isLastActivity = (slotIndex: number, activityIndex: number) =>
-    isLastDay && slotIndex === day.slots.length - 1 && activityIndex === day.slots[slotIndex].activities.length - 1;
-
   return (
     <div className="rounded-2xl bg-card border border-border overflow-hidden">
       <button
@@ -215,6 +258,9 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
               firstActivity?.lat, firstActivity?.lng
             );
 
+            const sortableIds = slot.activities.map((_, actIdx) => `d${dayIndex}-s${slotIndex}-a${actIdx}`);
+            const droppableId = `d${dayIndex}-s${slotIndex}`;
+
             return (
               <div key={slotIndex}>
                 {prevLastActivity && firstActivity && !isEditing && (
@@ -237,45 +283,61 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                     </span>
                   </div>
 
-                  <div className="px-3 py-2 space-y-2">
-                    {slot.activities.map((activity, activityIndex) => {
-                      const nextActivity = slot.activities[activityIndex + 1];
-                      const routeData = getRouteData(
-                        activity.lat, activity.lng,
-                        nextActivity?.lat, nextActivity?.lng
-                      );
-
-                      return (
-                        <div key={activityIndex}>
-                          <ActivityCard
+                  {isEditing ? (
+                    <DroppableSlot id={droppableId}>
+                      <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+                        {slot.activities.map((activity, activityIndex) => (
+                          <SortableActivityCard
+                            key={`d${dayIndex}-s${slotIndex}-a${activityIndex}`}
+                            id={`d${dayIndex}-s${slotIndex}-a${activityIndex}`}
                             activity={activity}
-                            onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
-                            onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
+                            dayIndex={dayIndex}
+                            slotIndex={slotIndex}
+                            activityIndex={activityIndex}
+                            onSwap={onSwap}
+                            onReplace={onReplace}
                             isSwapping={isSwapping}
                             isEditing={isEditing}
-                            onMoveUp={() => onMoveActivity?.(dayIndex, slotIndex, activityIndex, 'up')}
-                            onMoveDown={() => onMoveActivity?.(dayIndex, slotIndex, activityIndex, 'down')}
-                            canMoveUp={!isFirstActivity(slotIndex, activityIndex)}
-                            canMoveDown={!isLastActivity(slotIndex, activityIndex)}
-                            onRemove={() => onRemoveActivity?.(dayIndex, slotIndex, activityIndex)}
+                            onRemoveActivity={onRemoveActivity}
                           />
-                          {!isEditing && activityIndex < slot.activities.length - 1 && (
-                            <DistanceConnector
-                              fromLat={activity.lat}
-                              fromLng={activity.lng}
-                              toLat={nextActivity.lat}
-                              toLng={nextActivity.lng}
-                              durationText={routeData?.durationText}
-                              distanceText={routeData?.distanceText}
+                        ))}
+                      </SortableContext>
+                      {onAddActivity && (
+                        <AddPlaceInput onAdd={(place) => onAddActivity(dayIndex, slotIndex, place)} />
+                      )}
+                    </DroppableSlot>
+                  ) : (
+                    <div className="px-3 py-2 space-y-2">
+                      {slot.activities.map((activity, activityIndex) => {
+                        const nextActivity = slot.activities[activityIndex + 1];
+                        const routeData = getRouteData(
+                          activity.lat, activity.lng,
+                          nextActivity?.lat, nextActivity?.lng
+                        );
+
+                        return (
+                          <div key={activityIndex}>
+                            <ActivityCard
+                              activity={activity}
+                              onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
+                              onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
+                              isSwapping={isSwapping}
                             />
-                          )}
-                        </div>
-                      );
-                    })}
-                    {isEditing && onAddActivity && (
-                      <AddPlaceInput onAdd={(place) => onAddActivity(dayIndex, slotIndex, place)} />
-                    )}
-                  </div>
+                            {activityIndex < slot.activities.length - 1 && (
+                              <DistanceConnector
+                                fromLat={activity.lat}
+                                fromLng={activity.lng}
+                                toLat={nextActivity.lat}
+                                toLng={nextActivity.lng}
+                                durationText={routeData?.durationText}
+                                distanceText={routeData?.distanceText}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             );

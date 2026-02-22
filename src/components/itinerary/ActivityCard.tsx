@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Loader2, ExternalLink, Heart, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
+import { RefreshCw, Loader2, ExternalLink, Heart, GripVertical, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
@@ -11,14 +11,12 @@ interface ActivityCardProps {
   onReplace: (newActivity: { name: string; description: string; category: string }) => void;
   isSwapping: boolean;
   isEditing?: boolean;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  canMoveUp?: boolean;
-  canMoveDown?: boolean;
   onRemove?: () => void;
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  isDragging?: boolean;
 }
 
-const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onMoveUp, onMoveDown, canMoveUp, canMoveDown, onRemove }: ActivityCardProps) => {
+const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, dragHandleProps, isDragging }: ActivityCardProps) => {
   const navigate = useNavigate();
   const [showSwap, setShowSwap] = useState(false);
   const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
@@ -73,8 +71,9 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onMo
   return (
     <>
       <div className={cn(
-        "rounded-xl overflow-hidden transition-colors",
-        isEditing ? "bg-card border border-primary/20 shadow-sm" : "bg-card border border-border/50 hover:border-border"
+        "rounded-xl overflow-hidden transition-all",
+        isEditing ? "bg-card border border-primary/20 shadow-sm" : "bg-card border border-border/50 hover:border-border",
+        isDragging && "opacity-50 shadow-lg scale-[1.02]"
       )}>
         {/* Hero Image */}
         <div
@@ -98,22 +97,13 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onMo
           </div>
           {isEditing && (
             <div className="absolute top-2 right-2 flex items-start gap-1">
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
-                  disabled={!canMoveUp}
-                  className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-20 hover:bg-card active:scale-95 transition-all"
-                >
-                  <ChevronUp className="w-4 h-4 text-foreground" />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
-                  disabled={!canMoveDown}
-                  className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-20 hover:bg-card active:scale-95 transition-all"
-                >
-                  <ChevronDown className="w-4 h-4 text-foreground" />
-                </button>
-              </div>
+              <button
+                {...dragHandleProps}
+                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all cursor-grab active:cursor-grabbing touch-none"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <GripVertical className="w-4 h-4 text-foreground" />
+              </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
                 className="bg-destructive/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-destructive active:scale-95 transition-all"
