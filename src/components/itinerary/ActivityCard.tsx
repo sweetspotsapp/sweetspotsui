@@ -87,13 +87,13 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
   return (
     <>
       <div className={cn(
-        "rounded-xl transition-all",
+        "rounded-xl transition-all relative",
         isEditing ? "bg-card border border-primary/20 shadow-sm select-none" : "bg-card border border-border/50 hover:border-border",
         isDragging && "opacity-30 border-dashed border-2 border-primary/40 shadow-none scale-[0.98]"
       )}>
         {/* Hero Image */}
         <div
-          className={cn("relative w-full h-32 bg-muted overflow-hidden", !isEditing && activity.placeId && "cursor-pointer")}
+          className={cn("relative w-full h-32 bg-muted overflow-hidden rounded-t-xl", !isEditing && activity.placeId && "cursor-pointer")}
           onClick={handleCardClick}
         >
           {largeImageUrl ? (
@@ -113,55 +113,59 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
           <div className="absolute top-2 left-2 bg-card/80 backdrop-blur-sm text-xs font-medium px-2 py-0.5 rounded-full text-foreground capitalize">
             {categoryLabel}
           </div>
-          {isEditing && (
-            <div className="absolute top-2 right-2 flex items-center gap-1.5" ref={moveMenuRef}>
-              <div className="relative">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowMoveMenu(!showMoveMenu); }}
-                  className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all"
-                >
-                  <MoreVertical className="w-4 h-4 text-foreground" />
-                </button>
-                {showMoveMenu && availableDays && availableDays.length > 1 && (
-                  <div className="absolute top-full right-0 mt-1 w-40 rounded-lg border border-border bg-popover shadow-xl z-[100] py-1 overflow-hidden">
-                    <p className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Move to</p>
-                    {availableDays.map((d) => (
-                      <button
-                        key={d.dayIndex}
-                        disabled={d.dayIndex === currentDayIndex}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onMoveToDay?.(d.dayIndex);
-                          setShowMoveMenu(false);
-                        }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 text-xs transition-colors",
-                          d.dayIndex === currentDayIndex
-                            ? "text-muted-foreground/50 cursor-default"
-                            : "text-foreground hover:bg-muted"
-                        )}
-                      >
-                        {d.label}
-                        {d.dayIndex === currentDayIndex && <span className="ml-1 text-[10px] text-muted-foreground">(current)</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
-                className="bg-destructive/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-destructive active:scale-95 transition-all"
-              >
-                <Trash2 className="w-4 h-4 text-destructive-foreground" />
-              </button>
-            </div>
-          )}
           {!isEditing && activity.placeId && (
             <div className="absolute top-2 right-2 bg-card/80 backdrop-blur-sm p-1 rounded-full">
               <ExternalLink className="w-3 h-3 text-muted-foreground" />
             </div>
           )}
         </div>
+
+        {/* Edit buttons — outside overflow-hidden so dropdown isn't clipped */}
+        {isEditing && (
+          <div className="absolute top-2 right-2 flex items-center gap-1.5 z-30" ref={moveMenuRef}>
+            <div className="relative">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowMoveMenu(!showMoveMenu); }}
+                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all"
+              >
+                <MoreVertical className="w-4 h-4 text-foreground" />
+              </button>
+              {showMoveMenu && availableDays && availableDays.length > 1 && (
+                <div className="absolute top-full right-0 mt-1 w-40 rounded-lg border border-border bg-popover shadow-xl z-[100] py-1 overflow-hidden">
+                  <p className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Move to</p>
+                  {availableDays.map((d) => (
+                    <button
+                      key={d.dayIndex}
+                      disabled={d.dayIndex === currentDayIndex}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMoveToDay?.(d.dayIndex);
+                        setShowMoveMenu(false);
+                      }}
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-xs transition-colors",
+                        d.dayIndex === currentDayIndex
+                          ? "text-muted-foreground/50 cursor-default"
+                          : "text-foreground hover:bg-muted"
+                      )}
+                    >
+                      {d.label}
+                      {d.dayIndex === currentDayIndex && <span className="ml-1 text-[10px] text-muted-foreground">(current)</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
+              className="bg-destructive/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-destructive active:scale-95 transition-all"
+            >
+              <Trash2 className="w-4 h-4 text-destructive-foreground" />
+            </button>
+          </div>
+        )}
+
+      
 
         <div className="px-3 py-2.5">
           <div className="flex items-start gap-2">
