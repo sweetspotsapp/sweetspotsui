@@ -115,6 +115,11 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
     onSaveEdits?.(itinerary);
   };
 
+  const handleMoveToDay = useCallback((fromDayIdx: number, fromSlotIdx: number, fromActIdx: number, targetDayIdx: number) => {
+    const targetSlotActivities = itinerary.days[targetDayIdx]?.slots[0]?.activities?.length || 0;
+    onDragReorder(fromDayIdx, fromSlotIdx, fromActIdx, targetDayIdx, 0, targetSlotActivities);
+  }, [itinerary, onDragReorder]);
+
   const budgetSummary = useMemo(() => {
     let activitiesTotal = 0;
     const perDay: number[] = [];
@@ -319,6 +324,8 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
             isEditing={isEditing}
             onRemoveActivity={onRemoveActivity}
             onAddActivity={onAddActivity}
+            onMoveToDay={isEditing ? handleMoveToDay : undefined}
+            totalDays={isEditing ? itinerary.days : undefined}
           />
         ))
       )}

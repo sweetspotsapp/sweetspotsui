@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Loader2, ExternalLink, Heart, Trash2 } from "lucide-react";
+import { RefreshCw, Loader2, ExternalLink, Heart, Trash2, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
@@ -13,14 +13,31 @@ interface ActivityCardProps {
   isEditing?: boolean;
   onRemove?: () => void;
   isDragging?: boolean;
+  onMoveToDay?: (targetDayIndex: number) => void;
+  availableDays?: Array<{ dayIndex: number; label: string }>;
+  currentDayIndex?: number;
 }
 
-const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, isDragging }: ActivityCardProps) => {
+const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, isDragging, onMoveToDay, availableDays, currentDayIndex }: ActivityCardProps) => {
   const navigate = useNavigate();
   const [showSwap, setShowSwap] = useState(false);
   const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showMoveMenu, setShowMoveMenu] = useState(false);
+  const moveMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close move menu on outside click
+  useEffect(() => {
+    if (!showMoveMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (moveMenuRef.current && !moveMenuRef.current.contains(e.target as Node)) {
+        setShowMoveMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showMoveMenu]);
 
   const handleCardClick = () => {
     if (!isEditing && activity.placeId) {
@@ -71,7 +88,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
     <>
       <div className={cn(
         "rounded-xl overflow-hidden transition-all",
-        isEditing ? "bg-card border border-primary/20 shadow-sm" : "bg-card border border-border/50 hover:border-border",
+        isEditing ? "bg-card border border-primary/20 shadow-sm select-none" : "bg-card border border-border/50 hover:border-border",
         isDragging && "opacity-30 border-dashed border-2 border-primary/40 shadow-none scale-[0.98]"
       )}>
         {/* Hero Image */}
@@ -97,7 +114,40 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
             {categoryLabel}
           </div>
           {isEditing && (
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 right-2 flex items-center gap-1.5" ref={moveMenuRef}>
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMoveMenu(!showMoveMenu); }}
+                  className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all"
+                >
+                  <MoreVertical className="w-4 h-4 text-foreground" />
+                </button>
+                {showMoveMenu && availableDays && availableDays.length > 1 && (
+                  <div className="absolute top-full right-0 mt-1 w-40 rounded-lg border border-border bg-popover shadow-lg z-50 py-1 overflow-hidden">
+                    <p className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Move to</p>
+                    {availableDays.map((d) => (
+                      <button
+                        key={d.dayIndex}
+                        disabled={d.dayIndex === currentDayIndex}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveToDay?.(d.dayIndex);
+                          setShowMoveMenu(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-xs transition-colors",
+                          d.dayIndex === currentDayIndex
+                            ? "text-muted-foreground/50 cursor-default"
+                            : "text-foreground hover:bg-muted"
+                        )}
+                      >
+                        {d.label}
+                        {d.dayIndex === currentDayIndex && <span className="ml-1 text-[10px] text-muted-foreground">(current)</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
                 className="bg-destructive/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-destructive active:scale-95 transition-all"
