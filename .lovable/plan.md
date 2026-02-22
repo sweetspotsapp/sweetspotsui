@@ -1,58 +1,53 @@
 
 
-## Drag-and-Drop Activity Reordering
+## Improve Drag-and-Drop UX for Itinerary Activities
 
-Replace the up/down arrow buttons with touch-friendly hold-and-drag reordering for itinerary activities in edit mode. Activities can be dragged between time slots and between days.
+The current implementation has several issues that make DnD feel buggy: no edge detection (items always drop "on" instead of "before/after"), index-based React keys cause re-render confusion, no auto-scroll during drag, and minimal visual feedback. Here's the fix:
 
-### Approach
+### 1. Install `@atlaskit/pragmatic-drag-and-drop-hitbox`
 
-Use the **@dnd-kit** library (lightweight, touch-friendly, accessible, built for React) to enable drag-and-drop reordering. A drag handle icon will appear on each activity card in edit mode. Users can press and hold the handle, then drag the activity to reorder it -- within the same slot, across slots, or across days.
+This optional package provides `attachClosestEdge` and `extractClosestEdge` utilities, which determine whether the user is hovering closer to the **top** or **bottom** edge of a drop target. This is essential for sortable list behavior -- it tells us whether to insert the dragged item above or below the target.
 
-The up/down arrow buttons will be removed in favor of the drag handle, keeping the UI cleaner. The trash button for removing activities remains.
+### 2. Rewrite `DraggableActivityCard` in `DaySection.tsx`
 
-### Changes by File
+- Use `attachClosestEdge` in the drop target's `getData` with `allowedEdges: ['top', 'bottom']` and `getIsSticky: () => true` so the drop indicator doesn't flicker.
+- Track `closestEdge` state ('top' | 'bottom' | null) instead of a simple `isOver` boolean.
+- Render a colored line indicator at the **top** or **bottom** of the card depending on the edge, so users see exactly where the activity will land.
+- Use a stable unique key per activity (generate an `_id` field using `crypto.randomUUID()` when one doesn't exist) instead of array index.
 
-**1. Install `@dnd-kit/core` and `@dnd-kit/sortable` and `@dnd-kit/utilities`**
+### 3. Rewrite `DroppableSlot` in `DaySection.tsx`
 
-These are the standard packages for sortable drag-and-drop in React.
+- Also use `attachClosestEdge` so dropping into an empty slot shows proper feedback.
+- Show a "Drop here" placeholder when a slot has no activities and something is being dragged over it.
 
-**2. `src/components/itinerary/ItineraryView.tsx`**
+### 4. Update `ItineraryView.tsx` monitor
 
-- Wrap the days list in a `DndContext` provider (from @dnd-kit/core) when in edit mode
-- Flatten all activities into a single sortable list with composite IDs like `"day-0_slot-1_act-2"`
-- On `onDragEnd`, parse the source and destination IDs, remove the activity from its original position, and insert it at the new position
-- Update the editing banner text to: "Hold and drag activities to rearrange your itinerary."
-- Remove the `onGlobalMove` prop (no longer needed)
+- In the `monitorForElements` `onDrop` handler, use `extractClosestEdge` from the destination data to decide whether to insert before or after the target activity.
+- If `closestEdge === 'bottom'`, insert after the target index; if `'top'`, insert before.
+- Add `autoScrollForElements` from the core package for automatic scrolling when dragging near viewport edges.
 
-**3. `src/components/itinerary/DaySection.tsx`**
+### 5. Update `handleDragReorder` in `ItineraryPage.tsx`
 
-- Wrap each slot's activities list in a `SortableContext` (from @dnd-kit/sortable)
-- Each activity item becomes a `useSortable` draggable, using composite IDs
-- Add a droppable zone per slot so activities can be dropped between slots/days
-- Remove `onMoveActivity`, `canMoveUp`, `canMoveDown`, `isFirstDay`, `isLastDay` props
+- Accept an additional `edge: 'top' | 'bottom'` parameter to correctly calculate the insertion index (before vs after the target).
 
-**4. `src/components/itinerary/ActivityCard.tsx`**
+### 6. Improve `ActivityCard.tsx` drag styling
 
-- Add a drag handle (GripVertical icon from lucide) visible only in edit mode
-- Remove the up/down ChevronUp/ChevronDown buttons
-- Accept `dragHandleProps` (attributes + listeners from useSortable) to attach to the handle element
-- The card gets a visual style change while being dragged (slight opacity, shadow lift)
+- When `isDragging` is true, reduce opacity more noticeably and add a dashed border to show the "ghost" placeholder.
+- The drag handle cursor changes to `grabbing` while active.
 
-**5. `src/components/ItineraryPage.tsx`**
+### 7. Assign stable IDs to activities
 
-- Remove `handleGlobalMove` function
-- Remove `onGlobalMove` from the ItineraryView props
-- Add a new `handleDragReorder(fromDayIdx, fromSlotIdx, fromActIdx, toDayIdx, toSlotIdx, toActIdx)` handler that:
-  - Deep clones the itinerary
-  - Removes the activity from the source position
-  - Inserts it at the destination position
-  - Updates state
+- When itinerary data is loaded or generated, assign a `_dragId` (using `crypto.randomUUID()`) to each activity that doesn't have one. This ensures React keys are stable across re-renders after reordering.
 
-### Technical Details
+---
 
-- **Composite IDs**: Each draggable activity gets an ID like `d0-s1-a2` encoding its day, slot, and activity index. On drag end, both active and over IDs are parsed to determine source and destination.
-- **Touch support**: @dnd-kit has built-in touch sensor with a 250ms press delay to distinguish scrolling from dragging.
-- **Drop indicators**: A visual placeholder line appears between activities to show where the dragged item will land.
-- **Accessibility**: @dnd-kit provides keyboard support out of the box as a fallback.
-- The existing add-place and remove buttons remain unchanged.
+### Technical Summary
+
+**New dependency:** `@atlaskit/pragmatic-drag-and-drop-hitbox`
+
+**Files modified:**
+- `src/components/itinerary/DaySection.tsx` -- closestEdge detection, drop indicators, stable keys
+- `src/components/itinerary/ItineraryView.tsx` -- extractClosestEdge in monitor, auto-scroll, assign _dragIds
+- `src/components/itinerary/ActivityCard.tsx` -- improved drag ghost styling
+- `src/components/ItineraryPage.tsx` -- edge-aware insertion logic
 
