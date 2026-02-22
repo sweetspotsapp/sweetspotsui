@@ -12,7 +12,9 @@ interface DaySectionProps {
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
   isSwapping: boolean;
   isEditing?: boolean;
-  onDragReorder?: (dayIndex: number, slotIndex: number, fromIdx: number, toIdx: number) => void;
+  onMoveActivity?: (dayIndex: number, slotIndex: number, activityIndex: number, direction: 'up' | 'down') => void;
+  isFirstDay?: boolean;
+  isLastDay?: boolean;
 }
 
 const TIME_LABELS: Record<string, string> = {
@@ -26,7 +28,7 @@ interface RouteData {
   distanceText: string;
 }
 
-const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onDragReorder }: DaySectionProps) => {
+const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onMoveActivity, isFirstDay, isLastDay }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
 
@@ -105,18 +107,11 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
     total + slot.activities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0), 0
   );
 
-  const handleMoveUp = (slotIndex: number, activityIndex: number) => {
-    if (activityIndex > 0) {
-      onDragReorder?.(dayIndex, slotIndex, activityIndex, activityIndex - 1);
-    }
-  };
+  const isFirstActivity = (slotIndex: number, activityIndex: number) =>
+    isFirstDay && slotIndex === 0 && activityIndex === 0;
 
-  const handleMoveDown = (slotIndex: number, activityIndex: number) => {
-    const slot = day.slots[slotIndex];
-    if (activityIndex < slot.activities.length - 1) {
-      onDragReorder?.(dayIndex, slotIndex, activityIndex, activityIndex + 1);
-    }
-  };
+  const isLastActivity = (slotIndex: number, activityIndex: number) =>
+    isLastDay && slotIndex === day.slots.length - 1 && activityIndex === day.slots[slotIndex].activities.length - 1;
 
   return (
     <div className="rounded-2xl bg-card border border-border overflow-hidden">
@@ -191,10 +186,10 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                             onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
                             isSwapping={isSwapping}
                             isEditing={isEditing}
-                            onMoveUp={() => handleMoveUp(slotIndex, activityIndex)}
-                            onMoveDown={() => handleMoveDown(slotIndex, activityIndex)}
-                            canMoveUp={activityIndex > 0}
-                            canMoveDown={activityIndex < slot.activities.length - 1}
+                            onMoveUp={() => onMoveActivity?.(dayIndex, slotIndex, activityIndex, 'up')}
+                            onMoveDown={() => onMoveActivity?.(dayIndex, slotIndex, activityIndex, 'down')}
+                            canMoveUp={!isFirstActivity(slotIndex, activityIndex)}
+                            canMoveDown={!isLastActivity(slotIndex, activityIndex)}
                           />
                           {!isEditing && activityIndex < slot.activities.length - 1 && (
                             <DistanceConnector
