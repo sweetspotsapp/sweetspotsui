@@ -158,13 +158,44 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
     });
   };
 
-  const handleReorder = (dayIndex: number, slotIndex: number, fromIdx: number, toIdx: number) => {
+  const handleGlobalMove = (dayIdx: number, slotIdx: number, actIdx: number, direction: 'up' | 'down') => {
     if (!itinerary) return;
-    const updated = { ...itinerary };
-    const activities = [...updated.days[dayIndex].slots[slotIndex].activities];
-    const [moved] = activities.splice(fromIdx, 1);
-    activities.splice(toIdx, 0, moved);
-    updated.days[dayIndex].slots[slotIndex].activities = activities;
+    const updated = JSON.parse(JSON.stringify(itinerary)) as ItineraryData;
+    const days = updated.days;
+    const slot = days[dayIdx].slots[slotIdx];
+    const activity = slot.activities[actIdx];
+
+    if (direction === 'up') {
+      if (actIdx > 0) {
+        // Swap within same slot
+        slot.activities.splice(actIdx, 1);
+        slot.activities.splice(actIdx - 1, 0, activity);
+      } else if (slotIdx > 0) {
+        // Move to end of previous slot (same day)
+        slot.activities.splice(actIdx, 1);
+        days[dayIdx].slots[slotIdx - 1].activities.push(activity);
+      } else if (dayIdx > 0) {
+        // Move to end of last slot of previous day
+        slot.activities.splice(actIdx, 1);
+        const prevDay = days[dayIdx - 1];
+        prevDay.slots[prevDay.slots.length - 1].activities.push(activity);
+      }
+    } else {
+      if (actIdx < slot.activities.length - 1) {
+        // Swap within same slot
+        slot.activities.splice(actIdx, 1);
+        slot.activities.splice(actIdx + 1, 0, activity);
+      } else if (slotIdx < days[dayIdx].slots.length - 1) {
+        // Move to start of next slot (same day)
+        slot.activities.splice(actIdx, 1);
+        days[dayIdx].slots[slotIdx + 1].activities.unshift(activity);
+      } else if (dayIdx < days.length - 1) {
+        // Move to start of first slot of next day
+        slot.activities.splice(actIdx, 1);
+        days[dayIdx + 1].slots[0].activities.unshift(activity);
+      }
+    }
+
     setItinerary(updated);
   };
 
@@ -221,7 +252,7 @@ const ItineraryPage = ({ resumeItineraryId, onResumed }: ItineraryPageProps) => 
           tripParams={tripParams}
           onBack={handleBackToList}
           onSwap={handleSwap}
-          onReorder={handleReorder}
+          onGlobalMove={handleGlobalMove}
           onReplace={handleReplaceActivity}
           isSwapping={isSwapping}
           isGenerating={isGenerating}
