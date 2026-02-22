@@ -7,7 +7,8 @@ import { ThemeProvider } from "next-themes";
 import { AppProvider } from "@/context/AppContext";
 import { FeedbackProvider } from "@/context/FeedbackContext";
 import { AuthProvider } from "@/hooks/useAuth";
-import Index from "./pages/Index";
+import PersistentLayout from "./components/PersistentLayout";
+
 import Auth from "./pages/Auth";
 import PlaceDetails from "./pages/PlaceDetails";
 import CategorySeeAll from "./pages/CategorySeeAll";
@@ -29,12 +30,14 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route element={<PersistentLayout />}>
+                  <Route path="/" element={null} />
+                  <Route path="/saved" element={null} />
+                  <Route path="/trip" element={null} />
+                  <Route path="/place/:placeId" element={<PlaceDetails />} />
+                  <Route path="/see-all" element={<CategorySeeAll />} />
+                </Route>
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/saved" element={<Index />} />
-                <Route path="/place/:placeId" element={<PlaceDetails />} />
-                <Route path="/trip" element={<Index />} />
-                <Route path="/see-all" element={<CategorySeeAll />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/help-support" element={<HelpSupport />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
