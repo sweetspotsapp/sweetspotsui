@@ -53,7 +53,7 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-        <div className="bg-card rounded-3xl shadow-elevated w-full max-w-[420px] max-h-[80vh] flex flex-col">
+        <div className="bg-card rounded-3xl shadow-elevated w-full max-w-[420px] max-h-[80vh] flex flex-col overflow-visible">
           {/* Header */}
           <div className="px-6 pt-5 pb-4 flex items-center justify-between">
             <div>
