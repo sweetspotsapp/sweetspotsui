@@ -188,15 +188,15 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
             <>
               <button
                 onClick={handleCancelEditing}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
               >
-                <X className="w-3.5 h-3.5" /> Cancel
+                <X className="w-4 h-4" /> Cancel
               </button>
               <button
                 onClick={handleSaveEditing}
-                className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all"
               >
-                <Save className="w-3.5 h-3.5" /> Save
+                <Save className="w-4 h-4" /> Save Changes
               </button>
             </>
           ) : (
@@ -230,8 +230,8 @@ const ItineraryView = ({ itinerary, tripParams, onBack, onSwap, onReplace, onRem
 
       {/* Editing banner */}
       {isEditing && (
-        <div className="px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
-          <p className="text-xs text-muted-foreground">Hold and drag activities to rearrange your itinerary.</p>
+        <div className="px-4 py-3 rounded-xl bg-primary/10 border-2 border-primary/20">
+          <p className="text-xs font-medium text-primary">Editing Mode — Hold and drag activities to rearrange your itinerary.</p>
         </div>
       )}
 
