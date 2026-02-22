@@ -1,53 +1,26 @@
 
 
-## Improve Drag-and-Drop UX for Itinerary Activities
+## Make Entire Card Draggable (Remove Grip Handle)
 
-The current implementation has several issues that make DnD feel buggy: no edge detection (items always drop "on" instead of "before/after"), index-based React keys cause re-render confusion, no auto-scroll during drag, and minimal visual feedback. Here's the fix:
+Remove the separate `GripVertical` drag handle button from the activity card and instead make the **entire card** the drag element. Users will hold anywhere on the card to initiate dragging in edit mode.
 
-### 1. Install `@atlaskit/pragmatic-drag-and-drop-hitbox`
+### Changes
 
-This optional package provides `attachClosestEdge` and `extractClosestEdge` utilities, which determine whether the user is hovering closer to the **top** or **bottom** edge of a drop target. This is essential for sortable list behavior -- it tells us whether to insert the dragged item above or below the target.
+**1. `src/components/itinerary/ActivityCard.tsx`**
+- Remove the `dragHandleProps` prop entirely (no more separate handle ref).
+- Remove the `GripVertical` button from the edit-mode overlay.
+- Keep the `Trash2` delete button.
+- Keep the `isDragging` prop for visual feedback.
+- Remove `GripVertical` from the lucide imports.
 
-### 2. Rewrite `DraggableActivityCard` in `DaySection.tsx`
+**2. `src/components/itinerary/DaySection.tsx`**
+- In `DraggableActivityCard`, remove the separate `handleRef` for the drag handle.
+- Instead, pass the entire card `ref` as both the `element` **and** the `dragHandle` to `draggable()` -- or simply omit `dragHandle` so the whole element is draggable.
+- Remove `dragHandleProps` from the `ActivityCard` render.
+- Everything else (drop targets, edge detection, indicators) stays the same.
 
-- Use `attachClosestEdge` in the drop target's `getData` with `allowedEdges: ['top', 'bottom']` and `getIsSticky: () => true` so the drop indicator doesn't flicker.
-- Track `closestEdge` state ('top' | 'bottom' | null) instead of a simple `isOver` boolean.
-- Render a colored line indicator at the **top** or **bottom** of the card depending on the edge, so users see exactly where the activity will land.
-- Use a stable unique key per activity (generate an `_id` field using `crypto.randomUUID()` when one doesn't exist) instead of array index.
-
-### 3. Rewrite `DroppableSlot` in `DaySection.tsx`
-
-- Also use `attachClosestEdge` so dropping into an empty slot shows proper feedback.
-- Show a "Drop here" placeholder when a slot has no activities and something is being dragged over it.
-
-### 4. Update `ItineraryView.tsx` monitor
-
-- In the `monitorForElements` `onDrop` handler, use `extractClosestEdge` from the destination data to decide whether to insert before or after the target activity.
-- If `closestEdge === 'bottom'`, insert after the target index; if `'top'`, insert before.
-- Add `autoScrollForElements` from the core package for automatic scrolling when dragging near viewport edges.
-
-### 5. Update `handleDragReorder` in `ItineraryPage.tsx`
-
-- Accept an additional `edge: 'top' | 'bottom'` parameter to correctly calculate the insertion index (before vs after the target).
-
-### 6. Improve `ActivityCard.tsx` drag styling
-
-- When `isDragging` is true, reduce opacity more noticeably and add a dashed border to show the "ghost" placeholder.
-- The drag handle cursor changes to `grabbing` while active.
-
-### 7. Assign stable IDs to activities
-
-- When itinerary data is loaded or generated, assign a `_dragId` (using `crypto.randomUUID()`) to each activity that doesn't have one. This ensures React keys are stable across re-renders after reordering.
-
----
-
-### Technical Summary
-
-**New dependency:** `@atlaskit/pragmatic-drag-and-drop-hitbox`
-
-**Files modified:**
-- `src/components/itinerary/DaySection.tsx` -- closestEdge detection, drop indicators, stable keys
-- `src/components/itinerary/ItineraryView.tsx` -- extractClosestEdge in monitor, auto-scroll, assign _dragIds
-- `src/components/itinerary/ActivityCard.tsx` -- improved drag ghost styling
-- `src/components/ItineraryPage.tsx` -- edge-aware insertion logic
-
+### Result
+- No more grip icon button on activity cards in edit mode.
+- Users hold anywhere on the card to drag.
+- The delete button still works (its `stopPropagation` prevents accidental drags).
+- Drop indicators and edge detection remain unchanged.
