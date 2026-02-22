@@ -110,11 +110,11 @@ const loadLocalTrips = (): SavedTrip[] => {
       }
     }
     if (!raw) return [];
-    // Map old itinerary_data field to trip_data
+    // Map legacy data field for backwards compatibility
     const parsed = JSON.parse(raw);
     return parsed.map((item: any) => ({
       ...item,
-      trip_data: item.trip_data || item.itinerary_data || null,
+      trip_data: item.trip_data ?? item.itinerary_data ?? null,
     }));
   } catch { return []; }
 };
@@ -148,7 +148,7 @@ export const useTrip = () => {
       if (error) throw error;
       setSavedTrips(((data as any[]) || []).map((d: any) => ({
         ...d,
-        trip_data: (d.trip_data || d.itinerary_data) as TripData | null,
+        trip_data: d.trip_data as TripData | null,
         accommodation: d.accommodation as SavedTrip['accommodation'],
         flight_details: d.flight_details as SavedTrip['flight_details'],
       })));
