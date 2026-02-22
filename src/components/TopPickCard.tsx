@@ -140,7 +140,7 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
         {/* Vibe tag only - removed Top Pick badge */}
         {vibeTag && (
           <div className="absolute top-2 left-2">
-            <span className="px-2 py-1 bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground rounded-full">
+            <span className="px-2 py-1 bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground rounded-full max-w-[100px] truncate block">
               {vibeTag}
             </span>
           </div>
@@ -158,14 +158,12 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
           </p>
         )}
         
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {/* Rating */}
+        {/* Desktop: single row */}
+        <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-0.5">
             <Star className="w-3.5 h-3.5 text-primary fill-primary" />
             <span className="font-medium text-foreground">{place.rating.toFixed(1)}</span>
           </div>
-
-          {/* Distance in km - only show when using Nearby mode */}
           {showDistance && (
             <>
               <span className="text-border">•</span>
@@ -175,8 +173,6 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
               </div>
             </>
           )}
-
-          {/* Open/Closed status */}
           {place.is_open_now !== null && place.is_open_now !== undefined && (
             <>
               <span className="text-border">•</span>
@@ -187,6 +183,30 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
                 </span>
               </div>
             </>
+          )}
+        </div>
+
+        {/* Mobile: two-column layout */}
+        <div className="flex sm:hidden items-start justify-between text-xs text-muted-foreground">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-0.5">
+              <Star className="w-3.5 h-3.5 text-primary fill-primary" />
+              <span className="font-medium text-foreground">{place.rating.toFixed(1)}</span>
+            </div>
+            {showDistance && (
+              <div className="flex items-center gap-0.5">
+                <Navigation className="w-3 h-3" />
+                <span>{place.distance_km.toFixed(1)} km</span>
+              </div>
+            )}
+          </div>
+          {place.is_open_now !== null && place.is_open_now !== undefined && (
+            <div className="flex items-center gap-0.5">
+              <Clock className="w-3 h-3" />
+              <span className={place.is_open_now ? 'text-green-600' : 'text-red-500'}>
+                {place.is_open_now ? 'Open' : 'Closed'}
+              </span>
+            </div>
           )}
         </div>
       </div>

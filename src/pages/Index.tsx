@@ -31,6 +31,7 @@ const Index = () => {
     const state = location.state as { openItinerary?: boolean } | null;
     if (state?.openItinerary) return "itinerary";
     if (location.pathname === "/saved") return "saved";
+    if (location.pathname === "/itinerary") return "itinerary";
     // If arriving with a search param, force home tab
     const params = new URLSearchParams(location.search);
     if (params.get('search')) return "home";
