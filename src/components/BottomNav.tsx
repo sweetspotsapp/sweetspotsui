@@ -10,7 +10,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "saved" as const, label: "Saved", icon: Heart },
-    { id: "itinerary" as const, label: "Itinerary", icon: CalendarDays },
+    { id: "itinerary" as const, label: "Trip", icon: CalendarDays },
     { id: "profile" as const, label: "Profile", icon: User },
   ];
 

@@ -185,7 +185,7 @@ const BrowseForItinerary = ({ destination, selectedPlaceIds: initialSelected, on
                 : "bg-muted text-muted-foreground"
             )}
           >
-            {selected.size > 0 ? `Add ${selected.size} Spot${selected.size > 1 ? "s" : ""} to Itinerary` : "Continue Without Adding"}
+            {selected.size > 0 ? `Add ${selected.size} Spot${selected.size > 1 ? "s" : ""} to Trip` : "Continue Without Adding"}
           </button>
         </div>
       </div>

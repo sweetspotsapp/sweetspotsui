@@ -638,7 +638,7 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
         ) : (
           <>
             <Sparkles className="w-5 h-5" />
-            Generate Itinerary
+            Generate Trip
           </>
         )}
       </button>
