@@ -123,7 +123,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
                   <MoreVertical className="w-4 h-4 text-foreground" />
                 </button>
                 {showMoveMenu && availableDays && availableDays.length > 1 && (
-                  <div className="absolute top-full right-0 mt-1 w-40 rounded-lg border border-border bg-popover shadow-lg z-50 py-1 overflow-hidden">
+                  <div className="absolute top-full right-0 mt-1 w-40 rounded-lg border border-border bg-popover shadow-xl z-[100] py-1 overflow-hidden">
                     <p className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Move to</p>
                     {availableDays.map((d) => (
                       <button
