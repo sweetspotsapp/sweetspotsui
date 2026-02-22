@@ -5,21 +5,7 @@ import { cn } from "@/lib/utils";
 import SwapSheet from "./SwapSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useItinerary";
 
-const CATEGORY_ICONS: Record<string, string> = {
-  food: "🍽️",
-  cafe: "☕",
-  bar: "🍸",
-  museum: "🏛️",
-  park: "🌿",
-  shopping: "🛍️",
-  landmark: "📍",
-  entertainment: "🎭",
-  adventure: "🏔️",
-  nightlife: "🌙",
-  beach: "🏖️",
-  temple: "⛩️",
-  market: "🏪",
-};
+// No emoji icons — use text labels only
 
 interface ActivityCardProps {
   activity: Activity;
@@ -58,7 +44,7 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
     setShowSwap(false);
   };
 
-  const icon = CATEGORY_ICONS[activity.category] || "📍";
+  const categoryLabel = activity.category ? activity.category.charAt(0).toUpperCase() + activity.category.slice(1) : "Place";
 
   // Build larger image URL
   const largeImageUrl = activity.photoName && !imageError
@@ -104,11 +90,11 @@ const ActivityCard = ({ activity, onSwap, onMoveUp, onMoveDown, onReplace, isSwa
             />
           ) : (
             <div className={cn("w-full h-full bg-gradient-to-br flex items-center justify-center", fallbackGradient)}>
-              <span className="text-4xl opacity-60">{icon}</span>
+              <span className="text-sm font-semibold text-white/60 uppercase tracking-wider">{categoryLabel}</span>
             </div>
           )}
           <div className="absolute top-2 left-2 bg-card/80 backdrop-blur-sm text-xs font-medium px-2 py-0.5 rounded-full text-foreground capitalize">
-            {icon} {activity.category}
+            {categoryLabel}
           </div>
           {activity.placeId && (
             <div className="absolute top-2 right-2 bg-card/80 backdrop-blur-sm p-1 rounded-full">

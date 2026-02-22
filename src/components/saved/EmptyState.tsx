@@ -25,7 +25,7 @@ const EmptyState = ({ type }: EmptyStateProps) => {
         </div>
         
         <h3 className="text-lg font-semibold text-foreground mb-2">
-          No boards yet! 🌟
+          No boards yet
         </h3>
         <p className="text-sm text-muted-foreground max-w-[260px] mb-6">
           Save a place and start your first board to organize your favorite spots

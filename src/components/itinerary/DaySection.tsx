@@ -14,10 +14,10 @@ interface DaySectionProps {
   isSwapping: boolean;
 }
 
-const TIME_ICONS: Record<string, string> = {
-  Morning: "🌅",
-  Afternoon: "☀️",
-  Evening: "🌙",
+const TIME_LABELS: Record<string, string> = {
+  Morning: "AM",
+  Afternoon: "PM",
+  Evening: "EVE",
 };
 
 interface RouteData {
@@ -164,7 +164,7 @@ const DaySection = ({ day, dayIndex, onSwap, onReorder, onReplace, isSwapping }:
                   {/* Slot Header */}
                   <div className="px-4 py-2 bg-muted/20">
                     <span className="text-xs font-medium text-muted-foreground">
-                      {TIME_ICONS[slot.time] || "📍"} {slot.time}
+                      {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
                   </div>
 

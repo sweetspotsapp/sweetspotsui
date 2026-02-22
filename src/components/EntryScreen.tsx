@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, MapPin, Navigation, Sparkles, Compass, Heart, Loader2 } from "lucide-react";
+import { ArrowRight, MapPin, Navigation, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,42 +137,30 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
   // Step 0: Welcome / Introduction
   if (step === "welcome") {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center max-w-[420px] mx-auto px-6 py-8">
-        <div className="flex-1 flex flex-col items-center justify-center w-full gap-8">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center max-w-[420px] mx-auto px-8 py-12">
+        <div className="flex-1 flex flex-col items-center justify-center w-full gap-12">
+          {/* Logo */}
           <div className="opacity-0 animate-fade-up">
             <SweetSpotsLogo />
           </div>
 
-          <div className="text-center space-y-3 opacity-0 animate-fade-up delay-200">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">
-              Welcome to SweetSpots 🍯
+          {/* Hero copy — aspirational, identity-driven */}
+          <div className="text-center space-y-4 opacity-0 animate-fade-up delay-200">
+            <h1 className="text-4xl font-bold text-foreground tracking-tight leading-[1.15]">
+              The places you love<br />
+              are already waiting.
             </h1>
-            <p className="text-muted-foreground text-base max-w-xs mx-auto">
-              Your personal guide to places that actually match your vibe.
+            <p className="text-muted-foreground text-base max-w-[280px] mx-auto leading-relaxed">
+              Tell us who you are. We'll show you where you belong.
             </p>
           </div>
 
-          <div className="w-full space-y-3 opacity-0 animate-fade-up delay-300">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50">
-              <Compass className="w-5 h-5 text-primary flex-shrink-0" />
-              <span className="text-sm text-foreground">Discover places that match your mood</span>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50">
-              <Sparkles className="w-5 h-5 text-primary flex-shrink-0" />
-              <span className="text-sm text-foreground">Get personalized recommendations</span>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50">
-              <Heart className="w-5 h-5 text-primary flex-shrink-0" />
-              <span className="text-sm text-foreground">Save & share your favorites</span>
-            </div>
-          </div>
-
+          {/* Auth actions */}
           <div className="w-full space-y-3 opacity-0 animate-fade-up delay-400">
-            {/* Google Sign In */}
             <Button
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading}
-              className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-base"
+              className="w-full h-13 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-base font-medium"
             >
               {isGoogleLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -189,19 +177,17 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
               )}
             </Button>
 
-            {/* Email sign up / sign in */}
             <Button
               variant="outline"
               onClick={() => setShowAuthDialog(true)}
-              className="w-full h-12 rounded-xl text-base border-border"
+              className="w-full h-13 rounded-xl text-base border-border font-medium"
             >
               Sign in with email
             </Button>
 
-            {/* Continue as guest */}
             <button
               onClick={() => setStep("location")}
-              className="w-full text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors pt-2"
+              className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors pt-3"
             >
               Continue as guest
             </button>
@@ -209,17 +195,17 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
         </div>
 
         {/* Step dots */}
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-          <div className="w-2.5 h-2.5 rounded-full bg-muted" />
-          <div className="w-2.5 h-2.5 rounded-full bg-muted" />
+        <div className="mt-10 flex items-center justify-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary" />
+          <div className="w-2 h-2 rounded-full bg-border" />
+          <div className="w-2 h-2 rounded-full bg-border" />
         </div>
 
         <button
           onClick={onSkip}
-          className="mt-4 text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+          className="mt-4 text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          Skip to home
+          Skip
         </button>
 
         <AuthDialog
@@ -241,7 +227,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
           </div>
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-foreground tracking-tight">
-              Let's find your SweetSpots! 🍯
+              What are you in the mood for?
             </h1>
             <p className="text-muted-foreground text-base">
               Tell us whatever you feel right now. We'll find places that match your vibe.
@@ -264,7 +250,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
 
       <div className="flex-1">
         <h1 className="text-3xl font-semibold text-foreground mb-2">
-          Where should we look? 📍
+          Where should we look?
         </h1>
         <p className="text-muted-foreground mb-6">
           {mood
