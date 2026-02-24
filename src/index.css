@@ -6,60 +6,42 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
 
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Libre+Caslon+Text&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
-
 @layer base {
   :root {
     /* Warm, calm palette */
-    --background: 0 0% 100%;
-    --foreground: 265 4% 12.9%;
+    --background: 40 30% 97%;
+    --foreground: 25 20% 18%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 265 4% 12.9%;
+    --card: 40 25% 99%;
+    --card-foreground: 25 20% 18%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 265 4% 12.9%;
+    --popover: 40 25% 99%;
+    --popover-foreground: 25 20% 18%;
 
     /* Warm terracotta coral */
-    --primary: 266 4% 20.8%;
-    --primary-foreground: 248 0.3% 98.4%;
+    --primary: 15 60% 58%;
+    --primary-foreground: 40 30% 98%;
 
     /* Soft sage */
-    --secondary: 248 0.7% 96.8%;
-    --secondary-foreground: 266 4% 20.8%;
+    --secondary: 140 20% 92%;
+    --secondary-foreground: 140 25% 30%;
 
     /* Muted warm gray */
-    --muted: 248 0.7% 96.8%;
-    --muted-foreground: 257 4.6% 55.4%;
+    --muted: 30 15% 92%;
+    --muted-foreground: 25 10% 50%;
 
     /* Light sage accent */
-    --accent: 248 0.7% 96.8%;
-    --accent-foreground: 266 4% 20.8%;
+    --accent: 140 25% 88%;
+    --accent-foreground: 140 30% 25%;
 
-    --destructive: 27 24.5% 57.7%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 256 1.3% 92.9%;
-    --input: 256 1.3% 92.9%;
-    --ring: 257 4% 70.4%;
+    --border: 30 20% 88%;
+    --input: 30 20% 90%;
+    --ring: 15 60% 58%;
 
-    --radius: 0.375rem;
+    --radius: 1rem;
 
     /* Custom tokens */
     --warm-cream: 40 35% 95%;
@@ -79,62 +61,44 @@
     --transition-bounce: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 265 4% 12.9%;
-    --sidebar-primary: 266 4% 20.8%;
-    --sidebar-primary-foreground: 248 0.3% 98.4%;
-    --sidebar-accent: 248 0.7% 96.8%;
-    --sidebar-accent-foreground: 266 4% 20.8%;
-    --sidebar-border: 256 1.3% 92.9%;
-    --sidebar-ring: 257 4% 70.4%;
-    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    --chart-1: 41 22.2% 64.6%;
-    --chart-2: 185 11.8% 60%;
-    --chart-3: 227 7% 39.8%;
-    --chart-4: 84 18.9% 82.8%;
-    --chart-5: 70 18.8% 76.9%;
-    --sidebar: 248 0.3% 98.4%;
-    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --tracking-normal: 0em;
-    --spacing: 0.25rem;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --font-sans: Poppins, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 
   .dark {
-    --background: 0 0% 15%;
-    --foreground: 248 0.3% 98.4%;
+    --background: 25 15% 10%;
+    --foreground: 40 20% 95%;
 
-    --card: 266 4% 20.8%;
-    --card-foreground: 248 0.3% 98.4%;
+    --card: 25 15% 13%;
+    --card-foreground: 40 20% 95%;
 
-    --popover: 266 4% 20.8%;
-    --popover-foreground: 248 0.3% 98.4%;
+    --popover: 25 15% 13%;
+    --popover-foreground: 40 20% 95%;
 
-    --primary: 256 1.3% 92.9%;
-    --primary-foreground: 266 4% 20.8%;
+    --primary: 15 55% 55%;
+    --primary-foreground: 25 15% 10%;
 
-    --secondary: 260 4.1% 27.9%;
-    --secondary-foreground: 248 0.3% 98.4%;
+    --secondary: 140 15% 18%;
+    --secondary-foreground: 140 20% 80%;
 
-    --muted: 260 4.1% 27.9%;
-    --muted-foreground: 257 4% 70.4%;
+    --muted: 25 10% 18%;
+    --muted-foreground: 30 15% 60%;
 
-    --accent: 260 4.1% 27.9%;
-    --accent-foreground: 248 0.3% 98.4%;
+    --accent: 140 15% 20%;
+    --accent-foreground: 140 20% 85%;
 
-    --destructive: 22 19.1% 70.4%;
-    --destructive-foreground: 248 0.3% 98.4%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 100% / 10%;
-    --input: 0 0% 100% / 15%;
-    --ring: 264 2.7% 55.1%;
+    --border: 25 10% 20%;
+    --input: 25 10% 20%;
+    --ring: 15 55% 55%;
 
     --warm-cream: 25 15% 15%;
     --soft-coral: 15 50% 50%;
@@ -148,30 +112,14 @@
     --shadow-elevated: 0 16px 48px -12px hsl(0 0% 0% / 0.5);
 
     --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 248 0.3% 98.4%;
-    --sidebar-primary: 264 24.3% 48.8%;
-    --sidebar-primary-foreground: 248 0.3% 98.4%;
-    --sidebar-accent: 260 4.1% 27.9%;
-    --sidebar-accent-foreground: 248 0.3% 98.4%;
-    --sidebar-border: 0 0% 100% / 10%;
-    --sidebar-ring: 264 2.7% 55.1%;
-    --font-sans: Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
-    --chart-1: 264 24.3% 48.8%;
-    --chart-2: 162 17% 69.6%;
-    --chart-3: 70 18.8% 76.9%;
-    --chart-4: 304 26.5% 62.7%;
-    --chart-5: 16 24.6% 64.5%;
-    --sidebar: 266 4% 20.8%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --font-serif: "Libre Caslon Text", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
-    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --font-sans: Poppins, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 }
 
@@ -199,7 +147,7 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-
+  
   /* Touch scroll support */
   .touch-pan-x {
     touch-action: pan-x;
@@ -300,6 +248,7 @@
 .animate-fade-up {
   animation: fade-up 0.6s ease-out forwards;
 }
+
 
 .animate-fade-in {
   animation: fade-in 0.4s ease-out forwards;

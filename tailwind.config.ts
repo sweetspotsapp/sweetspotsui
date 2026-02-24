@@ -20,20 +20,16 @@ export default {
   				'sans-serif'
   			],
   			sans: [
-  				'Inter',
+  				'Poppins',
   				'ui-sans-serif',
   				'system-ui',
-  				'-apple-system',
-  				'BlinkMacSystemFont',
-  				'Segoe UI',
-  				'Roboto',
-  				'Helvetica Neue',
-  				'Arial',
-  				'Noto Sans',
-  				'sans-serif'
+  				'sans-serif',
+  				'Apple Color Emoji',
+  				'Segoe UI Emoji',
+  				'Segoe UI Symbol',
+  				'Noto Color Emoji'
   			],
   			serif: [
-  				'Lora',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
@@ -42,7 +38,6 @@ export default {
   				'serif'
   			],
   			mono: [
-  				'Space Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
@@ -107,14 +102,7 @@ export default {
   		boxShadow: {
   			soft: 'var(--shadow-soft)',
   			card: 'var(--shadow-card)',
-  			elevated: 'var(--shadow-elevated)',
-  			'2xs': 'var(--shadow-2xs)',
-  			xs: 'var(--shadow-xs)',
-  			sm: 'var(--shadow-sm)',
-  			md: 'var(--shadow-md)',
-  			lg: 'var(--shadow-lg)',
-  			xl: 'var(--shadow-xl)',
-  			'2xl': 'var(--shadow-2xl)'
+  			elevated: 'var(--shadow-elevated)'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -126,36 +114,20 @@ export default {
   		},
   		keyframes: {
   			'accordion-down': {
-  				from: {
-  					height: '0'
-  				},
-  				to: {
-  					height: 'var(--radix-accordion-content-height)'
-  				}
+  				from: { height: '0' },
+  				to: { height: 'var(--radix-accordion-content-height)' }
   			},
   			'accordion-up': {
-  				from: {
-  					height: 'var(--radix-accordion-content-height)'
-  				},
-  				to: {
-  					height: '0'
-  				}
+  				from: { height: 'var(--radix-accordion-content-height)' },
+  				to: { height: '0' }
   			},
   			'slide-in-bottom': {
-  				from: {
-  					transform: 'translateY(100%)'
-  				},
-  				to: {
-  					transform: 'translateY(0)'
-  				}
+  				from: { transform: 'translateY(100%)' },
+  				to: { transform: 'translateY(0)' }
   			},
   			'slide-in-right': {
-  				from: {
-  					transform: 'translateX(100%)'
-  				},
-  				to: {
-  					transform: 'translateX(0)'
-  				}
+  				from: { transform: 'translateX(100%)' },
+  				to: { transform: 'translateX(0)' }
   			}
   		},
   		animation: {
