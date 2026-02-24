@@ -27,8 +27,8 @@ const TopPicksSection: React.FC<TopPicksSectionProps> = ({
         <h2 className="text-lg font-bold text-foreground">Top Picks for You</h2>
       </div>
 
-      {/* Cards — 2 on mobile, up to 4 on desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      {/* Cards — 2 on mobile, up to 4 on desktop, full width */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
         {places.slice(0, 4).map((place) => (
           <TopPickCard
             key={place.id}

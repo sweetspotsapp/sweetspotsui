@@ -38,10 +38,10 @@ const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) =
   const bullets = getBulletPoints();
 
   return (
-    <div className="mx-4 mb-6 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/50 dark:border-amber-800/30">
+    <div className="mx-4 mb-6 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center gap-3 p-4 text-left"
+        className="w-full flex items-center gap-3 p-4 text-left rounded-2xl bg-amber-100/60 dark:bg-amber-900/40 hover:bg-amber-100/80 dark:hover:bg-amber-900/50 active:bg-amber-200/60 dark:active:bg-amber-900/60 transition-colors"
       >
         <div className="relative p-2 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 shrink-0">
           <IceCreamCone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
