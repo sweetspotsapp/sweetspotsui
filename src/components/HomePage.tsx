@@ -972,24 +972,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           </div>
         </div>
 
-        {/* Active Filter Chips */}
-        {activeFilters.size > 0 && (
-          <div className="px-4 lg:px-8 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
-            {Array.from(activeFilters).map((filterId) => (
-              <button
-                key={filterId}
-                onClick={() => removeFilter(filterId)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors"
-              >
-                {FILTER_LABELS[filterId] || filterId}
-                <X className="w-3 h-3" />
-              </button>
-            ))}
-          </div>
-        )}
       </div>
-
-      <LoginReminderBanner />
 
       {/* Mobile: slide-out overlay filter */}
       <div className="lg:hidden">
@@ -1026,6 +1009,23 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
         {/* Main Content */}
         <main className="pt-4 flex-1 min-w-0">
+        <LoginReminderBanner />
+
+        {/* Active Filter Chips */}
+        {activeFilters.size > 0 && (
+          <div className="px-4 lg:px-8 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+            {Array.from(activeFilters).map((filterId) => (
+              <button
+                key={filterId}
+                onClick={() => removeFilter(filterId)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors"
+              >
+                {FILTER_LABELS[filterId] || filterId}
+                <X className="w-3 h-3" />
+              </button>
+            ))}
+          </div>
+        )}
         {isSearching || isInitialLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="relative">
