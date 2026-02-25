@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 interface MoodInputProps {
   onSubmit: (mood: string) => void;
   onSkip?: () => void;
+  onBack?: () => void;
 }
 
 const suggestions = [
@@ -18,7 +19,7 @@ const suggestions = [
   "live music",
 ];
 
-const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
+const MoodInput = ({ onSubmit, onSkip, onBack }: MoodInputProps) => {
   const [value, setValue] = useState("");
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
 
@@ -112,16 +113,29 @@ const MoodInput = ({ onSubmit, onSkip }: MoodInputProps) => {
         })}
       </div>
 
-      <Button
-        type="submit"
-        variant="primary"
-        size="lg"
-        className="w-full h-12 text-base rounded-xl"
-        disabled={!hasInput}
-      >
-        Show me the goods
-        <ArrowRight className="w-5 h-5 ml-1" />
-      </Button>
+      <div className="flex gap-3">
+        {onBack && (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="h-12 px-6 rounded-xl"
+            onClick={onBack}
+          >
+            Back
+          </Button>
+        )}
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          className="flex-1 h-12 text-base rounded-xl"
+          disabled={!hasInput}
+        >
+          Show me the goods
+          <ArrowRight className="w-5 h-5 ml-1" />
+        </Button>
+      </div>
 
       {onSkip && (
         <button
