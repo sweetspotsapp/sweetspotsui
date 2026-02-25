@@ -1090,9 +1090,9 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
 
             {isMapView && mapPlaces.length > 0 ? (
-              <div className="lg:flex lg:gap-6 lg:px-8">
-                {/* Desktop: split view — map + list side by side */}
-                <div className="h-[calc(100vh-280px)] lg:h-[calc(100vh-200px)] mx-4 lg:mx-0 lg:flex-1 rounded-xl overflow-hidden border border-border">
+              <div className="lg:flex lg:flex-col lg:gap-6 lg:px-8">
+                {/* Map */}
+                <div className="h-[calc(100vh-280px)] lg:h-[400px] mx-4 lg:mx-0 rounded-xl overflow-hidden border border-border">
                   <BoardMapView
                     places={mapPlaces}
                     userLocation={userLocation}
@@ -1100,9 +1100,9 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                     getPlaceImage={getPlaceImage}
                   />
                 </div>
-                {/* Desktop: show list alongside map */}
-                <div className="hidden lg:block lg:w-[380px] lg:h-[calc(100vh-200px)] overflow-y-auto space-y-3">
-                  {filteredResults.slice(0, 20).map((place) => (
+                {/* Desktop: 3-column grid below map */}
+                <div className="hidden lg:grid lg:grid-cols-3 lg:gap-4 overflow-y-auto">
+                  {filteredResults.slice(0, 30).map((place) => (
                     <PlaceCardCompact
                       key={place.id}
                       place={place}
