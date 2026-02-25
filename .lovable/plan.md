@@ -1,56 +1,31 @@
 
 
-## Fix: Prevent HomePage from reloading on tab navigation
+## Add Back Button to Onboarding Flow
 
-### Root Cause
-
-In `Index.tsx` (line 127), `HomePage` is conditionally rendered:
-```tsx
-{activeTab === "home" && <HomePage />}
-```
-
-When the user switches to "Saved" or "Trip" tab, `HomePage` **fully unmounts**. When they switch back, it **remounts from scratch** -- creating new refs, re-running effects, and calling the unified-search API again despite having cached data.
-
-### Solution
-
-**Keep all tab content mounted but visually hidden** using CSS `display: none` instead of conditional rendering. This means `HomePage` stays alive in the DOM across tab switches, preserving all its state (refs, search results, etc.) without any API calls.
+The `EntryScreen` component has 3 steps: `welcome` → `location` → `mood`. Currently there's no way to go back from `location` to `welcome` or from `mood` to `location`.
 
 ### Changes
 
-**File: `src/pages/Index.tsx`**
+**File: `src/components/EntryScreen.tsx`**
 
-Replace the conditional rendering block:
-```tsx
-{activeTab === "home" && <HomePage />}
-{activeTab === "saved" && <SavedPage />}
-{activeTab === "trip" && <TripPage />}
-{activeTab === "profile" && <ProfilePage />}
-```
+1. **Location step (lines 349-372)** — Add a Back button before the Next button that returns to the `welcome` step:
+   - Add a flex row with Back + Next buttons (similar pattern already used in `OnboardingWizard.tsx`)
+   - Back button calls `setStep("welcome")`
+   - Update step dot indicator: dot 2 is active
 
-With CSS-hidden tabs that stay mounted:
-```tsx
-<div style={{ display: activeTab === "home" ? "block" : "none" }}>
-  <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
-</div>
-<div style={{ display: activeTab === "saved" ? "block" : "none" }}>
-  <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
-</div>
-<div style={{ display: activeTab === "trip" ? "block" : "none" }}>
-  <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} />
-</div>
-<div style={{ display: activeTab === "profile" ? "block" : "none" }}>
-  <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />
-</div>
-```
+2. **Mood step (lines 221-242)** — Add a Back button that returns to `location`:
+   - Below the `MoodInput` component, add a Back button that calls `setStep("location")`
+   - Update step dot indicator: dot 3 is active
+   - The mood step currently has no step dots or navigation — add them for consistency
 
-### Why this works
+**File: `src/components/MoodInput.tsx`**
 
-- `HomePage` mounts once and stays mounted -- no remount, no re-fetching
-- All local state (search results, refs, filters) survives tab switches
-- The unified-search API is only called when the user explicitly changes location or mood/vibe prompt
-- Other tabs (Saved, Trip, Profile) also benefit from not remounting
+3. Add an optional `onBack` prop so the parent can wire up back navigation. Add a Back button in the button row next to "Show me the goods".
 
-### Trade-off
+### Layout Details
 
-All four tab components stay in the DOM simultaneously, which uses slightly more memory. This is negligible for this app and is the standard pattern for tab-based mobile navigation (similar to how native apps keep tabs alive).
+- Location step: Replace the single "Next" button with a row of `[Back] [Next]`
+- Mood step: Add step dots + a `[Back]` button alongside existing controls
+- Back buttons use `variant="outline"` styling, matching the existing pattern from `OnboardingWizard`
+- Welcome step has no Back button (it's the first step)
 
