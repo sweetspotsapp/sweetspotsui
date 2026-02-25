@@ -12,7 +12,8 @@ interface SlideOutMenuProps {
   onDistanceChange: (distance: number) => void;
   totalPlaces: number;
   filteredCount: number;
-  isNearbyMode?: boolean; // Only show distance filter when using nearby location
+  isNearbyMode?: boolean;
+  alwaysOpen?: boolean;
 }
 
 const FILTER_SECTIONS = [
@@ -63,7 +64,8 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
   onDistanceChange,
   totalPlaces,
   filteredCount,
-  isNearbyMode = false
+  isNearbyMode = false,
+  alwaysOpen = false
 }) => {
   const toggleFilter = (filterId: string) => {
     const newFilters = new Set(activeFilters);
@@ -82,6 +84,90 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
 
   const hasFilters = activeFilters.size > 0 || maxDistance < 25;
 
+  // Always-open static sidebar mode (desktop)
+  if (alwaysOpen) {
+    return (
+      <div className="w-[250px] shrink-0 sticky top-[108px] self-start max-h-[calc(100vh-108px)] flex flex-col border-r border-border bg-card rounded-lg">
+        {/* Header */}
+        <div className="p-4 border-b border-border flex-shrink-0">
+          <h2 className="text-base font-semibold text-foreground">Filters</h2>
+        </div>
+
+        {/* Filter Sections */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          {isNearbyMode && (
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Distance
+              </h3>
+              <div className="px-1">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-foreground font-medium">
+                    Within {maxDistance} km
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Max {DISTANCE_MAX} km
+                  </span>
+                </div>
+                <Slider
+                  value={[maxDistance]}
+                  onValueChange={(values) => onDistanceChange(values[0])}
+                  min={1}
+                  max={DISTANCE_MAX}
+                  step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">1 km</span>
+                  <span className="text-xs text-muted-foreground">{DISTANCE_MAX} km</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {FILTER_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                {section.title}
+              </h3>
+              <div className="space-y-1">
+                {section.filters.map((filter) => (
+                  <label
+                    key={filter.id}
+                    className="flex items-center gap-2.5 px-2 py-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <Checkbox
+                      checked={activeFilters.has(filter.id)}
+                      onCheckedChange={() => toggleFilter(filter.id)}
+                      className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                    <span className="text-sm text-foreground">{filter.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="p-3 border-t border-border flex-shrink-0">
+          <div className="text-center text-xs text-muted-foreground mb-1">
+            Showing {filteredCount} of {totalPlaces} places
+          </div>
+          {hasFilters && (
+            <button
+              onClick={clearAll}
+              className="w-full py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile slide-out overlay mode
   return (
     <>
       {/* Backdrop */}
@@ -111,7 +197,6 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
 
         {/* Filter Sections */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Distance Slider - only show in nearby mode */}
           {isNearbyMode && (
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -168,7 +253,6 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-border flex-shrink-0 space-y-2">
-          {/* Live filter count */}
           <div className="text-center text-sm text-muted-foreground mb-2">
             Showing {filteredCount} of {totalPlaces} places
           </div>

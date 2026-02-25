@@ -869,7 +869,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background max-w-[420px] lg:max-w-4xl mx-auto relative pb-24 lg:pb-8">
+    <div className="min-h-screen bg-background max-w-[420px] lg:max-w-5xl mx-auto relative pb-24 lg:pb-8">
       {/* Nav Bar */}
       <div className="sticky top-0 lg:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between px-4 lg:px-8 py-3">
@@ -924,23 +924,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         {/* Search Bar */}
         <div className="px-4 lg:px-8 pb-3">
           <div className="flex items-center gap-3 max-w-2xl lg:mx-auto">
-            {/* Desktop: inline filter button */}
-            <button
-              onClick={() => setIsMenuOpen(true)}
-              className={`hidden lg:flex relative items-center gap-1.5 text-sm transition-colors border border-border rounded-full px-4 py-2.5 whitespace-nowrap shrink-0 ${
-                activeFilters.size > 0 
-                  ? "text-primary border-primary/50" 
-                  : "text-muted-foreground hover:text-primary"
-              }`}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span>Filter</span>
-              {activeFilters.size > 0 && (
-                <span className="w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
-                  {activeFilters.size}
-                </span>
-              )}
-            </button>
+            {/* Desktop filter button removed — sidebar always visible */}
             {/* Desktop: inline location picker */}
             <button
               onClick={() => setIsLocationPickerOpen(true)}
@@ -1007,20 +991,41 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
       <LoginReminderBanner />
 
-      <SlideOutMenu
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        activeFilters={activeFilters}
-        onFiltersChange={setActiveFilters}
-        maxDistance={maxDistance}
-        onDistanceChange={setMaxDistance}
-        totalPlaces={searchResults.length}
-        filteredCount={filteredResults.length}
-        isNearbyMode={onboardingData?.explore_location === "nearby"}
-      />
+      {/* Mobile: slide-out overlay filter */}
+      <div className="lg:hidden">
+        <SlideOutMenu
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          activeFilters={activeFilters}
+          onFiltersChange={setActiveFilters}
+          maxDistance={maxDistance}
+          onDistanceChange={setMaxDistance}
+          totalPlaces={searchResults.length}
+          filteredCount={filteredResults.length}
+          isNearbyMode={onboardingData?.explore_location === "nearby"}
+        />
+      </div>
 
-      {/* Main Content */}
-      <main className="pt-4">
+      {/* Desktop: two-column layout with always-visible sidebar */}
+      <div className="lg:flex lg:gap-0">
+        {/* Desktop sidebar */}
+        <div className="hidden lg:block">
+          <SlideOutMenu
+            isOpen={true}
+            onClose={() => {}}
+            activeFilters={activeFilters}
+            onFiltersChange={setActiveFilters}
+            maxDistance={maxDistance}
+            onDistanceChange={setMaxDistance}
+            totalPlaces={searchResults.length}
+            filteredCount={filteredResults.length}
+            isNearbyMode={onboardingData?.explore_location === "nearby"}
+            alwaysOpen={true}
+          />
+        </div>
+
+        {/* Main Content */}
+        <main className="pt-4 flex-1 min-w-0">
         {isSearching || isInitialLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="relative">
@@ -1146,6 +1151,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           </>
         )}
       </main>
+      </div> {/* end lg:flex two-column layout */}
 
       {/* Floating Map/List Toggle */}
       {filteredResults.length > 0 && !isSearching && !isInitialLoading && (
