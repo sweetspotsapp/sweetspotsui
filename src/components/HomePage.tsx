@@ -1013,7 +1013,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
         {/* Active Filter Chips */}
         {activeFilters.size > 0 && (
-          <div className="px-4 lg:px-8 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+          <div className="px-4 lg:px-8 pt-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
             {Array.from(activeFilters).map((filterId) => (
               <button
                 key={filterId}
