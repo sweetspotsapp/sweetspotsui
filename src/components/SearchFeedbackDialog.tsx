@@ -57,9 +57,6 @@ const SearchFeedbackDialog = ({ open, onClose, searchPrompt, userId }: SearchFee
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-w-[340px] rounded-2xl p-5 gap-0">
-        <button onClick={handleClose} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground">
-          <X className="w-4 h-4" />
-        </button>
 
         {submitted ? (
           <div className="text-center py-6">
