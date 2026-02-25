@@ -234,7 +234,14 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
             </p>
           </div>
           <div className="w-full">
-            <MoodInput onSubmit={handleMoodSubmit} onSkip={handleMoodSkip} />
+            <MoodInput onSubmit={handleMoodSubmit} onSkip={handleMoodSkip} onBack={() => setStep("location")} />
+          </div>
+
+          {/* Step dots */}
+          <div className="flex items-center justify-center gap-2 mt-6">
+            <div className="w-2 h-2 rounded-full bg-border" />
+            <div className="w-2 h-2 rounded-full bg-border" />
+            <div className="w-2 h-2 rounded-full bg-primary" />
           </div>
         </div>
       </div>
@@ -354,13 +361,22 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
           <div className="w-2.5 h-2.5 rounded-full bg-muted" />
         </div>
 
-        <Button
-          onClick={handleLocationNext}
-          disabled={!canFinish}
-          className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          Next
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setStep("welcome")}
+            className="h-12 px-6 rounded-xl"
+          >
+            Back
+          </Button>
+          <Button
+            onClick={handleLocationNext}
+            disabled={!canFinish}
+            className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Next
+          </Button>
+        </div>
 
         <button
           onClick={onSkip}
