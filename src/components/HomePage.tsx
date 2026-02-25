@@ -173,7 +173,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
       </div>
 
       {/* Desktop: Responsive grid */}
-      <div className="hidden lg:grid grid-cols-4 xl:grid-cols-5 gap-4 px-8">
+      <div className="hidden lg:grid grid-cols-3 lg:grid-cols-4 gap-4 px-8">
         {places.map((place) => (
           <PlaceCardCompact
             key={place.id}
@@ -869,7 +869,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background max-w-[420px] lg:max-w-7xl mx-auto relative pb-24 lg:pb-8">
+    <div className="min-h-screen bg-background max-w-[420px] lg:max-w-4xl mx-auto relative pb-24 lg:pb-8">
       {/* Nav Bar */}
       <div className="sticky top-0 lg:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between px-4 lg:px-8 py-3">
@@ -907,20 +907,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             </button>
           </div>
 
-          {/* Desktop: location in header bar */}
-          <div className="hidden lg:flex items-center gap-4 flex-1 justify-center">
-            <button
-              onClick={() => setIsLocationPickerOpen(true)}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border rounded-full px-4 py-1.5"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{onboardingData?.explore_location 
-                ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
-                : "Set location"
-              }</span>
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {/* Desktop: spacer (location moved to search bar row) */}
+          <div className="hidden lg:block flex-1" />
 
           <button
             onClick={() => setIsProfileMenuOpen(true)}
@@ -935,38 +923,52 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
         {/* Search Bar */}
         <div className="px-4 lg:px-8 pb-3">
-          <form onSubmit={handleSearchSubmit} className="relative max-w-2xl lg:mx-auto">
-            <div
-              className={`relative flex items-center transition-all duration-200 ${
-                isSearchFocused ? "ring-2 ring-primary/50 rounded-full" : ""
-              }`}
+          <div className="flex items-center gap-3 max-w-2xl lg:mx-auto">
+            {/* Desktop: inline location picker */}
+            <button
+              onClick={() => setIsLocationPickerOpen(true)}
+              className="hidden lg:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border rounded-full px-4 py-2.5 whitespace-nowrap shrink-0"
             >
-              {isSearching ? (
-                <Loader2 className="absolute left-3 w-4 h-4 text-primary animate-spin pointer-events-none" />
-              ) : (
-                <Sparkles className="absolute left-3 w-4 h-4 text-primary pointer-events-none" />
-              )}
-              <Input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                placeholder="Ask anything: rooftop bars, date spots..."
-                className="pl-9 pr-9 h-10 lg:h-12 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
-                disabled={isSearching}
-              />
-              {searchValue && !isSearching && (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="absolute right-3 p-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </form>
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{onboardingData?.explore_location 
+                ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
+                : "Set location"
+              }</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            <form onSubmit={handleSearchSubmit} className="relative flex-1">
+              <div
+                className={`relative flex items-center transition-all duration-200 ${
+                  isSearchFocused ? "ring-2 ring-primary/50 rounded-full" : ""
+                }`}
+              >
+                {isSearching ? (
+                  <Loader2 className="absolute left-3 w-4 h-4 text-primary animate-spin pointer-events-none" />
+                ) : (
+                  <Sparkles className="absolute left-3 w-4 h-4 text-primary pointer-events-none" />
+                )}
+                <Input
+                  type="text"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  placeholder="Ask anything: rooftop bars, date spots..."
+                  className="pl-9 pr-9 h-10 lg:h-12 rounded-full bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/70"
+                  disabled={isSearching}
+                />
+                {searchValue && !isSearching && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="absolute right-3 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
         </div>
 
         {/* Active Filter Chips */}
