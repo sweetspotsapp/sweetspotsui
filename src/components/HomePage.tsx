@@ -876,7 +876,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           {/* Filter Button - Top Left */}
           <button
             onClick={() => setIsMenuOpen(true)}
-            className={`relative p-2 -ml-2 transition-colors ${
+            className={`relative p-2 -ml-2 transition-colors lg:hidden ${
               activeFilters.size > 0 
                 ? "text-primary" 
                 : "text-foreground hover:text-primary"
@@ -924,6 +924,23 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         {/* Search Bar */}
         <div className="px-4 lg:px-8 pb-3">
           <div className="flex items-center gap-3 max-w-2xl lg:mx-auto">
+            {/* Desktop: inline filter button */}
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className={`hidden lg:flex relative items-center gap-1.5 text-sm transition-colors border border-border rounded-full px-4 py-2.5 whitespace-nowrap shrink-0 ${
+                activeFilters.size > 0 
+                  ? "text-primary border-primary/50" 
+                  : "text-muted-foreground hover:text-primary"
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span>Filter</span>
+              {activeFilters.size > 0 && (
+                <span className="w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
+                  {activeFilters.size}
+                </span>
+              )}
+            </button>
             {/* Desktop: inline location picker */}
             <button
               onClick={() => setIsLocationPickerOpen(true)}
