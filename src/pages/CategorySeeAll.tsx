@@ -63,7 +63,7 @@ const CategorySeeAll = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-50 flex items-center gap-3 px-4 py-3 border-b border-border bg-card/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 flex items-center gap-3 px-4 py-3 border-b border-border bg-card/95 backdrop-blur-sm max-w-4xl mx-auto">
         <button
           onClick={() => navigate(-1)}
           className="p-2 hover:bg-secondary rounded-full transition-colors"
@@ -77,8 +77,8 @@ const CategorySeeAll = () => {
       </header>
 
       {/* Pinterest-style Grid */}
-      <div className="p-3">
-        <div className="columns-2 gap-3 space-y-3">
+      <div className="p-3 lg:p-6 max-w-4xl mx-auto">
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-3 space-y-3">
           {places.map((place, index) => {
             const saved = isSaved(place.id);
             const imageUrl = place.image || getPlaceholderImage(place.name);
@@ -152,8 +152,8 @@ const CategorySeeAll = () => {
                   </div>
                 </div>
 
-                {/* Mobile: Info always visible below image */}
-                <div className="mt-2 px-1 md:hidden">
+                {/* Info always visible below image */}
+                <div className="mt-2 px-1">
                   <h3 className="font-semibold text-foreground text-sm line-clamp-1">
                     {place.name}
                   </h3>
