@@ -1,15 +1,11 @@
 
 
-## Add Top Padding to Filter Chips
+## Change
 
-The active filter chips container at line 1016 currently has `px-4 lg:px-8 pb-3` but no top padding, causing them to sit too close to the element above.
+**File: `src/components/SlideOutMenu.tsx` (line 90)**
 
-### Change
+Remove `rounded-lg` and change `max-h-[calc(100vh-108px)]` to `h-[calc(100vh-108px)]` for full height, and remove the rounded corners.
 
-**File: `src/components/HomePage.tsx` (line 1016)**
-
-Add `pt-4` to the chips container className:
-
-- **Before:** `px-4 lg:px-8 pb-3 flex gap-2 overflow-x-auto scrollbar-hide`
-- **After:** `px-4 lg:px-8 pt-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide`
+- **Before:** `w-[250px] shrink-0 sticky top-[108px] self-start max-h-[calc(100vh-108px)] flex flex-col border-r border-border bg-card rounded-lg`
+- **After:** `w-[250px] shrink-0 sticky top-[108px] self-start h-[calc(100vh-108px)] flex flex-col border-r border-border bg-card`
 
