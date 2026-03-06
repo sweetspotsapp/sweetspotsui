@@ -291,25 +291,31 @@ export type Database = {
         Row: {
           comment: string | null
           created_at: string
+          feedback_type: string | null
           id: string
           rating: number
           search_prompt: string | null
+          selected_option: string | null
           user_id: string
         }
         Insert: {
           comment?: string | null
           created_at?: string
+          feedback_type?: string | null
           id?: string
           rating: number
           search_prompt?: string | null
+          selected_option?: string | null
           user_id: string
         }
         Update: {
           comment?: string | null
           created_at?: string
+          feedback_type?: string | null
           id?: string
           rating?: number
           search_prompt?: string | null
+          selected_option?: string | null
           user_id?: string
         }
         Relationships: []
@@ -351,6 +357,7 @@ export type Database = {
           budget: string
           created_at: string
           destination: string
+          documents: Json | null
           end_date: string
           flight_details: Json | null
           group_size: number
@@ -369,6 +376,7 @@ export type Database = {
           budget?: string
           created_at?: string
           destination: string
+          documents?: Json | null
           end_date: string
           flight_details?: Json | null
           group_size?: number
@@ -387,6 +395,7 @@ export type Database = {
           budget?: string
           created_at?: string
           destination?: string
+          documents?: Json | null
           end_date?: string
           flight_details?: Json | null
           group_size?: number
