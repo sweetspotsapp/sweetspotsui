@@ -17,48 +17,48 @@ interface SlideOutMenuProps {
 }
 
 const FILTER_SECTIONS = [
-  {
-    title: "Price",
-    filters: [
-      { id: "under_50", label: "Under $50" },
-      { id: "50_100", label: "$50–$100" },
-      { id: "100_plus", label: "$100+" },
-    ],
-  },
-  {
-    title: "Dietary",
-    filters: [
-      { id: "halal", label: "Halal" },
-      { id: "vegetarian", label: "Vegetarian / Vegan" },
-      { id: "gluten_free", label: "Gluten-Free" },
-    ],
-  },
-  {
-    title: "Amenities",
-    filters: [
-      { id: "wifi", label: "Free WiFi" },
-      { id: "outdoor", label: "Outdoor Seating" },
-      { id: "parking", label: "Parking Available" },
-      { id: "wheelchair", label: "Wheelchair Accessible" },
-    ],
-  },
-  {
-    title: "Good For",
-    filters: [
-      { id: "dog_friendly", label: "Dog-Friendly" },
-      { id: "kid_friendly", label: "Kid-Friendly" },
-      { id: "late_night", label: "Late Night" },
-      { id: "large_groups", label: "Large Groups" },
-    ],
-  },
-];
+{
+  title: "Price",
+  filters: [
+  { id: "under_50", label: "Under $50" },
+  { id: "50_100", label: "$50–$100" },
+  { id: "100_plus", label: "$100+" }]
+
+},
+{
+  title: "Dietary",
+  filters: [
+  { id: "halal", label: "Halal" },
+  { id: "vegetarian", label: "Vegetarian / Vegan" },
+  { id: "gluten_free", label: "Gluten-Free" }]
+
+},
+{
+  title: "Amenities",
+  filters: [
+  { id: "wifi", label: "Free WiFi" },
+  { id: "outdoor", label: "Outdoor Seating" },
+  { id: "parking", label: "Parking Available" },
+  { id: "wheelchair", label: "Wheelchair Accessible" }]
+
+},
+{
+  title: "Good For",
+  filters: [
+  { id: "dog_friendly", label: "Dog-Friendly" },
+  { id: "kid_friendly", label: "Kid-Friendly" },
+  { id: "late_night", label: "Late Night" },
+  { id: "large_groups", label: "Large Groups" }]
+
+}];
+
 
 const DISTANCE_MAX = 25; // km
 
-const SlideOutMenu: React.FC<SlideOutMenuProps> = ({ 
-  isOpen, 
-  onClose, 
-  activeFilters, 
+const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
+  isOpen,
+  onClose,
+  activeFilters,
   onFiltersChange,
   maxDistance,
   onDistanceChange,
@@ -94,9 +94,9 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
         </div>
 
         {/* Filter Sections */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          {isNearbyMode && (
-            <div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-5 px-[8px]">
+          {isNearbyMode &&
+          <div>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 Distance
               </h3>
@@ -110,43 +110,43 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
                   </span>
                 </div>
                 <Slider
-                  value={[maxDistance]}
-                  onValueChange={(values) => onDistanceChange(values[0])}
-                  min={1}
-                  max={DISTANCE_MAX}
-                  step={1}
-                  className="w-full"
-                />
+                value={[maxDistance]}
+                onValueChange={(values) => onDistanceChange(values[0])}
+                min={1}
+                max={DISTANCE_MAX}
+                step={1}
+                className="w-full" />
+              
                 <div className="flex justify-between mt-1">
                   <span className="text-xs text-muted-foreground">1 km</span>
                   <span className="text-xs text-muted-foreground">{DISTANCE_MAX} km</span>
                 </div>
               </div>
             </div>
-          )}
+          }
 
-          {FILTER_SECTIONS.map((section) => (
-            <div key={section.title}>
+          {FILTER_SECTIONS.map((section) =>
+          <div key={section.title}>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 {section.title}
               </h3>
               <div className="space-y-1">
-                {section.filters.map((filter) => (
-                  <label
-                    key={filter.id}
-                    className="flex items-center gap-2.5 px-2 py-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
-                  >
+                {section.filters.map((filter) =>
+              <label
+                key={filter.id}
+                className="flex items-center gap-2.5 px-2 py-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors">
+                
                     <Checkbox
-                      checked={activeFilters.has(filter.id)}
-                      onCheckedChange={() => toggleFilter(filter.id)}
-                      className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                    />
+                  checked={activeFilters.has(filter.id)}
+                  onCheckedChange={() => toggleFilter(filter.id)}
+                  className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                
                     <span className="text-sm text-foreground">{filter.label}</span>
                   </label>
-                ))}
+              )}
               </div>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Footer */}
@@ -154,17 +154,17 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
           <div className="text-center text-xs text-muted-foreground mb-1">
             Showing {filteredCount} of {totalPlaces} places
           </div>
-          {hasFilters && (
-            <button
-              onClick={clearAll}
-              className="w-full py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
+          {hasFilters &&
+          <button
+            onClick={clearAll}
+            className="w-full py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            
               Clear all
             </button>
-          )}
+          }
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   // Mobile slide-out overlay mode
@@ -173,32 +173,32 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
       {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-foreground/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={onClose}
-      />
+        isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`
+        }
+        onClick={onClose} />
+      
 
       {/* Slide Panel */}
       <div
         className={`fixed top-0 left-0 h-full w-[300px] bg-card z-50 shadow-elevated transform transition-transform duration-300 ease-out flex flex-col ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
+        isOpen ? "translate-x-0" : "-translate-x-full"}`
+        }>
+        
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
           <h2 className="text-lg font-semibold text-foreground">Filters</h2>
           <button
             onClick={onClose}
-            className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
+            className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
+            
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Filter Sections */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {isNearbyMode && (
-            <div>
+          {isNearbyMode &&
+          <div>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 Distance
               </h3>
@@ -212,43 +212,43 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
                   </span>
                 </div>
                 <Slider
-                  value={[maxDistance]}
-                  onValueChange={(values) => onDistanceChange(values[0])}
-                  min={1}
-                  max={DISTANCE_MAX}
-                  step={1}
-                  className="w-full"
-                />
+                value={[maxDistance]}
+                onValueChange={(values) => onDistanceChange(values[0])}
+                min={1}
+                max={DISTANCE_MAX}
+                step={1}
+                className="w-full" />
+              
                 <div className="flex justify-between mt-2">
                   <span className="text-xs text-muted-foreground">1 km</span>
                   <span className="text-xs text-muted-foreground">{DISTANCE_MAX} km</span>
                 </div>
               </div>
             </div>
-          )}
+          }
 
-          {FILTER_SECTIONS.map((section) => (
-            <div key={section.title}>
+          {FILTER_SECTIONS.map((section) =>
+          <div key={section.title}>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 {section.title}
               </h3>
               <div className="space-y-2">
-                {section.filters.map((filter) => (
-                  <label
-                    key={filter.id}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                  >
+                {section.filters.map((filter) =>
+              <label
+                key={filter.id}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                
                     <Checkbox
-                      checked={activeFilters.has(filter.id)}
-                      onCheckedChange={() => toggleFilter(filter.id)}
-                      className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                    />
+                  checked={activeFilters.has(filter.id)}
+                  onCheckedChange={() => toggleFilter(filter.id)}
+                  className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                
                     <span className="text-sm text-foreground">{filter.label}</span>
                   </label>
-                ))}
+              )}
               </div>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Footer Actions */}
@@ -257,29 +257,29 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
             Showing {filteredCount} of {totalPlaces} places
           </div>
           
-          <Button 
+          <Button
             onClick={onClose}
-            className="w-full"
-          >
+            className="w-full">
+            
             Done
-            {activeFilters.size > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-primary-foreground/20 rounded-full text-xs">
+            {activeFilters.size > 0 &&
+            <span className="ml-2 px-2 py-0.5 bg-primary-foreground/20 rounded-full text-xs">
                 {activeFilters.size}
               </span>
-            )}
+            }
           </Button>
-          {hasFilters && (
-            <button
-              onClick={clearAll}
-              className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
+          {hasFilters &&
+          <button
+            onClick={clearAll}
+            className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            
               Clear all
             </button>
-          )}
+          }
         </div>
       </div>
-    </>
-  );
+    </>);
+
 };
 
 export default SlideOutMenu;
