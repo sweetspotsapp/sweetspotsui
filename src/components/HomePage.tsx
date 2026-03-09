@@ -51,7 +51,7 @@ const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   is_open_now: place.is_open_now,
   ai_score: place.score, // AI relevance score
   ratings_total: place.ratings_total || 0, // Number of reviews
-  unique_vibes: place.unique_vibes, // AI-generated one-liner
+  unique_vibes: place.unique_vibes // AI-generated one-liner
 });
 
 // Filter label mapping
@@ -69,7 +69,7 @@ const FILTER_LABELS: Record<string, string> = {
   scenic: "Scenic / Nice View",
   pet: "Pet-Friendly",
   late_night: "Late Night",
-  outdoor: "Outdoor Seating",
+  outdoor: "Outdoor Seating"
 };
 
 interface SectionRowProps {
@@ -80,7 +80,7 @@ interface SectionRowProps {
   toggleSave: (placeId: string) => void;
   isSaved: (placeId: string) => boolean;
   featured?: boolean;
-  userLocation?: { lat: number; lng: number } | null;
+  userLocation?: {lat: number;lng: number;} | null;
   onSeeAll?: (allPlaces: MockPlaceWithCoords[]) => void;
   showDistance?: boolean;
 }
@@ -95,7 +95,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
   featured = false,
   userLocation,
   onSeeAll,
-  showDistance = true,
+  showDistance = true
 }) => {
   const handleSeeAll = () => {
     if (onSeeAll) {
@@ -125,10 +125,10 @@ const SectionRow: React.FC<SectionRowProps> = ({
       {/* Section Header */}
       <div className="flex items-center justify-between px-4 lg:px-8 mb-3">
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-        <button 
+        <button
           onClick={handleSeeAll}
-          className="flex items-center gap-1 text-sm text-primary font-medium hover:underline cursor-pointer"
-        >
+          className="flex items-center gap-1 text-sm text-primary font-medium hover:underline cursor-pointer">
+          
           See all
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -136,45 +136,29 @@ const SectionRow: React.FC<SectionRowProps> = ({
 
       {/* Mobile: Horizontal scroll */}
       <div className="lg:hidden relative">
-        {showLeftArrow && (
-          <button
-            onClick={() => scrollBy('left')}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 bg-card/95 backdrop-blur-sm rounded-full shadow-lg border border-border opacity-0 group-hover/section:opacity-100 transition-opacity duration-200 hover:bg-card"
-          >
+        {showLeftArrow &&
+        <button
+          onClick={() => scrollBy('left')}
+          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 bg-card/95 backdrop-blur-sm rounded-full shadow-lg border border-border opacity-0 group-hover/section:opacity-100 transition-opacity duration-200 hover:bg-card">
+          
             <ChevronLeft className="w-4 h-4 text-foreground" />
           </button>
-        )}
-        {showRightArrow && (
-          <button
-            onClick={() => scrollBy('right')}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 bg-card/95 backdrop-blur-sm rounded-full shadow-lg border border-border opacity-0 group-hover/section:opacity-100 transition-opacity duration-200 hover:bg-card"
-          >
+        }
+        {showRightArrow &&
+        <button
+          onClick={() => scrollBy('right')}
+          className="absolute right-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 bg-card/95 backdrop-blur-sm rounded-full shadow-lg border border-border opacity-0 group-hover/section:opacity-100 transition-opacity duration-200 hover:bg-card">
+          
             <ChevronRight className="w-4 h-4 text-foreground" />
           </button>
-        )}
-        <div 
+        }
+        <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
           className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-        >
-          {places.map((place) => (
-            <PlaceCardCompact
-              key={place.id}
-              place={place}
-              onSave={toggleSave}
-              isSaved={isSaved(place.id)}
-              onClick={() => onPlaceClick(place)}
-              featured={featured}
-              showDistance={showDistance}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Desktop: Responsive grid */}
-      <div className="hidden lg:grid grid-cols-3 lg:grid-cols-4 gap-4 px-8">
-        {places.map((place) => (
+          style={{ WebkitOverflowScrolling: 'touch' }}>
+          
+          {places.map((place) =>
           <PlaceCardCompact
             key={place.id}
             place={place}
@@ -182,13 +166,29 @@ const SectionRow: React.FC<SectionRowProps> = ({
             isSaved={isSaved(place.id)}
             onClick={() => onPlaceClick(place)}
             featured={featured}
-            showDistance={showDistance}
-            isGridItem
-          />
-        ))}
+            showDistance={showDistance} />
+
+          )}
+        </div>
       </div>
-    </div>
-  );
+
+      {/* Desktop: Responsive grid */}
+      <div className="hidden lg:grid grid-cols-3 lg:grid-cols-4 gap-4 px-8">
+        {places.map((place) =>
+        <PlaceCardCompact
+          key={place.id}
+          place={place}
+          onSave={toggleSave}
+          isSaved={isSaved(place.id)}
+          onClick={() => onPlaceClick(place)}
+          featured={featured}
+          showDistance={showDistance}
+          isGridItem />
+
+        )}
+      </div>
+    </div>);
+
 };
 
 // Session storage key for caching results
@@ -203,7 +203,7 @@ const CURRENT_CACHE_VERSION = '2'; // Increment to bust cache
 // Get time-based search prompt for "Skip to Home" mode
 const getTimeBasedPrompt = (): string => {
   const hour = new Date().getHours();
-  
+
   if (hour >= 6 && hour < 11) {
     return "trending breakfast spots and coffee shops open now";
   } else if (hour >= 11 && hour < 14) {
@@ -230,7 +230,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const { location: userLocation, setManualLocation } = useLocation();
   const hasLoadedInitial = useRef(false);
   const hasConsumedSearchParam = useRef(false);
-  
+
 
   // Check cache version and clear if outdated
   const getCachedResults = (): MockPlace[] => {
@@ -272,8 +272,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
-  const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : (userMood || ""));
-  
+  const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : userMood || "");
+
   // Sync searchValue when userMood changes (from EntryScreen)
   useEffect(() => {
     if (userMood && !searchValue && !wasSkipMode.current) {
@@ -318,17 +318,17 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   });
   const [needsLocationPermission, setNeedsLocationPermission] = useState(false);
   const [maxDistance, setMaxDistance] = useState(25); // Default to max (no filter)
-  
+
   // Save to board dialog state
   const [saveToBoardPlace, setSaveToBoardPlace] = useState<MockPlace | null>(null);
-  
+
   // Filter modal state
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({ budget: null, vibes: [], placeTypes: [] });
-  
+
   // Location picker modal state
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
-  
+
   // Map view toggle state
   const [isMapView, setIsMapView] = useState(false);
 
@@ -371,7 +371,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     const currentLocation = onboardingData?.explore_location || "";
     const moodChanged = currentMood !== "" && currentMood !== cachedMood;
     const locationChanged = currentLocation !== "" && currentLocation !== cachedLocation;
-    
+
     // Skip if already loaded and nothing has changed (but not if we're in skip mode)
     if (hasLoadedInitial.current && !moodChanged && !locationChanged && !wasSkipMode.current) return;
 
@@ -388,7 +388,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
     const loadInitialPlaces = async () => {
       setIsInitialLoading(true);
-      
+
       // Clear cache if location or mood changed
       if (locationChanged || moodChanged) {
         console.log("Location or mood changed - clearing cache");
@@ -399,10 +399,10 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         setSearchResults([]);
         setAiSummary(null);
       }
-      
+
       try {
         let searchPrompt: string;
-        
+
         if (wasSkipMode.current) {
           // Use time-based prompt for skip mode
           searchPrompt = getTimeBasedPrompt();
@@ -414,15 +414,15 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           searchPrompt = currentMood || "popular restaurants and cafes nearby";
           console.log("Initial search with prompt:", searchPrompt, "location:", currentLocation);
         }
-        
+
         // Build search options based on onboarding location
-        const searchOptions: { locationName?: string; skipCache?: boolean } = {
-          skipCache: moodChanged || locationChanged, // Skip cache if anything changed
+        const searchOptions: {locationName?: string;skipCache?: boolean;} = {
+          skipCache: moodChanged || locationChanged // Skip cache if anything changed
         };
         if (currentLocation && currentLocation !== "nearby") {
           searchOptions.locationName = currentLocation;
         }
-        
+
         const result = await search(searchPrompt, searchOptions);
         if (result && result.places.length > 0) {
           setSearchResults(result.places.map(unifiedToMockPlace));
@@ -463,7 +463,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   }, [searchError, clearError]);
 
   const getPlaceById = useCallback((placeId: string) => {
-    return searchResults.find(p => p.id === placeId);
+    return searchResults.find((p) => p.id === placeId);
   }, [searchResults]);
 
   // Handle save
@@ -496,19 +496,19 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
   const handleSeeAll = (allPlaces: MockPlaceWithCoords[]) => {
     navigate(`/see-all`, {
-      state: { places: allPlaces, userLocation, searchQuery: searchValue || userMood },
+      state: { places: allPlaces, userLocation, searchQuery: searchValue || userMood }
     });
   };
 
   // Build search prompt with filters
   const buildSearchPrompt = (basePrompt: string, filters: FilterState): string => {
     let prompt = basePrompt;
-    
+
     // Add place types to prompt
     if (filters.placeTypes.length > 0) {
       prompt += `, ${filters.placeTypes.join(", ")}`;
     }
-    
+
     if (filters.budget) {
       const budgetLabels: Record<string, string> = {
         under_50: "budget-friendly under $50",
@@ -517,22 +517,22 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       };
       prompt += `, ${budgetLabels[filters.budget]}`;
     }
-    
+
     if (filters.vibes.length > 0) {
       prompt += `, ${filters.vibes.join(", ")}`;
     }
-    
+
     return prompt;
   };
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
-    
-    
+
+
     setUserMood(searchValue.trim());
     setNeedsLocationPermission(false);
-    
+
     // Clear old cache and results before new search to prevent stale data
     setAiSummary(null);
     setSearchResults([]); // Clear old results immediately so stale data isn't shown
@@ -545,20 +545,20 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     } catch (e) {
       console.error('Failed to clear cache:', e);
     }
-    
+
     // Build prompt with filters
     const searchPrompt = buildSearchPrompt(searchValue.trim(), appliedFilters);
     console.log("Search with filters:", searchPrompt);
-    
+
     // Build search options based on onboarding location
-    const searchOptions: { locationName?: string; skipCache?: boolean } = {
-      skipCache: true, // Always skip cache on new search to get fresh results
+    const searchOptions: {locationName?: string;skipCache?: boolean;} = {
+      skipCache: true // Always skip cache on new search to get fresh results
     };
     const exploreLocation = onboardingData?.explore_location;
     if (exploreLocation && exploreLocation !== "nearby") {
       searchOptions.locationName = exploreLocation;
     }
-    
+
     const result = await search(searchPrompt, searchOptions);
     if (result && result.places.length > 0) {
       setSearchResults(result.places.map(unifiedToMockPlace));
@@ -574,11 +574,11 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
   const handleFilterConfirm = async (filters: FilterState) => {
     setAppliedFilters(filters);
-    
+
     // Update active filters display
     const newActiveFilters = new Set<string>();
     if (filters.budget) newActiveFilters.add(filters.budget);
-    filters.vibes.forEach(v => {
+    filters.vibes.forEach((v) => {
       // Map vibes to filter IDs
       const vibeMap: Record<string, string> = {
         "Chill & relaxation": "chill",
@@ -586,18 +586,18 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         "Family Time": "family",
         "Hidden gems": "hidden",
         "Nights Life": "late_night",
-        "Adventure & outdoors": "outdoor",
+        "Adventure & outdoors": "outdoor"
       };
       const filterId = vibeMap[v] || v.toLowerCase().replace(/\s+/g, '_');
       newActiveFilters.add(filterId);
     });
     setActiveFilters(newActiveFilters);
-    
+
     // Re-run search with new filters if we have a search term
     if (searchValue.trim() || userMood) {
       const basePrompt = searchValue.trim() || userMood || "popular restaurants and cafes nearby";
       const searchPrompt = buildSearchPrompt(basePrompt, filters);
-      
+
       setAiSummary(null);
       setSearchResults([]); // Clear old results immediately
       try {
@@ -606,16 +606,16 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       } catch (e) {
         console.error('Failed to clear cache:', e);
       }
-      
+
       // Build search options based on onboarding location
-      const searchOptions: { locationName?: string; skipCache?: boolean } = {
-        skipCache: true, // Always skip cache on filter change
+      const searchOptions: {locationName?: string;skipCache?: boolean;} = {
+        skipCache: true // Always skip cache on filter change
       };
       const exploreLocation = onboardingData?.explore_location;
       if (exploreLocation && exploreLocation !== "nearby") {
         searchOptions.locationName = exploreLocation;
       }
-      
+
       const result = await search(searchPrompt, searchOptions);
       if (result && result.places.length > 0) {
         setSearchResults(result.places.map(unifiedToMockPlace));
@@ -630,12 +630,12 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     setIsInitialLoading(true);
     try {
       // Build search options based on onboarding location
-      const searchOptions: { locationName?: string } = {};
+      const searchOptions: {locationName?: string;} = {};
       const exploreLocation = onboardingData?.explore_location;
       if (exploreLocation && exploreLocation !== "nearby") {
         searchOptions.locationName = exploreLocation;
       }
-      
+
       const result = await search("popular restaurants and cafes nearby", searchOptions);
       if (result && result.places.length > 0) {
         setSearchResults(result.places.map(unifiedToMockPlace));
@@ -664,7 +664,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     // Update onboarding data with new location
     setOnboardingData({
       ...(onboardingData || { trip_intention: null, budget: null, travel_personality: [] }),
-      explore_location: newLocation,
+      explore_location: newLocation
     });
     setIsLocationPickerOpen(false);
   };
@@ -673,65 +673,65 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   // Now uses filteredResults for instant client-side filtering
   const displaySections = useMemo(() => {
     if (filteredResults.length === 0) return [];
-    
+
     const usedPlaceIds = new Set<string>();
-    const sections: { title: string; places: MockPlace[]; featured: boolean }[] = [];
-    
+    const sections: {title: string;places: MockPlace[];featured: boolean;}[] = [];
+
     // Section 1: Top Picks - Smart scoring based on rating, review count, and AI relevance
     // Calculate a composite score for each place
-    const scoredPlaces = filteredResults.map(place => {
+    const scoredPlaces = filteredResults.map((place) => {
       const extPlace = place as MockPlaceWithCoords;
-      
+
       // Normalize rating (0-5 scale → 0-1)
       const ratingScore = (extPlace.rating || 0) / 5;
-      
+
       // Normalize review count using log scale (more reviews = higher trust, but diminishing returns)
       // log10(100) ≈ 2, log10(1000) ≈ 3, so we cap at ~4 for very popular places
       const reviewCount = extPlace.ratings_total || 0;
       const reviewScore = reviewCount > 0 ? Math.min(Math.log10(reviewCount + 1) / 4, 1) : 0;
-      
+
       // AI relevance score (already 0-1 from search)
       const aiScore = extPlace.ai_score || 0;
-      
+
       // Distance penalty (closer is better, max 10km considered)
       const distanceKm = extPlace.distance_km || 10;
-      const proximityScore = Math.max(0, 1 - (distanceKm / 10));
-      
+      const proximityScore = Math.max(0, 1 - distanceKm / 10);
+
       // Combined score with weights:
       // - Rating: 30% (quality matters)
       // - Review count: 25% (social proof/trust)
       // - AI relevance: 30% (matches search intent)
       // - Proximity: 15% (convenience bonus)
-      const compositeScore = 
-        (ratingScore * 0.30) + 
-        (reviewScore * 0.25) + 
-        (aiScore * 0.30) + 
-        (proximityScore * 0.15);
-      
+      const compositeScore =
+      ratingScore * 0.30 +
+      reviewScore * 0.25 +
+      aiScore * 0.30 +
+      proximityScore * 0.15;
+
       return { place, compositeScore, ratingScore, reviewScore, aiScore };
     });
-    
+
     // Sort by composite score (highest first) and take top 2
-    const topPicks = scoredPlaces
-      .sort((a, b) => b.compositeScore - a.compositeScore)
-      .slice(0, 2)
-      .map(item => item.place);
-    
-    topPicks.forEach(p => usedPlaceIds.add(p.id));
-    
+    const topPicks = scoredPlaces.
+    sort((a, b) => b.compositeScore - a.compositeScore).
+    slice(0, 2).
+    map((item) => item.place);
+
+    topPicks.forEach((p) => usedPlaceIds.add(p.id));
+
     if (topPicks.length > 0) {
       sections.push({
         title: "Top Picks for You",
         places: topPicks,
-        featured: true,
+        featured: true
       });
     }
 
     // Group remaining places by category (excluding already used)
-    const remainingPlaces = filteredResults.filter(p => !usedPlaceIds.has(p.id));
+    const remainingPlaces = filteredResults.filter((p) => !usedPlaceIds.has(p.id));
     const categoryGroups: Record<string, MockPlace[]> = {};
-    
-    remainingPlaces.forEach(place => {
+
+    remainingPlaces.forEach((place) => {
       const category = place.ai_category?.toLowerCase() || 'other';
       if (!categoryGroups[category]) {
         categoryGroups[category] = [];
@@ -754,38 +754,38 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       warung: "Warungs",
       food_stall: "Food Stalls",
       fast_food: "Fast Food",
-      market: "Markets",
+      market: "Markets"
     };
 
     // Sort categories by number of places (most populated first)
-    const sortedCategories = Object.entries(categoryGroups)
-      .filter(([_, places]) => places.length >= 1)
-      .sort((a, b) => b[1].length - a[1].length);
+    const sortedCategories = Object.entries(categoryGroups).
+    filter(([_, places]) => places.length >= 1).
+    sort((a, b) => b[1].length - a[1].length);
 
     // Section 2: Primary category (5 places max)
     if (sortedCategories.length > 0) {
       const [category, places] = sortedCategories[0];
       const sectionPlaces = places.slice(0, 8);
-      sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
-      
+      sectionPlaces.forEach((p) => usedPlaceIds.add(p.id));
+
       sections.push({
         title: categoryLabels[category] || `${category.charAt(0).toUpperCase() + category.slice(1)}s`,
         places: sectionPlaces,
-        featured: false,
+        featured: false
       });
     }
 
     // Section 3: Secondary category (5 places max)
     if (sortedCategories.length > 1) {
       const [category, places] = sortedCategories[1];
-      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 8);
-      sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
-      
+      const sectionPlaces = places.filter((p) => !usedPlaceIds.has(p.id)).slice(0, 8);
+      sectionPlaces.forEach((p) => usedPlaceIds.add(p.id));
+
       if (sectionPlaces.length > 0) {
         sections.push({
           title: categoryLabels[category] || `${category.charAt(0).toUpperCase() + category.slice(1)}s`,
           places: sectionPlaces,
-          featured: false,
+          featured: false
         });
       }
     }
@@ -793,25 +793,25 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     // Section 4: Third category (5 places max)
     if (sortedCategories.length > 2) {
       const [category, places] = sortedCategories[2];
-      const sectionPlaces = places.filter(p => !usedPlaceIds.has(p.id)).slice(0, 8);
-      sectionPlaces.forEach(p => usedPlaceIds.add(p.id));
-      
+      const sectionPlaces = places.filter((p) => !usedPlaceIds.has(p.id)).slice(0, 8);
+      sectionPlaces.forEach((p) => usedPlaceIds.add(p.id));
+
       if (sectionPlaces.length > 0) {
         sections.push({
           title: categoryLabels[category] || `${category.charAt(0).toUpperCase() + category.slice(1)}s`,
           places: sectionPlaces,
-          featured: false,
+          featured: false
         });
       }
     }
 
     // Section 5: "More to Explore" - remaining unused places
-    const moreToExplore = filteredResults.filter(p => !usedPlaceIds.has(p.id));
+    const moreToExplore = filteredResults.filter((p) => !usedPlaceIds.has(p.id));
     if (moreToExplore.length > 0) {
       sections.push({
         title: "More to Explore",
         places: moreToExplore.slice(0, 20),
-        featured: false,
+        featured: false
       });
     }
 
@@ -820,35 +820,35 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
   // Convert search results to RankedPlace format for BoardMapView
   const mapPlaces: RankedPlace[] = useMemo(() => {
-    return filteredResults
-      .filter(p => {
-        const ext = p as MockPlaceWithCoords;
-        return ext.lat && ext.lng;
-      })
-      .map(p => {
-        const ext = p as MockPlaceWithCoords;
-        return {
-          place_id: p.id,
-          name: p.name,
-          address: null,
-          lat: ext.lat!,
-          lng: ext.lng!,
-          categories: p.categories || null,
-          rating: p.rating || null,
-          ratings_total: ext.ratings_total || null,
-          provider: null,
-          eta_seconds: null,
-          distance_meters: p.distance_km ? p.distance_km * 1000 : null,
-          score: ext.ai_score || 0,
-          why: p.ai_reason || "",
-          photo_name: p.image?.includes('place-photo') ? new URL(p.image).searchParams.get('photo_name') : null,
-          photos: [],
-          ai_reason: p.ai_reason,
-          ai_category: p.ai_category,
-          filter_tags: ext.filter_tags,
-          price_level: ext.price_level,
-        } as RankedPlace;
-      });
+    return filteredResults.
+    filter((p) => {
+      const ext = p as MockPlaceWithCoords;
+      return ext.lat && ext.lng;
+    }).
+    map((p) => {
+      const ext = p as MockPlaceWithCoords;
+      return {
+        place_id: p.id,
+        name: p.name,
+        address: null,
+        lat: ext.lat!,
+        lng: ext.lng!,
+        categories: p.categories || null,
+        rating: p.rating || null,
+        ratings_total: ext.ratings_total || null,
+        provider: null,
+        eta_seconds: null,
+        distance_meters: p.distance_km ? p.distance_km * 1000 : null,
+        score: ext.ai_score || 0,
+        why: p.ai_reason || "",
+        photo_name: p.image?.includes('place-photo') ? new URL(p.image).searchParams.get('photo_name') : null,
+        photos: [],
+        ai_reason: p.ai_reason,
+        ai_category: p.ai_category,
+        filter_tags: ext.filter_tags,
+        price_level: ext.price_level
+      } as RankedPlace;
+    });
   }, [filteredResults]);
 
   const getPlaceImage = useCallback((place: RankedPlace) => {
@@ -857,7 +857,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`;
     }
     // Find original mock place to get its image
-    const original = filteredResults.find(p => p.id === place.place_id);
+    const original = filteredResults.find((p) => p.id === place.place_id);
     if (original?.image && !original.image.includes('unsplash')) {
       return original.image;
     }
@@ -872,22 +872,22 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     <div className="min-h-screen bg-background max-w-[420px] lg:max-w-7xl mx-auto relative pb-24 lg:pb-8">
       {/* Nav Bar */}
       <div className="sticky top-0 lg:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50 lg:border-b-0">
-        <div className="flex items-center justify-between px-4 lg:px-8 py-3">
+        <div className="flex items-center justify-between px-4 lg:px-8 py-0">
           {/* Filter Button - Top Left */}
           <button
             onClick={() => setIsMenuOpen(true)}
             className={`relative p-2 -ml-2 transition-colors lg:hidden ${
-              activeFilters.size > 0 
-                ? "text-primary" 
-                : "text-foreground hover:text-primary"
-            }`}
-          >
+            activeFilters.size > 0 ?
+            "text-primary" :
+            "text-foreground hover:text-primary"}`
+            }>
+            
             <SlidersHorizontal className="w-6 h-6" />
-            {activeFilters.size > 0 && (
-              <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
+            {activeFilters.size > 0 &&
+            <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
                 {activeFilters.size}
               </span>
-            )}
+            }
           </button>
 
           <div className="flex flex-col items-center lg:hidden">
@@ -896,13 +896,13 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             </h1>
             <button
               onClick={() => setIsLocationPickerOpen(true)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-            >
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+              
               <MapPin className="w-3 h-3" />
-              <span>{onboardingData?.explore_location 
-                ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
-                : "Set location"
-              }</span>
+              <span>{onboardingData?.explore_location ?
+                onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location :
+                "Set location"
+                }</span>
               <ChevronDown className="w-3 h-3" />
             </button>
           </div>
@@ -912,8 +912,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
 
           <button
             onClick={() => setIsProfileMenuOpen(true)}
-            className="p-2 -mr-2 text-foreground hover:text-primary transition-colors lg:hidden"
-          >
+            className="p-2 -mr-2 text-foreground hover:text-primary transition-colors lg:hidden">
+            
             <Settings className="w-6 h-6" />
           </button>
 
@@ -928,14 +928,14 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           <form onSubmit={handleSearchSubmit} className="relative flex-1">
             <div
               className={`relative flex items-center transition-all duration-200 ${
-                isSearchFocused ? "ring-2 ring-primary/50 rounded-2xl" : ""
-              }`}
-            >
-              {isSearching ? (
-                <Loader2 className="absolute left-4 w-5 h-5 text-primary animate-spin pointer-events-none" />
-              ) : (
-                <Sparkles className="absolute left-4 w-5 h-5 text-primary pointer-events-none" />
-              )}
+              isSearchFocused ? "ring-2 ring-primary/50 rounded-2xl" : ""}`
+              }>
+              
+              {isSearching ?
+              <Loader2 className="absolute left-4 w-5 h-5 text-primary animate-spin pointer-events-none" /> :
+
+              <Sparkles className="absolute left-4 w-5 h-5 text-primary pointer-events-none" />
+              }
               <Input
                 type="text"
                 value={searchValue}
@@ -944,17 +944,17 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 onBlur={() => setIsSearchFocused(false)}
                 placeholder="Ask anything: rooftop bars, date spots..."
                 className="pl-11 pr-11 h-14 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
-                disabled={isSearching}
-              />
-              {searchValue && !isSearching && (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="absolute right-4 p-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
+                disabled={isSearching} />
+              
+              {searchValue && !isSearching &&
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-4 p-1 text-muted-foreground hover:text-foreground transition-colors">
+                
                   <X className="w-5 h-5" />
                 </button>
-              )}
+              }
             </div>
           </form>
         </div>
@@ -971,8 +971,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           onDistanceChange={setMaxDistance}
           totalPlaces={searchResults.length}
           filteredCount={filteredResults.length}
-          isNearbyMode={onboardingData?.explore_location === "nearby"}
-        />
+          isNearbyMode={onboardingData?.explore_location === "nearby"} />
+        
       </div>
 
       {/* Desktop: two-column layout with always-visible sidebar */}
@@ -989,8 +989,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             totalPlaces={searchResults.length}
             filteredCount={filteredResults.length}
             isNearbyMode={onboardingData?.explore_location === "nearby"}
-            alwaysOpen={true}
-          />
+            alwaysOpen={true} />
+          
         </div>
 
         {/* Main Content */}
@@ -1000,26 +1000,26 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             <div className="flex items-center gap-3 max-w-2xl mx-auto">
               <button
                 onClick={() => setIsLocationPickerOpen(true)}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border rounded-full px-4 py-3 whitespace-nowrap shrink-0"
-              >
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border rounded-full px-4 py-3 whitespace-nowrap shrink-0">
+                
                 <MapPin className="w-3.5 h-3.5" />
-                <span>{onboardingData?.explore_location 
-                  ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
-                  : "Set location"
-                }</span>
+                <span>{onboardingData?.explore_location ?
+                  onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location :
+                  "Set location"
+                  }</span>
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
               <form onSubmit={handleSearchSubmit} className="relative flex-1">
                 <div
                   className={`relative flex items-center transition-all duration-200 ${
-                    isSearchFocused ? "ring-2 ring-primary/50 rounded-2xl" : ""
-                  }`}
-                >
-                  {isSearching ? (
-                    <Loader2 className="absolute left-4 w-5 h-5 text-primary animate-spin pointer-events-none" />
-                  ) : (
-                    <Sparkles className="absolute left-4 w-5 h-5 text-primary pointer-events-none" />
-                  )}
+                  isSearchFocused ? "ring-2 ring-primary/50 rounded-2xl" : ""}`
+                  }>
+                  
+                  {isSearching ?
+                  <Loader2 className="absolute left-4 w-5 h-5 text-primary animate-spin pointer-events-none" /> :
+
+                  <Sparkles className="absolute left-4 w-5 h-5 text-primary pointer-events-none" />
+                  }
                   <Input
                     type="text"
                     value={searchValue}
@@ -1028,17 +1028,17 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                     onBlur={() => setIsSearchFocused(false)}
                     placeholder="Ask anything: rooftop bars, date spots..."
                     className="pl-11 pr-11 h-16 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
-                    disabled={isSearching}
-                  />
-                  {searchValue && !isSearching && (
-                    <button
-                      type="button"
-                      onClick={handleClearSearch}
-                      className="absolute right-4 p-1 text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                    disabled={isSearching} />
+                  
+                  {searchValue && !isSearching &&
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="absolute right-4 p-1 text-muted-foreground hover:text-foreground transition-colors">
+                    
                       <X className="w-5 h-5" />
                     </button>
-                  )}
+                  }
                 </div>
               </form>
             </div>
@@ -1046,21 +1046,21 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         <LoginReminderBanner />
 
         {/* Active Filter Chips */}
-        {activeFilters.size > 0 && (
+        {activeFilters.size > 0 &&
           <div className="px-4 lg:px-8 pt-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
-            {Array.from(activeFilters).map((filterId) => (
-              <button
-                key={filterId}
-                onClick={() => removeFilter(filterId)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors"
-              >
+            {Array.from(activeFilters).map((filterId) =>
+            <button
+              key={filterId}
+              onClick={() => removeFilter(filterId)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium whitespace-nowrap hover:bg-primary/20 transition-colors">
+              
                 {FILTER_LABELS[filterId] || filterId}
                 <X className="w-3 h-3" />
               </button>
-            ))}
+            )}
           </div>
-        )}
-        {isSearching || isInitialLoading ? (
+          }
+        {isSearching || isInitialLoading ?
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="relative">
               {/* Ice cream cone with bounce animation */}
@@ -1074,8 +1074,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             </div>
             <p className="text-foreground font-medium mt-4">Finding your SweetSpots...</p>
             <p className="text-muted-foreground text-sm mt-1">Scooping up the best places</p>
-          </div>
-        ) : needsLocationPermission ? (
+          </div> :
+          needsLocationPermission ?
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <MapPin className="w-12 h-12 text-muted-foreground mb-4" />
             <h3 className="font-semibold text-foreground mb-2">Enable Location Access</h3>
@@ -1086,8 +1086,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
               <MapPin className="w-4 h-4 mr-2" />
               Enable Location
             </Button>
-          </div>
-        ) : displaySections.length === 0 && searchResults.length > 0 ? (
+          </div> :
+          displaySections.length === 0 && searchResults.length > 0 ?
           // Filters resulted in no matches
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <SlidersHorizontal className="w-12 h-12 text-muted-foreground mb-4" />
@@ -1095,132 +1095,132 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             <p className="text-muted-foreground text-sm mb-4">
               Try removing some filters or adjusting the distance
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setActiveFilters(new Set());
                 setMaxDistance(25);
               }}
-              className="rounded-full"
-            >
+              className="rounded-full">
+              
               Clear all filters
             </Button>
-          </div>
-        ) : displaySections.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+          </div> :
+          displaySections.length === 0 ?
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
               <Sparkles className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Ask me anything to discover amazing places!</p>
-            </div>
-        ) : (
+            </div> :
+
           <>
             {/* AI Summary Card */}
-            {aiSummary && (
-              <AISummaryCard 
-                summary={aiSummary} 
-                searchQuery={userMood || searchValue}
-                location={onboardingData?.explore_location}
-              />
-            )}
+            {aiSummary &&
+            <AISummaryCard
+              summary={aiSummary}
+              searchQuery={userMood || searchValue}
+              location={onboardingData?.explore_location} />
+
+            }
 
 
-            {isMapView && mapPlaces.length > 0 ? (
-              <div className="lg:flex lg:flex-col lg:gap-6 lg:px-8">
+            {isMapView && mapPlaces.length > 0 ?
+            <div className="lg:flex lg:flex-col lg:gap-6 lg:px-8">
                 {/* Map */}
                 <div className="h-[calc(100vh-280px)] lg:h-[400px] mx-4 lg:mx-0 rounded-xl overflow-hidden border border-border">
                   <BoardMapView
-                    places={mapPlaces}
-                    userLocation={userLocation}
-                    onPlaceClick={handleMapPlaceClick}
-                    getPlaceImage={getPlaceImage}
-                  />
+                  places={mapPlaces}
+                  userLocation={userLocation}
+                  onPlaceClick={handleMapPlaceClick}
+                  getPlaceImage={getPlaceImage} />
+                
                 </div>
                 {/* Desktop: 3-column grid below map */}
                 <div className="hidden lg:grid lg:grid-cols-3 lg:gap-4 overflow-y-auto">
-                  {filteredResults.slice(0, 30).map((place) => (
-                    <PlaceCardCompact
-                      key={place.id}
-                      place={place}
-                      onSave={handleSaveClick}
-                      isSaved={isSaved(place.id)}
-                      onClick={() => handlePlaceClick(place)}
-                      showDistance={true}
-                      isGridItem
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Top Picks Section - Large vertical cards */}
-                {displaySections.find(s => s.featured) && (
-                  <TopPicksSection
-                    places={displaySections.find(s => s.featured)!.places}
-                    onPlaceClick={handlePlaceClick}
-                    toggleSave={handleSaveClick}
-                    isSaved={isSaved}
-                    showDistance={true}
-                  />
+                  {filteredResults.slice(0, 30).map((place) =>
+                <PlaceCardCompact
+                  key={place.id}
+                  place={place}
+                  onSave={handleSaveClick}
+                  isSaved={isSaved(place.id)}
+                  onClick={() => handlePlaceClick(place)}
+                  showDistance={true}
+                  isGridItem />
+
                 )}
+                </div>
+              </div> :
+
+            <>
+                {/* Top Picks Section - Large vertical cards */}
+                {displaySections.find((s) => s.featured) &&
+              <TopPicksSection
+                places={displaySections.find((s) => s.featured)!.places}
+                onPlaceClick={handlePlaceClick}
+                toggleSave={handleSaveClick}
+                isSaved={isSaved}
+                showDistance={true} />
+
+              }
 
                 {/* Other Sections - Horizontal scroll rows on mobile, grid on desktop */}
-                {displaySections
-                  .filter(section => !section.featured)
-                  .map((section, index) => (
-                    <SectionRow
-                      key={index}
-                      title={section.title}
-                      places={section.places}
-                      allPlaces={searchResults}
-                      onPlaceClick={handlePlaceClick}
-                      toggleSave={handleSaveClick}
-                      isSaved={isSaved}
-                      featured={false}
-                      userLocation={userLocation}
-                      onSeeAll={handleSeeAll}
-                      showDistance={true}
-                    />
-                  ))}
+                {displaySections.
+              filter((section) => !section.featured).
+              map((section, index) =>
+              <SectionRow
+                key={index}
+                title={section.title}
+                places={section.places}
+                allPlaces={searchResults}
+                onPlaceClick={handlePlaceClick}
+                toggleSave={handleSaveClick}
+                isSaved={isSaved}
+                featured={false}
+                userLocation={userLocation}
+                onSeeAll={handleSeeAll}
+                showDistance={true} />
+
+              )}
               </>
-            )}
+            }
           </>
-        )}
+          }
       </main>
       </div> {/* end lg:flex two-column layout */}
 
       {/* Floating Map/List Toggle */}
-      {filteredResults.length > 0 && !isSearching && !isInitialLoading && (
-        <button
-          onClick={() => setIsMapView(!isMapView)}
-          className="fixed bottom-28 lg:bottom-8 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center w-12 h-12 bg-foreground text-background rounded-full shadow-xl hover:bg-foreground/90 transition-all active:scale-95"
-        >
+      {filteredResults.length > 0 && !isSearching && !isInitialLoading &&
+      <button
+        onClick={() => setIsMapView(!isMapView)}
+        className="fixed bottom-28 lg:bottom-8 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center w-12 h-12 bg-foreground text-background rounded-full shadow-xl hover:bg-foreground/90 transition-all active:scale-95">
+        
           {isMapView ? <List className="w-5 h-5" /> : <Map className="w-5 h-5" />}
         </button>
-      )}
+      }
 
       {/* Save to Board Dialog */}
-      {saveToBoardPlace && (
-        <SaveToBoardDialog
-          placeId={saveToBoardPlace.id}
-          placeName={saveToBoardPlace.name}
-          onClose={() => setSaveToBoardPlace(null)}
-          onSaved={handleBoardSaveConfirmed}
-        />
-      )}
+      {saveToBoardPlace &&
+      <SaveToBoardDialog
+        placeId={saveToBoardPlace.id}
+        placeName={saveToBoardPlace.name}
+        onClose={() => setSaveToBoardPlace(null)}
+        onSaved={handleBoardSaveConfirmed} />
+
+      }
       
       {/* Filter Modal */}
       <TravelPersonalityFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
         onConfirm={handleFilterConfirm}
-        initialFilters={appliedFilters}
-      />
+        initialFilters={appliedFilters} />
+      
 
       {/* Profile Slide Menu */}
-      <ProfileSlideMenu 
-        isOpen={isProfileMenuOpen} 
+      <ProfileSlideMenu
+        isOpen={isProfileMenuOpen}
         onClose={() => setIsProfileMenuOpen(false)}
-        onNavigateToProfile={onNavigateToProfile}
-      />
+        onNavigateToProfile={onNavigateToProfile} />
+      
       
 
       {/* Location Picker Modal */}
@@ -1228,12 +1228,12 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         isOpen={isLocationPickerOpen}
         onClose={() => setIsLocationPickerOpen(false)}
         onSelectLocation={handleLocationChange}
-        currentLocation={onboardingData?.explore_location}
-      />
+        currentLocation={onboardingData?.explore_location} />
+      
 
 
-    </div>
-  );
+    </div>);
+
 };
 
 export default HomePage;
