@@ -470,6 +470,38 @@ const TripList = ({ trips, sharedTrips, isLoading, onView, onEdit, onDuplicate, 
         ))}
       </div>
 
+      {/* Shared with me section */}
+      {sharedTrips.length > 0 && (
+        <div className="space-y-3 pt-4 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Share2 className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Shared with me</h3>
+            <span className="text-xs text-muted-foreground">({sharedTrips.length})</span>
+          </div>
+          <div className="space-y-3">
+            {sharedTrips.map((it, i) => (
+              <div key={it.id} className="relative">
+                <div className="absolute -top-1 left-3 z-10">
+                  <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    from {(it as any).shared_by_name}
+                  </span>
+                </div>
+                <TripCard
+                  trip={it}
+                  index={i}
+                  onView={onView}
+                  onEdit={() => {}}
+                  onDuplicate={onDuplicate}
+                  onDelete={() => {}}
+                  onShare={() => {}}
+                  isShared
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
