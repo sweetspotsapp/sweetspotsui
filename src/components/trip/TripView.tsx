@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X } from "lucide-react";
+import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X, MapPin, Calendar, Users, Compass } from "lucide-react";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
 import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
@@ -172,8 +172,27 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
     return activities;
   }, [tripData]);
 
+  // Get hero image from first activity with a photo
+  const heroImage = useMemo(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    for (const day of tripData.days) {
+      for (const slot of day.slots) {
+        for (const act of slot.activities) {
+          if ((act as any).photoName) {
+            return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent((act as any).photoName)}&maxWidthPx=600`;
+          }
+        }
+      }
+    }
+    return null;
+  }, [tripData]);
+
+  const totalSpots = useMemo(() => {
+    return tripData.days.reduce((acc, d) => acc + d.slots.reduce((a, s) => a + s.activities.length, 0), 0);
+  }, [tripData]);
+
   return (
-    <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl px-4 md:px-6 lg:px-8 py-4 space-y-4 relative">
+    <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl px-4 md:px-6 lg:px-8 py-4 space-y-5 relative">
       {/* Back + Actions */}
       <div className="flex items-center justify-between">
         <button
@@ -235,24 +254,88 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
         </div>
       )}
 
-      {/* Trip Name */}
-      {tripParams?.name && !isEditing && (
-        <h2 className="text-lg font-bold text-foreground">{tripParams.name}</h2>
-      )}
+      {/* ─── Hero Section: Two-column on desktop, stacked on mobile ─── */}
+      {!isEditing && (
+        <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-soft">
+          <div className="flex flex-col md:flex-row">
+            {/* Left: Text info */}
+            <div className="flex-1 p-5 md:p-6 flex flex-col justify-center min-w-0">
+              {tripParams?.name && (
+                <h2 className="text-xl font-bold text-foreground mb-1">{tripParams.name}</h2>
+              )}
+              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-3">
+                <MapPin className="w-3.5 h-3.5" />
+                {tripParams?.destination}
+              </p>
 
-      {/* Summary */}
-      {tripData.summary && !isEditing && (
-        <div className="px-4 py-3 rounded-2xl bg-primary/5 border border-primary/10">
-          <p className="text-sm text-foreground leading-relaxed">{tripData.summary}</p>
+              {/* Summary */}
+              {tripData.summary && (
+                <p className="text-sm text-foreground/80 leading-relaxed mb-4 line-clamp-3">
+                  {tripData.summary}
+                </p>
+              )}
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {tripParams?.startDate && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                    <span>{tripData.days.length} days</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <MapPin className="w-3.5 h-3.5 text-primary" />
+                  <span>{totalSpots} spots</span>
+                </div>
+                {budgetSummary.grandTotal > 0 && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <DollarSign className="w-3.5 h-3.5 text-primary" />
+                    <span>${budgetSummary.grandTotal.toLocaleString()}</span>
+                  </div>
+                )}
+                {tripParams && tripParams.groupSize > 1 && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Users className="w-3.5 h-3.5 text-primary" />
+                    <span>{tripParams.groupSize} people</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Vibe pills */}
+              {tripParams?.vibes && tripParams.vibes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {tripParams.vibes.slice(0, 4).map(v => (
+                    <span key={v} className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{v}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Hero image */}
+            <div className="md:w-[45%] aspect-[4/3] md:aspect-auto relative flex-shrink-0">
+              {heroImage ? (
+                <img
+                  src={heroImage}
+                  alt={tripParams?.name || tripParams?.destination || "Trip"}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center min-h-[180px]">
+                  <Compass className="w-12 h-12 text-muted-foreground/30" />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Budget Summary */}
-      {budgetSummary.activitiesTotal > 0 && !isEditing && (
+      {/* Budget detail (collapsed into hero, show expanded only if large) */}
+      {budgetSummary.activitiesTotal > 0 && !isEditing && (budgetSummary.accommodationTotal > 0 || budgetSummary.flightTotal > 0) && (
         <div className="px-4 py-3 rounded-2xl bg-card border border-border space-y-2">
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">Estimated Budget</span>
+            <span className="text-sm font-semibold text-foreground">Budget Breakdown</span>
           </div>
           <div className="space-y-1 text-xs text-muted-foreground">
             <div className="flex justify-between">
