@@ -1,6 +1,12 @@
 import { Sparkles } from "lucide-react";
 import TopPickCard from "./TopPickCard";
 import { MockPlace } from "./PlaceCardCompact";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 
 interface TopPicksSectionProps {
   places: MockPlace[];
@@ -19,6 +25,9 @@ const TopPicksSection: React.FC<TopPicksSectionProps> = ({
 }) => {
   if (places.length === 0) return null;
 
+  const isMobile = useIsMobile();
+  const displayPlaces = places.slice(0, 4);
+
   return (
     <div className="mb-8 px-4 lg:px-8">
       {/* Section Header */}
@@ -27,19 +36,48 @@ const TopPicksSection: React.FC<TopPicksSectionProps> = ({
         <h2 className="text-lg font-bold text-foreground">Top Picks for You</h2>
       </div>
 
-      {/* Cards — 2 on mobile, up to 4 on desktop, full width */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
-        {places.slice(0, 4).map((place) => (
-          <TopPickCard
-            key={place.id}
-            place={place}
-            onSave={toggleSave}
-            isSaved={isSaved(place.id)}
-            onClick={() => onPlaceClick(place)}
-            showDistance={showDistance}
-          />
-        ))}
-      </div>
+      {/* Mobile: swipeable carousel */}
+      {isMobile ? (
+        <Carousel
+          opts={{
+            align: "start",
+            loop: false,
+            containScroll: "trimSnaps",
+          }}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-3">
+            {displayPlaces.map((place) => (
+              <CarouselItem
+                key={place.id}
+                className={`pl-3 ${displayPlaces.length === 1 ? "basis-[90%]" : "basis-[85%]"}`}
+              >
+                <TopPickCard
+                  place={place}
+                  onSave={toggleSave}
+                  isSaved={isSaved(place.id)}
+                  onClick={() => onPlaceClick(place)}
+                  showDistance={showDistance}
+                />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
+      ) : (
+        /* Desktop/Tablet: grid layout */
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
+          {displayPlaces.map((place) => (
+            <TopPickCard
+              key={place.id}
+              place={place}
+              onSave={toggleSave}
+              isSaved={isSaved(place.id)}
+              onClick={() => onPlaceClick(place)}
+              showDistance={showDistance}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

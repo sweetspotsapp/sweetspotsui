@@ -539,6 +539,17 @@ const Step1Content = ({
           </button>
         )}
       </div>
+
+      {/* Custom prompt field */}
+      <div className="pt-2 space-y-1">
+        <label className="text-xs font-medium text-muted-foreground">Describe what kind of trip you want</label>
+        <input
+          value={vibeDetails}
+          onChange={(e) => setVibeDetails(e.target.value)}
+          placeholder="Example: I want cozy cafes, sunset views, and good local food."
+          className="w-full px-4 py-2.5 rounded-xl text-sm bg-card border border-border text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary/30"
+        />
+      </div>
     </div>
 
     {/* Upload Section (Coming Soon) */}
