@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import LoginReminderBanner from "./LoginReminderBanner";
+import ShareTripDialog from "./trip/ShareTripDialog";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import AppHeader from "./AppHeader";
 import { format, parseISO, isAfter, isBefore, isToday } from "date-fns";
