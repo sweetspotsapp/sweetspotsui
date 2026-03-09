@@ -30,7 +30,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
-    savedTrips, isLoading,
+    savedTrips, sharedTrips, isLoading,
     saveTrip, deleteTrip,
   } = useTrip();
 
@@ -224,6 +224,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
       {phase === "list" && (
         <TripList
           trips={savedTrips}
+          sharedTrips={sharedTrips}
           isLoading={isLoading}
           onView={handleViewTrip}
           onEdit={handleEditTrip}
@@ -348,6 +349,7 @@ const FILTERS: { id: TripFilter; label: string }[] = [
 // ─── Trip List Component ─────────────────────────────────
 interface TripListProps {
   trips: SavedTrip[];
+  sharedTrips: (SavedTrip & { shared_by_name?: string })[];
   isLoading: boolean;
   onView: (it: SavedTrip) => void;
   onEdit: (it: SavedTrip) => void;
@@ -357,7 +359,7 @@ interface TripListProps {
   onCreateNew: () => void;
 }
 
-const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew }: TripListProps) => {
+const TripList = ({ trips, sharedTrips, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -468,6 +470,38 @@ const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onS
         ))}
       </div>
 
+      {/* Shared with me section */}
+      {sharedTrips.length > 0 && (
+        <div className="space-y-3 pt-4 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Share2 className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Shared with me</h3>
+            <span className="text-xs text-muted-foreground">({sharedTrips.length})</span>
+          </div>
+          <div className="space-y-3">
+            {sharedTrips.map((it, i) => (
+              <div key={it.id} className="relative">
+                <div className="absolute -top-1 left-3 z-10">
+                  <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    from {(it as any).shared_by_name}
+                  </span>
+                </div>
+                <TripCard
+                  trip={it}
+                  index={i}
+                  onView={onView}
+                  onEdit={() => {}}
+                  onDuplicate={onDuplicate}
+                  onDelete={() => {}}
+                  onShare={() => {}}
+                  isShared
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
@@ -504,9 +538,10 @@ interface TripCardProps {
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
   onShare: (trip: SavedTrip) => void;
+  isShared?: boolean;
 }
 
-const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare }: TripCardProps) => {
+const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare, isShared }: TripCardProps) => {
   const startDate = trip.start_date ? format(parseISO(trip.start_date), "MMM d") : "";
   const endDate = trip.end_date ? format(parseISO(trip.end_date), "MMM d, yyyy") : "";
   const heroImage = getTripHeroImage(trip);
@@ -524,8 +559,8 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare 
       className="rounded-2xl bg-card border border-border overflow-hidden shadow-soft opacity-0 animate-fade-up hover:shadow-card hover:-translate-y-0.5 transition-all duration-300 group relative"
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: "forwards" }}
     >
-      {/* Overflow menu */}
-      <div className="absolute top-2 right-2 z-10">
+      {/* Overflow menu — hide for shared trips */}
+      {!isShared && <div className="absolute top-2 right-2 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -553,7 +588,7 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare 
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </div>}
 
       {/* Clickable card body: text left, image right */}
       <button

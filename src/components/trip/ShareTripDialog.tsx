@@ -73,6 +73,15 @@ const ShareTripDialog = ({ isOpen, onClose, tripId, tripName }: ShareTripDialogP
         }
       } else {
         toast.success("Trip shared!", { description: `"${tripName}" has been shared.` });
+        // Send email notification (fire-and-forget)
+        supabase.functions.invoke("notify-trip-shared", {
+          body: {
+            tripId,
+            tripName,
+            sharedWithUserId: targetUserId,
+            sharerName: user.email?.split("@")[0] || "Someone",
+          },
+        }).catch(console.error);
       }
 
       setInput("");
