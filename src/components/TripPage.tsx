@@ -340,11 +340,25 @@ interface TripListProps {
 
 const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onCreateNew }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Sort trips: upcoming/current first (by start_date asc), then past (by start_date desc)
+  const sorted = useMemo(() => {
+    return [...trips].sort((a, b) => {
+      const catA = classifyTrip(a);
+      const catB = classifyTrip(b);
+      const order: Record<string, number> = { current: 0, upcoming: 1, past: 2 };
+      if (order[catA] !== order[catB]) return order[catA] - order[catB];
+      // Within same category: upcoming/current sort by earliest start, past sort by latest start
+      if (catA === "past") return parseISO(b.start_date).getTime() - parseISO(a.start_date).getTime();
+      return parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime();
+    });
+  }, [trips]);
 
   const filtered = useMemo(() => {
-    if (activeFilter === "all") return trips;
-    return trips.filter(t => classifyTrip(t) === activeFilter);
-  }, [trips, activeFilter]);
+    if (activeFilter === "all") return sorted;
+    return sorted.filter(t => classifyTrip(t) === activeFilter);
+  }, [sorted, activeFilter]);
 
   if (isLoading) {
     return (
