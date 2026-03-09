@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign } from "lucide-react";
+import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import AppHeader from "./AppHeader";
@@ -500,9 +506,44 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete }: TripCa
 
   return (
     <div
-      className="rounded-2xl bg-card border border-border overflow-hidden shadow-soft opacity-0 animate-fade-up hover:shadow-card hover:-translate-y-0.5 transition-all duration-300 group"
+      className="rounded-2xl bg-card border border-border overflow-hidden shadow-soft opacity-0 animate-fade-up hover:shadow-card hover:-translate-y-0.5 transition-all duration-300 group relative"
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: "forwards" }}
     >
+      {/* Overflow menu */}
+      <div className="absolute top-2 right-2 z-10">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="p-1.5 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background border border-border/50 shadow-sm transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={() => onEdit(trip)}>
+              <Pencil className="w-4 h-4 mr-2" /> Edit Trip
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDuplicate(trip)}>
+              <Copy className="w-4 h-4 mr-2" /> Duplicate Trip
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              if (navigator.share) {
+                navigator.share({ title: trip.name || trip.destination, text: `Check out my trip to ${trip.destination}!` });
+              }
+            }}>
+              <Share2 className="w-4 h-4 mr-2" /> Share Trip
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onDelete(trip.id)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Delete Trip
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Clickable card body: text left, image right */}
       <button
         onClick={() => trip.trip_data ? onView(trip) : onEdit(trip)}
@@ -578,19 +619,6 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete }: TripCa
           <div className="absolute inset-0 bg-gradient-to-l from-transparent to-card/10" />
         </div>
       </button>
-
-      {/* Action bar */}
-      <div className="flex items-center border-t border-border/50 divide-x divide-border/50">
-        <button onClick={() => onEdit(trip)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors">
-          <Pencil className="w-3.5 h-3.5" /> Edit
-        </button>
-        <button onClick={() => onDuplicate(trip)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors">
-          <Copy className="w-3.5 h-3.5" /> Duplicate
-        </button>
-        <button onClick={() => onDelete(trip.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-destructive hover:bg-destructive/5 transition-colors">
-          <Trash2 className="w-3.5 h-3.5" /> Delete
-        </button>
-      </div>
     </div>
   );
 };
