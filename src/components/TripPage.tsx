@@ -463,6 +463,7 @@ const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onS
             onEdit={onEdit}
             onDuplicate={onDuplicate}
             onDelete={() => setConfirmDeleteId(it.id)}
+            onShare={onShare}
           />
         ))}
       </div>
