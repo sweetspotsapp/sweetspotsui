@@ -65,7 +65,13 @@ const TopPicksSection: React.FC<TopPicksSectionProps> = ({
         </Carousel>
       ) : (
         /* Desktop/Tablet: grid layout */
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
+        <div className={cn(
+          "grid gap-3 lg:gap-5",
+          displayPlaces.length === 1 && "grid-cols-1 max-w-md",
+          displayPlaces.length === 2 && "grid-cols-2 max-w-2xl",
+          displayPlaces.length === 3 && "grid-cols-2 sm:grid-cols-3 max-w-4xl",
+          displayPlaces.length >= 4 && "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+        )}>
           {displayPlaces.map((place) => (
             <TopPickCard
               key={place.id}
