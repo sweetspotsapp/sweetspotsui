@@ -382,6 +382,12 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                           nextActivity?.lat, nextActivity?.lng
                         );
 
+                        // Calculate global card index for alternating layout
+                        let globalIdx = activityIndex;
+                        for (let si = 0; si < slotIndex; si++) {
+                          globalIdx += day.slots[si].activities.length;
+                        }
+
                         return (
                           <div key={activityIndex}>
                             <ActivityCard
@@ -389,6 +395,7 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                               onSwap={() => onSwap(dayIndex, slotIndex, activityIndex)}
                               onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
                               isSwapping={isSwapping}
+                              cardIndex={globalIdx}
                             />
                             {activityIndex < slot.activities.length - 1 && (
                               <DistanceConnector

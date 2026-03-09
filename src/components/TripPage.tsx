@@ -340,11 +340,25 @@ interface TripListProps {
 
 const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onCreateNew }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Sort trips: upcoming/current first (by start_date asc), then past (by start_date desc)
+  const sorted = useMemo(() => {
+    return [...trips].sort((a, b) => {
+      const catA = classifyTrip(a);
+      const catB = classifyTrip(b);
+      const order: Record<string, number> = { current: 0, upcoming: 1, past: 2 };
+      if (order[catA] !== order[catB]) return order[catA] - order[catB];
+      // Within same category: upcoming/current sort by earliest start, past sort by latest start
+      if (catA === "past") return parseISO(b.start_date).getTime() - parseISO(a.start_date).getTime();
+      return parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime();
+    });
+  }, [trips]);
 
   const filtered = useMemo(() => {
-    if (activeFilter === "all") return trips;
-    return trips.filter(t => classifyTrip(t) === activeFilter);
-  }, [trips, activeFilter]);
+    if (activeFilter === "all") return sorted;
+    return sorted.filter(t => classifyTrip(t) === activeFilter);
+  }, [sorted, activeFilter]);
 
   if (isLoading) {
     return (
@@ -429,10 +443,34 @@ const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onC
             onView={onView}
             onEdit={onEdit}
             onDuplicate={onDuplicate}
-            onDelete={onDelete}
+            onDelete={() => setConfirmDeleteId(it.id)}
           />
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
+          <div className="bg-card rounded-2xl border border-border shadow-elevated p-6 mx-4 max-w-sm w-full space-y-4 animate-fade-up" style={{ animationFillMode: "forwards" }}>
+            <h3 className="text-lg font-semibold text-foreground">Delete this trip?</h3>
+            <p className="text-sm text-muted-foreground">This action cannot be undone. The trip and all its data will be permanently removed.</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { onDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
