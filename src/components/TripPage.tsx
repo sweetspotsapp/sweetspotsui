@@ -224,6 +224,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
       {phase === "list" && (
         <TripList
           trips={savedTrips}
+          sharedTrips={sharedTrips}
           isLoading={isLoading}
           onView={handleViewTrip}
           onEdit={handleEditTrip}
