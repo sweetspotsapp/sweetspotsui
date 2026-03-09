@@ -541,11 +541,7 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare 
             <DropdownMenuItem onClick={() => onDuplicate(trip)}>
               <Copy className="w-4 h-4 mr-2" /> Duplicate Trip
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              if (navigator.share) {
-                navigator.share({ title: trip.name || trip.destination, text: `Check out my trip to ${trip.destination}!` });
-              }
-            }}>
+            <DropdownMenuItem onClick={() => onShare(trip)}>
               <Share2 className="w-4 h-4 mr-2" /> Share Trip
             </DropdownMenuItem>
             <DropdownMenuItem
