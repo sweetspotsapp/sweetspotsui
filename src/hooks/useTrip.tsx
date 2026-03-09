@@ -341,7 +341,7 @@ export const useTrip = () => {
 
   return {
     generate, swap, isGenerating, isSwapping,
-    savedTrips, isLoading, loadTrips,
+    savedTrips, sharedTrips, isLoading, loadTrips,
     saveTrip, deleteTrip,
   };
 };
