@@ -1,18 +1,20 @@
-import { Home, Heart, CalendarDays } from "lucide-react";
+import { Home, Heart, CalendarDays, Map } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface BottomNavProps {
-  activeTab: "home" | "saved" | "trip" | "profile";
-  onTabChange: (tab: "home" | "saved" | "trip" | "profile") => void;
+  activeTab: "home" | "map" | "saved" | "trip" | "profile";
+  onTabChange: (tab: "home" | "map" | "saved" | "trip" | "profile") => void;
+  tripBadgeCount?: number;
 }
 
-const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
+const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProps) => {
   const { user } = useAuth();
 
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
+    { id: "map" as const, label: "Map", icon: Map },
     { id: "saved" as const, label: "Saved", icon: Heart },
     { id: "trip" as const, label: "Trip", icon: CalendarDays },
     { id: "profile" as const, label: "Profile", icon: null },
@@ -25,11 +27,12 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
     <>
       {/* Mobile Floating Pill Nav */}
       <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 lg:hidden">
-        <div className="flex items-center gap-5 px-6 py-3 rounded-full bg-foreground/90 backdrop-blur-md shadow-lg shadow-foreground/10">
+        <div className="flex items-center gap-4 px-5 py-3 rounded-full bg-foreground/90 backdrop-blur-md shadow-lg shadow-foreground/10">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             const isProfile = tab.id === "profile";
+            const showBadge = tab.id === "trip" && tripBadgeCount > 0;
 
             return (
               <button
@@ -64,6 +67,11 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                     fill={isActive && tab.id === "saved" ? "currentColor" : "none"}
                   />
                 ) : null}
+                {showBadge && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 border-2 border-foreground/90">
+                    {tripBadgeCount > 9 ? "9+" : tripBadgeCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -83,6 +91,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
+              const showBadge = tab.id === "trip" && tripBadgeCount > 0;
               
               return (
                 <button
@@ -90,7 +99,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                   onClick={() => onTabChange(tab.id)}
                   data-saved-tab={tab.id === "saved" ? "true" : undefined}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                     isActive 
                       ? "bg-primary/10 text-primary" 
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -110,6 +119,11 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                     </Avatar>
                   )}
                   {tab.label}
+                  {showBadge && (
+                    <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
+                      {tripBadgeCount > 9 ? "9+" : tripBadgeCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
