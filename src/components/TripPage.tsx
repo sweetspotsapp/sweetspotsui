@@ -353,6 +353,7 @@ const FILTERS: { id: TripFilter; label: string }[] = [
 interface TripListProps {
   trips: SavedTrip[];
   sharedTrips: (SavedTrip & { shared_by_name?: string })[];
+  pendingInvites: (SavedTrip & { shared_by_name?: string; invite_id?: string })[];
   isLoading: boolean;
   onView: (it: SavedTrip) => void;
   onEdit: (it: SavedTrip) => void;
@@ -360,6 +361,8 @@ interface TripListProps {
   onDelete: (id: string) => void;
   onShare: (trip: SavedTrip) => void;
   onCreateNew: () => void;
+  onAcceptInvite: (inviteId: string) => Promise<void>;
+  onIgnoreInvite: (inviteId: string) => Promise<void>;
 }
 
 const TripList = ({ trips, sharedTrips, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew }: TripListProps) => {
