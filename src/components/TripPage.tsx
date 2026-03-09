@@ -225,6 +225,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
         <TripList
           trips={savedTrips}
           sharedTrips={sharedTrips}
+          pendingInvites={pendingInvites}
           isLoading={isLoading}
           onView={handleViewTrip}
           onEdit={handleEditTrip}
@@ -232,6 +233,8 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
           onDelete={deleteTrip}
           onShare={(trip) => setShareTrip({ id: trip.id, name: trip.name || trip.destination })}
           onCreateNew={handleNewTrip}
+          onAcceptInvite={acceptInvite}
+          onIgnoreInvite={ignoreInvite}
         />
       )}
 
