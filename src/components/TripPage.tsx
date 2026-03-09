@@ -349,6 +349,7 @@ const FILTERS: { id: TripFilter; label: string }[] = [
 // ─── Trip List Component ─────────────────────────────────
 interface TripListProps {
   trips: SavedTrip[];
+  sharedTrips: (SavedTrip & { shared_by_name?: string })[];
   isLoading: boolean;
   onView: (it: SavedTrip) => void;
   onEdit: (it: SavedTrip) => void;
@@ -358,7 +359,7 @@ interface TripListProps {
   onCreateNew: () => void;
 }
 
-const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew }: TripListProps) => {
+const TripList = ({ trips, sharedTrips, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
