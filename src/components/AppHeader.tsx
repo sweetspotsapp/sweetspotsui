@@ -16,7 +16,7 @@ const AppHeader = ({ onSettingsClick, actions }: AppHeaderProps) => (
   <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40 lg:hidden">
     <div className="max-w-md mx-auto flex items-center justify-between px-4 py-3">
       <div className="w-10" />
-      <h1 className="text-xl font-bold text-primary tracking-tight font-sans">
+      <h1 className="text-xl font-bold text-primary tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>
         SweetSpots
       </h1>
       <div className="flex items-center gap-1">

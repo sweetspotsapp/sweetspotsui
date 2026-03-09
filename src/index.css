@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
 
 @import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
 
 @layer base {
   :root {
     /* Warm, calm palette */
-    --background: 40 30% 97%;
+    --background: 0 0% 100%;
     --foreground: 25 20% 18%;
 
     --card: 40 25% 99%;
