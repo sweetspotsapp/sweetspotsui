@@ -16,9 +16,11 @@ interface ActivityCardProps {
   onMoveToDay?: (targetDayIndex: number) => void;
   availableDays?: Array<{ dayIndex: number; label: string }>;
   currentDayIndex?: number;
+  /** Used for alternating card layout (image left vs right) */
+  cardIndex?: number;
 }
 
-const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, isDragging, onMoveToDay, availableDays, currentDayIndex }: ActivityCardProps) => {
+const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, isDragging, onMoveToDay, availableDays, currentDayIndex, cardIndex = 0 }: ActivityCardProps) => {
   const navigate = useNavigate();
   const [showSwap, setShowSwap] = useState(false);
   const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
@@ -62,7 +64,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
 
   const categoryLabel = activity.category ? activity.category.charAt(0).toUpperCase() + activity.category.slice(1) : "Place";
 
-  const largeImageUrl = activity.photoName && !imageError
+  const imageUrl = activity.photoName && !imageError
     ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(activity.photoName)}&maxWidthPx=400&maxHeightPx=250`
     : null;
 
@@ -84,6 +86,68 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
 
   const fallbackGradient = CATEGORY_GRADIENTS[activity.category] || "from-muted to-muted-foreground/20";
 
+  // Alternate image position: even = image left, odd = image right
+  const imageOnRight = cardIndex % 2 !== 0;
+
+  // ─── Image element (shared) ───
+  const imageElement = (
+    <div
+      className={cn(
+        "w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden",
+        !isEditing && activity.placeId && "cursor-pointer"
+      )}
+      onClick={handleCardClick}
+    >
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={activity.name}
+          className="w-full h-full object-cover"
+          draggable="false"
+          style={{ pointerEvents: isEditing ? 'none' : 'auto' }}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div className={cn("w-full h-full bg-gradient-to-br flex items-center justify-center", fallbackGradient)}>
+          <span className="text-[10px] font-semibold text-white/60 uppercase tracking-wider">{categoryLabel}</span>
+        </div>
+      )}
+    </div>
+  );
+
+  // ─── Text content element (shared) ───
+  const textElement = (
+    <div className="flex-1 min-w-0 flex flex-col justify-center">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full capitalize">{categoryLabel}</span>
+        {activity.mustInclude && (
+          <Heart className="w-3 h-3 text-primary fill-primary flex-shrink-0" />
+        )}
+      </div>
+      <span
+        className={cn("text-sm font-semibold text-foreground truncate mt-1", !isEditing && activity.placeId && "cursor-pointer hover:text-primary transition-colors")}
+        onClick={handleCardClick}
+      >
+        {activity.name}
+      </span>
+      {activity.time && (
+        <span className="text-[11px] text-muted-foreground">{activity.time}</span>
+      )}
+      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{activity.description}</p>
+      <div className="flex items-center gap-2 mt-1">
+        {activity.estimatedCost !== undefined && activity.estimatedCost > 0 && (
+          <span className="text-xs font-medium text-primary">${activity.estimatedCost}/pp</span>
+        )}
+        {activity.estimatedCost === 0 && (
+          <span className="text-xs font-medium text-deep-sage">Free</span>
+        )}
+        {!isEditing && activity.placeId && (
+          <ExternalLink className="w-3 h-3 text-muted-foreground" />
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className={cn(
@@ -91,44 +155,15 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
         isEditing ? "bg-card border border-primary/20 shadow-sm select-none" : "bg-card border border-border/50 hover:border-border",
         isDragging && "opacity-30 border-dashed border-2 border-primary/40 shadow-none scale-[0.98]"
       )}>
-        {/* Hero Image */}
-        <div
-          className={cn("relative w-full h-32 bg-muted overflow-hidden rounded-t-xl", !isEditing && activity.placeId && "cursor-pointer")}
-          onClick={handleCardClick}
-        >
-          {largeImageUrl ? (
-            <img
-              src={largeImageUrl}
-              alt={activity.name}
-              className="w-full h-full object-cover"
-              draggable="false"
-              style={{ pointerEvents: isEditing ? 'none' : 'auto' }}
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <div className={cn("w-full h-full bg-gradient-to-br flex items-center justify-center", fallbackGradient)}>
-              <span className="text-sm font-semibold text-white/60 uppercase tracking-wider">{categoryLabel}</span>
-            </div>
-          )}
-          <div className="absolute top-2 left-2 bg-card/80 backdrop-blur-sm text-xs font-medium px-2 py-0.5 rounded-full text-foreground capitalize">
-            {categoryLabel}
-          </div>
-          {!isEditing && activity.placeId && (
-            <div className="absolute top-2 right-2 bg-card/80 backdrop-blur-sm p-1 rounded-full">
-              <ExternalLink className="w-3 h-3 text-muted-foreground" />
-            </div>
-          )}
-        </div>
-
-        {/* Edit buttons — outside overflow-hidden so dropdown isn't clipped */}
+        {/* Edit buttons */}
         {isEditing && (
           <div className="absolute top-2 right-2 flex items-center gap-1.5 z-30" ref={moveMenuRef}>
             <div className="relative">
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMoveMenu(!showMoveMenu); }}
-                className="bg-card/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all"
+                className="bg-card/90 backdrop-blur-sm w-7 h-7 flex items-center justify-center rounded-full hover:bg-card active:scale-95 transition-all border border-border"
               >
-                <MoreVertical className="w-4 h-4 text-foreground" />
+                <MoreVertical className="w-3.5 h-3.5 text-foreground" />
               </button>
               {showMoveMenu && availableDays && availableDays.length > 1 && (
                 <div className="absolute top-full right-0 mt-1 w-40 rounded-lg border border-border bg-popover shadow-xl z-[100] py-1 overflow-hidden">
@@ -158,60 +193,34 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
-              className="bg-destructive/90 backdrop-blur-sm w-8 h-8 flex items-center justify-center rounded-full hover:bg-destructive active:scale-95 transition-all"
+              className="bg-destructive/90 backdrop-blur-sm w-7 h-7 flex items-center justify-center rounded-full hover:bg-destructive active:scale-95 transition-all"
             >
-              <Trash2 className="w-4 h-4 text-destructive-foreground" />
+              <Trash2 className="w-3.5 h-3.5 text-destructive-foreground" />
             </button>
           </div>
         )}
 
-      
+        {/* Horizontal card: image + text side by side, alternating */}
+        <div className={cn("flex items-stretch gap-3 p-2.5", imageOnRight && "flex-row-reverse")}>
+          {imageElement}
+          {textElement}
 
-        <div className="px-3 py-2.5">
-          <div className="flex items-start gap-2">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={cn("text-sm font-semibold text-foreground truncate", !isEditing && activity.placeId && "cursor-pointer hover:text-primary transition-colors")}
-                  onClick={handleCardClick}
-                >
-                  {activity.name}
-                </span>
-                {activity.mustInclude && (
-                  <Heart className="w-3 h-3 text-primary fill-primary flex-shrink-0" />
+          {/* Swap button — only when not editing */}
+          {!isEditing && (
+            <div className="flex items-center flex-shrink-0">
+              <button
+                onClick={handleSwapClick}
+                disabled={loading}
+                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 text-primary" />
                 )}
-              </div>
-              {activity.time && (
-                <span className="text-xs text-muted-foreground">{activity.time}</span>
-              )}
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{activity.description}</p>
-              <div className="flex items-center gap-2 mt-1.5">
-                {activity.estimatedCost !== undefined && activity.estimatedCost > 0 && (
-                  <span className="text-xs font-medium text-primary">${activity.estimatedCost}/pp</span>
-                )}
-                {activity.estimatedCost === 0 && (
-                  <span className="text-xs font-medium text-green-600">Free</span>
-                )}
-              </div>
+              </button>
             </div>
-
-            {/* Actions — only show swap when not editing */}
-            {!isEditing && (
-              <div className="flex flex-col gap-1 flex-shrink-0">
-                <button
-                  onClick={handleSwapClick}
-                  disabled={loading}
-                  className="p-1 rounded-md hover:bg-muted transition-colors"
-                >
-                  {loading ? (
-                    <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-3.5 h-3.5 text-primary" />
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
