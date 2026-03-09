@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, User, Settings, SortAsc, Loader2, Link2 } from "lucide-react";
+import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
 import { useNavigate, useLocation as useRouterLocation } from "react-router-dom";
