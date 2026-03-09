@@ -327,6 +327,8 @@ interface Step1Props {
   customVibe: string;
   setCustomVibe: (v: string) => void;
   addCustomVibe: () => void;
+  vibeDetails: string;
+  setVibeDetails: (v: string) => void;
   showUploadSection: boolean;
   setShowUploadSection: (v: boolean) => void;
   duration: number;
