@@ -922,21 +922,9 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         </div>
       </div>
 
-      {/* Search Bar — below the header */}
-      <div className="px-4 lg:px-8 py-4">
-        <div className="flex items-center gap-3 max-w-2xl lg:mx-auto">
-          {/* Desktop: inline location picker */}
-          <button
-            onClick={() => setIsLocationPickerOpen(true)}
-            className="hidden lg:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border rounded-full px-4 py-3 whitespace-nowrap shrink-0"
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{onboardingData?.explore_location 
-              ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
-              : "Set location"
-            }</span>
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
+      {/* Search Bar — below the header (mobile only, desktop moves inside flex) */}
+      <div className="px-4 py-4 lg:hidden">
+        <div className="flex items-center gap-3 max-w-2xl">
           <form onSubmit={handleSearchSubmit} className="relative flex-1">
             <div
               className={`relative flex items-center transition-all duration-200 ${
@@ -955,7 +943,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 placeholder="Ask anything: rooftop bars, date spots..."
-                className="pl-11 pr-11 h-14 lg:h-16 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
+                className="pl-11 pr-11 h-14 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
                 disabled={isSearching}
               />
               {searchValue && !isSearching && (
@@ -1006,7 +994,55 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         </div>
 
         {/* Main Content */}
-        <main className="pt-4 flex-1 min-w-0">
+        <main className="flex-1 min-w-0">
+          {/* Desktop Search Bar — inside the content column */}
+          <div className="hidden lg:block px-8 py-4">
+            <div className="flex items-center gap-3 max-w-2xl mx-auto">
+              <button
+                onClick={() => setIsLocationPickerOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors border border-border rounded-full px-4 py-3 whitespace-nowrap shrink-0"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>{onboardingData?.explore_location 
+                  ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location)
+                  : "Set location"
+                }</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+              <form onSubmit={handleSearchSubmit} className="relative flex-1">
+                <div
+                  className={`relative flex items-center transition-all duration-200 ${
+                    isSearchFocused ? "ring-2 ring-primary/50 rounded-2xl" : ""
+                  }`}
+                >
+                  {isSearching ? (
+                    <Loader2 className="absolute left-4 w-5 h-5 text-primary animate-spin pointer-events-none" />
+                  ) : (
+                    <Sparkles className="absolute left-4 w-5 h-5 text-primary pointer-events-none" />
+                  )}
+                  <Input
+                    type="text"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                    placeholder="Ask anything: rooftop bars, date spots..."
+                    className="pl-11 pr-11 h-16 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
+                    disabled={isSearching}
+                  />
+                  {searchValue && !isSearching && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="absolute right-4 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+          </div>
         <LoginReminderBanner />
 
         {/* Active Filter Chips */}
