@@ -869,7 +869,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background max-w-[420px] lg:max-w-5xl mx-auto relative pb-24 lg:pb-8">
+    <div className="min-h-screen bg-background max-w-[420px] lg:max-w-7xl mx-auto relative pb-24 lg:pb-8">
       {/* Nav Bar */}
       <div className="sticky top-0 lg:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between px-4 lg:px-8 py-3">
@@ -1157,7 +1157,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       {filteredResults.length > 0 && !isSearching && !isInitialLoading && (
         <button
           onClick={() => setIsMapView(!isMapView)}
-          className="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-full text-sm font-semibold shadow-xl hover:bg-foreground/90 transition-all active:scale-95"
+          className="fixed bottom-28 lg:bottom-8 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-full text-sm font-semibold shadow-xl hover:bg-foreground/90 transition-all active:scale-95"
         >
           {isMapView ? <List className="w-4 h-4" /> : <Map className="w-4 h-4" />}
           {isMapView ? "List" : "Map"}
