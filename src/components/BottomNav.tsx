@@ -1,4 +1,4 @@
-import { Home, Heart, CalendarDays, Map } from "lucide-react";
+import { Home, Heart, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
