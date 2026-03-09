@@ -30,7 +30,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
-    savedTrips, isLoading,
+    savedTrips, sharedTrips, isLoading,
     saveTrip, deleteTrip,
   } = useTrip();
 
