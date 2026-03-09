@@ -41,6 +41,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
   const [prefillParams, setPrefillParams] = useState<TripParams | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [shareTrip, setShareTrip] = useState<{ id: string; name: string } | null>(null);
 
   // Resume a specific trip when returning from place details
   useEffect(() => {
