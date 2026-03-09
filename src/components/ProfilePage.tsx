@@ -85,6 +85,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [characterIndex, setCharacterIndex] = useState(0);
   const [isLoadingCharacter, setIsLoadingCharacter] = useState(false);
   const [username, setUsername] = useState("Explorer");
+  const [sweetSpotsId, setSweetSpotsId] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
