@@ -339,6 +339,7 @@ const Step1Content = ({
   startDate, setStartDate, endDate, setEndDate,
   hasEndDate, setHasEndDate, vibes, toggleVibe,
   customVibe, setCustomVibe, addCustomVibe,
+  vibeDetails, setVibeDetails,
   showUploadSection, setShowUploadSection, duration,
 }: Step1Props) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
