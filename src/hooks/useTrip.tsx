@@ -131,6 +131,7 @@ export const useTrip = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
   const [savedTrips, setSavedTrips] = useState<SavedTrip[]>([]);
+  const [sharedTrips, setSharedTrips] = useState<(SavedTrip & { shared_by_name?: string })[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadTrips = useCallback(async () => {
