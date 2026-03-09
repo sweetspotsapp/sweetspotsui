@@ -385,3 +385,4 @@ export const useTrip = () => {
     savedTrips, sharedTrips, pendingInvites, isLoading, loadTrips,
     saveTrip, deleteTrip, acceptInvite, ignoreInvite,
   };
+};
