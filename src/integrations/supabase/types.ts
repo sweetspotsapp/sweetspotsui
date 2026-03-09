@@ -360,6 +360,7 @@ export type Database = {
           permission: string
           shared_by: string
           shared_with: string
+          status: string
           trip_id: string
         }
         Insert: {
@@ -368,6 +369,7 @@ export type Database = {
           permission?: string
           shared_by: string
           shared_with: string
+          status?: string
           trip_id: string
         }
         Update: {
@@ -376,6 +378,7 @@ export type Database = {
           permission?: string
           shared_by?: string
           shared_with?: string
+          status?: string
           trip_id?: string
         }
         Relationships: [
