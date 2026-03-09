@@ -53,6 +53,7 @@ const CreateTripModal = ({
   const [hasEndDate, setHasEndDate] = useState(!!initialParams?.endDate);
   const [vibes, setVibes] = useState<string[]>(initialParams?.vibes || []);
   const [customVibe, setCustomVibe] = useState("");
+  const [vibeDetails, setVibeDetails] = useState("");
   
   const [showUploadSection, setShowUploadSection] = useState(false);
   const [showBrowse, setShowBrowse] = useState(false);
@@ -197,6 +198,8 @@ const CreateTripModal = ({
               customVibe={customVibe}
               setCustomVibe={setCustomVibe}
               addCustomVibe={addCustomVibe}
+              vibeDetails={vibeDetails}
+              setVibeDetails={setVibeDetails}
               showUploadSection={showUploadSection}
               setShowUploadSection={setShowUploadSection}
               duration={duration}
@@ -326,6 +329,8 @@ interface Step1Props {
   customVibe: string;
   setCustomVibe: (v: string) => void;
   addCustomVibe: () => void;
+  vibeDetails: string;
+  setVibeDetails: (v: string) => void;
   showUploadSection: boolean;
   setShowUploadSection: (v: boolean) => void;
   duration: number;
@@ -336,6 +341,7 @@ const Step1Content = ({
   startDate, setStartDate, endDate, setEndDate,
   hasEndDate, setHasEndDate, vibes, toggleVibe,
   customVibe, setCustomVibe, addCustomVibe,
+  vibeDetails, setVibeDetails,
   showUploadSection, setShowUploadSection, duration,
 }: Step1Props) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -539,6 +545,17 @@ const Step1Content = ({
           </button>
         )}
       </div>
+
+      {/* Custom prompt field */}
+      <div className="pt-2 space-y-1">
+        <label className="text-xs font-medium text-muted-foreground">Describe what kind of trip you want</label>
+        <input
+          value={vibeDetails}
+          onChange={(e) => setVibeDetails(e.target.value)}
+          placeholder="Example: I want cozy cafes, sunset views, and good local food."
+          className="w-full px-4 py-2.5 rounded-xl text-sm bg-card border border-border text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary/30"
+        />
+      </div>
     </div>
 
     {/* Upload Section (Coming Soon) */}
@@ -616,39 +633,44 @@ const Step2Content = ({
     <div className="space-y-3">
       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Budget</label>
 
+      {/* Budget Mode Toggle */}
+      <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
+        <button
+          onClick={() => setUseTotalBudget(false)}
+          className={cn(
+            "flex-1 py-2 rounded-lg text-xs font-medium transition-all",
+            !useTotalBudget ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+          )}
+        >
+          Daily Budget
+        </button>
+        <button
+          onClick={() => setUseTotalBudget(true)}
+          className={cn(
+            "flex-1 py-2 rounded-lg text-xs font-medium transition-all",
+            useTotalBudget ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+          )}
+        >
+          Total Trip Budget
+        </button>
+      </div>
+
       {!useTotalBudget ? (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            {BUDGET_OPTIONS.map((b) => (
-              <button
-                key={b}
-                onClick={() => setBudget(b)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left",
-                  budget === b
-                    ? "bg-primary/10 border border-primary/50"
-                    : "bg-card border border-border hover:bg-muted/30"
-                )}
-              >
-                <div className={cn(
-                  "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0",
-                  budget === b ? "bg-primary border-primary" : "border-border"
-                )}>
-                  {budget === b && <Check className="w-3 h-3 text-primary-foreground" />}
-                </div>
-                <span className={cn("flex-1", budget === b ? "text-foreground" : "text-muted-foreground")}>{b}</span>
-                <span className={cn("text-xs", budget === b ? "text-primary" : "text-muted-foreground/70")}>
-                  {BUDGET_LABELS[b]}
-                </span>
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setUseTotalBudget(true)}
-            className="text-xs text-primary font-medium hover:text-primary/80 transition-colors"
-          >
-            Or set a total budget
-          </button>
+        <div className="grid grid-cols-2 gap-2">
+          {(["$", "$$", "$$$", "$$$$"] as const).map((b) => (
+            <button
+              key={b}
+              onClick={() => setBudget(b)}
+              className={cn(
+                "px-4 py-3 rounded-xl text-sm font-medium transition-all text-center",
+                budget === b
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
+              )}
+            >
+              {BUDGET_LABELS[b]}
+            </button>
+          ))}
         </div>
       ) : (
         <div className="space-y-3">
@@ -659,7 +681,7 @@ const Step2Content = ({
                 type="number"
                 value={totalBudget}
                 onChange={(e) => setTotalBudget(e.target.value)}
-                placeholder="Total trip budget"
+                placeholder="Enter your total trip budget"
                 className="flex-1 text-sm bg-transparent outline-none text-foreground placeholder:text-muted-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
@@ -667,18 +689,17 @@ const Step2Content = ({
           </div>
           {perDayBudget !== null && perDayBudget > 0 && (
             <p className="text-xs text-muted-foreground px-1">
-              Approx. <span className="font-medium text-foreground">{budgetSymbol}{perDayBudget}</span>/day for {duration} {duration === 1 ? "day" : "days"}
+              ≈ <span className="font-medium text-foreground">{budgetSymbol}{perDayBudget}</span>/day for {duration} {duration === 1 ? "day" : "days"}
               {!budgetIsPerPerson && groupSize > 1 && (
                 <span> ({budgetSymbol}{Math.round(perDayBudget / groupSize)}/day per person)</span>
               )}
             </p>
           )}
-          <button
-            onClick={() => setUseTotalBudget(false)}
-            className="text-xs text-primary font-medium hover:text-primary/80 transition-colors"
-          >
-            Use spending tiers instead
-          </button>
+          {totalBudget && !duration && (
+            <p className="text-xs text-muted-foreground px-1">
+              Select dates to see per-day breakdown
+            </p>
+          )}
         </div>
       )}
     </div>
