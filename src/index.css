@@ -9,7 +9,7 @@
 @layer base {
   :root {
     /* Warm, calm palette */
-    --background: 40 30% 97%;
+    --background: 0 0% 100%;
     --foreground: 25 20% 18%;
 
     --card: 40 25% 99%;
