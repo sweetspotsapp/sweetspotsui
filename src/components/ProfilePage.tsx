@@ -264,11 +264,12 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
     const loadProfile = async () => {
       const { data } = await (supabase
         .from("profiles") as any)
-        .select("avatar_url, username, cover_url")
+        .select("avatar_url, username, cover_url, sweetspots_id")
         .eq("id", user.id)
         .single();
       if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       if (data?.username) setUsername(data.username);
+      if (data?.sweetspots_id) setSweetSpotsId(data.sweetspots_id);
       if (data?.cover_url) {
         // Resolve preset labels to actual image imports, or use as URL for custom uploads
         const resolved = PRESET_COVER_MAP[data.cover_url] || data.cover_url;
