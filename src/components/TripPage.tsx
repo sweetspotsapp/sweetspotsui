@@ -229,6 +229,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
           onEdit={handleEditTrip}
           onDuplicate={handleDuplicate}
           onDelete={deleteTrip}
+          onShare={(trip) => setShareTrip({ id: trip.id, name: trip.name || trip.destination })}
           onCreateNew={handleNewTrip}
         />
       )}
