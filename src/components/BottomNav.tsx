@@ -1,4 +1,4 @@
-import { Home, Heart, CalendarDays, Map } from "lucide-react";
+import { Home, Heart, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -14,7 +14,6 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
 
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
-    { id: "map" as const, label: "Map", icon: Map },
     { id: "saved" as const, label: "Saved", icon: Heart },
     { id: "trip" as const, label: "Trip", icon: CalendarDays },
     { id: "profile" as const, label: "Profile", icon: null },
@@ -101,7 +100,7 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                   className={cn(
                     "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                     isActive 
-                      ? "bg-primary/10 text-primary" 
+                      ? "bg-primary text-primary-foreground" 
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
