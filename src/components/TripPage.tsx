@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import LoginReminderBanner from "./LoginReminderBanner";
+import ShareTripDialog from "./trip/ShareTripDialog";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import AppHeader from "./AppHeader";
 import { format, parseISO, isAfter, isBefore, isToday } from "date-fns";
@@ -40,6 +41,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
   const [prefillParams, setPrefillParams] = useState<TripParams | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [shareTrip, setShareTrip] = useState<{ id: string; name: string } | null>(null);
 
   // Resume a specific trip when returning from place details
   useEffect(() => {
@@ -227,6 +229,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
           onEdit={handleEditTrip}
           onDuplicate={handleDuplicate}
           onDelete={deleteTrip}
+          onShare={(trip) => setShareTrip({ id: trip.id, name: trip.name || trip.destination })}
           onCreateNew={handleNewTrip}
         />
       )}
@@ -271,6 +274,15 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
       isOpen={isProfileMenuOpen} 
       onClose={() => setIsProfileMenuOpen(false)}
     />
+
+    {shareTrip && (
+      <ShareTripDialog
+        isOpen={!!shareTrip}
+        onClose={() => setShareTrip(null)}
+        tripId={shareTrip.id}
+        tripName={shareTrip.name}
+      />
+    )}
     </>
   );
 };
@@ -341,10 +353,11 @@ interface TripListProps {
   onEdit: (it: SavedTrip) => void;
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
+  onShare: (trip: SavedTrip) => void;
   onCreateNew: () => void;
 }
 
-const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onCreateNew }: TripListProps) => {
+const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -450,6 +463,7 @@ const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onC
             onEdit={onEdit}
             onDuplicate={onDuplicate}
             onDelete={() => setConfirmDeleteId(it.id)}
+            onShare={onShare}
           />
         ))}
       </div>
@@ -489,9 +503,10 @@ interface TripCardProps {
   onEdit: (it: SavedTrip) => void;
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
+  onShare: (trip: SavedTrip) => void;
 }
 
-const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete }: TripCardProps) => {
+const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare }: TripCardProps) => {
   const startDate = trip.start_date ? format(parseISO(trip.start_date), "MMM d") : "";
   const endDate = trip.end_date ? format(parseISO(trip.end_date), "MMM d, yyyy") : "";
   const heroImage = getTripHeroImage(trip);
@@ -527,11 +542,7 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete }: TripCa
             <DropdownMenuItem onClick={() => onDuplicate(trip)}>
               <Copy className="w-4 h-4 mr-2" /> Duplicate Trip
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              if (navigator.share) {
-                navigator.share({ title: trip.name || trip.destination, text: `Check out my trip to ${trip.destination}!` });
-              }
-            }}>
+            <DropdownMenuItem onClick={() => onShare(trip)}>
               <Share2 className="w-4 h-4 mr-2" /> Share Trip
             </DropdownMenuItem>
             <DropdownMenuItem

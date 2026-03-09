@@ -85,6 +85,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const [characterIndex, setCharacterIndex] = useState(0);
   const [isLoadingCharacter, setIsLoadingCharacter] = useState(false);
   const [username, setUsername] = useState("Explorer");
+  const [sweetSpotsId, setSweetSpotsId] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -263,11 +264,12 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
     const loadProfile = async () => {
       const { data } = await (supabase
         .from("profiles") as any)
-        .select("avatar_url, username, cover_url")
+        .select("avatar_url, username, cover_url, sweetspots_id")
         .eq("id", user.id)
         .single();
       if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       if (data?.username) setUsername(data.username);
+      if (data?.sweetspots_id) setSweetSpotsId(data.sweetspots_id);
       if (data?.cover_url) {
         // Resolve preset labels to actual image imports, or use as URL for custom uploads
         const resolved = PRESET_COVER_MAP[data.cover_url] || data.cover_url;
@@ -533,6 +535,18 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
               >
                 <h1 className="text-lg font-bold text-foreground">{username}</h1>
                 <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </button>
+            )}
+
+            {sweetSpotsId && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(sweetSpotsId);
+                  toast({ title: "Copied!", description: `${sweetSpotsId} copied to clipboard` });
+                }}
+                className="text-[11px] font-mono text-primary/70 bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
+              >
+                {sweetSpotsId} 📋
               </button>
             )}
 

@@ -206,6 +206,7 @@ export type Database = {
           mobility: Json | null
           notification_settings: Json | null
           privacy_settings: Json | null
+          sweetspots_id: string | null
           username: string | null
           vibe: Json | null
         }
@@ -219,6 +220,7 @@ export type Database = {
           mobility?: Json | null
           notification_settings?: Json | null
           privacy_settings?: Json | null
+          sweetspots_id?: string | null
           username?: string | null
           vibe?: Json | null
         }
@@ -232,6 +234,7 @@ export type Database = {
           mobility?: Json | null
           notification_settings?: Json | null
           privacy_settings?: Json | null
+          sweetspots_id?: string | null
           username?: string | null
           vibe?: Json | null
         }
@@ -350,6 +353,41 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_trips: {
+        Row: {
+          created_at: string
+          id: string
+          permission: string
+          shared_by: string
+          shared_with: string
+          trip_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission?: string
+          shared_by: string
+          shared_with: string
+          trip_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission?: string
+          shared_by?: string
+          shared_with?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_trips_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           accommodation: Json | null
@@ -416,6 +454,7 @@ export type Database = {
     }
     Functions: {
       clean_expired_cache: { Args: never; Returns: number }
+      generate_sweetspots_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
