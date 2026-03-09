@@ -87,7 +87,7 @@ const SlideOutMenu: React.FC<SlideOutMenuProps> = ({
   // Always-open static sidebar mode (desktop)
   if (alwaysOpen) {
     return (
-      <div className="w-[250px] shrink-0 sticky top-[108px] self-start h-[calc(100vh-108px)] flex flex-col border-r border-border bg-card">
+      <div className="w-[250px] shrink-0 sticky top-[64px] self-start h-[calc(100vh-64px)] flex flex-col border-r border-border bg-card">
         {/* Header */}
         <div className="p-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-semibold text-foreground">Filters</h2>

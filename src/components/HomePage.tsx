@@ -871,7 +871,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   return (
     <div className="min-h-screen bg-background max-w-[420px] lg:max-w-7xl mx-auto relative pb-24 lg:pb-8">
       {/* Nav Bar */}
-      <div className="sticky top-0 lg:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
+      <div className="sticky top-0 lg:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50 lg:border-b-0">
         <div className="flex items-center justify-between px-4 lg:px-8 py-3">
           {/* Filter Button - Top Left */}
           <button
