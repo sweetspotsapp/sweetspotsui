@@ -443,10 +443,34 @@ const TripList = ({ trips, isLoading, onView, onEdit, onDuplicate, onDelete, onC
             onView={onView}
             onEdit={onEdit}
             onDuplicate={onDuplicate}
-            onDelete={onDelete}
+            onDelete={() => setConfirmDeleteId(it.id)}
           />
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
+          <div className="bg-card rounded-2xl border border-border shadow-elevated p-6 mx-4 max-w-sm w-full space-y-4 animate-fade-up" style={{ animationFillMode: "forwards" }}>
+            <h3 className="text-lg font-semibold text-foreground">Delete this trip?</h3>
+            <p className="text-sm text-muted-foreground">This action cannot be undone. The trip and all its data will be permanently removed.</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { onDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
