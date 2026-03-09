@@ -274,6 +274,15 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
       isOpen={isProfileMenuOpen} 
       onClose={() => setIsProfileMenuOpen(false)}
     />
+
+    {shareTrip && (
+      <ShareTripDialog
+        isOpen={!!shareTrip}
+        onClose={() => setShareTrip(null)}
+        tripId={shareTrip.id}
+        tripName={shareTrip.name}
+      />
+    )}
     </>
   );
 };
