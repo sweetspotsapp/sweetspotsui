@@ -588,7 +588,7 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare,
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </div>}
 
       {/* Clickable card body: text left, image right */}
       <button
