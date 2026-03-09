@@ -502,9 +502,10 @@ interface TripCardProps {
   onEdit: (it: SavedTrip) => void;
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
+  onShare: (trip: SavedTrip) => void;
 }
 
-const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete }: TripCardProps) => {
+const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare }: TripCardProps) => {
   const startDate = trip.start_date ? format(parseISO(trip.start_date), "MMM d") : "";
   const endDate = trip.end_date ? format(parseISO(trip.end_date), "MMM d, yyyy") : "";
   const heroImage = getTripHeroImage(trip);
