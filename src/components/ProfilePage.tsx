@@ -538,6 +538,18 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
               </button>
             )}
 
+            {sweetSpotsId && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(sweetSpotsId);
+                  toast({ title: "Copied!", description: `${sweetSpotsId} copied to clipboard` });
+                }}
+                className="text-[11px] font-mono text-primary/70 bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
+              >
+                {sweetSpotsId} 📋
+              </button>
+            )}
+
             <p className="text-xs text-muted-foreground">
               {vibeBreakdown.length > 0
                 ? `${vibeBreakdown[0]?.label} soul · ${personalityTraits[0]?.label || 'Curious explorer'}`
