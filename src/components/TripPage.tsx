@@ -365,7 +365,7 @@ interface TripListProps {
   onIgnoreInvite: (inviteId: string) => Promise<void>;
 }
 
-const TripList = ({ trips, sharedTrips, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew }: TripListProps) => {
+const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew, onAcceptInvite, onIgnoreInvite }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
