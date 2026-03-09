@@ -30,8 +30,8 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
-    savedTrips, sharedTrips, isLoading,
-    saveTrip, deleteTrip,
+    savedTrips, sharedTrips, pendingInvites, isLoading,
+    saveTrip, deleteTrip, acceptInvite, ignoreInvite,
   } = useTrip();
 
   const [phase, setPhase] = useState<Phase>("list");
@@ -225,6 +225,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
         <TripList
           trips={savedTrips}
           sharedTrips={sharedTrips}
+          pendingInvites={pendingInvites}
           isLoading={isLoading}
           onView={handleViewTrip}
           onEdit={handleEditTrip}
@@ -232,6 +233,8 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
           onDelete={deleteTrip}
           onShare={(trip) => setShareTrip({ id: trip.id, name: trip.name || trip.destination })}
           onCreateNew={handleNewTrip}
+          onAcceptInvite={acceptInvite}
+          onIgnoreInvite={ignoreInvite}
         />
       )}
 
@@ -350,6 +353,7 @@ const FILTERS: { id: TripFilter; label: string }[] = [
 interface TripListProps {
   trips: SavedTrip[];
   sharedTrips: (SavedTrip & { shared_by_name?: string })[];
+  pendingInvites: (SavedTrip & { shared_by_name?: string; invite_id?: string })[];
   isLoading: boolean;
   onView: (it: SavedTrip) => void;
   onEdit: (it: SavedTrip) => void;
@@ -357,9 +361,11 @@ interface TripListProps {
   onDelete: (id: string) => void;
   onShare: (trip: SavedTrip) => void;
   onCreateNew: () => void;
+  onAcceptInvite: (inviteId: string) => Promise<void>;
+  onIgnoreInvite: (inviteId: string) => Promise<void>;
 }
 
-const TripList = ({ trips, sharedTrips, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew }: TripListProps) => {
+const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew, onAcceptInvite, onIgnoreInvite }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -447,7 +453,81 @@ const TripList = ({ trips, sharedTrips, isLoading, onView, onEdit, onDuplicate, 
         New Trip
       </button>
 
-      {/* Empty filter state */}
+      {/* Trip Invitations */}
+      {pendingInvites.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Share2 className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Trip Invitations</h3>
+            <span className="min-w-[20px] h-5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold px-1.5">
+              {pendingInvites.length}
+            </span>
+          </div>
+          {pendingInvites.map((invite) => {
+            const startDate = invite.start_date ? format(parseISO(invite.start_date), "MMM d") : "";
+            const endDate = invite.end_date ? format(parseISO(invite.end_date), "MMM d, yyyy") : "";
+            const spotCount = countSpots(invite);
+            const budgetLabel = estimateBudget(invite);
+            return (
+              <div key={invite.invite_id || invite.id} className="rounded-2xl bg-card border-2 border-primary/20 p-4 space-y-3 animate-fade-up" style={{ animationFillMode: "forwards" }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-primary font-medium mb-1">
+                      {invite.shared_by_name} invited you
+                    </p>
+                    <h4 className="text-base font-semibold text-foreground truncate">
+                      {invite.name || invite.destination}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {invite.destination}
+                    </p>
+                  </div>
+                </div>
+                {/* Meta */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                    <Clock className="w-3 h-3" /> {startDate} – {endDate}
+                  </span>
+                  {invite.vibes && invite.vibes.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      {invite.vibes.slice(0, 3).map(v => (
+                        <span key={v} className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{v}</span>
+                      ))}
+                    </div>
+                  )}
+                  {budgetLabel && (
+                    <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                      <DollarSign className="w-3 h-3" /> {budgetLabel}
+                    </span>
+                  )}
+                  {spotCount > 0 && (
+                    <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                      <MapPin className="w-3 h-3" /> {spotCount} spots
+                    </span>
+                  )}
+                </div>
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => invite.invite_id && onAcceptInvite(invite.invite_id)}
+                    className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    Join Trip
+                  </button>
+                  <button
+                    onClick={() => invite.invite_id && onIgnoreInvite(invite.invite_id)}
+                    className="px-4 py-2 rounded-xl border border-border text-muted-foreground text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    Ignore
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+
       {filtered.length === 0 && (
         <p className="text-center text-sm text-muted-foreground py-8">
           No {activeFilter} trips found.

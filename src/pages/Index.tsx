@@ -5,12 +5,13 @@ import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
+import MapPage from "@/components/MapPage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
 
-
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
+import { usePendingInvites } from "@/hooks/usePendingInvites";
 import type { OnboardingData } from "@/context/AppContext";
 
 type AppState = "onboarding" | "loading" | "main";
@@ -25,8 +26,9 @@ const Index = () => {
   } = useApp();
   
   const location = useLocation();
+  const { pendingCount, markSeen } = usePendingInvites();
   
-  const getInitialTab = (): "home" | "saved" | "trip" | "profile" => {
+  const getInitialTab = (): "home" | "map" | "saved" | "trip" | "profile" => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) return "trip";
     if (location.pathname === "/saved") return "saved";
@@ -36,7 +38,7 @@ const Index = () => {
     return "home";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "saved" | "trip" | "profile">(getInitialTab);
+  const [activeTab, setActiveTab] = useState<"home" | "map" | "saved" | "trip" | "profile">(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,6 +57,14 @@ const Index = () => {
       setActiveTab("home");
     }
   }, [location.state, location.search]);
+
+  // Mark invites as seen when user visits trip tab
+  useEffect(() => {
+    if (activeTab === "trip") {
+      markSeen();
+    }
+  }, [activeTab, markSeen]);
+
   const [appState, setAppState] = useState<AppState>(
     hasCompletedOnboarding ? "main" : "onboarding"
   );
@@ -66,7 +76,6 @@ const Index = () => {
       setAppState("onboarding");
     }
   }, [hasCompletedOnboarding, appState]);
-
 
   const handleOnboardingComplete = (data: OnboardingData) => {
     setOnboardingData(data);
@@ -101,7 +110,7 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "saved" | "trip" | "profile") => {
+  const handleTabChange = (tab: "home" | "map" | "saved" | "trip" | "profile") => {
     setActiveTab(tab);
   };
 
@@ -127,6 +136,9 @@ const Index = () => {
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
         <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
       </div>
+      <div style={{ display: activeTab === "map" ? "block" : "none" }}>
+        <MapPage />
+      </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
         <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
       </div>
@@ -140,6 +152,7 @@ const Index = () => {
       <BottomNav 
         activeTab={activeTab} 
         onTabChange={handleTabChange}
+        tripBadgeCount={pendingCount}
       />
     </div>
   );
