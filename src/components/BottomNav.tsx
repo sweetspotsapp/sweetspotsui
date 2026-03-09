@@ -100,7 +100,7 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                   className={cn(
                     "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                     isActive 
-                      ? "bg-primary/10 text-primary" 
+                      ? "bg-primary text-primary-foreground" 
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
