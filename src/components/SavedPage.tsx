@@ -310,32 +310,18 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   return (
     <>
       <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
-        {/* Header */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="w-10" />
-            
-            <h1 className="text-xl font-bold text-foreground tracking-tight">
-              SweetSpots
-            </h1>
-            
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setShowImportDialog(true)}
-                className="p-2 text-foreground hover:text-primary transition-colors"
-                aria-label="Import from link"
-              >
-                <Link2 className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => setIsProfileMenuOpen(true)}
-                className="p-2 -mr-2 text-foreground hover:text-primary transition-colors"
-              >
-                <Settings className="w-6 h-6" />
-              </button>
-            </div>
-          </div>
-        </header>
+        <AppHeader 
+          onSettingsClick={() => setIsProfileMenuOpen(true)}
+          actions={
+            <button
+              onClick={() => setShowImportDialog(true)}
+              className="p-2 text-foreground hover:text-primary transition-colors"
+              aria-label="Import from link"
+            >
+              <Link2 className="w-5 h-5" />
+            </button>
+          }
+        />
 
         {/* Page Title */}
         <div className="px-4 pt-6 pb-4">
