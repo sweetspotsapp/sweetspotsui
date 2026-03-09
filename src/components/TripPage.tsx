@@ -538,6 +538,7 @@ interface TripCardProps {
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
   onShare: (trip: SavedTrip) => void;
+  isShared?: boolean;
 }
 
 const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare }: TripCardProps) => {
