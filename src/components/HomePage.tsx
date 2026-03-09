@@ -891,7 +891,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           </button>
 
           <div className="flex flex-col items-center lg:hidden">
-            <h1 className="text-xl font-bold text-primary tracking-tight">
+            <h1 className="text-xl font-bold text-foreground tracking-tight font-sans">
               SweetSpots
             </h1>
             <button
