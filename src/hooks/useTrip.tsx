@@ -132,6 +132,7 @@ export const useTrip = () => {
   const [isSwapping, setIsSwapping] = useState(false);
   const [savedTrips, setSavedTrips] = useState<SavedTrip[]>([]);
   const [sharedTrips, setSharedTrips] = useState<(SavedTrip & { shared_by_name?: string })[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<(SavedTrip & { shared_by_name?: string; invite_id?: string })[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadTrips = useCallback(async () => {
