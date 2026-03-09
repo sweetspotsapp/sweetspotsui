@@ -352,9 +352,36 @@ export const useTrip = () => {
     } finally { setIsSwapping(false); }
   };
 
+  const acceptInvite = async (inviteId: string) => {
+    try {
+      const { error } = await (supabase.from("shared_trips") as any)
+        .update({ status: "accepted" })
+        .eq("id", inviteId);
+      if (error) throw error;
+      await loadTrips();
+      toast({ title: "Trip joined!" });
+    } catch (err) {
+      console.error("Error accepting invite:", err);
+      toast({ title: "Could not join trip", variant: "destructive" });
+    }
+  };
+
+  const ignoreInvite = async (inviteId: string) => {
+    try {
+      const { error } = await (supabase.from("shared_trips") as any)
+        .update({ status: "ignored" })
+        .eq("id", inviteId);
+      if (error) throw error;
+      setPendingInvites(prev => prev.filter(i => i.invite_id !== inviteId));
+      toast({ title: "Invitation dismissed" });
+    } catch (err) {
+      console.error("Error ignoring invite:", err);
+      toast({ title: "Could not dismiss", variant: "destructive" });
+    }
+  };
+
   return {
     generate, swap, isGenerating, isSwapping,
-    savedTrips, sharedTrips, isLoading, loadTrips,
-    saveTrip, deleteTrip,
+    savedTrips, sharedTrips, pendingInvites, isLoading, loadTrips,
+    saveTrip, deleteTrip, acceptInvite, ignoreInvite,
   };
-};
