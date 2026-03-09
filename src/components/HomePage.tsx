@@ -1157,7 +1157,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       {filteredResults.length > 0 && !isSearching && !isInitialLoading && (
         <button
           onClick={() => setIsMapView(!isMapView)}
-          className="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-full text-sm font-semibold shadow-xl hover:bg-foreground/90 transition-all active:scale-95"
+          className="fixed bottom-28 lg:bottom-8 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-full text-sm font-semibold shadow-xl hover:bg-foreground/90 transition-all active:scale-95"
         >
           {isMapView ? <List className="w-4 h-4" /> : <Map className="w-4 h-4" />}
           {isMapView ? "List" : "Map"}
