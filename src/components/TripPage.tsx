@@ -342,6 +342,7 @@ interface TripListProps {
   onEdit: (it: SavedTrip) => void;
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
+  onShare: (trip: SavedTrip) => void;
   onCreateNew: () => void;
 }
 
