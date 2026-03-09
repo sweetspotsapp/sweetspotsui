@@ -559,8 +559,8 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare,
       className="rounded-2xl bg-card border border-border overflow-hidden shadow-soft opacity-0 animate-fade-up hover:shadow-card hover:-translate-y-0.5 transition-all duration-300 group relative"
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: "forwards" }}
     >
-      {/* Overflow menu */}
-      <div className="absolute top-2 right-2 z-10">
+      {/* Overflow menu — hide for shared trips */}
+      {!isShared && <div className="absolute top-2 right-2 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
