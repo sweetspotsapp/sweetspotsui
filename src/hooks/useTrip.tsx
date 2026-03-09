@@ -157,10 +157,10 @@ export const useTrip = () => {
         flight_details: d.flight_details as SavedTrip['flight_details'],
       })));
 
-      // Load shared trips
+      // Load shared trips (accepted)
       const { data: sharedData } = await (supabase
         .from("shared_trips") as any)
-        .select("trip_id, shared_by, permission, trips:trip_id(*)")
+        .select("id, trip_id, shared_by, permission, status, trips:trip_id(*)")
         .eq("shared_with", user.id);
 
       if (sharedData) {
@@ -173,16 +173,28 @@ export const useTrip = () => {
         const nameMap: Record<string, string> = {};
         (sharerProfiles || []).forEach((p: any) => { nameMap[p.id] = p.username || "Someone"; });
 
-        setSharedTrips((sharedData as any[])
-          .filter((s: any) => s.trips)
+        const accepted = (sharedData as any[])
+          .filter((s: any) => s.trips && s.status === "accepted")
           .map((s: any) => ({
             ...s.trips,
             trip_data: s.trips.trip_data as TripData | null,
             accommodation: s.trips.accommodation as SavedTrip['accommodation'],
             flight_details: s.trips.flight_details as SavedTrip['flight_details'],
             shared_by_name: nameMap[s.shared_by] || "Someone",
-          }))
-        );
+          }));
+        setSharedTrips(accepted);
+
+        const pending = (sharedData as any[])
+          .filter((s: any) => s.trips && s.status === "pending")
+          .map((s: any) => ({
+            ...s.trips,
+            trip_data: s.trips.trip_data as TripData | null,
+            accommodation: s.trips.accommodation as SavedTrip['accommodation'],
+            flight_details: s.trips.flight_details as SavedTrip['flight_details'],
+            shared_by_name: nameMap[s.shared_by] || "Someone",
+            invite_id: s.id,
+          }));
+        setPendingInvites(pending);
       }
     } catch (err) {
       console.error("Error loading trips:", err);
