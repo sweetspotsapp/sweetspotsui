@@ -38,10 +38,11 @@ const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) =
 
 
 
+
       // Not JSON, fall back to sentence splitting
     } // Legacy: split by sentences
     let cleaned = summary;if (location && location !== "nearby") {cleaned = cleaned.replace(/\s*nearby\.?/gi, '.');cleaned = cleaned.replace(/\s*within \d+(\.\d+)?\s*(km|miles?)\.?/gi, '.');cleaned = cleaned.replace(/\.\./g, '.').trim();}return cleaned.split(/(?<=\.)\s+/).map((s) => s.trim()).filter((s) => s.length > 5).slice(0, 3);};const bullets = getBulletPoints();return <div className="mx-4 mb-6 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 bg-[#fff1cc]">
-      <button onClick={() => setIsExpanded(!isExpanded)} className="w-full flex items-center gap-3 p-4 text-left rounded-2xl transition-colors py-[8px] bg-[#f5e8db]">
+      <button onClick={() => setIsExpanded(!isExpanded)} className="w-full gap-3 p-4 text-left rounded-2xl transition-colors py-[8px] bg-[#f5e8db] flex items-center justify-center">
         
         <div className="relative p-2 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 shrink-0">
           <IceCreamCone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -50,8 +51,7 @@ const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) =
         <span className="text-sm font-medium text-amber-700 dark:text-amber-300 flex-1">
           Here's the scoop
         </span>
-        {isExpanded ?
-      <ChevronUp className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" /> :
+        {isExpanded ? <ChevronUp className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" /> :
 
       <ChevronDown className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
       }
