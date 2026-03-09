@@ -53,6 +53,7 @@ const CreateTripModal = ({
   const [hasEndDate, setHasEndDate] = useState(!!initialParams?.endDate);
   const [vibes, setVibes] = useState<string[]>(initialParams?.vibes || []);
   const [customVibe, setCustomVibe] = useState("");
+  const [vibeDetails, setVibeDetails] = useState("");
   
   const [showUploadSection, setShowUploadSection] = useState(false);
   const [showBrowse, setShowBrowse] = useState(false);
