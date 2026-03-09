@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign } from "lucide-react";
+import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import AppHeader from "./AppHeader";
