@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 import TopPickCard from "./TopPickCard";
 import { MockPlace } from "./PlaceCardCompact";
