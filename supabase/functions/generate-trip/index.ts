@@ -37,13 +37,20 @@ serve(async (req) => {
       ? `\n\nAccommodation(s):\n${accommodations.map((a: any, i: number) => `- Stay ${i + 1}: ${a.name || 'Unknown'} at ${a.address || 'Unknown address'}`).join("\n")}\nPlease consider proximity to accommodation when planning activities.`
       : "";
 
+    const vibeInstruction = vibeDetails
+      ? `\n\nCRITICAL — The traveler specifically described what they want: "${vibeDetails}"\nYou MUST heavily prioritize this description when choosing activities. Every activity should relate to or complement this request. Do NOT add generic tourist activities that don't match unless absolutely necessary to fill a time slot.`
+      : "";
+
+    const vibeChipsInstruction = vibes && vibes.length > 0
+      ? `\nThe traveler selected these vibes: ${vibes.join(", ")}. Prioritize activities that match these moods.`
+      : "";
+
     const prompt = `Create a detailed day-by-day travel plan for a trip to ${destination}.
 
 Trip details:
 - Dates: ${startDate} to ${endDate}
 - Budget level: ${budget} ($ = budget, $$ = moderate, $$$ = upscale, $$$$ = luxury)
-- Group size: ${groupSize} people
-- Vibes they want: ${vibes.join(", ")}${vibeDetails ? `\n- Additional details from the traveler: "${vibeDetails}"` : ""}${mustIncludeSection}${accommodationSection}
+- Group size: ${groupSize} people${vibeChipsInstruction}${vibeInstruction}${mustIncludeSection}${accommodationSection}
 
 Generate a structured trip plan with Morning, Afternoon, and Evening slots for each day. Each activity should have:
 - A realistic name of a real place or activity
@@ -51,6 +58,8 @@ Generate a structured trip plan with Morning, Afternoon, and Evening slots for e
 - A category
 - An optional time range
 - An estimated cost per person in USD (be realistic based on the budget level and destination)
+
+IMPORTANT: The traveler's vibes and description are the MOST important input. Build the entire itinerary around what they asked for. If they said "sunset", prioritize sunset viewpoints, rooftop bars at golden hour, sunset cruises, etc. If they said "foodie", focus on food experiences. Do NOT default to generic city tours or random cafes.
 
 Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 for restaurants, $10-30 for museums, etc. Adjust for the destination's cost of living.`;
 
@@ -82,7 +91,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
                             properties: {
                               name: { type: "string" },
                               time: { type: "string", description: "e.g. 9:00 AM - 11:00 AM" },
-                              category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market"] },
+                              category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market", "nature", "viewpoint", "wellness", "tour"] },
                               description: { type: "string", description: "1-2 sentences" },
                               mustInclude: { type: "boolean" },
                               estimatedCost: { type: "number", description: "Estimated cost per person in USD. Use 0 for free activities." },
@@ -117,7 +126,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a travel planning expert. Return structured trip plans using the provided tool. Always include realistic cost estimates." },
+          { role: "system", content: "You are a travel planning expert who deeply personalizes itineraries. The traveler's stated vibes, mood, and description are your PRIMARY guide — every activity must reflect what they asked for. Never fall back to generic tourist itineraries. Return structured trip plans using the provided tool with realistic cost estimates." },
           { role: "user", content: prompt },
         ],
         tools: [toolDef],
@@ -156,7 +165,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: "You are a travel planning expert. You MUST use the create_trip tool to return your response. Do not respond with plain text." },
+            { role: "system", content: "You are a travel planning expert who deeply personalizes itineraries based on the traveler's vibes and description. You MUST use the create_trip tool to return your response. Do not respond with plain text." },
             { role: "user", content: prompt },
           ],
           tools: [toolDef],
