@@ -15,11 +15,11 @@ import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
 
-const BUDGET_LABELS: Record<string, string> = {
-  "$": "~$50/day",
-  "$$": "~$100/day",
-  "$$$": "~$200/day",
-  "$$$$": "$300+/day",
+const BASE_BUDGET_USD: Record<string, number> = {
+  "$": 50,
+  "$$": 100,
+  "$$$": 200,
+  "$$$$": 300,
 };
 
 interface CreateTripModalProps {
