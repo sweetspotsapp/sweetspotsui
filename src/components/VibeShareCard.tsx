@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Download, Share2, X, Copy, Check } from "lucide-react";
+import { Download, Share2, X, Instagram } from "lucide-react";
 import { toPng } from "html-to-image";
 import { Button } from "./ui/button";
 import { toast } from "@/hooks/use-toast";
