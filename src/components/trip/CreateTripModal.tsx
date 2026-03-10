@@ -256,6 +256,7 @@ const CreateTripModal = ({
               setBoardIds={setBoardIds}
               destination={destination}
               onBrowse={() => setShowBrowse(true)}
+              getBudgetLabel={getBudgetLabel}
             />
           )}
         </div>
