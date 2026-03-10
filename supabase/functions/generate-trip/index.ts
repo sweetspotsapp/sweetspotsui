@@ -126,7 +126,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a travel planning expert. Return structured trip plans using the provided tool. Always include realistic cost estimates." },
+          { role: "system", content: "You are a travel planning expert who deeply personalizes itineraries. The traveler's stated vibes, mood, and description are your PRIMARY guide — every activity must reflect what they asked for. Never fall back to generic tourist itineraries. Return structured trip plans using the provided tool with realistic cost estimates." },
           { role: "user", content: prompt },
         ],
         tools: [toolDef],
