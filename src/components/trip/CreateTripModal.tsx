@@ -170,7 +170,11 @@ const CreateTripModal = ({
           <h2 className="text-base font-semibold text-foreground">
             {step === 1 ? "Trip Setup" : "Planning Style"}
           </h2>
-          <div className="w-7" />
+          {step === 2 ? (
+            <CurrencyPicker value={budgetCurrency} onChange={setBudgetCurrency} compact />
+          ) : (
+            <div className="w-7" />
+          )}
         </div>
 
         {/* Step Indicator */}
