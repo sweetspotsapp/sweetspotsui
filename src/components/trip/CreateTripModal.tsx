@@ -170,11 +170,7 @@ const CreateTripModal = ({
           <h2 className="text-base font-semibold text-foreground">
             {step === 1 ? "Trip Setup" : "Planning Style"}
           </h2>
-          {step === 2 ? (
-            <CurrencyPicker value={budgetCurrency} onChange={setBudgetCurrency} compact />
-          ) : (
-            <div className="w-7" />
-          )}
+          <div className="w-7" />
         </div>
 
         {/* Step Indicator */}
@@ -635,7 +631,10 @@ const Step2Content = ({
   <div className="space-y-5">
     {/* Budget */}
     <div className="space-y-3">
-      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Budget</label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Budget</label>
+        <CurrencyPicker value={budgetCurrency} onChange={setBudgetCurrency} compact />
+      </div>
 
       {/* Budget Mode Toggle */}
       <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
