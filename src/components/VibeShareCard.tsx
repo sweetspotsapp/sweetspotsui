@@ -277,13 +277,17 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
               </Button>
             ) : (
               <Button
-                onClick={handleCopyImage}
+                onClick={async () => {
+                  await handleDownload();
+                  window.open("https://www.instagram.com/", "_blank");
+                  toast({ title: "Image saved! Upload it to your Instagram story or post 📸" });
+                }}
                 disabled={isExporting}
                 className="flex-1 h-10 rounded-xl border-border text-xs"
                 variant="outline"
               >
-                {copied ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
-                {copied ? "Copied!" : "Copy image"}
+                <Instagram className="w-3.5 h-3.5 mr-1.5" />
+                Instagram
               </Button>
             )}
           </div>
