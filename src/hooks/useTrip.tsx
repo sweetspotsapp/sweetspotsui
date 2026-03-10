@@ -49,6 +49,7 @@ export interface TripParams {
   budget: string;
   groupSize: number;
   vibes: string[];
+  vibeDetails?: string;
   mustIncludePlaceIds: string[];
   boardIds: string[];
   accommodations?: AccommodationEntry[];
