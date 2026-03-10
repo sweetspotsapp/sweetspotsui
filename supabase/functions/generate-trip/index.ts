@@ -91,7 +91,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
                             properties: {
                               name: { type: "string" },
                               time: { type: "string", description: "e.g. 9:00 AM - 11:00 AM" },
-                              category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market"] },
+                              category: { type: "string", enum: ["food", "cafe", "bar", "museum", "park", "shopping", "landmark", "entertainment", "adventure", "nightlife", "beach", "temple", "market", "nature", "viewpoint", "wellness", "tour"] },
                               description: { type: "string", description: "1-2 sentences" },
                               mustInclude: { type: "boolean" },
                               estimatedCost: { type: "number", description: "Estimated cost per person in USD. Use 0 for free activities." },
