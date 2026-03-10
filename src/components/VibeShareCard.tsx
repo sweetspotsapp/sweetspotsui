@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Download, Share2, X, Copy, Check } from "lucide-react";
+import { Download, Share2, X, Instagram } from "lucide-react";
 import { toPng } from "html-to-image";
 import { Button } from "./ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -27,7 +27,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [copied, setCopied] = useState(false);
+  
 
   useEffect(() => {
     // Detect mobile by checking touch support + screen width
@@ -101,21 +101,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, "_blank");
   };
 
-  const handleCopyImage = async () => {
-    const blob = await generateImage();
-    if (!blob) return;
-    try {
-      await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": blob }),
-      ]);
-      setCopied(true);
-      toast({ title: "Image copied to clipboard" });
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback: download instead
-      handleDownload();
-    }
-  };
+
 
   // Map color classes to actual inline styles for export
   const colorMap: Record<string, string> = {
@@ -277,13 +263,17 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
               </Button>
             ) : (
               <Button
-                onClick={handleCopyImage}
+                onClick={async () => {
+                  await handleDownload();
+                  window.open("https://www.instagram.com/", "_blank");
+                  toast({ title: "Image saved! Upload it to your Instagram story or post 📸" });
+                }}
                 disabled={isExporting}
                 className="flex-1 h-10 rounded-xl border-border text-xs"
                 variant="outline"
               >
-                {copied ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
-                {copied ? "Copied!" : "Copy image"}
+                <Instagram className="w-3.5 h-3.5 mr-1.5" />
+                Instagram
               </Button>
             )}
           </div>
