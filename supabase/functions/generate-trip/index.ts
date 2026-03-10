@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { destination, startDate, endDate, budget, groupSize, vibes, mustIncludePlaceIds, accommodations } = await req.json();
+    const { destination, startDate, endDate, budget, groupSize, vibes, vibeDetails, mustIncludePlaceIds, accommodations } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -43,7 +43,7 @@ Trip details:
 - Dates: ${startDate} to ${endDate}
 - Budget level: ${budget} ($ = budget, $$ = moderate, $$$ = upscale, $$$$ = luxury)
 - Group size: ${groupSize} people
-- Vibes they want: ${vibes.join(", ")}${mustIncludeSection}${accommodationSection}
+- Vibes they want: ${vibes.join(", ")}${vibeDetails ? `\n- Additional details from the traveler: "${vibeDetails}"` : ""}${mustIncludeSection}${accommodationSection}
 
 Generate a structured trip plan with Morning, Afternoon, and Evening slots for each day. Each activity should have:
 - A realistic name of a real place or activity

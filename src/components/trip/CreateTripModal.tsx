@@ -138,6 +138,7 @@ const CreateTripModal = ({
       budget,
       groupSize,
       vibes,
+      vibeDetails: vibeDetails.trim() || undefined,
       mustIncludePlaceIds,
       boardIds,
     });
