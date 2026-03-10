@@ -114,6 +114,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
   };
 
   const handleDuplicate = (saved: SavedTrip) => {
+    const savedVibeDetails = (saved.trip_data as any)?._meta?.vibeDetails || undefined;
     setPrefillParams({
       name: saved.name ? `${saved.name} (copy)` : undefined,
       destination: saved.destination,
@@ -122,6 +123,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
       budget: saved.budget,
       groupSize: saved.group_size,
       vibes: saved.vibes || [],
+      vibeDetails: savedVibeDetails,
       mustIncludePlaceIds: saved.must_include_place_ids || [],
       boardIds: saved.board_ids || [],
       accommodations: saved.accommodation || undefined,
@@ -137,8 +139,15 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
     setShowCreateModal(false);
     const result = await generate(params);
     if (result) {
-      setTripData(result);
-      const id = await saveTrip(params, result, editingId || undefined);
+      const resultWithContext: TripData = {
+        ...result,
+        _meta: {
+          ...(result._meta || {}),
+          vibeDetails: params.vibeDetails?.trim() || "",
+        },
+      };
+      setTripData(resultWithContext);
+      const id = await saveTrip(params, resultWithContext, editingId || undefined);
       if (id) setEditingId(id);
       setPhase("view");
     }
