@@ -56,3 +56,12 @@ verify_jwt = false
 
 [functions.compute-routes]
 verify_jwt = false
+
+[functions.place-autocomplete]
+verify_jwt = false
+
+[functions.find-user-by-email]
+verify_jwt = false
+
+[functions.notify-trip-shared]
+verify_jwt = false
