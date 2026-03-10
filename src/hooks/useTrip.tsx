@@ -210,6 +210,14 @@ export const useTrip = () => {
   useEffect(() => { loadTrips(); }, [loadTrips]);
 
   const saveTrip = async (params: TripParams, tripData: TripData, existingId?: string): Promise<string | null> => {
+    const tripDataWithContext: TripData = {
+      ...tripData,
+      _meta: {
+        ...(tripData._meta || {}),
+        vibeDetails: params.vibeDetails?.trim() || "",
+      },
+    };
+
     if (!user) {
       const now = new Date().toISOString();
       const localItems = loadLocalTrips();
@@ -228,7 +236,7 @@ export const useTrip = () => {
                 vibes: params.vibes,
                 must_include_place_ids: params.mustIncludePlaceIds,
                 board_ids: params.boardIds,
-                trip_data: tripData,
+                trip_data: tripDataWithContext,
                 accommodation: params.accommodations || null,
                 flight_details: params.flightDetails || null,
                 updated_at: now,
@@ -252,7 +260,7 @@ export const useTrip = () => {
           vibes: params.vibes,
           must_include_place_ids: params.mustIncludePlaceIds,
           board_ids: params.boardIds,
-          trip_data: tripData,
+          trip_data: tripDataWithContext,
           accommodation: params.accommodations || null,
           flight_details: params.flightDetails || null,
           created_at: now,
@@ -277,7 +285,7 @@ export const useTrip = () => {
         vibes: params.vibes,
         must_include_place_ids: params.mustIncludePlaceIds,
         board_ids: params.boardIds,
-        trip_data: JSON.parse(JSON.stringify(tripData)),
+        trip_data: JSON.parse(JSON.stringify(tripDataWithContext)),
         accommodation: params.accommodations ? JSON.parse(JSON.stringify(params.accommodations)) : null,
         flight_details: params.flightDetails ? JSON.parse(JSON.stringify(params.flightDetails)) : null,
       };
