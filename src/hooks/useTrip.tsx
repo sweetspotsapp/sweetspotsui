@@ -30,6 +30,9 @@ export interface TripDay {
 export interface TripData {
   summary?: string;
   days: TripDay[];
+  _meta?: {
+    vibeDetails?: string;
+  };
 }
 
 export interface AccommodationEntry {
