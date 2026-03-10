@@ -73,7 +73,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         parameters: {
           type: "object",
           properties: {
-            summary: { type: "string", description: "A 1-2 sentence overview that reflects the traveler's stated vibes, mood, and specific requests (e.g. 'A sunset-chasing evening...' if they asked for sunsets). Do NOT write a generic city description." },
+            summary: { type: "string", description: "Write this like you're hyping up the trip to a friend — casual, warm, maybe a little cheeky. Keep it 1-2 sentences. Example: 'Chasing sunsets across Melbourne — rooftop golden hours, waterfront views, and zero alarms 🌅'. Do NOT sound like a travel brochure." },
             days: {
               type: "array",
               items: {
