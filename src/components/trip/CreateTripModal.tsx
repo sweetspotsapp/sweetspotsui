@@ -102,6 +102,7 @@ const CreateTripModal = ({
         setGroupSize(initialParams.groupSize || 2);
         setMustIncludePlaceIds(initialParams.mustIncludePlaceIds || []);
         setBoardIds(initialParams.boardIds || []);
+        setVibeDetails(initialParams.vibeDetails || "");
       } else {
         setName("");
         setDestination("");
@@ -110,6 +111,7 @@ const CreateTripModal = ({
         setHasEndDate(false);
         setVibes([]);
         setCustomVibe("");
+        setVibeDetails("");
         setBudget("$$");
         setTotalBudget("");
         setUseTotalBudget(false);
