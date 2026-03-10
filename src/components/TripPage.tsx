@@ -93,6 +93,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
   };
 
   const handleEditTrip = (saved: SavedTrip) => {
+    const savedVibeDetails = (saved.trip_data as any)?._meta?.vibeDetails || undefined;
     setPrefillParams({
       name: saved.name || undefined,
       destination: saved.destination,
@@ -101,6 +102,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
       budget: saved.budget,
       groupSize: saved.group_size,
       vibes: saved.vibes || [],
+      vibeDetails: savedVibeDetails,
       mustIncludePlaceIds: saved.must_include_place_ids || [],
       boardIds: saved.board_ids || [],
       accommodations: saved.accommodation || undefined,
