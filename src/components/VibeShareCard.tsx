@@ -27,7 +27,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [copied, setCopied] = useState(false);
+  
 
   useEffect(() => {
     // Detect mobile by checking touch support + screen width
