@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { destination, vibes, budget, dayLabel, timeSlot, currentActivity, category } = await req.json();
+    const { destination, vibes, vibeDetails, budget, dayLabel, timeSlot, currentActivity, category } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -17,9 +17,10 @@ serve(async (req) => {
     const prompt = `I'm visiting ${destination} and currently have "${currentActivity}" (${category}) planned for ${timeSlot} on ${dayLabel}.
 
 Trip vibes: ${(vibes || []).join(", ")}
+${vibeDetails ? `Traveler's specific intent: ${vibeDetails}` : ""}
 Budget: ${budget}
 
-Suggest 3-4 alternative activities for this same time slot. Each should be a real place or activity in ${destination}, different from "${currentActivity}", matching the trip vibes and budget.`;
+Suggest 3-4 alternative activities for this same time slot. Each should be a real place or activity in ${destination}, different from "${currentActivity}", matching the trip vibes, specific intent, and budget.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

@@ -92,6 +92,7 @@ export interface SwapAlternative {
 interface SwapParams {
   destination: string;
   vibes: string[];
+  vibeDetails?: string;
   budget: string;
   dayLabel: string;
   timeSlot: string;

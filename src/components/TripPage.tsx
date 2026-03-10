@@ -172,11 +172,12 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
     return await swap({
       destination: tripParams.destination,
       vibes: tripParams.vibes,
+      vibeDetails: tripParams.vibeDetails,
       budget: tripParams.budget,
       dayLabel: day.label,
       timeSlot: slot.time,
       currentActivity: activity.name,
-      category: `${activity.category}${tripParams.vibeDetails ? ` | Traveler intent: ${tripParams.vibeDetails}` : ""}`,
+      category: activity.category,
     });
   };
 
