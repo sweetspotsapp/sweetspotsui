@@ -656,7 +656,7 @@ const Step2Content = ({
   groupSize, setGroupSize,
   mustIncludePlaceIds, setMustIncludePlaceIds,
   boardIds, setBoardIds,
-  destination, onBrowse,
+  destination, onBrowse, getBudgetLabel,
 }: Step2Props) => (
   <div className="space-y-5">
     {/* Budget */}
