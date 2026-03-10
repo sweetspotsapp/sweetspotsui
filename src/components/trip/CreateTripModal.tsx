@@ -631,7 +631,10 @@ const Step2Content = ({
   <div className="space-y-5">
     {/* Budget */}
     <div className="space-y-3">
-      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Budget</label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Budget</label>
+        <CurrencyPicker value={budgetCurrency} onChange={setBudgetCurrency} compact />
+      </div>
 
       {/* Budget Mode Toggle */}
       <div className="flex gap-2 p-1 rounded-xl bg-muted/50">
