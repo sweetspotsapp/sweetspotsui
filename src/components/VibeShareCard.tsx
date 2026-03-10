@@ -101,21 +101,7 @@ const VibeShareCard = ({ open, onClose, vibeBreakdown, personalityTraits, userNa
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, "_blank");
   };
 
-  const handleCopyImage = async () => {
-    const blob = await generateImage();
-    if (!blob) return;
-    try {
-      await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": blob }),
-      ]);
-      setCopied(true);
-      toast({ title: "Image copied to clipboard" });
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback: download instead
-      handleDownload();
-    }
-  };
+
 
   // Map color classes to actual inline styles for export
   const colorMap: Record<string, string> = {
