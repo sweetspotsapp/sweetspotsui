@@ -15,11 +15,11 @@ import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
 
-const BUDGET_LABELS: Record<string, string> = {
-  "$": "~$50/day",
-  "$$": "~$100/day",
-  "$$$": "~$200/day",
-  "$$$$": "$300+/day",
+const BASE_BUDGET_USD: Record<string, number> = {
+  "$": 50,
+  "$$": 100,
+  "$$$": 200,
+  "$$$$": 300,
 };
 
 interface CreateTripModalProps {
@@ -67,6 +67,25 @@ const CreateTripModal = ({
   const [groupSize, setGroupSize] = useState(initialParams?.groupSize || 2);
   const [mustIncludePlaceIds, setMustIncludePlaceIds] = useState<string[]>(initialParams?.mustIncludePlaceIds || []);
   const [boardIds, setBoardIds] = useState<string[]>(initialParams?.boardIds || []);
+  const [exchangeRate, setExchangeRate] = useState(1);
+
+  // Fetch exchange rate when currency changes
+  useEffect(() => {
+    if (budgetCurrency === "USD") {
+      setExchangeRate(1);
+      return;
+    }
+    let cancelled = false;
+    fetch(`https://open.er-api.com/v6/latest/USD`)
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && data?.rates?.[budgetCurrency]) {
+          setExchangeRate(data.rates[budgetCurrency]);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [budgetCurrency]);
 
   // Reset when opening
   useEffect(() => {
@@ -99,6 +118,7 @@ const CreateTripModal = ({
         setGroupSize(2);
         setMustIncludePlaceIds([]);
         setBoardIds([]);
+        setExchangeRate(1);
       }
     }
   }, [isOpen, initialParams]);
@@ -111,6 +131,14 @@ const CreateTripModal = ({
   const perDayBudget = useTotalBudget && totalBudget && duration > 0
     ? Math.round(parseFloat(totalBudget) / duration)
     : null;
+
+  const getBudgetLabel = (tier: string) => {
+    const baseUsd = BASE_BUDGET_USD[tier] || 100;
+    const converted = Math.round(baseUsd * exchangeRate);
+    const prefix = tier === "$$$$" ? "" : "~";
+    const suffix = tier === "$$$$" ? "+" : "";
+    return `${prefix}${budgetSymbol}${converted.toLocaleString()}${suffix}/day`;
+  };
 
   const toggleVibe = (v: string) => {
     setVibes(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
@@ -228,6 +256,7 @@ const CreateTripModal = ({
               setBoardIds={setBoardIds}
               destination={destination}
               onBrowse={() => setShowBrowse(true)}
+              getBudgetLabel={getBudgetLabel}
             />
           )}
         </div>
@@ -616,6 +645,7 @@ interface Step2Props {
   setBoardIds: (ids: string[]) => void;
   destination?: string;
   onBrowse?: () => void;
+  getBudgetLabel: (tier: string) => string;
 }
 
 const Step2Content = ({
@@ -627,7 +657,7 @@ const Step2Content = ({
   groupSize, setGroupSize,
   mustIncludePlaceIds, setMustIncludePlaceIds,
   boardIds, setBoardIds,
-  destination, onBrowse,
+  destination, onBrowse, getBudgetLabel,
 }: Step2Props) => (
   <div className="space-y-5">
     {/* Budget */}
@@ -672,7 +702,7 @@ const Step2Content = ({
                   : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
               )}
             >
-              {BUDGET_LABELS[b]}
+              {getBudgetLabel(b)}
             </button>
           ))}
         </div>
