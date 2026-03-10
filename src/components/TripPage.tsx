@@ -176,7 +176,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
       dayLabel: day.label,
       timeSlot: slot.time,
       currentActivity: activity.name,
-      category: activity.category,
+      category: `${activity.category}${tripParams.vibeDetails ? ` | Traveler intent: ${tripParams.vibeDetails}` : ""}`,
     });
   };
 
