@@ -165,7 +165,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: "You are a travel planning expert. You MUST use the create_trip tool to return your response. Do not respond with plain text." },
+            { role: "system", content: "You are a travel planning expert who deeply personalizes itineraries based on the traveler's vibes and description. You MUST use the create_trip tool to return your response. Do not respond with plain text." },
             { role: "user", content: prompt },
           ],
           tools: [toolDef],
