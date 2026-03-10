@@ -71,6 +71,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
 
   const handleViewTrip = (saved: SavedTrip) => {
     if (saved.trip_data) {
+      const savedVibeDetails = (saved.trip_data as any)?._meta?.vibeDetails || undefined;
       setTripData(saved.trip_data);
       setTripParams({
         name: saved.name || undefined,
@@ -80,6 +81,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
         budget: saved.budget,
         groupSize: saved.group_size,
         vibes: saved.vibes || [],
+        vibeDetails: savedVibeDetails,
         mustIncludePlaceIds: saved.must_include_place_ids || [],
         boardIds: saved.board_ids || [],
         accommodations: saved.accommodation || undefined,
