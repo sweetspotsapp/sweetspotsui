@@ -71,7 +71,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         parameters: {
           type: "object",
           properties: {
-            summary: { type: "string", description: "A 1-2 sentence overview of the trip" },
+            summary: { type: "string", description: "A 1-2 sentence overview that reflects the traveler's stated vibes, mood, and specific requests (e.g. 'A sunset-chasing evening...' if they asked for sunsets). Do NOT write a generic city description." },
             days: {
               type: "array",
               items: {
