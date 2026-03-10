@@ -61,6 +61,8 @@ Generate a structured trip plan with Morning, Afternoon, and Evening slots for e
 
 IMPORTANT: The traveler's vibes and description are the MOST important input. Build the entire itinerary around what they asked for. If they said "sunset", prioritize sunset viewpoints, rooftop bars at golden hour, sunset cruises, etc. If they said "foodie", focus on food experiences. Do NOT default to generic city tours or random cafes.
 
+The trip summary MUST reflect the traveler's specific intent and vibes — not a generic city description. For example, if vibes are "Chill" and details say "sunset only", write something like "A golden-hour journey through Melbourne's best sunset viewpoints..." NOT "An exploration of Melbourne's coffee culture...".
+
 Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 for restaurants, $10-30 for museums, etc. Adjust for the destination's cost of living.`;
 
     const toolDef = {
@@ -71,7 +73,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         parameters: {
           type: "object",
           properties: {
-            summary: { type: "string", description: "A 1-2 sentence overview of the trip" },
+            summary: { type: "string", description: "A 1-2 sentence overview that reflects the traveler's stated vibes, mood, and specific requests (e.g. 'A sunset-chasing evening...' if they asked for sunsets). Do NOT write a generic city description." },
             days: {
               type: "array",
               items: {
