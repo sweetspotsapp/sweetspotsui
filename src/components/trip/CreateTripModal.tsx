@@ -644,6 +644,7 @@ interface Step2Props {
   setBoardIds: (ids: string[]) => void;
   destination?: string;
   onBrowse?: () => void;
+  getBudgetLabel: (tier: string) => string;
 }
 
 const Step2Content = ({
