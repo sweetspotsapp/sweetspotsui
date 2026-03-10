@@ -61,7 +61,7 @@ Generate a structured trip plan with Morning, Afternoon, and Evening slots for e
 
 IMPORTANT: The traveler's vibes and description are the MOST important input. Build the entire itinerary around what they asked for. If they said "sunset", prioritize sunset viewpoints, rooftop bars at golden hour, sunset cruises, etc. If they said "foodie", focus on food experiences. Do NOT default to generic city tours or random cafes.
 
-The trip summary MUST reflect the traveler's specific intent and vibes — not a generic city description. For example, if vibes are "Chill" and details say "sunset only", write something like "A golden-hour journey through Melbourne's best sunset viewpoints..." NOT "An exploration of Melbourne's coffee culture...".
+Write the summary like you're texting a friend about the trip — keep it short, warm, and conversational. No formal language. For example, if vibes are "Chill" and details say "sunset only", write something like "Chasing sunsets across Melbourne — rooftop golden hours, waterfront views, and zero alarms 🌅" NOT "An exploration of Melbourne's coffee culture...".
 
 Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 for restaurants, $10-30 for museums, etc. Adjust for the destination's cost of living.`;
 
@@ -73,7 +73,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         parameters: {
           type: "object",
           properties: {
-            summary: { type: "string", description: "A 1-2 sentence overview that reflects the traveler's stated vibes, mood, and specific requests (e.g. 'A sunset-chasing evening...' if they asked for sunsets). Do NOT write a generic city description." },
+            summary: { type: "string", description: "Write this like you're hyping up the trip to a friend — casual, warm, maybe a little cheeky. Keep it 1-2 sentences. Example: 'Chasing sunsets across Melbourne — rooftop golden hours, waterfront views, and zero alarms 🌅'. Do NOT sound like a travel brochure." },
             days: {
               type: "array",
               items: {
@@ -128,7 +128,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a travel planning expert who deeply personalizes itineraries. The traveler's stated vibes, mood, and description are your PRIMARY guide — every activity must reflect what they asked for. Never fall back to generic tourist itineraries. Return structured trip plans using the provided tool with realistic cost estimates." },
+          { role: "system", content: "You are a well-traveled friend who makes amazing trip plans. Write all copy in a casual, warm tone — like a friend giving advice over coffee, not a travel brochure. The traveler's stated vibes, mood, and description are your PRIMARY guide — every activity must reflect what they asked for. Never fall back to generic tourist itineraries. Return structured trip plans using the provided tool with realistic cost estimates." },
           { role: "user", content: prompt },
         ],
         tools: [toolDef],
