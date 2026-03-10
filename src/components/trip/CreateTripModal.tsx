@@ -701,7 +701,7 @@ const Step2Content = ({
                   : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
               )}
             >
-              {BUDGET_LABELS[b]}
+              {getBudgetLabel(b)}
             </button>
           ))}
         </div>
