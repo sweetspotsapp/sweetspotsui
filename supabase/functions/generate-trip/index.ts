@@ -43,7 +43,7 @@ Trip details:
 - Dates: ${startDate} to ${endDate}
 - Budget level: ${budget} ($ = budget, $$ = moderate, $$$ = upscale, $$$$ = luxury)
 - Group size: ${groupSize} people
-- Vibes they want: ${vibes.join(", ")}${mustIncludeSection}${accommodationSection}
+- Vibes they want: ${vibes.join(", ")}${vibeDetails ? `\n- Additional details from the traveler: "${vibeDetails}"` : ""}${mustIncludeSection}${accommodationSection}
 
 Generate a structured trip plan with Morning, Afternoon, and Evening slots for each day. Each activity should have:
 - A realistic name of a real place or activity
