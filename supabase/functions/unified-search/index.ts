@@ -847,7 +847,7 @@ serve(async (req) => {
         
         // Cache the result for 24 hours — cities don't move (fire and forget)
         if (lat !== undefined && lng !== undefined) {
-          setCacheValue(supabaseAdmin, geoCacheKey, { lat, lng }, 24 * 60 * 60 * 1000).then(() => {});
+          setCacheValue(supabaseAdmin, geoCacheKey, { lat, lng }, 30 * 24 * 60 * 60 * 1000).then(() => {});
         }
       }
     }
@@ -871,7 +871,7 @@ serve(async (req) => {
     const roundedLat = Math.round(lat * 200) / 200;
     const roundedLng = Math.round(lng * 200) / 200;
     const searchCacheKey = `search:${roundedLat}:${roundedLng}:${radius_m}:${keywords.toLowerCase().trim()}`;
-    const SEARCH_CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+    const SEARCH_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
     const cachedSearch = await getCacheValue<{
       candidates: PlaceCandidate[];
