@@ -871,7 +871,7 @@ serve(async (req) => {
     const roundedLat = Math.round(lat * 200) / 200;
     const roundedLng = Math.round(lng * 200) / 200;
     const searchCacheKey = `search:${roundedLat}:${roundedLng}:${radius_m}:${keywords.toLowerCase().trim()}`;
-    const SEARCH_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const SEARCH_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
     const cachedSearch = await getCacheValue<{
       candidates: PlaceCandidate[];
