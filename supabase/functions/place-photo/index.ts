@@ -1,12 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const BUCKET = 'place-photos';
+
+const TRANSPARENT_PIXEL = new Uint8Array([
+  0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00,
+  0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x21,
+  0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00,
+  0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x01, 0x44,
+  0x00, 0x3b,
+]);
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -24,51 +34,74 @@ serve(async (req) => {
       );
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY_BE');
+
     if (!googleMapsApiKey) {
-      console.error('GOOGLE_MAPS_API_KEY_BE not configured');
       return new Response(
         JSON.stringify({ error: 'Google Maps API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Fetch the photo from Google Places API (New)
-    const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}&key=${googleMapsApiKey}`;
-    
-    console.log('Fetching photo:', photoName);
-    
-    const response = await fetch(photoUrl);
-    
-    if (!response.ok) {
-      console.error('Photo fetch failed:', response.status);
-      // Return a 1x1 transparent pixel so the browser doesn't show a broken image icon
-      const pixel = new Uint8Array([
-        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00,
-        0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x21,
-        0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00,
-        0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x01, 0x44,
-        0x00, 0x3b
-      ]);
-      return new Response(pixel, {
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    // Storage path: use Google photo_name as natural path + size variant
+    // e.g. places/ChIJ.../photos/AXCi.../400x400
+    const storagePath = `${photoName}/${maxWidth}x${maxHeight}`;
+
+    // === CHECK CACHE: Try Supabase Storage first ===
+    const { data: cachedBlob, error: downloadError } = await supabase.storage
+      .from(BUCKET)
+      .download(storagePath);
+
+    if (cachedBlob && !downloadError) {
+      console.log('Cache HIT:', storagePath);
+      const buffer = await cachedBlob.arrayBuffer();
+      return new Response(buffer, {
         headers: {
           ...corsHeaders,
-          'Content-Type': 'image/gif',
-          'Cache-Control': 'no-cache',
+          'Content-Type': cachedBlob.type || 'image/jpeg',
+          'Cache-Control': 'public, max-age=2592000', // 30 days
+          'X-Cache': 'HIT',
         },
       });
     }
 
-    // Get the image data and content type
+    // === CACHE MISS: Fetch from Google Places API ===
+    console.log('Cache MISS — fetching from Google:', photoName);
+    const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}&key=${googleMapsApiKey}`;
+    const response = await fetch(photoUrl);
+
+    if (!response.ok) {
+      console.error('Google photo fetch failed:', response.status);
+      return new Response(TRANSPARENT_PIXEL, {
+        headers: { ...corsHeaders, 'Content-Type': 'image/gif', 'Cache-Control': 'no-cache' },
+      });
+    }
+
     const imageData = await response.arrayBuffer();
     const contentType = response.headers.get('Content-Type') || 'image/jpeg';
 
-    // Return the image with proper headers
+    // === STORE in Supabase Storage (fire-and-forget, don't block response) ===
+    supabase.storage
+      .from(BUCKET)
+      .upload(storagePath, imageData, { contentType, upsert: false })
+      .then(({ error }) => {
+        if (error && !error.message.includes('already exists')) {
+          console.error('Storage upload error:', error.message);
+        } else if (!error) {
+          console.log('Cached to storage:', storagePath);
+        }
+      });
+
     return new Response(imageData, {
       headers: {
         ...corsHeaders,
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+        'Cache-Control': 'public, max-age=2592000', // 30 days
+        'X-Cache': 'MISS',
       },
     });
 
