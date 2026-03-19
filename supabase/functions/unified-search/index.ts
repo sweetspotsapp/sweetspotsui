@@ -845,9 +845,9 @@ serve(async (req) => {
           );
         }
         
-        // Cache the result for 4 hours (only if geocoding succeeded, fire and forget)
+        // Cache the result for 24 hours — cities don't move (fire and forget)
         if (lat !== undefined && lng !== undefined) {
-          setCacheValue(supabaseAdmin, geoCacheKey, { lat, lng }, 4 * 60 * 60 * 1000).then(() => {});
+          setCacheValue(supabaseAdmin, geoCacheKey, { lat, lng }, 24 * 60 * 60 * 1000).then(() => {});
         }
       }
     }
@@ -866,10 +866,32 @@ serve(async (req) => {
     const { keywords, intent } = await translatePromptToKeywords(prompt, lovableApiKey, supabaseAdmin);
     console.log(`⏱️  Translation: ${Date.now() - translationStartTime}ms`);
 
+    // ============ SEARCH RESULT CACHE ============
+    // Round to ~500m grid so nearby users share the same cached Google + AI results
+    const roundedLat = Math.round(lat * 200) / 200;
+    const roundedLng = Math.round(lng * 200) / 200;
+    const searchCacheKey = `search:${roundedLat}:${roundedLng}:${radius_m}:${keywords.toLowerCase().trim()}`;
+    const SEARCH_CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+    const cachedSearch = await getCacheValue<{
+      candidates: PlaceCandidate[];
+      relevanceScores: [string, number][];
+      summary: string;
+    }>(supabaseAdmin, searchCacheKey);
+
+    // Hoisted vars — set in cache miss path (Google + AI) or restored from cache hit
+    let candidates: PlaceCandidate[] = [];
+    let relevanceMap: Map<string, number> = new Map();
+    let summary = '';
+    let placesNeedingTags: PlaceCandidate[] = [];
+    let filteredGooglePlaces: any[] = [];
+    let generatedTagsMap = new Map<string, string[]>();
+
+    if (!cachedSearch) {
     // ============ STEP 1: Google Places Text Search (fetch up to 40 places) ============
     const googleStartTime = Date.now();
     const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
-    
+
     let allGooglePlaces: any[] = [];
     let nextPageToken: string | null = null;
     const maxPages = 2;
@@ -983,7 +1005,7 @@ serve(async (req) => {
     const EXCLUDED_NAME_PATTERNS = /^(PT\s|CV\s|UD\s|TB\s|PD\s)/i;
 
     // Filter out irrelevant places
-    const filteredGooglePlaces = allGooglePlaces.filter((place: any) => {
+    filteredGooglePlaces = allGooglePlaces.filter((place: any) => {
       const types: string[] = place.types || [];
       const name: string = place.displayName?.text || '';
       
@@ -1046,7 +1068,7 @@ serve(async (req) => {
     }
     
     // Identify places missing filter_tags
-    const placesNeedingTags = baseCandidates.filter(c => {
+    placesNeedingTags = baseCandidates.filter(c => {
       const dbData = dbPlaceMap.get(c.place_id);
       return !dbData?.filter_tags || dbData.filter_tags.length === 0;
     });
@@ -1054,10 +1076,10 @@ serve(async (req) => {
     console.log(`⏱️  DB fetch: ${Date.now() - dbFetchStartTime}ms - Found ${dbPlaceMap.size} places in DB, ${placesNeedingTags.length} need filter_tags`);
 
     // Merge existing filter_tags from DB into candidates (don't wait for AI generation)
-    const candidates: PlaceCandidate[] = baseCandidates.map(c => {
+    candidates = baseCandidates.map(c => {
       const dbData = dbPlaceMap.get(c.place_id);
       const existingTags = dbData?.filter_tags;
-      
+
       return {
         ...c,
         filter_tags: (existingTags && existingTags.length > 0) ? existingTags : null,
@@ -1067,6 +1089,14 @@ serve(async (req) => {
         unique_vibes: dbData?.unique_vibes ?? null,
       };
     });
+
+    } else {
+      // Cache HIT: restore pre-computed candidates and relevance scores — skip Google + AI entirely
+      console.log(`Search cache HIT: ${searchCacheKey}`);
+      candidates = cachedSearch.candidates;
+      relevanceMap = new Map(cachedSearch.relevanceScores);
+      summary = cachedSearch.summary;
+    }
 
     // ============ PARALLEL STEP 2: Fetch travel times + AI scoring + user data + auth + filter tags ============
     const parallelStartTime = Date.now();
@@ -1150,8 +1180,10 @@ serve(async (req) => {
         return travelData;
       })(),
 
-      // 2b: AI relevance scoring + summary (use intent for better context)
-      getAIRelevanceAndSummary(intent || prompt, validCandidates, lovableApiKey),
+      // 2b: AI relevance scoring + summary (skipped on cache hit)
+      cachedSearch
+        ? Promise.resolve({ relevanceMap, summary })
+        : getAIRelevanceAndSummary(intent || prompt, validCandidates, lovableApiKey),
 
       // 2c: Get authenticated user ID + fetch profile + saved places (moved from earlier sequential code)
       (async () => {
@@ -1181,42 +1213,44 @@ serve(async (req) => {
         return { userId: null, profile: null, savedPlaces: [] };
       })(),
       
-      // 2f: Generate filter_tags for places that need them (non-blocking)
-      (async () => {
-        const generatedTagsMap = new Map<string, string[]>();
-        if (placesNeedingTags.length > 0 && lovableApiKey) {
-          try {
-            const tags = await generateFilterTagsWithAI(placesNeedingTags, lovableApiKey);
-            console.log(`AI generated tags for ${tags.size} places`);
-            return tags;
-          } catch (e) {
-            console.error('Filter tags generation error:', e);
-          }
-        }
-        return generatedTagsMap;
-      })(),
+      // 2f: Generate filter_tags for places that need them (skipped on cache hit)
+      (!cachedSearch && placesNeedingTags.length > 0 && lovableApiKey)
+        ? generateFilterTagsWithAI(placesNeedingTags, lovableApiKey)
+        : Promise.resolve(new Map<string, string[]>()),
     ]);
 
     console.log(`⏱️  Parallel operations completed in ${Date.now() - parallelStartTime}ms`);
 
     const travelData = travelTimeResult;
-    const { relevanceMap, summary } = aiResult;
     const { userId: authenticatedUserId, profile, savedPlaces } = authDataResult;
-    const generatedTagsMap = filterTagsResult;
-    
-    console.log('User:', authenticatedUserId || 'anonymous');
-    
-    // Merge generated tags into candidates that didn't have them
-    if (generatedTagsMap.size > 0) {
-      candidates.forEach((c, idx) => {
-        if (!c.filter_tags || c.filter_tags.length === 0) {
-          const generated = generatedTagsMap.get(c.place_id);
-          if (generated) {
-            candidates[idx].filter_tags = generated;
+
+    // On cache miss: extract AI results, merge tags, write to cache
+    if (!cachedSearch) {
+      const { relevanceMap: freshRelevanceMap, summary: freshSummary } = aiResult as { relevanceMap: Map<string, number>; summary: string };
+      relevanceMap = freshRelevanceMap;
+      summary = freshSummary;
+      generatedTagsMap = filterTagsResult as Map<string, string[]>;
+
+      if (generatedTagsMap.size > 0) {
+        candidates.forEach((c, idx) => {
+          if (!c.filter_tags || c.filter_tags.length === 0) {
+            const generated = generatedTagsMap.get(c.place_id);
+            if (generated) candidates[idx].filter_tags = generated;
           }
-        }
+        });
+      }
+
+      // Cache the result for 2 hours (fire and forget)
+      setCacheValue(supabaseAdmin, searchCacheKey, {
+        candidates,
+        relevanceScores: Array.from(relevanceMap.entries()),
+        summary,
+      }, SEARCH_CACHE_TTL_MS).then(() => {
+        console.log(`Search result cached: ${searchCacheKey}`);
       });
     }
+
+    console.log('User:', authenticatedUserId || 'anonymous');
 
     // ============ STEP 3: Score and rank places ============
     const relevantCandidates = validCandidates.filter(p => relevanceMap.has(p.place_id));
@@ -1274,7 +1308,8 @@ serve(async (req) => {
     rankedPlaces.sort((a, b) => b.score - a.score);
     const topPlaces = rankedPlaces.slice(0, limit);
 
-    // ============ STEP 4: Upsert places to database (async, don't wait) ============
+    // ============ STEP 4: Upsert places to database (cache miss only) ============
+    if (filteredGooglePlaces.length > 0) {
     const placesToUpsert = filteredGooglePlaces.map((place: any) => {
       const firstPhoto = place.photos?.[0];
       const priceLevel = place.priceLevel ? 
@@ -1335,6 +1370,7 @@ serve(async (req) => {
           }
         }
       });
+    } // end if (filteredGooglePlaces.length > 0)
 
     // Log search (fire and forget) - only for authenticated users
     if (authenticatedUserId) {
