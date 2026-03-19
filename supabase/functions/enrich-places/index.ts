@@ -554,17 +554,13 @@ serve(async (req) => {
       for (const cached of cachedPlaces) {
         const normalizedName = cached.name.toLowerCase().trim();
         const lastEnriched = cached.last_enriched_at ? new Date(cached.last_enriched_at) : null;
-        const hasCriticalData = cached.opening_hours || cached.reviews;
-        const hasMultiplePhotos = cached.photos && cached.photos.length > 1;
-        const isFresh = lastEnriched && lastEnriched > freshnessThreshold && hasCriticalData && hasMultiplePhotos;
-        
+        const isFresh = lastEnriched && lastEnriched > freshnessThreshold;
+
         if (isFresh) {
           cachedPlacesMap.set(normalizedName, cached);
-        } else if (lastEnriched && (!hasCriticalData || !hasMultiplePhotos)) {
-          console.log(`Cache STALE (missing data or photos): "${cached.name}" - will re-fetch`);
         }
       }
-      console.log(`Found ${cachedPlacesMap.size} fresh cached places (< ${CACHE_FRESHNESS_DAYS} days old with complete data and multiple photos)`);
+      console.log(`Found ${cachedPlacesMap.size} fresh cached places (< ${CACHE_FRESHNESS_DAYS} days old)`);
     }
 
     // Determine which places need fresh data from Google

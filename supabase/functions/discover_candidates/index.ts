@@ -79,7 +79,7 @@ serve(async (req) => {
 
     // Parse request body
     const body: RequestBody = await req.json();
-    const { prompt, lat, lng, radius_m, max_results = 60 } = body;
+    const { prompt, lat, lng, radius_m, max_results = 20 } = body;
 
     if (!prompt || lat === undefined || lng === undefined || radius_m === undefined) {
       return new Response(
@@ -88,8 +88,8 @@ serve(async (req) => {
       );
     }
 
-    // Cap max_results at 60 (Google's practical limit with pagination)
-    const targetResults = Math.min(max_results, 60);
+    // Cap max_results at 20 to limit API usage (1 page = 1 API call)
+    const targetResults = Math.min(max_results, 20);
     const maxPages = Math.ceil(targetResults / 20); // Up to 3 pages
 
     console.log('Search request:', { prompt, lat, lng, radius_m, targetResults, maxPages });

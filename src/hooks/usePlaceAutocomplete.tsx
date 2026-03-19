@@ -37,6 +37,15 @@ export function usePlaceAutocomplete(input: string) {
       return;
     }
 
+    // Show local matches immediately (no API call needed)
+    const localMatches = getLocalCityMatches(input);
+    if (localMatches.length > 0) {
+      setPredictions(localMatches);
+      setIsLoading(false);
+      return;
+    }
+
+    // Only call Google if local data has no matches
     setIsLoading(true);
     debounceRef.current = setTimeout(async () => {
       try {
@@ -45,14 +54,14 @@ export function usePlaceAutocomplete(input: string) {
         });
 
         if (error || !data?.suggestions) {
-          console.error("Autocomplete proxy error, falling back to local cities:", error);
-          setPredictions(getLocalCityMatches(input));
+          console.error("Autocomplete proxy error:", error);
+          setPredictions([]);
         } else {
-          setPredictions(data.suggestions.length > 0 ? data.suggestions : getLocalCityMatches(input));
+          setPredictions(data.suggestions);
         }
       } catch (e) {
-        console.error("Autocomplete error, falling back to local cities:", e);
-        setPredictions(getLocalCityMatches(input));
+        console.error("Autocomplete error:", e);
+        setPredictions([]);
       } finally {
         setIsLoading(false);
       }
