@@ -110,7 +110,7 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "map" | "saved" | "trip" | "profile") => {
+  const handleTabChange = (tab: "home" | "explore" | "saved" | "trip" | "profile") => {
     setActiveTab(tab);
   };
 
