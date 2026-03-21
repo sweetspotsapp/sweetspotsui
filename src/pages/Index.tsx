@@ -28,17 +28,17 @@ const Index = () => {
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
-  const getInitialTab = (): "home" | "map" | "saved" | "trip" | "profile" => {
+  const getInitialTab = (): "home" | "explore" | "saved" | "trip" | "profile" => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) return "trip";
     if (location.pathname === "/saved") return "saved";
     if (location.pathname === "/trip") return "trip";
     const params = new URLSearchParams(location.search);
-    if (params.get('search')) return "home";
+    if (params.get('search')) return "explore";
     return "home";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "map" | "saved" | "trip" | "profile">(getInitialTab);
+  const [activeTab, setActiveTab] = useState<"home" | "explore" | "saved" | "trip" | "profile">(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
 
   useEffect(() => {
