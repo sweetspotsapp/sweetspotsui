@@ -4,8 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface BottomNavProps {
-  activeTab: "home" | "map" | "saved" | "trip" | "profile";
-  onTabChange: (tab: "home" | "map" | "saved" | "trip" | "profile") => void;
+  activeTab: "home" | "explore" | "saved" | "trip" | "profile";
+  onTabChange: (tab: "home" | "explore" | "saved" | "trip" | "profile") => void;
   tripBadgeCount?: number;
 }
 

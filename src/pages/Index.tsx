@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import ChatHome from "@/components/ChatHome";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
-import MapPage from "@/components/MapPage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
 
