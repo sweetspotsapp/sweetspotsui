@@ -54,7 +54,7 @@ const Index = () => {
     }
     const params = new URLSearchParams(location.search);
     if (params.get('search')) {
-      setActiveTab("home");
+      setActiveTab("explore");
     }
   }, [location.state, location.search]);
 
