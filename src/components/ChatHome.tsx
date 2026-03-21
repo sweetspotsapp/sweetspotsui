@@ -3,7 +3,9 @@ import { Menu, Bell, Send, X, Clock, Users, Sparkles, ChevronRight, Loader2, Set
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
-import AppHeader from "./AppHeader";
+import { supabase } from "@/integrations/supabase/client";
+import { useTrip, type TripParams, type TripData } from "@/hooks/useTrip";
+import { toast } from "sonner";
 
 // ── Template data ──
 const templates = [
@@ -22,12 +24,15 @@ const notifications = [
 
 interface ChatHomeProps {
   onNavigateToProfile: () => void;
+  onTripGenerated?: (tripId: string) => void;
 }
 
-const ChatHome = ({ onNavigateToProfile }: ChatHomeProps) => {
+const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
   const navigate = useNavigate();
+  const { generate, saveTrip } = useTrip();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingMessage, setGeneratingMessage] = useState("Parsing your request...");
   const [leftPanel, setLeftPanel] = useState(false);
   const [rightPanel, setRightPanel] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -36,17 +41,69 @@ const ChatHome = ({ onNavigateToProfile }: ChatHomeProps) => {
   const openRight = () => { setLeftPanel(false); setRightPanel(true); };
   const closeAll = () => { setLeftPanel(false); setRightPanel(false); };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!prompt.trim() || isGenerating) return;
+    const userPrompt = prompt.trim();
     setIsGenerating(true);
-    // Store the prompt and navigate to trip tab with generation state
-    sessionStorage.setItem("sweetspots_chat_prompt", prompt.trim());
-    setTimeout(() => {
+    setGeneratingMessage("Parsing your request...");
+    setPrompt("");
+
+    try {
+      // Step 1: Parse the prompt into trip params
+      const { data: parsed, error: parseError } = await supabase.functions.invoke("parse-trip-prompt", {
+        body: { prompt: userPrompt },
+      });
+
+      if (parseError) throw parseError;
+      if (parsed?.error) {
+        toast.error(parsed.error);
+        setIsGenerating(false);
+        return;
+      }
+
+      const tripParams: TripParams = {
+        name: parsed.name || undefined,
+        destination: parsed.destination,
+        startDate: parsed.startDate,
+        endDate: parsed.endDate,
+        budget: parsed.budget || "$$",
+        groupSize: parsed.groupSize || 1,
+        vibes: parsed.vibes || [],
+        vibeDetails: parsed.vibeDetails || userPrompt,
+        mustIncludePlaceIds: [],
+        boardIds: [],
+      };
+
+      // Step 2: Generate the itinerary
+      setGeneratingMessage("Generating your itinerary...");
+      const tripData = await generate(tripParams);
+
+      if (!tripData) {
+        setIsGenerating(false);
+        return;
+      }
+
+      // Step 3: Save and navigate
+      const tripDataWithContext: TripData = {
+        ...tripData,
+        _meta: {
+          ...(tripData._meta || {}),
+          vibeDetails: tripParams.vibeDetails?.trim() || "",
+        },
+      };
+
+      const tripId = await saveTrip(tripParams, tripDataWithContext);
+
       setIsGenerating(false);
-      setPrompt("");
-      // Navigate to trip/itinerary tab
-      navigate("/", { state: { openTrip: true } });
-    }, 600);
+
+      if (tripId && onTripGenerated) {
+        onTripGenerated(tripId);
+      }
+    } catch (err) {
+      console.error("Chat trip generation error:", err);
+      toast.error("Something went wrong. Please try again.");
+      setIsGenerating(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -107,7 +164,7 @@ const ChatHome = ({ onNavigateToProfile }: ChatHomeProps) => {
         {isGenerating ? (
           <div className="flex flex-col items-center gap-4 animate-fade-in">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <p className="text-lg font-medium text-foreground">Generating your itinerary...</p>
+            <p className="text-lg font-medium text-foreground">{generatingMessage}</p>
           </div>
         ) : (
           <div className="w-full max-w-lg flex flex-col items-center gap-8 animate-fade-in">
