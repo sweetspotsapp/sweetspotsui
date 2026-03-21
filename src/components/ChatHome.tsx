@@ -7,12 +7,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTrip, type TripParams, type TripData } from "@/hooks/useTrip";
 import { toast } from "sonner";
 
-// ── Template data ──
+// ── Template data (sidebar) ──
 const templates = [
   { id: "1", title: "Weekend Foodie Escape", desc: "Explore the best local eats and hidden cafes", duration: "2 days", tag: "Foodie" },
   { id: "2", title: "Chill Beach Getaway", desc: "Slow mornings, sunset walks, no rushing", duration: "3 days", tag: "Chill" },
   { id: "3", title: "Nightlife Adventure", desc: "Rooftop bars, live music, late-night bites", duration: "2 days", tag: "Nightlife" },
   { id: "4", title: "Culture & History Deep Dive", desc: "Museums, galleries, and walking tours", duration: "4 days", tag: "Culture" },
+];
+
+// ── Quick-start cards (main screen) ──
+const quickStartCards = [
+  { id: "q1", country: "Japan", prompt: "5 days in Tokyo and Kyoto, street food, temples, cherry blossoms", duration: "5 days", tag: "Culture" },
+  { id: "q2", country: "Italy", prompt: "4 days in Rome, pasta tastings, historic ruins, golden hour walks", duration: "4 days", tag: "Foodie" },
+  { id: "q3", country: "Thailand", prompt: "3 days in Bangkok, night markets, rooftop bars, local street eats", duration: "3 days", tag: "Nightlife" },
+  { id: "q4", country: "Australia", prompt: "3 days in Melbourne, chill cafes, laneways, brunch culture", duration: "3 days", tag: "Chill" },
+  { id: "q5", country: "Portugal", prompt: "4 days in Lisbon, pasteis de nata, tram rides, Alfama sunsets", duration: "4 days", tag: "Culture" },
+  { id: "q6", country: "South Korea", prompt: "3 days in Seoul, Korean BBQ, Bukchon village, Hongdae nightlife", duration: "3 days", tag: "Foodie" },
 ];
 
 // ── Notification data (mock) ──
