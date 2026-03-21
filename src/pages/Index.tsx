@@ -134,7 +134,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
-        <ChatHome onNavigateToProfile={() => setActiveTab("profile")} />
+        <ChatHome
+          onNavigateToProfile={() => setActiveTab("profile")}
+          onTripGenerated={(tripId) => {
+            setResumeTripId(tripId);
+            setActiveTab("trip");
+          }}
+        />
       </div>
       <div style={{ display: activeTab === "explore" ? "block" : "none" }}>
         <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
