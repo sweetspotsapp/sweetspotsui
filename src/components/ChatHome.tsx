@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import { Menu, Bell, Send, X, Clock, Users, Sparkles, ChevronRight, Loader2, Settings } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Menu, Bell, Send, X, Clock, Users, Sparkles, ChevronRight, Loader2, Settings, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useTrip, type TripParams, type TripData } from "@/hooks/useTrip";
 import { toast } from "sonner";
+import TripView from "./trip/TripView";
+import GeneratingOverlay from "./trip/GeneratingOverlay";
 
 // ── Template data (sidebar) ──
 const templates = [
@@ -39,7 +41,7 @@ interface ChatHomeProps {
 
 const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
   const navigate = useNavigate();
-  const { generate, saveTrip } = useTrip();
+  const { generate, swap, saveTrip, isGenerating: tripGenerating, isSwapping } = useTrip();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingMessage, setGeneratingMessage] = useState("Parsing your request...");
@@ -47,19 +49,21 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
   const [rightPanel, setRightPanel] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Preview state
+  const [previewTripData, setPreviewTripData] = useState<TripData | null>(null);
+  const [previewTripParams, setPreviewTripParams] = useState<TripParams | null>(null);
+
   const openLeft = () => { setRightPanel(false); setLeftPanel(true); };
   const openRight = () => { setLeftPanel(false); setRightPanel(true); };
   const closeAll = () => { setLeftPanel(false); setRightPanel(false); };
 
-  const handleSubmit = async () => {
-    if (!prompt.trim() || isGenerating) return;
-    const userPrompt = prompt.trim();
+  const generateFromPrompt = async (userPrompt: string) => {
+    if (!userPrompt.trim() || isGenerating) return;
     setIsGenerating(true);
     setGeneratingMessage("Parsing your request...");
     setPrompt("");
 
     try {
-      // Step 1: Parse the prompt into trip params
       const { data: parsed, error: parseError } = await supabase.functions.invoke("parse-trip-prompt", {
         body: { prompt: userPrompt },
       });
@@ -84,7 +88,6 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
         boardIds: [],
       };
 
-      // Step 2: Generate the itinerary
       setGeneratingMessage("Generating your itinerary...");
       const tripData = await generate(tripParams);
 
@@ -93,7 +96,6 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
         return;
       }
 
-      // Step 3: Save and navigate
       const tripDataWithContext: TripData = {
         ...tripData,
         _meta: {
@@ -102,19 +104,93 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
         },
       };
 
-      const tripId = await saveTrip(tripParams, tripDataWithContext);
-
+      // Show preview instead of saving immediately
+      setPreviewTripData(tripDataWithContext);
+      setPreviewTripParams(tripParams);
       setIsGenerating(false);
-
-      if (tripId && onTripGenerated) {
-        onTripGenerated(tripId);
-      }
     } catch (err) {
       console.error("Chat trip generation error:", err);
       toast.error("Something went wrong. Please try again.");
       setIsGenerating(false);
     }
   };
+
+  const handleSubmit = () => generateFromPrompt(prompt.trim());
+
+  const handleCardClick = (cardPrompt: string) => {
+    generateFromPrompt(cardPrompt);
+  };
+
+  const handleSaveTrip = async () => {
+    if (!previewTripData || !previewTripParams) return;
+    const tripId = await saveTrip(previewTripParams, previewTripData);
+    if (tripId && onTripGenerated) {
+      onTripGenerated(tripId);
+    }
+    setPreviewTripData(null);
+    setPreviewTripParams(null);
+  };
+
+  const handleBackFromPreview = () => {
+    setPreviewTripData(null);
+    setPreviewTripParams(null);
+  };
+
+  const handleSwap = async (dayIndex: number, slotIndex: number, activityIndex: number) => {
+    if (!previewTripData || !previewTripParams) return;
+    const day = previewTripData.days[dayIndex];
+    const slot = day.slots[slotIndex];
+    const activity = slot.activities[activityIndex];
+    return await swap({
+      destination: previewTripParams.destination,
+      vibes: previewTripParams.vibes,
+      vibeDetails: previewTripParams.vibeDetails,
+      budget: previewTripParams.budget,
+      dayLabel: day.label,
+      timeSlot: slot.time,
+      currentActivity: activity.name,
+      category: activity.category,
+    });
+  };
+
+  const handleReplaceActivity = (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => {
+    if (!previewTripData) return;
+    const updated = JSON.parse(JSON.stringify(previewTripData)) as TripData;
+    const act = updated.days[dayIndex].slots[slotIndex].activities[activityIndex];
+    updated.days[dayIndex].slots[slotIndex].activities[activityIndex] = { ...act, ...newActivity };
+    setPreviewTripData(updated);
+  };
+
+  const handleRemoveActivity = (dayIdx: number, slotIdx: number, actIdx: number) => {
+    if (!previewTripData) return;
+    const updated = JSON.parse(JSON.stringify(previewTripData)) as TripData;
+    updated.days[dayIdx].slots[slotIdx].activities.splice(actIdx, 1);
+    setPreviewTripData(updated);
+  };
+
+  const handleAddActivity = (dayIdx: number, slotIdx: number, newActivity: { name: string; placeId?: string; category: string; description: string }) => {
+    if (!previewTripData) return;
+    const updated = JSON.parse(JSON.stringify(previewTripData)) as TripData;
+    updated.days[dayIdx].slots[slotIdx].activities.push({
+      name: newActivity.name,
+      description: newActivity.description,
+      category: newActivity.category,
+      placeId: newActivity.placeId,
+    } as any);
+    setPreviewTripData(updated);
+  };
+
+  const handleDragReorder = useCallback((fromDayIdx: number, fromSlotIdx: number, fromActIdx: number, toDayIdx: number, toSlotIdx: number, toActIdx: number) => {
+    if (!previewTripData) return;
+    const updated = JSON.parse(JSON.stringify(previewTripData)) as TripData;
+    const [activity] = updated.days[fromDayIdx].slots[fromSlotIdx].activities.splice(fromActIdx, 1);
+    let adjustedIdx = toActIdx;
+    if (fromDayIdx === toDayIdx && fromSlotIdx === toSlotIdx && fromActIdx < toActIdx) {
+      adjustedIdx = Math.max(0, toActIdx - 1);
+    }
+    updated.days[toDayIdx].slots[toSlotIdx].activities.splice(adjustedIdx, 0, activity);
+    setPreviewTripData(updated);
+  }, [previewTripData]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -130,6 +206,28 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
       inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + "px";
     }
   }, [prompt]);
+
+  // ── Preview mode: show TripView ──
+  if (previewTripData) {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <TripView
+          tripData={previewTripData}
+          tripParams={previewTripParams}
+          onBack={handleBackFromPreview}
+          onSwap={handleSwap}
+          onReplace={handleReplaceActivity}
+          onRemoveActivity={handleRemoveActivity}
+          onAddActivity={handleAddActivity}
+          onDragReorder={handleDragReorder}
+          isSwapping={isSwapping}
+          isGenerating={false}
+          onRegenerate={() => previewTripParams && generateFromPrompt(previewTripParams.vibeDetails || previewTripParams.destination)}
+          onSave={handleSaveTrip}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative">
@@ -203,10 +301,7 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
               {quickStartCards.map((card) => (
                 <button
                   key={card.id}
-                  onClick={() => {
-                    setPrompt(card.prompt);
-                    setTimeout(() => inputRef.current?.focus(), 100);
-                  }}
+                  onClick={() => handleCardClick(card.prompt)}
                   className="text-left bg-card border border-border rounded-xl p-4 hover:border-primary/40 hover:shadow-sm transition-all group"
                 >
                   <p className="text-[11px] font-medium text-muted-foreground mb-1.5">{card.country}</p>
@@ -228,21 +323,21 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
       {!isGenerating && (
         <div className="fixed bottom-20 lg:bottom-6 left-0 right-0 z-30 px-4">
           <div className="max-w-lg mx-auto">
-            <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-4 py-3 shadow-lg">
+            <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-4 py-2.5 shadow-lg">
               <textarea
                 ref={inputRef}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g. 3 days in Melbourne, chill cafes, good food, no rushing"
-                className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[20px] max-h-[120px]"
+                className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[20px] max-h-[120px] py-[5px] leading-5"
                 rows={1}
               />
               <button
                 onClick={handleSubmit}
                 disabled={!prompt.trim()}
                 className={cn(
-                  "shrink-0 p-2 rounded-xl transition-all",
+                  "shrink-0 p-2 rounded-xl transition-all mb-[1px]",
                   prompt.trim()
                     ? "bg-primary text-primary-foreground hover:opacity-90"
                     : "bg-muted text-muted-foreground"
