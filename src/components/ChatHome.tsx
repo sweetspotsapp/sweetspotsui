@@ -169,7 +169,6 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
         </button>
       </div>
 
-      {/* ── Main Chat Area ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 pb-32 lg:pb-24">
         {isGenerating ? (
           <div className="flex flex-col items-center gap-4 animate-fade-in">
@@ -177,7 +176,7 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
             <p className="text-lg font-medium text-foreground">{generatingMessage}</p>
           </div>
         ) : (
-          <div className="w-full max-w-lg flex flex-col items-center gap-8 animate-fade-in">
+          <div className="w-full max-w-2xl flex flex-col items-center gap-8 animate-fade-in">
             {/* Headline */}
             <div className="text-center space-y-2">
               <h2 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
@@ -196,6 +195,29 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
                   <hint.icon className="w-3.5 h-3.5" />
                   <span>{hint.label}</span>
                 </div>
+              ))}
+            </div>
+
+            {/* Quick-start trip cards */}
+            <div className="w-full grid grid-cols-2 lg:grid-cols-3 gap-3">
+              {quickStartCards.map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => {
+                    setPrompt(card.prompt);
+                    setTimeout(() => inputRef.current?.focus(), 100);
+                  }}
+                  className="text-left bg-card border border-border rounded-xl p-4 hover:border-primary/40 hover:shadow-sm transition-all group"
+                >
+                  <p className="text-[11px] font-medium text-muted-foreground mb-1.5">{card.country}</p>
+                  <p className="text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                    {card.prompt}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-2.5">
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">{card.duration}</span>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{card.tag}</span>
+                  </div>
+                </button>
               ))}
             </div>
           </div>
