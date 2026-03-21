@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import ChatHome from "@/components/ChatHome";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
-import MapPage from "@/components/MapPage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
 
@@ -28,17 +28,17 @@ const Index = () => {
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
-  const getInitialTab = (): "home" | "map" | "saved" | "trip" | "profile" => {
+  const getInitialTab = (): "home" | "explore" | "saved" | "trip" | "profile" => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) return "trip";
     if (location.pathname === "/saved") return "saved";
     if (location.pathname === "/trip") return "trip";
     const params = new URLSearchParams(location.search);
-    if (params.get('search')) return "home";
+    if (params.get('search')) return "explore";
     return "home";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "map" | "saved" | "trip" | "profile">(getInitialTab);
+  const [activeTab, setActiveTab] = useState<"home" | "explore" | "saved" | "trip" | "profile">(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ const Index = () => {
     }
     const params = new URLSearchParams(location.search);
     if (params.get('search')) {
-      setActiveTab("home");
+      setActiveTab("explore");
     }
   }, [location.state, location.search]);
 
@@ -110,7 +110,7 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "map" | "saved" | "trip" | "profile") => {
+  const handleTabChange = (tab: "home" | "explore" | "saved" | "trip" | "profile") => {
     setActiveTab(tab);
   };
 
@@ -134,10 +134,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
-        <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
+        <ChatHome onNavigateToProfile={() => setActiveTab("profile")} />
       </div>
-      <div style={{ display: activeTab === "map" ? "block" : "none" }}>
-        <MapPage />
+      <div style={{ display: activeTab === "explore" ? "block" : "none" }}>
+        <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
         <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
