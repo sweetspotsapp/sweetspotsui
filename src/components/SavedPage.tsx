@@ -474,6 +474,16 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
         onClose={() => setShowImportDialog(false)}
       />
 
+      {/* Add Spot Modal */}
+      <AddSpotModal
+        open={showAddSpotModal}
+        onClose={() => setShowAddSpotModal(false)}
+        onUrlSubmit={(url) => {
+          setShowAddSpotModal(false);
+          setShowImportDialog(true);
+        }}
+      />
+
       {/* Profile Slide Menu */}
       <ProfileSlideMenu 
         isOpen={isProfileMenuOpen} 
