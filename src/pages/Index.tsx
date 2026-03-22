@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import ChatHome from "@/components/ChatHome";
-import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
@@ -28,17 +26,15 @@ const Index = () => {
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
-  const getInitialTab = (): "home" | "explore" | "saved" | "trip" | "profile" => {
+  const getInitialTab = (): "spots" | "trip" | "profile" => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) return "trip";
-    if (location.pathname === "/saved") return "saved";
+    if (location.pathname === "/saved") return "spots";
     if (location.pathname === "/trip") return "trip";
-    const params = new URLSearchParams(location.search);
-    if (params.get('search')) return "explore";
-    return "home";
+    return "spots";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "explore" | "saved" | "trip" | "profile">(getInitialTab);
+  const [activeTab, setActiveTab] = useState<"spots" | "trip" | "profile">(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,11 +48,7 @@ const Index = () => {
       }
       window.history.replaceState({}, '');
     }
-    const params = new URLSearchParams(location.search);
-    if (params.get('search')) {
-      setActiveTab("explore");
-    }
-  }, [location.state, location.search]);
+  }, [location.state]);
 
   // Mark invites as seen when user visits trip tab
   useEffect(() => {
@@ -90,16 +82,6 @@ const Index = () => {
     }, 800);
   };
 
-  const handleMoodSubmit = (mood: string) => {
-    setUserMood(mood);
-    setAppState("loading");
-    
-    setTimeout(() => {
-      completeOnboarding(mood, []);
-      setAppState("main");
-    }, 1000);
-  };
-
   const handleSkip = () => {
     sessionStorage.setItem('sweetspots_skip_mode', 'true');
     setAppState("loading");
@@ -110,7 +92,7 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "explore" | "saved" | "trip" | "profile") => {
+  const handleTabChange = (tab: "spots" | "trip" | "profile") => {
     setActiveTab(tab);
   };
 
@@ -133,26 +115,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background lg:pt-16">
-      <div style={{ display: activeTab === "home" ? "block" : "none" }}>
-        <ChatHome
-          onNavigateToProfile={() => setActiveTab("profile")}
-          onTripGenerated={(tripId) => {
-            setResumeTripId(tripId);
-            setActiveTab("trip");
-          }}
-        />
-      </div>
-      <div style={{ display: activeTab === "explore" ? "block" : "none" }}>
-        <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
-      </div>
-      <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
+      <div style={{ display: activeTab === "spots" ? "block" : "none" }}>
         <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
       </div>
       <div style={{ display: activeTab === "trip" ? "block" : "none" }}>
         <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} />
       </div>
       <div style={{ display: activeTab === "profile" ? "block" : "none" }}>
-        <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />
+        <ProfilePage onNavigateToSaved={() => setActiveTab("spots")} />
       </div>
       
       <BottomNav 

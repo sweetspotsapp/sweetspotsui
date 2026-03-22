@@ -1,11 +1,11 @@
-import { Home, Compass, Heart, CalendarDays } from "lucide-react";
+import { MapPin, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface BottomNavProps {
-  activeTab: "home" | "explore" | "saved" | "trip" | "profile";
-  onTabChange: (tab: "home" | "explore" | "saved" | "trip" | "profile") => void;
+  activeTab: "spots" | "trip" | "profile";
+  onTabChange: (tab: "spots" | "trip" | "profile") => void;
   tripBadgeCount?: number;
 }
 
@@ -13,9 +13,7 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
   const { user } = useAuth();
 
   const tabs = [
-    { id: "home" as const, label: "Home", icon: Home },
-    { id: "explore" as const, label: "Explore", icon: Compass },
-    { id: "saved" as const, label: "Saved", icon: Heart },
+    { id: "spots" as const, label: "Spots", icon: MapPin },
     { id: "trip" as const, label: "Itinerary", icon: CalendarDays },
     { id: "profile" as const, label: "Profile", icon: null },
   ];
@@ -38,7 +36,6 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                data-saved-tab={tab.id === "saved" ? "true" : undefined}
                 className={cn(
                   "relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200",
                   isActive
@@ -64,7 +61,6 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                         ? "text-primary"
                         : "text-background/70"
                     )}
-                    fill={isActive && tab.id === "saved" ? "currentColor" : "none"}
                   />
                 ) : null}
                 {showBadge && (
@@ -82,7 +78,7 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
       <nav className="hidden lg:block fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-8 h-16">
           {/* Logo */}
-          <button onClick={() => onTabChange("home")} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+          <button onClick={() => onTabChange("spots")} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
             <img src="/sweetspots-logo.svg" alt="SweetSpots" className="h-8 w-auto" />
           </button>
 
@@ -97,7 +93,6 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  data-saved-tab={tab.id === "saved" ? "true" : undefined}
                   className={cn(
                     "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                     isActive 
@@ -106,10 +101,7 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                   )}
                 >
                   {Icon ? (
-                    <Icon 
-                      className="w-4 h-4" 
-                      fill={isActive && tab.id === "saved" ? "currentColor" : "none"}
-                    />
+                    <Icon className="w-4 h-4" />
                   ) : (
                     <Avatar className="w-5 h-5">
                       {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
