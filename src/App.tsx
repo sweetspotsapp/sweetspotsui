@@ -32,6 +32,7 @@ const App = () => (
               <Routes>
                 <Route element={<PersistentLayout />}>
                   <Route path="/" element={null} />
+                  <Route path="/saved" element={null} />
                   <Route path="/trip" element={null} />
                   <Route path="/place/:placeId" element={<PlaceDetails />} />
                   <Route path="/place/:placeId" element={<PlaceDetails />} />
