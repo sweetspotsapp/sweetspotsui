@@ -8,6 +8,7 @@ import { useTrip, type TripParams, type TripData } from "@/hooks/useTrip";
 import { toast } from "sonner";
 import TripView from "./trip/TripView";
 import GeneratingOverlay from "./trip/GeneratingOverlay";
+import ImportLinkDialog from "./saved/ImportLinkDialog";
 
 // ── Template data (sidebar) ──
 const templates = [
