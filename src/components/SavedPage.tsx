@@ -290,7 +290,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
+      <div className="min-h-screen bg-background pb-20 lg:max-w-7xl mx-auto">
         <AppHeader 
           onSettingsClick={() => setIsProfileMenuOpen(true)}
         />
