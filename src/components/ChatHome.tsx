@@ -449,6 +449,9 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
           )}
         </div>
       </div>
+
+      {/* Import Link Dialog */}
+      <ImportLinkDialog open={showImportDialog} onClose={() => setShowImportDialog(false)} />
     </div>
   );
 };
