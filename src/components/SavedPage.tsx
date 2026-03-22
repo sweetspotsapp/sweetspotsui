@@ -62,6 +62,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showAddSpotModal, setShowAddSpotModal] = useState(false);
   // Handle openBoard state from navigation (e.g., when returning from place details)
   useEffect(() => {
     const state = routerLocation.state as { openBoard?: string | "all" } | null;
