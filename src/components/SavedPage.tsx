@@ -311,26 +311,27 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
   return (
     <>
-      <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
+      <div className="min-h-screen bg-background pb-20 lg:max-w-7xl mx-auto">
         <AppHeader 
           onSettingsClick={() => setIsProfileMenuOpen(true)}
-          actions={
-            <button
-              onClick={() => setShowImportDialog(true)}
-              className="p-2 text-foreground hover:text-primary transition-colors"
-              aria-label="Import from link"
-            >
-              <Link2 className="w-5 h-5" />
-            </button>
-          }
         />
 
-        {/* Page Title */}
-        <div className="px-4 pt-6 pb-4">
-          <h1 className="text-2xl font-bold text-foreground">Saved Spots</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Your curated collection of favorite places
-          </p>
+        {/* Page Title + Add Spot CTA */}
+        <div className="px-4 pt-6 pb-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Spots</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Your curated collection
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddSpotModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground 
+                       text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add spot
+          </button>
         </div>
 
         {isLoading ? (
