@@ -20,6 +20,7 @@ import BoardEditor from "./saved/BoardEditor";
 import EmptyState from "./saved/EmptyState";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
+import AddSpotModal from "./AddSpotModal";
 
 // Haversine distance calculation
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
