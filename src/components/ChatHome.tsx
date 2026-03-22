@@ -339,6 +339,13 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
         <div className="fixed bottom-20 lg:bottom-6 left-0 right-0 z-30 px-4">
           <div className="max-w-lg mx-auto">
             <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-4 py-2.5 shadow-lg">
+              <button
+                onClick={() => setShowImportDialog(true)}
+                className="shrink-0 p-2 rounded-xl text-muted-foreground hover:text-primary transition-colors mb-[1px]"
+                aria-label="Import from link"
+              >
+                <Link2 className="w-4 h-4" />
+              </button>
               <textarea
                 ref={inputRef}
                 value={prompt}
