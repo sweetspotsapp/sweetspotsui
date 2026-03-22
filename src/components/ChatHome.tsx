@@ -316,6 +316,19 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
                   </div>
                 </button>
               ))}
+              {/* Import from link card */}
+              <button
+                onClick={() => setShowImportDialog(true)}
+                className="text-left bg-card border border-dashed border-border rounded-xl p-4 hover:border-primary/40 hover:shadow-sm transition-all group flex flex-col items-center justify-center gap-2"
+              >
+                <Link2 className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <p className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors text-center">
+                  Import a place
+                </p>
+                <p className="text-[10px] text-muted-foreground text-center leading-tight">
+                  Paste a TikTok, Instagram, or Google Maps link
+                </p>
+              </button>
             </div>
           </div>
         )}
