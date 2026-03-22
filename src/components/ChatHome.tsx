@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Menu, Bell, Send, X, Clock, Users, Sparkles, ChevronRight, Loader2, Settings, ArrowLeft } from "lucide-react";
+import { Menu, Bell, Send, X, Clock, Users, Sparkles, ChevronRight, Loader2, Settings, ArrowLeft, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
