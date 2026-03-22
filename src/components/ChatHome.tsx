@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Menu, Bell, Send, X, Clock, Users, Sparkles, ChevronRight, Loader2, Settings, ArrowLeft } from "lucide-react";
+import { Menu, Bell, Send, X, Clock, Users, Sparkles, ChevronRight, Loader2, Settings, ArrowLeft, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { useTrip, type TripParams, type TripData } from "@/hooks/useTrip";
 import { toast } from "sonner";
 import TripView from "./trip/TripView";
 import GeneratingOverlay from "./trip/GeneratingOverlay";
+import ImportLinkDialog from "./saved/ImportLinkDialog";
 
 // ── Template data (sidebar) ──
 const templates = [
@@ -48,6 +49,7 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
   const [leftPanel, setLeftPanel] = useState(false);
   const [rightPanel, setRightPanel] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Preview state
   const [previewTripData, setPreviewTripData] = useState<TripData | null>(null);
@@ -314,6 +316,19 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
                   </div>
                 </button>
               ))}
+              {/* Import from link card */}
+              <button
+                onClick={() => setShowImportDialog(true)}
+                className="text-left bg-card border border-dashed border-border rounded-xl p-4 hover:border-primary/40 hover:shadow-sm transition-all group flex flex-col items-center justify-center gap-2"
+              >
+                <Link2 className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <p className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors text-center">
+                  Import a place
+                </p>
+                <p className="text-[10px] text-muted-foreground text-center leading-tight">
+                  Paste a TikTok, Instagram, or Google Maps link
+                </p>
+              </button>
             </div>
           </div>
         )}
@@ -324,6 +339,13 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
         <div className="fixed bottom-20 lg:bottom-6 left-0 right-0 z-30 px-4">
           <div className="max-w-lg mx-auto">
             <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-4 py-2.5 shadow-lg">
+              <button
+                onClick={() => setShowImportDialog(true)}
+                className="shrink-0 p-2 rounded-xl text-muted-foreground hover:text-primary transition-colors mb-[1px]"
+                aria-label="Import from link"
+              >
+                <Link2 className="w-4 h-4" />
+              </button>
               <textarea
                 ref={inputRef}
                 value={prompt}
@@ -427,6 +449,9 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
           )}
         </div>
       </div>
+
+      {/* Import Link Dialog */}
+      <ImportLinkDialog open={showImportDialog} onClose={() => setShowImportDialog(false)} />
     </div>
   );
 };
