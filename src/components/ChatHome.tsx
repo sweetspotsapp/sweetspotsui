@@ -49,6 +49,7 @@ const ChatHome = ({ onNavigateToProfile, onTripGenerated }: ChatHomeProps) => {
   const [leftPanel, setLeftPanel] = useState(false);
   const [rightPanel, setRightPanel] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Preview state
   const [previewTripData, setPreviewTripData] = useState<TripData | null>(null);
