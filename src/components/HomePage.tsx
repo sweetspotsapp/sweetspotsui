@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrip, type SavedTrip } from "@/hooks/useTrip";
-import { Star, Users, CalendarDays, MapPin } from "lucide-react";
+import { Star, CalendarDays, MapPin } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import TripPreviewSheet from "./TripPreviewSheet";
 
 interface HomePageProps {
   onNavigateToTrip?: (tripId?: string) => void;
@@ -14,6 +16,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
   const { user } = useAuth();
   const { savedTrips, isLoading } = useTrip();
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [previewTrip, setPreviewTrip] = useState<SavedTrip | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -29,6 +32,8 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
   }, [user]);
 
   const displayName = profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Explorer";
+  const avatarUrl = user?.user_metadata?.avatar_url;
+  const initials = (user?.email?.[0] || displayName[0] || "E").toUpperCase();
 
   const displayTrips = savedTrips.slice(0, 3);
 
@@ -41,7 +46,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
     }
   };
 
-  const getTripActivityCount = (trip: SavedTrip) => {
+  const getTripSpotCount = (trip: SavedTrip) => {
     if (!trip.trip_data?.days) return 0;
     return trip.trip_data.days.reduce((count, day) => {
       return count + day.slots.reduce((sc, slot) => sc + slot.activities.length, 0);
@@ -66,10 +71,18 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
   return (
     <div className="min-h-screen bg-background">
       <div className="px-5 pt-14 pb-32 max-w-lg mx-auto">
-        {/* Greeting */}
-        <h1 className="text-2xl font-bold text-primary mb-6">
-          Hello, {displayName}
-        </h1>
+        {/* Greeting with avatar */}
+        <div className="flex items-center gap-3 mb-6">
+          <Avatar className="w-10 h-10">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+            <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <h1 className="text-2xl font-bold text-primary">
+            Hello, {displayName}
+          </h1>
+        </div>
 
         {/* Trip Cards */}
         {isLoading ? (
@@ -82,13 +95,13 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
           <div className="space-y-5">
             {displayTrips.map((trip) => {
               const photoUrl = getTripPhotoUrl(trip);
-              const activityCount = getTripActivityCount(trip);
+              const spotCount = getTripSpotCount(trip);
               const duration = getTripDuration(trip);
 
               return (
                 <button
                   key={trip.id}
-                  onClick={() => onNavigateToTrip?.(trip.id)}
+                  onClick={() => setPreviewTrip(trip)}
                   className="w-full text-left group"
                 >
                   <div className="relative rounded-2xl overflow-hidden shadow-lg shadow-foreground/5 aspect-[4/3]">
@@ -107,10 +120,10 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
                         {trip.name || `${trip.destination} Trip`}
                       </h3>
                       <div className="flex items-center gap-3 text-white/80 text-xs">
-                        {activityCount > 0 && (
+                        {spotCount > 0 && (
                           <span className="flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5" />
-                            {activityCount}
+                            <MapPin className="w-3.5 h-3.5" />
+                            {spotCount}
                           </span>
                         )}
                         <span className="flex items-center gap-1">
@@ -145,6 +158,14 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
           </div>
         )}
       </div>
+
+      {/* Trip Preview Bottom Sheet */}
+      {previewTrip && (
+        <TripPreviewSheet
+          trip={previewTrip}
+          onClose={() => setPreviewTrip(null)}
+        />
+      )}
     </div>
   );
 };
