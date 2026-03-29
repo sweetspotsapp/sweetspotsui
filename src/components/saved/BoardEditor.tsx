@@ -116,7 +116,7 @@ const BoardEditor = ({ onClose, editBoard, savedPlaces = [] }: BoardEditorProps)
         <div className="flex justify-center">
           <div className="w-40 rounded-2xl overflow-hidden bg-card border border-border/50 shadow-lg">
             <div className={cn(
-              "aspect-[4/3] bg-gradient-to-br flex items-center justify-center",
+              "aspect-[4/3] bg-primary/20 flex items-center justify-center",
               selectedColor
             )}>
               {selectedPlaces.length > 0 ? (
@@ -171,7 +171,7 @@ const BoardEditor = ({ onClose, editBoard, savedPlaces = [] }: BoardEditorProps)
                 key={color.value}
                 onClick={() => setSelectedColor(color.value)}
                 className={cn(
-                  "w-10 h-10 rounded-full bg-gradient-to-br transition-all",
+                  "w-10 h-10 rounded-full bg-primary transition-all",
                   color.value,
                   selectedColor === color.value 
                     ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110" 
@@ -228,7 +228,7 @@ const BoardEditor = ({ onClose, editBoard, savedPlaces = [] }: BoardEditorProps)
                     </div>
                     
                     {/* Place Name */}
-                    <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                    <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-black/50">
                       <p className="text-[10px] text-white font-medium line-clamp-1">{place.name}</p>
                     </div>
                   </button>
