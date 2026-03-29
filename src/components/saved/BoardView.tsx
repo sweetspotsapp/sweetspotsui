@@ -243,9 +243,9 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   return (
     <>
       <div className="fixed inset-0 z-50 bg-background animate-slide-in-bottom flex flex-col max-w-md mx-auto">
-        {/* Header with gradient */}
-        <div className={cn("relative h-36 bg-gradient-to-br flex-shrink-0", colorClass)}>
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+        {/* Header */}
+        <div className={cn("relative h-36 bg-primary/20 flex-shrink-0")}>
+          <div className="absolute inset-0 bg-background/60" />
           
           {/* Top Bar */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3">

@@ -42,7 +42,7 @@ const BoardCard = ({
   const renderCollage = () => {
     if (coverImages.length === 0) {
       return (
-        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+        <div className="w-full h-full bg-primary/20 flex items-center justify-center">
           <Heart className="w-10 h-10 text-primary/60" />
         </div>
       );
@@ -50,7 +50,7 @@ const BoardCard = ({
 
     if (coverImages.length === 1) {
       return (
-        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40">
+        <div className="w-full h-full bg-primary/20">
           <img 
             src={coverImages[0]} 
             alt={name}
@@ -63,7 +63,7 @@ const BoardCard = ({
 
     if (coverImages.length === 2) {
       return (
-        <div className="w-full h-full flex gap-0.5 bg-gradient-to-br from-primary/20 to-primary/40">
+        <div className="w-full h-full flex gap-0.5 bg-primary/20">
           <img src={coverImages[0]} alt="" className="w-1/2 h-full object-cover" onError={handleImgError} />
           <img src={coverImages[1]} alt="" className="w-1/2 h-full object-cover" onError={handleImgError} />
         </div>
@@ -71,7 +71,7 @@ const BoardCard = ({
     }
 
     return (
-      <div className="w-full h-full flex gap-0.5 bg-gradient-to-br from-primary/20 to-primary/40">
+      <div className="w-full h-full flex gap-0.5 bg-primary/20">
         <img src={coverImages[0]} alt="" className="w-1/2 h-full object-cover" onError={handleImgError} />
         <div className="w-1/2 h-full flex flex-col gap-0.5">
           <img src={coverImages[1]} alt="" className="w-full h-1/2 object-cover" onError={handleImgError} />
@@ -100,7 +100,7 @@ const BoardCard = ({
       <div className="aspect-[4/5] relative overflow-hidden bg-muted">
         {renderCollage()}
         
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-black/20" />
         
         {/* Options Dropdown */}
         {hasOptions && (
