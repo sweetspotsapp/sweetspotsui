@@ -11,7 +11,7 @@ interface BottomNavProps {
   showPlusButton?: boolean;
 }
 
-const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0 }: BottomNavProps) => {
+const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0, showPlusButton = true }: BottomNavProps) => {
   const { user } = useAuth();
 
   const tabs = [
