@@ -1,4 +1,4 @@
-import { X, MapPin, Calendar, Star } from "lucide-react";
+import { MapPin, Calendar, Star } from "lucide-react";
 import type { SavedTrip } from "@/hooks/useTrip";
 import { differenceInDays, parseISO } from "date-fns";
 import DaySection from "./trip/DaySection";
@@ -6,9 +6,10 @@ import DaySection from "./trip/DaySection";
 interface TripPreviewSheetProps {
   trip: SavedTrip;
   onClose: () => void;
+  onSaveToMyTrips?: (trip: SavedTrip) => void;
 }
 
-const TripPreviewSheet = ({ trip, onClose }: TripPreviewSheetProps) => {
+const TripPreviewSheet = ({ trip, onClose, onSaveToMyTrips }: TripPreviewSheetProps) => {
   const getTripDuration = () => {
     try {
       return differenceInDays(parseISO(trip.end_date), parseISO(trip.start_date)) + 1;
@@ -43,23 +44,15 @@ const TripPreviewSheet = ({ trip, onClose }: TripPreviewSheetProps) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* Backdrop */}
+      {/* Backdrop — tap to dismiss */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Sheet */}
       <div className="relative z-10 w-full max-w-md bg-card rounded-t-3xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] flex flex-col">
-        {/* Handle */}
+        {/* Handle — swipe indicator */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-muted flex items-center justify-center"
-        >
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
 
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 pb-8">
@@ -98,9 +91,17 @@ const TripPreviewSheet = ({ trip, onClose }: TripPreviewSheetProps) => {
                 {trip.trip_data.summary}
               </p>
             )}
+
+            {/* Primary CTA */}
+            <button
+              onClick={() => onSaveToMyTrips?.(trip)}
+              className="w-full mt-4 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm active:scale-[0.98] transition-transform"
+            >
+              Save to My Trips
+            </button>
           </div>
 
-          {/* Day-by-day itinerary (read-only) */}
+          {/* Day-by-day itinerary (read-only, no edit controls) */}
           {trip.trip_data?.days && (
             <div className="px-4 space-y-4">
               {trip.trip_data.days.map((day, dayIndex) => (
