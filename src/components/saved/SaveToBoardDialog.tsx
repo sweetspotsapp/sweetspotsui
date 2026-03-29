@@ -315,7 +315,7 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
       <div className="md:hidden absolute inset-x-0 bottom-0 flex flex-col">
         <div className="relative w-full bg-card rounded-t-3xl animate-slide-in-bottom max-h-[85vh] flex flex-col">
           <div className="flex justify-center pt-3 pb-2">
-            <div className="w-10 h-1 rounded-full bg-border" />
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
           {dialogContent}
         </div>
@@ -324,7 +324,7 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
       {/* Tablet/Desktop: Side panel from right */}
       <div className="hidden md:flex absolute inset-y-0 right-0 w-full max-w-md">
         <div 
-          className="relative w-full bg-card border-l border-border animate-slide-in-right flex flex-col"
+          className="relative w-full bg-card shadow-elevated animate-slide-in-right flex flex-col"
           style={{ animationDuration: "250ms" }}
         >
           {dialogContent}
