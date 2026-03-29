@@ -164,6 +164,10 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
         <TripPreviewSheet
           trip={previewTrip}
           onClose={() => setPreviewTrip(null)}
+          onSaveToMyTrips={(trip) => {
+            setPreviewTrip(null);
+            onNavigateToTrip?.(trip.id);
+          }}
         />
       )}
     </div>
