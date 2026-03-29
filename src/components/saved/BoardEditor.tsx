@@ -114,7 +114,7 @@ const BoardEditor = ({ onClose, editBoard, savedPlaces = [] }: BoardEditorProps)
       <div className="p-4 space-y-6 pb-20 overflow-y-auto max-h-[calc(100vh-60px)]">
         {/* Preview Card */}
         <div className="flex justify-center">
-          <div className="w-40 rounded-2xl overflow-hidden bg-card border border-border/50 shadow-lg">
+          <div className="w-40 rounded-2xl overflow-hidden bg-card shadow-lg">
             <div className={cn(
               "aspect-[4/3] bg-primary/20 flex items-center justify-center",
               selectedColor

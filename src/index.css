@@ -255,14 +255,8 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--warm-cream)) 0%,
-    hsl(var(--primary) / 0.1) 50%,
-    hsl(var(--warm-cream)) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s ease-in-out infinite;
+  background: hsl(var(--warm-cream));
+  animation: gentle-pulse 2s ease-in-out infinite;
 }
 
 .animate-gentle-pulse {
