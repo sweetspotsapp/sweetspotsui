@@ -295,11 +295,6 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
           {/* Stage: Saved */}
           {stage === "saved" && place && (
             <div className="bg-card rounded-2xl shadow-lg overflow-hidden">
-              {/* Success Banner */}
-              <div className="bg-primary text-primary-foreground py-3 text-center text-sm font-semibold">
-                Your spot has been saved!
-              </div>
-
               {/* Place Image */}
               {place.photo_url ? (
                 <img
@@ -330,13 +325,13 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
                       handleClose();
                       onNavigateToTrip?.();
                     }}
-                    className="w-full py-3 rounded-xl bg-muted text-foreground font-semibold text-sm hover:bg-muted/80 transition-colors"
+                    className="w-full py-3 rounded-xl bg-card text-primary font-semibold text-sm hover:bg-muted/50 transition-colors"
                   >
                     Check My trip
                   </button>
                   <button
                     onClick={handleReset}
-                    className="w-full py-3 rounded-xl bg-muted text-foreground font-semibold text-sm hover:bg-muted/80 transition-colors"
+                    className="w-full py-3 rounded-xl bg-card text-primary font-semibold text-sm hover:bg-muted/50 transition-colors"
                   >
                     Stay in Home
                   </button>
