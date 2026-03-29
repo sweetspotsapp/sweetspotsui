@@ -8,6 +8,7 @@ interface BottomNavProps {
   onTabChange: (tab: "home" | "saved" | "trip" | "profile") => void;
   onPlusPress?: () => void;
   tripBadgeCount?: number;
+  showPlusButton?: boolean;
 }
 
 const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0 }: BottomNavProps) => {
