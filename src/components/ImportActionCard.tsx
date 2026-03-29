@@ -97,8 +97,9 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
       label: "IG",
       icon: (
         <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none">
-          <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5"/>
-          <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="2" y="2" width="20" height="20" rx="5" fill="currentColor" opacity="0.15"/>
+          <rect x="2" y="2" width="20" height="20" rx="5" fill="currentColor" opacity="0.15"/>
+          <circle cx="12" cy="12" r="5" fill="currentColor" opacity="0.3"/>
           <circle cx="18" cy="6" r="1.5" fill="currentColor"/>
         </svg>
       ),
@@ -141,11 +142,11 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
           {stage === "actions" && (
             <div className="space-y-3">
               {/* Create New Trip - Disabled */}
-              <div className="bg-card rounded-2xl p-4 opacity-50 cursor-not-allowed shadow-lg border border-border/40">
+              <div className="bg-card rounded-2xl p-4 opacity-50 cursor-not-allowed shadow-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-primary" fill="currentColor">
+                      <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z"/>
                     </svg>
                   </div>
                   <div>
@@ -158,7 +159,7 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
               {/* Import Your SweetSpots */}
               <button
                 onClick={() => setStage("import-options")}
-                className="w-full bg-card rounded-2xl p-4 text-left shadow-lg border border-border/40 hover:border-primary/30 transition-all active:scale-[0.98]"
+                className="w-full bg-card rounded-2xl p-4 text-left shadow-lg transition-all active:scale-[0.98]"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -179,7 +180,7 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
           {stage === "import-options" && (
             <div className="space-y-3">
               {/* Import Header Card */}
-              <div className="bg-card rounded-2xl p-4 shadow-lg border border-border/40">
+              <div className="bg-card rounded-2xl p-4 shadow-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                     <svg viewBox="0 0 24 24" className="w-5 h-5 text-primary" fill="currentColor">
@@ -194,7 +195,7 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
               </div>
 
               {/* URL Input */}
-              <div className="bg-card rounded-2xl p-4 shadow-lg border border-border/40">
+              <div className="bg-card rounded-2xl p-4 shadow-lg">
                 <div className="flex items-center gap-2">
                   <input
                     type="url"
@@ -226,7 +227,7 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
                   <div
                     key={platform.id}
                     className={cn(
-                      "flex-1 bg-card rounded-2xl p-4 flex items-center justify-center shadow-lg border border-border/40",
+                      "flex-1 bg-card rounded-2xl p-4 flex items-center justify-center shadow-lg",
                       platform.disabled && "opacity-40 cursor-not-allowed"
                     )}
                   >
@@ -241,9 +242,9 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
 
           {/* Stage: Loading */}
           {stage === "loading" && (
-            <div className="bg-card rounded-2xl p-8 shadow-lg border border-border/40 flex flex-col items-center gap-4">
+            <div className="bg-card rounded-2xl p-8 shadow-lg flex flex-col items-center gap-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                <Loader2 className="w-12 h-12 text-primary animate-spin" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-foreground">Finding your spot</p>
@@ -254,7 +255,7 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
 
           {/* Stage: Found */}
           {stage === "found" && place && (
-            <div className="bg-card rounded-2xl shadow-lg border border-border/40 overflow-hidden">
+            <div className="bg-card rounded-2xl shadow-lg overflow-hidden">
               {/* Place Image */}
               {place.photo_url ? (
                 <img
@@ -293,7 +294,7 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
 
           {/* Stage: Saved */}
           {stage === "saved" && place && (
-            <div className="bg-card rounded-2xl shadow-lg border border-border/40 overflow-hidden">
+            <div className="bg-card rounded-2xl shadow-lg overflow-hidden">
               {/* Success Banner */}
               <div className="bg-primary text-primary-foreground py-3 text-center text-sm font-semibold">
                 Your spot has been saved!
@@ -329,13 +330,13 @@ const ImportActionCard = ({ open, onClose, onNavigateToTrip }: ImportActionCardP
                       handleClose();
                       onNavigateToTrip?.();
                     }}
-                    className="w-full py-3 rounded-xl border border-primary text-primary font-semibold text-sm hover:bg-primary/5 transition-colors"
+                    className="w-full py-3 rounded-xl bg-muted text-foreground font-semibold text-sm hover:bg-muted/80 transition-colors"
                   >
                     Check My trip
                   </button>
                   <button
                     onClick={handleReset}
-                    className="w-full py-3 rounded-xl border border-primary text-primary font-semibold text-sm hover:bg-primary/5 transition-colors"
+                    className="w-full py-3 rounded-xl bg-muted text-foreground font-semibold text-sm hover:bg-muted/80 transition-colors"
                   >
                     Stay in Home
                   </button>

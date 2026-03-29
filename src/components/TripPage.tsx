@@ -755,8 +755,8 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare,
               <Compass className="w-8 h-8 text-muted-foreground/40" />
             </div>
           )}
-          {/* Overlay gradient for contrast */}
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent to-card/10" />
+          {/* Overlay for contrast */}
+          <div className="absolute inset-0 bg-card/10" />
         </div>
       </button>
     </div>

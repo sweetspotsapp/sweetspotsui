@@ -64,7 +64,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--soft-coral)/0.15)] to-background">
+    <div className="min-h-screen bg-background">
       <div className="px-5 pt-14 pb-32 max-w-lg mx-auto">
         {/* Greeting */}
         <h1 className="text-2xl font-bold text-primary mb-6">
@@ -99,9 +99,9 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10" />
+                      <div className="absolute inset-0 bg-primary/15" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-black/50" />
                     <div className="absolute bottom-0 left-0 right-0 p-5">
                       <h3 className="text-xl font-bold text-white mb-2">
                         {trip.name || `${trip.destination} Trip`}

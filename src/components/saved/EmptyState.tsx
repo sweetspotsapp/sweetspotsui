@@ -13,8 +13,8 @@ const EmptyState = ({ type }: EmptyStateProps) => {
       <div className="flex flex-col items-center justify-center py-16 px-6 text-center animate-fade-in">
         {/* Fun Illustration */}
         <div className="relative mb-6">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
+          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
               <Heart className="w-8 h-8 text-primary" />
             </div>
           </div>
