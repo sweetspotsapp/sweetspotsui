@@ -865,8 +865,8 @@ const PlaceDetailsPage = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNav activeTab="spots" onTabChange={tab => {
-      if (tab === 'spots') navigate('/');else if (tab === 'trip') navigate('/trip');else if (tab === 'profile') navigate('/profile');
+      <BottomNav activeTab="home" onTabChange={tab => {
+      if (tab === 'home') navigate('/');else if (tab === 'saved') navigate('/saved');else if (tab === 'trip') navigate('/trip');else if (tab === 'profile') navigate('/profile');
     }} />
 
       {/* Save to Board Dialog */}
