@@ -12,7 +12,7 @@ const TipsSection = ({ tips }: TipsSectionProps) => {
         <h3 className="font-semibold text-foreground">SweetSpots Tips</h3>
       </div>
       
-      <div className="bg-gradient-to-br from-amber-500/5 via-orange-500/10 to-amber-500/5 border border-primary/10 rounded-2xl p-4">
+      <div className="bg-primary/5 rounded-2xl p-4">
         <ul className="space-y-3">
           {tips.map((tip, i) => (
             <li 
