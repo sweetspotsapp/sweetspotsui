@@ -145,6 +145,7 @@ const Index = () => {
         onTabChange={handleTabChange}
         onPlusPress={() => setShowImportCard(true)}
         tripBadgeCount={pendingCount}
+        showPlusButton={activeTab === "home"}
       />
 
       <ImportActionCard
