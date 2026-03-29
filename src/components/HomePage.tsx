@@ -54,7 +54,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
         for (const slot of day.slots) {
           for (const activity of slot.activities) {
             if (activity.photoName) {
-              return `https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_reference=${activity.photoName}&max_width=800`;
+              return `https://bqjuoxckvrkykfqpbkpv.supabase.co/functions/v1/place-photo?photo_name=${encodeURIComponent(activity.photoName)}&maxWidthPx=800`;
             }
           }
         }
