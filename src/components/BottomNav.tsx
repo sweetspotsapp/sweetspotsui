@@ -28,13 +28,15 @@ const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0, sh
     <>
       {/* Mobile Floating Pill Nav */}
       <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 lg:hidden">
-        {/* Plus Button - centered above the pill */}
-        <button
-          onClick={onPlusPress}
-          className="absolute -top-14 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
+        {/* Plus Button - centered above the pill, only on Home */}
+        {showPlusButton && (
+          <button
+            onClick={onPlusPress}
+            className="absolute -top-14 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        )}
 
         <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-foreground/90 backdrop-blur-md shadow-lg shadow-foreground/10">
           {tabs.map((tab) => {
@@ -86,13 +88,15 @@ const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0, sh
           </button>
 
           <div className="flex items-center gap-1">
-            {/* Plus button for desktop */}
-            <button
-              onClick={onPlusPress}
-              className="mr-2 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+            {/* Plus button for desktop - only on Home */}
+            {showPlusButton && (
+              <button
+                onClick={onPlusPress}
+                className="mr-2 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            )}
 
             {tabs.map((tab) => {
               const Icon = tab.icon;
