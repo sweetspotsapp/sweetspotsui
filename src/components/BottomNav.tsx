@@ -67,7 +67,7 @@ const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0 }: 
                   />
                 ) : null}
                 {showBadge && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 border-2 border-foreground/90">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
                     {tripBadgeCount > 9 ? "9+" : tripBadgeCount}
                   </span>
                 )}
@@ -78,7 +78,7 @@ const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0 }: 
       </nav>
 
       {/* Desktop Top Nav */}
-      <nav className="hidden lg:block fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
+      <nav className="hidden lg:block fixed top-0 left-0 right-0 z-50 bg-card shadow-soft">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-8 h-16">
           <button onClick={() => onTabChange("home")} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
             <img src="/sweetspots-logo.svg" alt="SweetSpots" className="h-8 w-auto" />
