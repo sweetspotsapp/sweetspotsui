@@ -66,8 +66,8 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
   const menuItems = [
     {
       id: "settings",
-      label: "Settings",
-      icon: Settings,
+      label: "Preferences",
+      icon: SlidersHorizontal,
       onClick: handleNavigateToSettings,
       trailing: <ChevronRight className="w-4 h-4 text-muted-foreground" />,
     },
