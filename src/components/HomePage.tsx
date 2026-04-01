@@ -10,6 +10,7 @@ import TripPreviewSheet from "./TripPreviewSheet";
 interface HomePageProps {
   onNavigateToTrip?: (tripId?: string) => void;
   onNavigateToSpots?: () => void;
+  onMenuClick?: () => void;
 }
 
 const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
