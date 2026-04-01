@@ -73,16 +73,27 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick }: HomePage
     <div className="min-h-screen bg-background">
       <div className="px-5 pt-14 pb-32 max-w-lg mx-auto">
         {/* Greeting with avatar */}
-        <div className="flex items-center gap-3 mb-6">
-          <Avatar className="w-10 h-10">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-            <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <h1 className="text-2xl font-bold text-primary">
-            Hello, {displayName}
-          </h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Avatar className="w-10 h-10">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+              <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <h1 className="text-2xl font-bold text-primary">
+              Hello, {displayName}
+            </h1>
+          </div>
+          {onMenuClick && (
+            <button
+              onClick={onMenuClick}
+              className="p-2 text-foreground hover:text-primary transition-colors"
+              aria-label="Menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          )}
         </div>
 
         {/* Trip Cards */}
