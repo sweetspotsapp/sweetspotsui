@@ -69,6 +69,10 @@ const Index = () => {
     );
   }
 
+  if (showOnboarding) {
+    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
