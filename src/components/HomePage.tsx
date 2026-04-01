@@ -72,7 +72,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
     <div className="min-h-screen bg-background">
       <div className="px-5 pt-14 pb-32 max-w-lg mx-auto">
         {/* Greeting with avatar */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-1">
           <Avatar className="w-10 h-10">
             {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
@@ -83,6 +83,14 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
             Hello, {displayName}
           </h1>
         </div>
+        <p className="text-sm text-muted-foreground mb-8 ml-[52px]">
+          Your next trip starts here
+        </p>
+
+        {/* Section label */}
+        {displayTrips.length > 0 && (
+          <h2 className="text-base font-semibold text-foreground mb-4">Your trips</h2>
+        )}
 
         {/* Trip Cards */}
         {isLoading ? (
@@ -151,9 +159,9 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
         ) : (
           <div className="text-center py-16">
             <MapPin className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-foreground mb-2">No trips yet</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-2">Where to next?</h2>
             <p className="text-sm text-muted-foreground">
-              Start by importing your favorite spots
+              Import the places you've been saving and we'll turn them into a trip.
             </p>
           </div>
         )}

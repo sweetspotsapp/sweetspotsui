@@ -60,7 +60,7 @@ interface CharacterMatch {
 
 const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const navigate = useNavigate();
-  const { savedPlaceIds, userVibes } = useApp();
+  const { savedPlaceIds } = useApp();
   const { user } = useAuth();
   const { vibeBreakdown, personalityTraits, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount, refresh: refreshVibeDNA } = useVibeDNA();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -847,19 +847,7 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
           )}
         </section>
 
-        <section className="bg-warm-cream rounded-xl p-4 space-y-2 opacity-0 animate-fade-up" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
-          <h3 className="font-semibold text-foreground text-sm">Current mood preferences</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {userVibes.map((vibe, index) => (
-              <span 
-                key={index}
-                className="inline-flex items-center px-2.5 py-1 rounded-full bg-background text-foreground text-xs font-medium border border-border"
-              >
-                {vibe}
-              </span>
-            ))}
-          </div>
-        </section>
+        
       </div>
     </div>
 

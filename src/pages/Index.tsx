@@ -5,26 +5,13 @@ import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
-import EntryScreen from "@/components/EntryScreen";
-import LoadingTransition from "@/components/LoadingTransition";
 import ImportActionCard from "@/components/ImportActionCard";
 
-import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import { usePendingInvites } from "@/hooks/usePendingInvites";
-import type { OnboardingData } from "@/context/AppContext";
-
-type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { 
-    hasCompletedOnboarding, 
-    setUserMood, 
-    completeOnboarding,
-    setOnboardingData,
-  } = useApp();
-  
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
@@ -59,41 +46,6 @@ const Index = () => {
     }
   }, [activeTab, markSeen]);
 
-  const [appState, setAppState] = useState<AppState>(
-    hasCompletedOnboarding ? "main" : "onboarding"
-  );
-
-  useEffect(() => {
-    if (hasCompletedOnboarding && appState === "onboarding") {
-      setAppState("main");
-    } else if (!hasCompletedOnboarding && appState === "main") {
-      setAppState("onboarding");
-    }
-  }, [hasCompletedOnboarding, appState]);
-
-  const handleOnboardingComplete = (data: OnboardingData) => {
-    setOnboardingData(data);
-    if (data.mood) {
-      setUserMood(data.mood);
-    }
-    setAppState("loading");
-    
-    setTimeout(() => {
-      completeOnboarding(data.mood || "", []);
-      setAppState("main");
-    }, 800);
-  };
-
-  const handleSkip = () => {
-    sessionStorage.setItem('sweetspots_skip_mode', 'true');
-    setAppState("loading");
-    
-    setTimeout(() => {
-      completeOnboarding("", []);
-      setAppState("main");
-    }, 800);
-  };
-
   const handleTabChange = (tab: "home" | "saved" | "trip" | "profile") => {
     setActiveTab(tab);
   };
@@ -111,15 +63,6 @@ const Index = () => {
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
-  }
-
-  if (appState === "onboarding") {
-    return <EntryScreen onComplete={handleOnboardingComplete} onSkip={handleSkip} />;
-  }
-
-  if (appState === "loading") {
-    const isSkipMode = sessionStorage.getItem('sweetspots_skip_mode') === 'true';
-    return <LoadingTransition isSkipMode={isSkipMode} />;
   }
 
   return (
