@@ -8,6 +8,7 @@ import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
 import ImportActionCard from "@/components/ImportActionCard";
+import ProfileSlideMenu from "@/components/ProfileSlideMenu";
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
