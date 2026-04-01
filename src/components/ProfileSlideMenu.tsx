@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   User, 
-  Settings, 
+  SlidersHorizontal, 
   Sun, 
   Moon, 
   Crown, 
