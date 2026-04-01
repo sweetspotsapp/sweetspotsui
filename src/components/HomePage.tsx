@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrip, type SavedTrip } from "@/hooks/useTrip";
-import { Star, CalendarDays, MapPin } from "lucide-react";
+import { Star, CalendarDays, MapPin, Menu } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -10,9 +10,10 @@ import TripPreviewSheet from "./TripPreviewSheet";
 interface HomePageProps {
   onNavigateToTrip?: (tripId?: string) => void;
   onNavigateToSpots?: () => void;
+  onMenuClick?: () => void;
 }
 
-const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
+const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick }: HomePageProps) => {
   const { user } = useAuth();
   const { savedTrips, isLoading } = useTrip();
   const [profileName, setProfileName] = useState<string | null>(null);
@@ -72,16 +73,27 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots }: HomePageProps) => {
     <div className="min-h-screen bg-background">
       <div className="px-5 pt-14 pb-32 max-w-lg mx-auto">
         {/* Greeting with avatar */}
-        <div className="flex items-center gap-3 mb-6">
-          <Avatar className="w-10 h-10">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-            <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <h1 className="text-2xl font-bold text-primary">
-            Hello, {displayName}
-          </h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Avatar className="w-10 h-10">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+              <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <h1 className="text-2xl font-bold text-primary">
+              Hello, {displayName}
+            </h1>
+          </div>
+          {onMenuClick && (
+            <button
+              onClick={onMenuClick}
+              className="p-2 text-foreground hover:text-primary transition-colors"
+              aria-label="Menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          )}
         </div>
 
         {/* Trip Cards */}

@@ -8,6 +8,7 @@ import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
 import ImportActionCard from "@/components/ImportActionCard";
+import ProfileSlideMenu from "@/components/ProfileSlideMenu";
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<"home" | "saved" | "trip" | "profile">(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
   const [showImportCard, setShowImportCard] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     const state = location.state as { openTrip?: boolean } | null;
@@ -128,6 +130,7 @@ const Index = () => {
         <HomePage 
           onNavigateToTrip={handleNavigateToTripFromHome}
           onNavigateToSpots={() => setActiveTab("saved")}
+          onMenuClick={() => setShowProfileMenu(true)}
         />
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
@@ -155,6 +158,12 @@ const Index = () => {
           setShowImportCard(false);
           setActiveTab("trip");
         }}
+      />
+
+      <ProfileSlideMenu
+        isOpen={showProfileMenu}
+        onClose={() => setShowProfileMenu(false)}
+        onNavigateToProfile={() => setActiveTab("profile")}
       />
     </div>
   );
