@@ -130,6 +130,7 @@ const Index = () => {
         <HomePage 
           onNavigateToTrip={handleNavigateToTripFromHome}
           onNavigateToSpots={() => setActiveTab("saved")}
+          onMenuClick={() => setShowProfileMenu(true)}
         />
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
