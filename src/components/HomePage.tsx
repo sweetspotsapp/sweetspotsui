@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrip, type SavedTrip } from "@/hooks/useTrip";
-import { Star, CalendarDays, MapPin } from "lucide-react";
+import { Star, CalendarDays, MapPin, Menu } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
