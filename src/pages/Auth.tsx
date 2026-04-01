@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,7 +23,6 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (user && !isLoading) {
       navigate("/", { replace: true });
@@ -34,7 +33,6 @@ const Auth = () => {
     e.preventDefault();
     setErrors({});
 
-    // Validate input
     const result = authSchema.safeParse({ email, password });
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
@@ -67,7 +65,7 @@ const Auth = () => {
           }
         } else {
           toast({
-            title: "Welcome!",
+            title: "Welcome to Sweetspots",
             description: "Your account has been created.",
           });
         }
@@ -95,30 +93,32 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
-      {/* Top decorative element */}
-      <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-      
-      {/* Header */}
-      <header className="pt-safe pt-12 pb-4 px-5 relative z-10">
-        <div className="flex items-center gap-2 opacity-0 animate-fade-up" style={{ animationFillMode: 'forwards' }}>
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <MapPin className="w-5 h-5 text-primary" />
-          </div>
+    <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto px-6">
+      {/* Logo header */}
+      <header className="pt-12 pb-8">
+        <div className="flex items-center gap-3 opacity-0 animate-fade-up" style={{ animationFillMode: 'forwards' }}>
+          <img
+            src="/sweetspots-logo.svg"
+            alt="Sweetspots"
+            className="h-10 w-10"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
           <span className="text-lg font-semibold text-primary">Sweetspots</span>
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col justify-center px-5 pb-8 relative">
+      <main className="flex-1 flex flex-col justify-center pb-12">
         <div className="w-full space-y-8">
-          {/* Headlines */}
+          {/* Heading */}
           <div className="space-y-2 opacity-0 animate-fade-up" style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}>
-            <h1 className="text-2xl font-bold text-foreground leading-tight">
+            <h1 className="text-3xl font-bold text-foreground leading-tight">
               {isSignUp ? "Create your account" : "Welcome back"}
             </h1>
             <p className="text-base text-muted-foreground">
-              {isSignUp 
-                ? "Sign up to discover personalized places" 
+              {isSignUp
+                ? "Start saving spots and planning trips"
                 : "Sign in to continue exploring"}
             </p>
           </div>
@@ -128,13 +128,13 @@ const Auth = () => {
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="email"
                     placeholder="Email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-12 rounded-xl"
+                    className="pl-12 h-14 rounded-2xl bg-muted/50 border-0 text-base"
                     autoComplete="email"
                   />
                 </div>
@@ -145,13 +145,13 @@ const Auth = () => {
 
               <div className="space-y-1.5">
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="password"
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 h-12 rounded-xl"
+                    className="pl-12 h-14 rounded-2xl bg-muted/50 border-0 text-base"
                     autoComplete={isSignUp ? "new-password" : "current-password"}
                   />
                 </div>
@@ -163,9 +163,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              variant="primary"
-              size="lg"
-              className="w-full h-12 text-base rounded-xl"
+              className="w-full h-14 text-base rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -173,7 +171,7 @@ const Auth = () => {
               ) : (
                 <>
                   {isSignUp ? "Create account" : "Sign in"}
-                  <ArrowRight className="w-5 h-5 ml-1" />
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </>
               )}
             </Button>
