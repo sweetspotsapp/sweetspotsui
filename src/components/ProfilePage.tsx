@@ -60,7 +60,7 @@ interface CharacterMatch {
 
 const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   const navigate = useNavigate();
-  const { savedPlaceIds, userVibes } = useApp();
+  const { savedPlaceIds } = useApp();
   const { user } = useAuth();
   const { vibeBreakdown, personalityTraits, isLoading: isVibeLoading, totalInteractions, searchCount, placesShownCount, refresh: refreshVibeDNA } = useVibeDNA();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
