@@ -6,12 +6,16 @@ import SavedPage from "@/components/SavedPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
 import ImportActionCard from "@/components/ImportActionCard";
+import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 
 import { useAuth } from "@/hooks/useAuth";
 import { usePendingInvites } from "@/hooks/usePendingInvites";
 
 const Index = () => {
   const { user, isLoading: authLoading } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem("sweetspots_onboarding_done");
+  });
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
