@@ -159,6 +159,12 @@ const Index = () => {
           setActiveTab("trip");
         }}
       />
+
+      <ProfileSlideMenu
+        isOpen={showProfileMenu}
+        onClose={() => setShowProfileMenu(false)}
+        onNavigateToProfile={() => setActiveTab("profile")}
+      />
     </div>
   );
 };
