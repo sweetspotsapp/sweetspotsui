@@ -8,6 +8,7 @@ import { AppProvider } from "@/context/AppContext";
 import { FeedbackProvider } from "@/context/FeedbackContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import PersistentLayout from "./components/PersistentLayout";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import Auth from "./pages/Auth";
 import PlaceDetails from "./pages/PlaceDetails";
