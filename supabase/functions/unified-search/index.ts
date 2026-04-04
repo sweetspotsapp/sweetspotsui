@@ -1098,7 +1098,7 @@ serve(async (req) => {
       summary = cachedSearch.summary;
     }
 
-    // ============ PARALLEL STEP 2: Fetch travel times + AI scoring + user data + auth + filter tags ============
+    // ============ PARALLEL STEP 2: Haversine distance + AI scoring + user data + auth + filter tags ============
     const parallelStartTime = Date.now();
 
     // Filter candidates with valid coordinates
@@ -1116,76 +1116,31 @@ serve(async (req) => {
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
     
-    // Calculate straight-line distances and sort
-    const candidatesWithDistance = validCandidates.map(p => ({
-      ...p,
-      straightLineDistance: haversineDistance(lat, lng, p.lat, p.lng)
-    })).sort((a, b) => a.straightLineDistance - b.straightLineDistance);
+    // Calculate distances and estimated ETAs using haversine (NO external API call)
+    const speedMps = getSpeedForMode(mode);
+    const travelData = new Map<string, { eta: number | null; distance: number | null }>();
     
-    // Only calculate route matrix for closest 30 places (major optimization)
-    const candidatesForRouting = candidatesWithDistance.slice(0, 30);
-    console.log(`Routing optimization: ${validCandidates.length} → ${candidatesForRouting.length} candidates`);
+    validCandidates.forEach(place => {
+      const distanceMeters = Math.round(haversineDistance(lat, lng, place.lat, place.lng));
+      // Apply a 1.3x detour factor for road routing approximation
+      const routeDistance = Math.round(distanceMeters * 1.3);
+      const estimatedEta = Math.round(routeDistance / speedMps);
+      travelData.set(place.place_id, {
+        eta: estimatedEta,
+        distance: routeDistance,
+      });
+    });
 
-    // Parallel operations (including auth fetch now)
-    const [travelTimeResult, aiResult, authDataResult, filterTagsResult] = await Promise.all([
-      // 2a: Geoapify travel times (only for top 30 nearest candidates)
-      (async () => {
-        const travelData = new Map<string, { eta: number | null; distance: number | null }>();
-        
-        try {
-          const sources = [{ location: [lng, lat] }];
-          const targets = candidatesForRouting.map(p => ({ location: [p.lng, p.lat] }));
-          
-          const matrixResponse = await fetch(
-            `https://api.geoapify.com/v1/routematrix?apiKey=${geoapifyApiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                mode: mapModeToGeoapify(mode),
-                sources,
-                targets,
-              }),
-            }
-          );
+    console.log(`⏱️  Haversine distances computed for ${validCandidates.length} places (0 external API calls)`);
 
-          if (matrixResponse.ok) {
-            const matrixData = await matrixResponse.json();
-            if (matrixData.sources_to_targets?.[0]) {
-              const results = matrixData.sources_to_targets[0];
-              candidatesForRouting.forEach((place, index) => {
-                const result = results[index];
-                travelData.set(place.place_id, {
-                  eta: result?.time ?? null,
-                  distance: result?.distance ?? null,
-                });
-              });
-            }
-          }
-          
-          // For places beyond top 30, estimate using straight-line distance
-          candidatesWithDistance.slice(30).forEach(place => {
-            // Rough estimate: 50 km/h average speed for driving
-            const speedMps = mode === 'walk' ? 1.4 : mode === 'bike' ? 5.5 : 13.9;
-            const estimatedEta = Math.round(place.straightLineDistance / speedMps);
-            travelData.set(place.place_id, {
-              eta: estimatedEta,
-              distance: Math.round(place.straightLineDistance),
-            });
-          });
-        } catch (e) {
-          console.error('Geoapify error:', e);
-        }
-        
-        return travelData;
-      })(),
-
+    // Parallel operations (AI scoring + auth + filter tags — NO routing API)
+    const [aiResult, authDataResult, filterTagsResult] = await Promise.all([
       // 2b: AI relevance scoring + summary (skipped on cache hit)
       cachedSearch
         ? Promise.resolve({ relevanceMap, summary })
         : getAIRelevanceAndSummary(intent || prompt, validCandidates, lovableApiKey),
 
-      // 2c: Get authenticated user ID + fetch profile + saved places (moved from earlier sequential code)
+      // 2c: Get authenticated user ID + fetch profile + saved places
       (async () => {
         let userId: string | null = null;
         if (authHeader) {
