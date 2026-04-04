@@ -1,41 +1,29 @@
 
 
-# Updated Production Audit: Add Real-Time Collaboration Section
+# Make Quick-Tip Cards Clickable + Add Trip Templates to Homepage
 
-## What's Missing
+## Problem
+1. "Search by vibe" and "Plan a trip" cards in `WelcomeCTA` are plain `<div>`s — not clickable.
+2. Homepage is empty for new/guest users beyond the CTA. It should show inspiring trip templates.
 
-The current trip sharing system (`shared_trips` table) only supports **view-only** access. There's no real-time sync — when one user drags an activity, the other user doesn't see it. The `permission` column defaults to `'view'` and is never set to `'edit'`.
+## Plan
 
-## What to Add to the Audit Document
+### 1. Make quick-tip cards clickable (WelcomeCTA.tsx)
+- Convert "Search by vibe" `<div>` to a `<button>` that calls `onDiscoverClick` (navigates to Discover tab).
+- Add a new `onTripClick` prop. Convert "Plan a trip" `<div>` to a `<button>` that calls `onTripClick` (navigates to Trip tab).
+- Add hover/tap styles (e.g. `hover:border-primary/40 active:scale-[0.98]`).
 
-### Real-Time Collaborative Itinerary Editing
+### 2. Add trip template section to HomePage
+- Below WelcomeCTA (for new users) or below existing trips (for returning users), add a **"Popular Itineraries"** section showing curated trip templates.
+- Templates will be hardcoded data (no API cost) with destination name, cover image (gradient placeholder), duration, and spot count — e.g. "3 Days in Tokyo", "Weekend in Bali", "5 Days in Paris".
+- Each template card is tappable → navigates to Trip tab with the destination pre-filled (via `sessionStorage` like the existing Plan-It Nudge pattern).
+- Cards styled as horizontal-scroll carousel with photo backgrounds, similar to existing trip cards but smaller.
 
-**Current state:** Trips can be shared via email/SweetSpots ID, but recipients get read-only access. No presence indicators, no live cursors, no conflict resolution.
-
-**What's needed:**
-
-1. **Permission upgrade** — Allow `shared_trips.permission = 'edit'` so the sharer can grant edit access (not just view).
-
-2. **Realtime sync via Postgres Changes** — Enable `supabase_realtime` on the `trips` table. When User A drags an activity, the `trip_data` JSONB column updates, and User B receives the change instantly via Supabase Realtime subscription.
-
-3. **Presence indicators** — Use Supabase Realtime Presence to show who's currently viewing/editing the trip (avatars in the trip header, colored cursors or highlights on the activity card being dragged).
-
-4. **Conflict resolution** — Since `trip_data` is a single JSONB blob, two simultaneous edits could clash. Strategy: last-write-wins with optimistic UI + toast notification ("Alex just moved Coffee Shop to Day 2").
-
-5. **UI changes:**
-   - Share dialog: toggle between "Can view" / "Can edit" permission
-   - Trip header: show collaborator avatars with online status dots
-   - Activity cards: subtle highlight when another user is dragging one
-   - Change feed: small toast or log showing recent edits by collaborators
-
-6. **Cost impact:** Realtime connections are low-cost (included in Supabase free tier up to 200 concurrent). No additional API calls — just WebSocket subscriptions.
-
-## Plan: Regenerate the .docx
-
-Update the existing `sweetspots-production-audit.docx` to add a new **Section 5: Real-Time Collaboration** covering the above, inserted after the current retention section. Also update the sprint roadmap to include collaboration in Sprint 3 or as a new Sprint 5.
+### 3. Wire up navigation (HomePage.tsx + Index.tsx)
+- Pass `onNavigateToTrip` through to `WelcomeCTA` as `onTripClick`.
+- Ensure `onNavigateToDiscover` and `onNavigateToTrip` are both wired from `Index.tsx`.
 
 ### Files to modify
-- **Generate updated `/mnt/documents/sweetspots-production-audit_v2.docx`** with the new collaboration section
-
-### No code changes — document update only.
+- `src/components/WelcomeCTA.tsx` — add `onTripClick` prop, make cards clickable, add template data + carousel section
+- `src/components/HomePage.tsx` — pass `onNavigateToTrip` to WelcomeCTA, show templates for all user states
 
