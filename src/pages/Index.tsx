@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
+import DiscoverPage from "@/components/DiscoverPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
