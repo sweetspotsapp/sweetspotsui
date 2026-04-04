@@ -1240,7 +1240,7 @@ serve(async (req) => {
         scores.behaviorFit * WEIGHTS.behaviorFit +
         scores.quality * WEIGHTS.quality;
 
-      const why = generateWhyString(place, scores, travel.eta);
+      const why = generateWhyString(place, scores, travel.distance);
 
       return {
         ...place,
