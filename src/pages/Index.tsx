@@ -38,7 +38,7 @@ const Index = () => {
     return "home";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "saved" | "trip" | "profile">(getInitialTab);
+  const [activeTab, setActiveTab] = useState<"home" | "discover" | "saved" | "trip" | "profile">(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
   const [showImportCard, setShowImportCard] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
