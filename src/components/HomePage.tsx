@@ -165,7 +165,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick }: HomePage
             <MapPin className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-foreground mb-2">No trips yet</h2>
             <p className="text-sm text-muted-foreground">
-              Start by importing your favorite spots
+              Head to Discover to find your next spot
             </p>
           </div>
         )}
