@@ -163,7 +163,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onNavigateToDiscover, o
             })}
           </div>
         ) : (
-          <WelcomeCTA onDiscoverClick={() => onNavigateToDiscover?.()} />
+          <WelcomeCTA onDiscoverClick={() => onNavigateToDiscover?.()} onTripClick={() => onNavigateToTrip?.()} />
         )}
       </div>
 
