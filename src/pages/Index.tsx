@@ -131,6 +131,7 @@ const Index = () => {
         <HomePage 
           onNavigateToTrip={handleNavigateToTripFromHome}
           onNavigateToSpots={() => setActiveTab("saved")}
+          onNavigateToDiscover={() => setActiveTab("discover")}
           onMenuClick={() => setShowProfileMenu(true)}
         />
       </div>
