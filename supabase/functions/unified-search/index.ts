@@ -103,24 +103,24 @@ interface Profile {
   vibe: Record<string, unknown> | null;
 }
 
-// Weights for scoring
+// Weights for scoring (distance-only model — no external routing API)
 const WEIGHTS = {
   aiRelevance: 0.50,
-  eta: 0.20,
-  distance: 0.05,
+  distance: 0.25,
   profileFit: 0.10,
   behaviorFit: 0.05,
   quality: 0.10,
 };
 
-// Map mode to Geoapify mode
-function mapModeToGeoapify(mode: 'drive' | 'walk' | 'bike'): string {
-  const modeMap: Record<string, string> = {
-    drive: 'drive',
-    walk: 'walk',
-    bike: 'bicycle',
+// Map mode to estimated speed (m/s) for ETA approximation
+function getSpeedForMode(mode: 'drive' | 'walk' | 'bike'): number {
+  // Average speeds accounting for urban conditions
+  const speeds: Record<string, number> = {
+    drive: 11.1, // ~40 km/h city driving
+    walk: 1.3,   // ~4.7 km/h walking
+    bike: 4.2,   // ~15 km/h cycling
   };
-  return modeMap[mode] || 'drive';
+  return speeds[mode] || 11.1;
 }
 
 // Calculate ETA score (lower is better)
@@ -180,12 +180,11 @@ function generateWhyString(
   place: PlaceCandidate,
   scores: {
     aiRelevance: number;
-    eta: number;
     distance: number;
     profileFit: number;
     quality: number;
   },
-  etaSeconds: number | null
+  distanceMeters: number | null
 ): string {
   const factors: { name: string; score: number; description: string }[] = [
     { 
@@ -195,8 +194,12 @@ function generateWhyString(
     },
     { 
       name: 'nearby', 
-      score: scores.eta, 
-      description: etaSeconds ? `${Math.round(etaSeconds / 60)} min away` : 'Close by' 
+      score: scores.distance, 
+      description: distanceMeters 
+        ? distanceMeters < 1000 
+          ? `${Math.round(distanceMeters)} m away`
+          : `${(distanceMeters / 1000).toFixed(1)} km away`
+        : 'Close by' 
     },
     { 
       name: 'profile', 
@@ -700,19 +703,12 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY_BE')!;
-    const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY'); // Geocoding fallback only
 
     if (!googleMapsApiKey) {
       return new Response(
         JSON.stringify({ error: 'Google Maps API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!geoapifyApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Geoapify API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -1098,7 +1094,7 @@ serve(async (req) => {
       summary = cachedSearch.summary;
     }
 
-    // ============ PARALLEL STEP 2: Fetch travel times + AI scoring + user data + auth + filter tags ============
+    // ============ PARALLEL STEP 2: Haversine distance + AI scoring + user data + auth + filter tags ============
     const parallelStartTime = Date.now();
 
     // Filter candidates with valid coordinates
@@ -1116,76 +1112,31 @@ serve(async (req) => {
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
     
-    // Calculate straight-line distances and sort
-    const candidatesWithDistance = validCandidates.map(p => ({
-      ...p,
-      straightLineDistance: haversineDistance(lat, lng, p.lat, p.lng)
-    })).sort((a, b) => a.straightLineDistance - b.straightLineDistance);
+    // Calculate distances and estimated ETAs using haversine (NO external API call)
+    const speedMps = getSpeedForMode(mode);
+    const travelData = new Map<string, { eta: number | null; distance: number | null }>();
     
-    // Only calculate route matrix for closest 30 places (major optimization)
-    const candidatesForRouting = candidatesWithDistance.slice(0, 30);
-    console.log(`Routing optimization: ${validCandidates.length} → ${candidatesForRouting.length} candidates`);
+    validCandidates.forEach(place => {
+      const distanceMeters = Math.round(haversineDistance(lat, lng, place.lat, place.lng));
+      // Apply a 1.3x detour factor for road routing approximation
+      const routeDistance = Math.round(distanceMeters * 1.3);
+      const estimatedEta = Math.round(routeDistance / speedMps);
+      travelData.set(place.place_id, {
+        eta: estimatedEta,
+        distance: routeDistance,
+      });
+    });
 
-    // Parallel operations (including auth fetch now)
-    const [travelTimeResult, aiResult, authDataResult, filterTagsResult] = await Promise.all([
-      // 2a: Geoapify travel times (only for top 30 nearest candidates)
-      (async () => {
-        const travelData = new Map<string, { eta: number | null; distance: number | null }>();
-        
-        try {
-          const sources = [{ location: [lng, lat] }];
-          const targets = candidatesForRouting.map(p => ({ location: [p.lng, p.lat] }));
-          
-          const matrixResponse = await fetch(
-            `https://api.geoapify.com/v1/routematrix?apiKey=${geoapifyApiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                mode: mapModeToGeoapify(mode),
-                sources,
-                targets,
-              }),
-            }
-          );
+    console.log(`⏱️  Haversine distances computed for ${validCandidates.length} places (0 external API calls)`);
 
-          if (matrixResponse.ok) {
-            const matrixData = await matrixResponse.json();
-            if (matrixData.sources_to_targets?.[0]) {
-              const results = matrixData.sources_to_targets[0];
-              candidatesForRouting.forEach((place, index) => {
-                const result = results[index];
-                travelData.set(place.place_id, {
-                  eta: result?.time ?? null,
-                  distance: result?.distance ?? null,
-                });
-              });
-            }
-          }
-          
-          // For places beyond top 30, estimate using straight-line distance
-          candidatesWithDistance.slice(30).forEach(place => {
-            // Rough estimate: 50 km/h average speed for driving
-            const speedMps = mode === 'walk' ? 1.4 : mode === 'bike' ? 5.5 : 13.9;
-            const estimatedEta = Math.round(place.straightLineDistance / speedMps);
-            travelData.set(place.place_id, {
-              eta: estimatedEta,
-              distance: Math.round(place.straightLineDistance),
-            });
-          });
-        } catch (e) {
-          console.error('Geoapify error:', e);
-        }
-        
-        return travelData;
-      })(),
-
+    // Parallel operations (AI scoring + auth + filter tags — NO routing API)
+    const [aiResult, authDataResult, filterTagsResult] = await Promise.all([
       // 2b: AI relevance scoring + summary (skipped on cache hit)
       cachedSearch
         ? Promise.resolve({ relevanceMap, summary })
         : getAIRelevanceAndSummary(intent || prompt, validCandidates, lovableApiKey),
 
-      // 2c: Get authenticated user ID + fetch profile + saved places (moved from earlier sequential code)
+      // 2c: Get authenticated user ID + fetch profile + saved places
       (async () => {
         let userId: string | null = null;
         if (authHeader) {
@@ -1221,7 +1172,6 @@ serve(async (req) => {
 
     console.log(`⏱️  Parallel operations completed in ${Date.now() - parallelStartTime}ms`);
 
-    const travelData = travelTimeResult;
     const { userId: authenticatedUserId, profile, savedPlaces } = authDataResult;
 
     // On cache miss: extract AI results, merge tags, write to cache
@@ -1278,7 +1228,6 @@ serve(async (req) => {
       
       const scores = {
         aiRelevance: aiScore,
-        eta: calculateEtaScore(travel.eta, maxEta),
         distance: calculateDistanceScore(travel.distance, maxDistance),
         profileFit: calculateProfileFit(profile as Profile | null, place),
         behaviorFit: isSaved ? 0.8 : 0.5,
@@ -1287,13 +1236,12 @@ serve(async (req) => {
 
       const totalScore =
         scores.aiRelevance * WEIGHTS.aiRelevance +
-        scores.eta * WEIGHTS.eta +
         scores.distance * WEIGHTS.distance +
         scores.profileFit * WEIGHTS.profileFit +
         scores.behaviorFit * WEIGHTS.behaviorFit +
         scores.quality * WEIGHTS.quality;
 
-      const why = generateWhyString(place, scores, travel.eta);
+      const why = generateWhyString(place, scores, travel.distance);
 
       return {
         ...place,
