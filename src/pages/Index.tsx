@@ -132,11 +132,6 @@ const Index = () => {
           onNavigateToTrip={handleNavigateToTripFromHome}
           onNavigateToSpots={() => setActiveTab("saved")}
           onMenuClick={() => setShowProfileMenu(true)}
-          onImportPress={() => setShowImportCard(true)}
-          onNavigateToTripWithCity={(city) => {
-            sessionStorage.setItem('sweetspots_trip_city', city);
-            setActiveTab("trip");
-          }}
         />
       </div>
       <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
