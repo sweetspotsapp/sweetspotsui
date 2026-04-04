@@ -178,7 +178,7 @@ const Auth = () => {
           </form>
 
           {/* Toggle */}
-          <div className="text-center opacity-0 animate-fade-up" style={{ animationDelay: '450ms', animationFillMode: 'forwards' }}>
+          <div className="text-center space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: '450ms', animationFillMode: 'forwards' }}>
             <button
               type="button"
               onClick={() => {
@@ -193,6 +193,16 @@ const Auth = () => {
                 <>Don't have an account? <span className="text-primary font-medium">Sign up</span></>
               )}
             </button>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => navigate("/", { replace: true })}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+              >
+                Skip for now
+              </button>
+            </div>
           </div>
         </div>
       </main>
