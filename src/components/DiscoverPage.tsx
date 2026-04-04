@@ -121,22 +121,26 @@ const DiscoverPage = () => {
           </button>
         </div>
 
-        {/* Vibe chips — show when no results yet */}
+        {/* Guided tooltip + Recent searches + Vibe chips — show when no results yet */}
         {!hasSearched && (
-          <div className="mb-8">
-            <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Try a vibe</p>
-            <div className="flex flex-wrap gap-2">
-              {vibeChips.map((chip) => (
-                <button
-                  key={chip}
-                  onClick={() => handleChipClick(chip)}
-                  className="px-3 py-1.5 rounded-full text-sm bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  {chip}
-                </button>
-              ))}
+          <>
+            <FirstSearchTooltip />
+            <RecentSearches onSelect={(q) => { setQuery(q); handleSearch(q); }} />
+            <div className="mb-8">
+              <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Try a vibe</p>
+              <div className="flex flex-wrap gap-2">
+                {vibeChips.map((chip) => (
+                  <button
+                    key={chip}
+                    onClick={() => handleChipClick(chip)}
+                    className="px-3 py-1.5 rounded-full text-sm bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* AI Summary */}
