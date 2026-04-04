@@ -226,7 +226,7 @@ const DiscoverPlaceCard = ({
           {distanceKm && (
             <span className="text-[11px] text-muted-foreground">{distanceKm} km</span>
           )}
-          {place.price_level && (
+          {place.price_level != null && place.price_level > 0 && (
             <span className="text-[11px] text-muted-foreground">{"$".repeat(place.price_level)}</span>
           )}
         </div>
