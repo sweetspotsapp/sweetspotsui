@@ -30,7 +30,7 @@ const Index = () => {
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
-  const getInitialTab = (): "home" | "saved" | "trip" | "profile" => {
+  const getInitialTab = (): "home" | "discover" | "saved" | "trip" | "profile" => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) return "trip";
     if (location.pathname === "/saved") return "saved";
