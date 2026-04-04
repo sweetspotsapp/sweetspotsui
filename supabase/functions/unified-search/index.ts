@@ -700,19 +700,11 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY_BE')!;
-    const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
     if (!googleMapsApiKey) {
       return new Response(
         JSON.stringify({ error: 'Google Maps API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!geoapifyApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Geoapify API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
