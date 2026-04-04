@@ -1176,7 +1176,6 @@ serve(async (req) => {
 
     console.log(`⏱️  Parallel operations completed in ${Date.now() - parallelStartTime}ms`);
 
-    const travelData = travelTimeResult;
     const { userId: authenticatedUserId, profile, savedPlaces } = authDataResult;
 
     // On cache miss: extract AI results, merge tags, write to cache
