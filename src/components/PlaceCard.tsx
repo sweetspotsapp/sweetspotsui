@@ -86,8 +86,8 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
             onError={handleImgError}
           />
           
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-foreground/40" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
           
           {/* Save button */}
           <button
@@ -145,8 +145,8 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
           onError={handleImgError}
         />
         
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-foreground/40" />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/30 to-transparent" />
         
         {/* Save button */}
         <button

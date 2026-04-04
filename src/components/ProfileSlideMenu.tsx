@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   User, 
-  SlidersHorizontal, 
+  Settings, 
   Sun, 
   Moon, 
   Crown, 
@@ -66,8 +66,8 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
   const menuItems = [
     {
       id: "settings",
-      label: "Preferences",
-      icon: SlidersHorizontal,
+      label: "Settings",
+      icon: Settings,
       onClick: handleNavigateToSettings,
       trailing: <ChevronRight className="w-4 h-4 text-muted-foreground" />,
     },

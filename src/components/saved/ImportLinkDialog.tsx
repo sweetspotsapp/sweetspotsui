@@ -98,9 +98,9 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Dialog */}
-      <div className="relative z-50 w-full max-w-md mx-4 mb-4 sm:mb-0 bg-card rounded-2xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+      <div className="relative z-50 w-full max-w-md mx-4 mb-4 sm:mb-0 bg-card rounded-2xl shadow-xl border border-border overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
           <div className="flex items-center gap-2">
             <Link2 className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Import a Place</h2>
@@ -123,13 +123,13 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://..."
-                className="flex-1 px-4 py-2.5 rounded-xl bg-muted text-foreground text-sm placeholder:text-muted-foreground focus:outline-none"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-muted border border-border/40 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 disabled={state === "loading"}
                 onKeyDown={(e) => e.key === "Enter" && handleImport()}
               />
               <button
                 onClick={handlePaste}
-                className="px-3 py-2.5 rounded-xl bg-muted text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="px-3 py-2.5 rounded-xl bg-muted border border-border/40 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 disabled={state === "loading"}
               >
                 Paste
@@ -147,7 +147,7 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
 
           {/* Found State - Place Preview */}
           {state === "found" && place && (
-            <div className="rounded-xl bg-muted/30 overflow-hidden">
+            <div className="rounded-xl border border-border/60 bg-muted/30 overflow-hidden">
               <div className="flex gap-3 p-3">
                 {place.photo_url ? (
                   <img
@@ -178,7 +178,7 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
 
           {/* Error State */}
           {state === "error" && (
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-destructive/10">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
               <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
               <p className="text-sm text-destructive">{errorMsg}</p>
             </div>
@@ -186,7 +186,7 @@ const ImportLinkDialog = ({ open, onClose }: ImportLinkDialogProps) => {
         </div>
 
         {/* Footer Actions */}
-        <div className="px-5 py-4 flex gap-2">
+        <div className="px-5 py-4 border-t border-border/40 flex gap-2">
           {state === "found" && place ? (
             alreadySaved ? (
               <div className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-muted text-muted-foreground text-sm font-medium">

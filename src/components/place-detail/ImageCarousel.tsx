@@ -64,8 +64,8 @@ const ImageCarousel = ({ images, placeName }: ImageCarouselProps) => {
                 (e.target as HTMLImageElement).src = `https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800`;
               }}
             />
-            {/* Overlay at bottom */}
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-black/30" />
+            {/* Gradient overlay at bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
           </div>
         ))}
       </div>

@@ -14,7 +14,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "bg-muted text-foreground hover:bg-muted/80",
+          "border-2 border-border bg-transparent hover:bg-muted hover:border-primary/30",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-muted hover:text-foreground",
@@ -23,7 +23,7 @@ const buttonVariants = cva(
         primary:
           "bg-primary text-primary-foreground shadow-card hover:shadow-elevated hover:scale-[1.02] active:scale-[0.98] font-semibold",
         soft:
-          "bg-warm-cream text-foreground hover:bg-warm-sand/50",
+          "bg-warm-cream text-foreground border border-border hover:bg-warm-sand/50 hover:border-primary/20",
         save:
           "bg-transparent text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-2",
         tag:

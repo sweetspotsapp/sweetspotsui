@@ -20,7 +20,6 @@ import BoardEditor from "./saved/BoardEditor";
 import EmptyState from "./saved/EmptyState";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
-import AddSpotModal from "./AddSpotModal";
 
 // Haversine distance calculation
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -62,7 +61,6 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [showAddSpotModal, setShowAddSpotModal] = useState(false);
   // Handle openBoard state from navigation (e.g., when returning from place details)
   useEffect(() => {
     const state = routerLocation.state as { openBoard?: string | "all" } | null;
@@ -290,7 +288,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background pb-20 lg:max-w-7xl mx-auto">
+      <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
         <AppHeader 
           onSettingsClick={() => setIsProfileMenuOpen(true)}
         />
@@ -311,27 +309,26 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
   return (
     <>
-      <div className="min-h-screen bg-background pb-20 lg:max-w-7xl mx-auto">
+      <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
         <AppHeader 
           onSettingsClick={() => setIsProfileMenuOpen(true)}
+          actions={
+            <button
+              onClick={() => setShowImportDialog(true)}
+              className="p-2 text-foreground hover:text-primary transition-colors"
+              aria-label="Import from link"
+            >
+              <Link2 className="w-5 h-5" />
+            </button>
+          }
         />
 
-        {/* Page Title + Add Spot CTA */}
-        <div className="px-4 pt-6 pb-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Spots</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Your curated collection
-            </p>
-          </div>
-          <button
-            onClick={() => setShowAddSpotModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground 
-                       text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add spot
-          </button>
+        {/* Page Title */}
+        <div className="px-4 pt-6 pb-4">
+          <h1 className="text-2xl font-bold text-foreground">Saved Spots</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Your curated collection of favorite places
+          </p>
         </div>
 
         {isLoading ? (
@@ -383,7 +380,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
             {/* Pinterest-Style Masonry Grid */}
             <div className="px-4 pb-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {/* All Saved Board - Always First */}
                 <BoardCard
                   isAllSaved
@@ -472,16 +469,6 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
       <ImportLinkDialog
         open={showImportDialog}
         onClose={() => setShowImportDialog(false)}
-      />
-
-      {/* Add Spot Modal */}
-      <AddSpotModal
-        open={showAddSpotModal}
-        onClose={() => setShowAddSpotModal(false)}
-        onUrlSubmit={(url) => {
-          setShowAddSpotModal(false);
-          setShowImportDialog(true);
-        }}
       />
 
       {/* Profile Slide Menu */}

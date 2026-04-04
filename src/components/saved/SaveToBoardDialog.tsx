@@ -130,7 +130,7 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
   const dialogContent = (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
         <div>
           <h2 className="text-lg font-semibold text-foreground">
             {wasInitiallySaved ? "Manage boards" : "Save to Board"}
@@ -166,13 +166,16 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
                   key={board.id}
                   onClick={() => toggleBoard(board.id)}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 rounded-xl transition-all",
+                    "w-full flex items-center gap-3 p-3 rounded-xl border transition-all",
                     selectedBoards.includes(board.id)
-                      ? "bg-primary/10"
-                      : "bg-muted/50 hover:bg-muted"
+                      ? "bg-primary/10 border-primary/50"
+                      : "bg-background border-border hover:border-primary/30"
                   )}
                 >
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex-shrink-0" />
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg bg-gradient-to-br flex-shrink-0",
+                    board.color
+                  )} />
                   <div className="flex-1 text-left">
                     <h3 className="font-medium text-foreground text-sm">{board.name}</h3>
                     <p className="text-xs text-muted-foreground">
@@ -180,10 +183,10 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
                     </p>
                   </div>
                   <div className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center transition-all",
+                    "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
                     selectedBoards.includes(board.id)
-                      ? "bg-primary"
-                      : "bg-muted"
+                      ? "bg-primary border-primary"
+                      : "border-muted-foreground/30"
                   )}>
                     {selectedBoards.includes(board.id) && (
                       <Check className="w-3.5 h-3.5 text-primary-foreground" />
@@ -195,14 +198,14 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
 
             {/* New Board Form */}
             {showNewBoard ? (
-              <div className="p-4 rounded-xl bg-primary/5 space-y-3">
+              <div className="p-4 rounded-xl border border-primary/50 bg-primary/5 space-y-3">
                 <input
                   type="text"
                   value={newBoardName}
                   onChange={(e) => setNewBoardName(e.target.value)}
                   placeholder="Board name"
-                  className="w-full px-3 py-2.5 rounded-lg bg-muted text-foreground 
-                             placeholder:text-muted-foreground focus:outline-none"
+                  className="w-full px-3 py-2.5 rounded-lg bg-background border border-border text-foreground 
+                             placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   autoFocus
                 />
                 <div className="flex flex-wrap gap-2">
@@ -227,10 +230,11 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
                       key={color.value}
                       onClick={() => setNewBoardColor(color.value)}
                       className={cn(
-                        "w-8 h-8 rounded-full bg-primary transition-all",
+                        "w-8 h-8 rounded-full bg-gradient-to-br transition-all",
+                        color.value,
                         newBoardColor === color.value 
-                          ? "scale-110 opacity-100" 
-                          : "opacity-40 hover:scale-105"
+                          ? "ring-2 ring-foreground ring-offset-2 ring-offset-card scale-110" 
+                          : "hover:scale-105"
                       )}
                     />
                   ))}
@@ -238,7 +242,7 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowNewBoard(false)}
-                    className="flex-1 py-2 rounded-lg bg-muted text-sm text-foreground hover:bg-muted/80 transition-colors"
+                    className="flex-1 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-muted transition-colors"
                   >
                     Cancel
                   </button>
@@ -260,8 +264,8 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
             ) : (
               <button
                 onClick={() => setShowNewBoard(true)}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50
-                           hover:bg-muted transition-all"
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-dashed border-border 
+                           hover:border-primary/50 hover:bg-primary/5 transition-all"
               >
                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                   <FolderPlus className="w-5 h-5 text-muted-foreground" />
@@ -272,13 +276,13 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
           </div>
 
           {/* Footer */}
-          <div className="px-4 pt-4 pb-6 md:pb-4 space-y-2">
+          <div className="px-4 pt-4 pb-6 md:pb-4 border-t border-border/50 space-y-2">
             {wasInitiallySaved && initialBoardIds.length > 0 && !allBoardsDeselected && (
               <button
                 onClick={handleRemoveEntirely}
                 disabled={isSaving}
-                className="w-full py-3 rounded-xl bg-destructive/10 text-destructive font-medium 
-                           hover:bg-destructive/15 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl border border-destructive/50 text-destructive font-medium 
+                           hover:bg-destructive/10 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Remove from all & unsave
@@ -315,7 +319,7 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
       <div className="md:hidden absolute inset-x-0 bottom-0 flex flex-col">
         <div className="relative w-full bg-card rounded-t-3xl animate-slide-in-bottom max-h-[85vh] flex flex-col">
           <div className="flex justify-center pt-3 pb-2">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            <div className="w-10 h-1 rounded-full bg-border" />
           </div>
           {dialogContent}
         </div>
@@ -324,7 +328,7 @@ const SaveToBoardDialog = ({ placeId, placeName, onClose, onSaved }: SaveToBoard
       {/* Tablet/Desktop: Side panel from right */}
       <div className="hidden md:flex absolute inset-y-0 right-0 w-full max-w-md">
         <div 
-          className="relative w-full bg-card shadow-elevated animate-slide-in-right flex flex-col"
+          className="relative w-full bg-card border-l border-border animate-slide-in-right flex flex-col"
           style={{ animationDuration: "250ms" }}
         >
           {dialogContent}

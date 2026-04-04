@@ -1,9 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
-@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
 
 @layer base {
   :root {
@@ -254,8 +255,14 @@
 }
 
 .animate-shimmer {
-  background: hsl(var(--warm-cream));
-  animation: gentle-pulse 2s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--warm-cream)) 0%,
+    hsl(var(--primary) / 0.1) 50%,
+    hsl(var(--warm-cream)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
 }
 
 .animate-gentle-pulse {

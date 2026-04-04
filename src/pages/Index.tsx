@@ -3,13 +3,11 @@ import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
-import DiscoverPage from "@/components/DiscoverPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
+import MapPage from "@/components/MapPage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
-import ImportActionCard from "@/components/ImportActionCard";
-import ProfileSlideMenu from "@/components/ProfileSlideMenu";
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,18 +28,18 @@ const Index = () => {
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
-  const getInitialTab = (): "home" | "discover" | "saved" | "trip" | "profile" => {
+  const getInitialTab = (): "home" | "map" | "saved" | "trip" | "profile" => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) return "trip";
     if (location.pathname === "/saved") return "saved";
     if (location.pathname === "/trip") return "trip";
+    const params = new URLSearchParams(location.search);
+    if (params.get('search')) return "home";
     return "home";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "discover" | "saved" | "trip" | "profile">(getInitialTab);
+  const [activeTab, setActiveTab] = useState<"home" | "map" | "saved" | "trip" | "profile">(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
-  const [showImportCard, setShowImportCard] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     const state = location.state as { openTrip?: boolean } | null;
@@ -54,8 +52,13 @@ const Index = () => {
       }
       window.history.replaceState({}, '');
     }
-  }, [location.state]);
+    const params = new URLSearchParams(location.search);
+    if (params.get('search')) {
+      setActiveTab("home");
+    }
+  }, [location.state, location.search]);
 
+  // Mark invites as seen when user visits trip tab
   useEffect(() => {
     if (activeTab === "trip") {
       markSeen();
@@ -87,6 +90,16 @@ const Index = () => {
     }, 800);
   };
 
+  const handleMoodSubmit = (mood: string) => {
+    setUserMood(mood);
+    setAppState("loading");
+    
+    setTimeout(() => {
+      completeOnboarding(mood, []);
+      setAppState("main");
+    }, 1000);
+  };
+
   const handleSkip = () => {
     sessionStorage.setItem('sweetspots_skip_mode', 'true');
     setAppState("loading");
@@ -97,15 +110,8 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "discover" | "saved" | "trip" | "profile") => {
+  const handleTabChange = (tab: "home" | "map" | "saved" | "trip" | "profile") => {
     setActiveTab(tab);
-  };
-
-  const handleNavigateToTripFromHome = (tripId?: string) => {
-    if (tripId) {
-      setResumeTripId(tripId);
-    }
-    setActiveTab("trip");
   };
 
   if (authLoading) {
@@ -128,15 +134,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
-        <HomePage 
-          onNavigateToTrip={handleNavigateToTripFromHome}
-          onNavigateToSpots={() => setActiveTab("saved")}
-          onNavigateToDiscover={() => setActiveTab("discover")}
-          onMenuClick={() => setShowProfileMenu(true)}
-        />
+        <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
       </div>
-      <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
-        <DiscoverPage />
+      <div style={{ display: activeTab === "map" ? "block" : "none" }}>
+        <MapPage />
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
         <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
@@ -151,24 +152,7 @@ const Index = () => {
       <BottomNav 
         activeTab={activeTab} 
         onTabChange={handleTabChange}
-        onPlusPress={() => setShowImportCard(true)}
         tripBadgeCount={pendingCount}
-        showPlusButton={false}
-      />
-
-      <ImportActionCard
-        open={showImportCard}
-        onClose={() => setShowImportCard(false)}
-        onNavigateToTrip={() => {
-          setShowImportCard(false);
-          setActiveTab("trip");
-        }}
-      />
-
-      <ProfileSlideMenu
-        isOpen={showProfileMenu}
-        onClose={() => setShowProfileMenu(false)}
-        onNavigateToProfile={() => setActiveTab("profile")}
       />
     </div>
   );

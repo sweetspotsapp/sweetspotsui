@@ -243,9 +243,9 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   return (
     <>
       <div className="fixed inset-0 z-50 bg-background animate-slide-in-bottom flex flex-col max-w-md mx-auto">
-        {/* Header */}
-        <div className={cn("relative h-36 bg-primary/20 flex-shrink-0")}>
-          <div className="absolute inset-0 bg-background/60" />
+        {/* Header with gradient */}
+        <div className={cn("relative h-36 bg-gradient-to-br flex-shrink-0", colorClass)}>
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
           
           {/* Top Bar */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3">
@@ -387,7 +387,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                           alt={place.name}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-black/30" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                         
                         {/* Manage Saved Spot Button */}
                         <button 
@@ -474,7 +474,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                                 alt={place.name}
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                               />
-                              <div className="absolute inset-0 bg-black/30" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                               
                               {/* AI Badge */}
                               <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-primary/90 backdrop-blur-sm">
