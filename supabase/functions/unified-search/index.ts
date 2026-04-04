@@ -180,12 +180,11 @@ function generateWhyString(
   place: PlaceCandidate,
   scores: {
     aiRelevance: number;
-    eta: number;
     distance: number;
     profileFit: number;
     quality: number;
   },
-  etaSeconds: number | null
+  distanceMeters: number | null
 ): string {
   const factors: { name: string; score: number; description: string }[] = [
     { 
@@ -195,8 +194,12 @@ function generateWhyString(
     },
     { 
       name: 'nearby', 
-      score: scores.eta, 
-      description: etaSeconds ? `${Math.round(etaSeconds / 60)} min away` : 'Close by' 
+      score: scores.distance, 
+      description: distanceMeters 
+        ? distanceMeters < 1000 
+          ? `${Math.round(distanceMeters)} m away`
+          : `${(distanceMeters / 1000).toFixed(1)} km away`
+        : 'Close by' 
     },
     { 
       name: 'profile', 
