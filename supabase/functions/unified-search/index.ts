@@ -704,6 +704,7 @@ serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY_BE')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY'); // Geocoding fallback only
 
     if (!googleMapsApiKey) {
       return new Response(
