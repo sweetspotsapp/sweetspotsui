@@ -1232,7 +1232,6 @@ serve(async (req) => {
       
       const scores = {
         aiRelevance: aiScore,
-        eta: calculateEtaScore(travel.eta, maxEta),
         distance: calculateDistanceScore(travel.distance, maxDistance),
         profileFit: calculateProfileFit(profile as Profile | null, place),
         behaviorFit: isSaved ? 0.8 : 0.5,
@@ -1241,7 +1240,6 @@ serve(async (req) => {
 
       const totalScore =
         scores.aiRelevance * WEIGHTS.aiRelevance +
-        scores.eta * WEIGHTS.eta +
         scores.distance * WEIGHTS.distance +
         scores.profileFit * WEIGHTS.profileFit +
         scores.behaviorFit * WEIGHTS.behaviorFit +
