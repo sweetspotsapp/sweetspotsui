@@ -6,14 +6,16 @@ import { differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import TripPreviewSheet from "./TripPreviewSheet";
+import WelcomeCTA from "./WelcomeCTA";
 
 interface HomePageProps {
   onNavigateToTrip?: (tripId?: string) => void;
   onNavigateToSpots?: () => void;
+  onNavigateToDiscover?: () => void;
   onMenuClick?: () => void;
 }
 
-const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick }: HomePageProps) => {
+const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onNavigateToDiscover, onMenuClick }: HomePageProps) => {
   const { user } = useAuth();
   const { savedTrips, isLoading } = useTrip();
   const [profileName, setProfileName] = useState<string | null>(null);
@@ -161,13 +163,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick }: HomePage
             })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <MapPin className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-foreground mb-2">No trips yet</h2>
-            <p className="text-sm text-muted-foreground">
-              Head to Discover to find your next spot
-            </p>
-          </div>
+          <WelcomeCTA onDiscoverClick={() => onNavigateToDiscover?.()} />
         )}
       </div>
 

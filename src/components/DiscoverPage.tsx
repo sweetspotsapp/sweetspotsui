@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, Sparkles, Loader2, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnifiedSearch, type UnifiedPlace } from "@/hooks/useUnifiedSearch";
 import { useNavigate } from "react-router-dom";
 import AISummaryCard from "./AISummaryCard";
 import { useSavedPlaces } from "@/hooks/useSavedPlaces";
-
+import RecentSearches from "./RecentSearches";
+import FirstSearchTooltip from "./FirstSearchTooltip";
 const vibeChips = [
   "Cozy cafés",
   "Rooftop bars",
@@ -120,22 +121,26 @@ const DiscoverPage = () => {
           </button>
         </div>
 
-        {/* Vibe chips — show when no results yet */}
+        {/* Guided tooltip + Recent searches + Vibe chips — show when no results yet */}
         {!hasSearched && (
-          <div className="mb-8">
-            <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Try a vibe</p>
-            <div className="flex flex-wrap gap-2">
-              {vibeChips.map((chip) => (
-                <button
-                  key={chip}
-                  onClick={() => handleChipClick(chip)}
-                  className="px-3 py-1.5 rounded-full text-sm bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  {chip}
-                </button>
-              ))}
+          <>
+            <FirstSearchTooltip />
+            <RecentSearches onSelect={(q) => { setQuery(q); handleSearch(q); }} />
+            <div className="mb-8">
+              <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Try a vibe</p>
+              <div className="flex flex-wrap gap-2">
+                {vibeChips.map((chip) => (
+                  <button
+                    key={chip}
+                    onClick={() => handleChipClick(chip)}
+                    className="px-3 py-1.5 rounded-full text-sm bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* AI Summary */}
