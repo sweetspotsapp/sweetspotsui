@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, Sparkles, Loader2, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnifiedSearch, type UnifiedPlace } from "@/hooks/useUnifiedSearch";
 import { useNavigate } from "react-router-dom";
 import AISummaryCard from "./AISummaryCard";
 import { useSavedPlaces } from "@/hooks/useSavedPlaces";
-
+import RecentSearches from "./RecentSearches";
+import FirstSearchTooltip from "./FirstSearchTooltip";
 const vibeChips = [
   "Cozy cafés",
   "Rooftop bars",
