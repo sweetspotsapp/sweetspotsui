@@ -54,6 +54,19 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
     }
   }, [resumeTripId, savedTrips, isLoading]);
 
+  // Auto-open create modal when a template destination is set
+  useEffect(() => {
+    const templateDest = sessionStorage.getItem("sweetspots_template_destination");
+    if (templateDest) {
+      sessionStorage.removeItem("sweetspots_template_destination");
+      setPrefillParams({ destination: templateDest, startDate: "", endDate: "", budget: "$$", groupSize: 2, vibes: [], mustIncludePlaceIds: [], boardIds: [] });
+      setEditingId(null);
+      setTripData(null);
+      setTripParams(null);
+      setShowCreateModal(true);
+    }
+  }, []);
+
   // Store current editing ID so ActivityCard can reference it for back-navigation
   useEffect(() => {
     if (phase === "view" && editingId) {
