@@ -103,11 +103,10 @@ interface Profile {
   vibe: Record<string, unknown> | null;
 }
 
-// Weights for scoring
+// Weights for scoring (distance-only model — no external routing API)
 const WEIGHTS = {
   aiRelevance: 0.50,
-  eta: 0.20,
-  distance: 0.05,
+  distance: 0.25,
   profileFit: 0.10,
   behaviorFit: 0.05,
   quality: 0.10,
