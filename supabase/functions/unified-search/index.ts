@@ -112,14 +112,15 @@ const WEIGHTS = {
   quality: 0.10,
 };
 
-// Map mode to Geoapify mode
-function mapModeToGeoapify(mode: 'drive' | 'walk' | 'bike'): string {
-  const modeMap: Record<string, string> = {
-    drive: 'drive',
-    walk: 'walk',
-    bike: 'bicycle',
+// Map mode to estimated speed (m/s) for ETA approximation
+function getSpeedForMode(mode: 'drive' | 'walk' | 'bike'): number {
+  // Average speeds accounting for urban conditions
+  const speeds: Record<string, number> = {
+    drive: 11.1, // ~40 km/h city driving
+    walk: 1.3,   // ~4.7 km/h walking
+    bike: 4.2,   // ~15 km/h cycling
   };
-  return modeMap[mode] || 'drive';
+  return speeds[mode] || 11.1;
 }
 
 // Calculate ETA score (lower is better)
