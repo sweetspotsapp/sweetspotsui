@@ -6,10 +6,12 @@ import { differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import TripPreviewSheet from "./TripPreviewSheet";
+import WelcomeCTA from "./WelcomeCTA";
 
 interface HomePageProps {
   onNavigateToTrip?: (tripId?: string) => void;
   onNavigateToSpots?: () => void;
+  onNavigateToDiscover?: () => void;
   onMenuClick?: () => void;
 }
 
