@@ -15,7 +15,7 @@ interface HomePageProps {
   onMenuClick?: () => void;
 }
 
-const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick }: HomePageProps) => {
+const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onNavigateToDiscover, onMenuClick }: HomePageProps) => {
   const { user } = useAuth();
   const { savedTrips, isLoading } = useTrip();
   const [profileName, setProfileName] = useState<string | null>(null);
