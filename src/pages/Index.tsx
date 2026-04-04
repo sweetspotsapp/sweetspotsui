@@ -134,6 +134,9 @@ const Index = () => {
           onMenuClick={() => setShowProfileMenu(true)}
         />
       </div>
+      <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
+        <DiscoverPage />
+      </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
         <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
       </div>
