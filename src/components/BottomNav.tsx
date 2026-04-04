@@ -16,6 +16,7 @@ const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0, sh
 
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
+    { id: "discover" as const, label: "Discover", icon: Search },
     { id: "saved" as const, label: "Save", icon: Heart },
     { id: "trip" as const, label: "Trip", icon: CalendarDays },
     { id: "profile" as const, label: "Profile", icon: null },
