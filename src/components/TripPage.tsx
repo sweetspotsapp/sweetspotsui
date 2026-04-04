@@ -59,7 +59,7 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
     const templateDest = sessionStorage.getItem("sweetspots_template_destination");
     if (templateDest) {
       sessionStorage.removeItem("sweetspots_template_destination");
-      setPrefillParams({ destination: templateDest, startDate: "", endDate: "", budget: "$$", groupSize: 2, vibes: [] });
+      setPrefillParams({ destination: templateDest, startDate: "", endDate: "", budget: "$$", groupSize: 2, vibes: [], mustIncludePlaceIds: [], boardIds: [] });
       setEditingId(null);
       setTripData(null);
       setTripParams(null);
