@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
 import SavedPage from "@/components/SavedPage";
+import DiscoverPage from "@/components/DiscoverPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
 import EntryScreen from "@/components/EntryScreen";
@@ -29,7 +30,7 @@ const Index = () => {
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
-  const getInitialTab = (): "home" | "saved" | "trip" | "profile" => {
+  const getInitialTab = (): "home" | "discover" | "saved" | "trip" | "profile" => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) return "trip";
     if (location.pathname === "/saved") return "saved";
@@ -37,7 +38,7 @@ const Index = () => {
     return "home";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "saved" | "trip" | "profile">(getInitialTab);
+  const [activeTab, setActiveTab] = useState<"home" | "discover" | "saved" | "trip" | "profile">(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
   const [showImportCard, setShowImportCard] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -96,7 +97,7 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "saved" | "trip" | "profile") => {
+  const handleTabChange = (tab: "home" | "discover" | "saved" | "trip" | "profile") => {
     setActiveTab(tab);
   };
 
@@ -132,6 +133,9 @@ const Index = () => {
           onNavigateToSpots={() => setActiveTab("saved")}
           onMenuClick={() => setShowProfileMenu(true)}
         />
+      </div>
+      <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
+        <DiscoverPage />
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
         <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />

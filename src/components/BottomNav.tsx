@@ -1,11 +1,11 @@
-import { Home, Heart, CalendarDays, Plus } from "lucide-react";
+import { Home, Heart, CalendarDays, Plus, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface BottomNavProps {
-  activeTab: "home" | "saved" | "trip" | "profile";
-  onTabChange: (tab: "home" | "saved" | "trip" | "profile") => void;
+  activeTab: "home" | "discover" | "saved" | "trip" | "profile";
+  onTabChange: (tab: "home" | "discover" | "saved" | "trip" | "profile") => void;
   onPlusPress?: () => void;
   tripBadgeCount?: number;
   showPlusButton?: boolean;
@@ -16,6 +16,7 @@ const BottomNav = ({ activeTab, onTabChange, onPlusPress, tripBadgeCount = 0, sh
 
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
+    { id: "discover" as const, label: "Discover", icon: Search },
     { id: "saved" as const, label: "Save", icon: Heart },
     { id: "trip" as const, label: "Trip", icon: CalendarDays },
     { id: "profile" as const, label: "Profile", icon: null },
