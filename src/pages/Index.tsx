@@ -97,7 +97,7 @@ const Index = () => {
     }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "saved" | "trip" | "profile") => {
+  const handleTabChange = (tab: "home" | "discover" | "saved" | "trip" | "profile") => {
     setActiveTab(tab);
   };
 
