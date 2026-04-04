@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrip, type SavedTrip } from "@/hooks/useTrip";
-import { Star, CalendarDays, MapPin, Menu } from "lucide-react";
+import { Star, CalendarDays, MapPin, Menu, Compass } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -46,7 +46,6 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick, onImportPr
     fetchProfile();
   }, [user]);
 
-  // Fetch saved place count and top city
   useEffect(() => {
     if (!user) {
       setSavedCount(0);
@@ -55,7 +54,6 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick, onImportPr
     }
 
     const fetchSavedStats = async () => {
-      // Get total saved count
       const { data: savedData } = await supabase
         .from("saved_places")
         .select("place_id, places(address)")
@@ -64,11 +62,9 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick, onImportPr
       if (!savedData) return;
       setSavedCount(savedData.length);
 
-      // Extract city from address and count
       const cityCounts: Record<string, number> = {};
       savedData.forEach((sp: any) => {
         if (sp.places?.address) {
-          // Try to extract city from address (usually after first comma)
           const parts = sp.places.address.split(",");
           const city = parts.length >= 2 ? parts[parts.length - 2].trim() : parts[0].trim();
           if (city) {
@@ -141,32 +137,35 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick, onImportPr
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="px-5 pt-14 pb-32 max-w-lg mx-auto space-y-5">
-        {/* Greeting with avatar */}
+      <div className="px-5 pt-14 pb-32 max-w-lg mx-auto space-y-6">
+        {/* Greeting */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
+            <Avatar className="w-10 h-10 ring-2 ring-primary/10">
               {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
               <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <h1 className="text-2xl font-bold text-primary">
-              Hello, {displayName}
-            </h1>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Welcome back</p>
+              <h1 className="text-lg font-bold text-foreground leading-tight">
+                {displayName}
+              </h1>
+            </div>
           </div>
           {onMenuClick && (
             <button
               onClick={onMenuClick}
-              className="p-2 text-foreground hover:text-primary transition-colors"
+              className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               aria-label="Menu"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
           )}
         </div>
 
-        {/* Adaptive Section: Import Banner or Plan-It Nudge */}
+        {/* Adaptive Section */}
         {userTier === "engaged" && topCity ? (
           <PlanItNudge
             city={topCity.city}
@@ -177,29 +176,38 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick, onImportPr
           <ImportBanner onImportPress={handleImport} />
         )}
 
-        {/* Recently Saved (active & engaged) */}
-        {userTier !== "new" && (
-          <RecentlySavedSection />
-        )}
+        {/* Recently Saved */}
+        {userTier !== "new" && <RecentlySavedSection />}
 
         {/* Compact import for engaged users */}
         {userTier === "engaged" && (
           <ImportBanner compact onImportPress={handleImport} />
         )}
 
-        {/* Trip Cards */}
+        {/* Trip Section */}
         <div>
-          <h3 className="text-base font-semibold text-foreground mb-3">
-            {userTier === "new" ? "Get inspired" : "Your Trips"}
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-foreground">
+              {userTier === "new" ? "Get inspired" : "Your Trips"}
+            </h3>
+            {displayTrips.length > 0 && (
+              <button
+                onClick={() => onNavigateToTrip?.()}
+                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                See all
+              </button>
+            )}
+          </div>
+
           {isLoading ? (
-            <div className="space-y-5">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-64 rounded-2xl bg-muted animate-pulse" />
+            <div className="space-y-4">
+              {[1, 2].map(i => (
+                <div key={i} className="h-52 rounded-2xl bg-muted animate-pulse" />
               ))}
             </div>
           ) : displayTrips.length > 0 ? (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {displayTrips.map((trip) => {
                 const photoUrl = getTripPhotoUrl(trip);
                 const spotCount = getTripSpotCount(trip);
@@ -211,7 +219,7 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick, onImportPr
                     onClick={() => setPreviewTrip(trip)}
                     className="w-full text-left group"
                   >
-                    <div className="relative rounded-2xl overflow-hidden shadow-lg shadow-foreground/5 aspect-[4/3]">
+                    <div className="relative rounded-2xl overflow-hidden aspect-[16/9]">
                       {photoUrl ? (
                         <img
                           src={photoUrl}
@@ -219,36 +227,27 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick, onImportPr
                           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="absolute inset-0 bg-primary/15" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5" />
                       )}
-                      <div className="absolute inset-0 bg-black/50" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                       <div className="absolute bottom-0 left-0 right-0 p-5">
-                        <h3 className="text-xl font-bold text-white mb-2">
+                        <h3 className="text-lg font-bold text-white mb-1.5">
                           {trip.name || `${trip.destination} Trip`}
                         </h3>
-                        <div className="flex items-center gap-3 text-white/80 text-xs">
+                        <div className="flex items-center gap-3 text-white/70 text-xs">
                           {spotCount > 0 && (
                             <span className="flex items-center gap-1">
-                              <MapPin className="w-3.5 h-3.5" />
-                              {spotCount}
+                              <MapPin className="w-3 h-3" />
+                              {spotCount} spots
                             </span>
                           )}
-                          <span className="flex items-center gap-1">
-                            <Star className="w-3.5 h-3.5" />
-                            4.5
-                          </span>
                           {duration && (
                             <span className="flex items-center gap-1">
-                              <CalendarDays className="w-3.5 h-3.5" />
+                              <CalendarDays className="w-3 h-3" />
                               {duration}
                             </span>
                           )}
                         </div>
-                        {trip.trip_data?.summary && (
-                          <p className="text-white/70 text-xs mt-2 line-clamp-2">
-                            {trip.trip_data.summary}
-                          </p>
-                        )}
                       </div>
                     </div>
                   </button>
@@ -256,11 +255,13 @@ const HomePage = ({ onNavigateToTrip, onNavigateToSpots, onMenuClick, onImportPr
               })}
             </div>
           ) : (
-            <div className="text-center py-16">
-              <MapPin className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-foreground mb-2">No trips yet</h2>
-              <p className="text-sm text-muted-foreground">
-                Start by importing your favorite spots
+            <div className="rounded-2xl border border-dashed border-border/60 p-10 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                <Compass className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-foreground mb-1">No trips yet</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Start by saving spots you love, then plan your perfect trip.
               </p>
             </div>
           )}

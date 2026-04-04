@@ -1,5 +1,4 @@
 import { ArrowRight, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface PlanItNudgeProps {
   city: string;
@@ -9,9 +8,12 @@ interface PlanItNudgeProps {
 
 const PlanItNudge = ({ city, spotCount, onPlanTrip }: PlanItNudgeProps) => {
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-primary/15 to-primary/5 p-5 border border-primary/10">
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+    <button
+      onClick={() => onPlanTrip(city)}
+      className="w-full rounded-2xl border border-primary/20 bg-primary/5 p-5 text-left hover:bg-primary/10 hover:border-primary/30 transition-all group"
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
           <MapPin className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
@@ -22,16 +24,11 @@ const PlanItNudge = ({ city, spotCount, onPlanTrip }: PlanItNudgeProps) => {
             Ready to plan your trip?
           </p>
         </div>
-        <Button
-          size="sm"
-          onClick={() => onPlanTrip(city)}
-          className="shrink-0 gap-1.5"
-        >
-          Plan it
-          <ArrowRight className="w-4 h-4" />
-        </Button>
+        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+          <ArrowRight className="w-4 h-4 text-primary-foreground" />
+        </div>
       </div>
-    </div>
+    </button>
   );
 };
 
