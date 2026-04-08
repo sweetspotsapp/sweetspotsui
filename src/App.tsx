@@ -14,6 +14,7 @@ import PlaceDetails from "./pages/PlaceDetails";
 import CategorySeeAll from "./pages/CategorySeeAll";
 import Settings from "./pages/Settings";
 import HelpSupport from "./pages/HelpSupport";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 

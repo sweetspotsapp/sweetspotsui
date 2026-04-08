@@ -1,5 +1,8 @@
 import { Sparkles, Zap, Infinity, MapPin, X } from "lucide-react";
 import { Button } from "./ui/button";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -7,6 +10,10 @@ interface UpgradeModalProps {
 }
 
 const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
+  const { user } = useAuth();
+  const { openCheckout } = useSubscription();
+  const navigate = useNavigate();
+
   if (!open) return null;
 
   const perks = [
@@ -16,14 +23,20 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
     { icon: Sparkles, label: "Early access to new features" },
   ];
 
+  const handleUpgrade = () => {
+    if (!user) {
+      navigate("/auth");
+      onClose();
+      return;
+    }
+    openCheckout();
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Card */}
       <div className="relative w-full max-w-md mx-4 mb-4 sm:mb-0 bg-card rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-        {/* Close */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-full bg-muted/80 text-muted-foreground hover:text-foreground transition-colors z-10"
@@ -31,7 +44,6 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
           <X className="w-4 h-4" />
         </button>
 
-        {/* Header */}
         <div className="px-6 pt-8 pb-4 text-center">
           <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
             <Sparkles className="w-7 h-7 text-primary" />
@@ -44,7 +56,6 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
           </p>
         </div>
 
-        {/* Perks */}
         <div className="px-6 space-y-3">
           {perks.map((perk) => (
             <div key={perk.label} className="flex items-center gap-3">
@@ -56,9 +67,8 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
           ))}
         </div>
 
-        {/* CTA */}
         <div className="px-6 pt-6 pb-8 space-y-2.5">
-          <Button className="w-full h-12 rounded-2xl text-base font-semibold gap-2" size="lg">
+          <Button onClick={handleUpgrade} className="w-full h-12 rounded-2xl text-base font-semibold gap-2" size="lg">
             <Sparkles className="w-4 h-4" />
             Upgrade to Pro — $5.99/mo
           </Button>
