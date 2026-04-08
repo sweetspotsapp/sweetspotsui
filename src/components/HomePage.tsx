@@ -313,7 +313,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       {tripStatus?.type === "upcoming" && tripStatus.upcoming && engagementLevel === "engaged" && (
         <div className="px-5 pt-4 pb-2 animate-fade-in" style={{ animationDelay: "50ms", animationFillMode: "both" }}>
           <button
-            onClick={handlePlanTrip}
+            onClick={() => handleGoToTrip(tripStatus.upcoming!.id)}
             className="w-full relative overflow-hidden rounded-2xl bg-primary/10 p-5 text-left transition-all hover:bg-primary/15 active:scale-[0.98]"
           >
             <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Upcoming</p>
