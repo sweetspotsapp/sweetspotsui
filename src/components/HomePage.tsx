@@ -274,6 +274,25 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : userMood || "");
 
+  // Rotating search placeholder hints
+  const searchHints = useMemo(() => [
+    "Try 'rooftop sunset drinks'",
+    "Try 'cozy café with wifi'",
+    "Try 'hidden gems near me'",
+    "Try 'date night vibes'",
+    "Try 'brunch with a view'",
+    "Try 'late night eats'",
+    "Try 'quiet spot to work'",
+    "Try 'best coffee in town'",
+  ], []);
+  const [hintIndex, setHintIndex] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHintIndex((i) => (i + 1) % searchHints.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [searchHints.length]);
+
   // Sync searchValue when userMood changes (from EntryScreen)
   useEffect(() => {
     if (userMood && !searchValue && !wasSkipMode.current) {
@@ -942,7 +961,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 onChange={(e) => setSearchValue(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
-                placeholder="Ask anything: rooftop bars, date spots..."
+                placeholder={searchHints[hintIndex]}
                 className="pl-11 pr-11 h-14 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
                 disabled={isSearching} />
               
@@ -1026,7 +1045,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                     onChange={(e) => setSearchValue(e.target.value)}
                     onFocus={() => setIsSearchFocused(true)}
                     onBlur={() => setIsSearchFocused(false)}
-                    placeholder="Ask anything: rooftop bars, date spots..."
+                    placeholder={searchHints[hintIndex]}
                     className="pl-11 pr-11 h-16 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
                     disabled={isSearching} />
                   
