@@ -129,6 +129,7 @@ const DraggableActivityCard = ({
   onMoveToDay?: (targetDayIndex: number) => void;
   availableDays?: Array<{ dayIndex: number; label: string }>;
   currentDayIndex?: number;
+  destination?: string;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
