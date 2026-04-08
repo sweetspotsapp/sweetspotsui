@@ -2,25 +2,37 @@
 
 ## Problem
 
-The Pro card's "Manage billing" and "Cancel subscription" section is crammed inside the card border, looking cluttered and cheap. It needs to be pulled out and redesigned.
+Right now, Pro and Free users see the exact same UI everywhere. The only difference is the search limit (5/day vs unlimited). There's no visual feedback that makes Pro feel premium.
 
-## Plan
+## Plan: Make Pro Feel Premium
 
-### Redesign the Pro management section in `src/pages/Pricing.tsx`
+### 1. Add a Pro badge to the profile slide menu
+In `src/components/ProfileSlideMenu.tsx`, show a small gold "PRO" badge next to the user's name when they're subscribed. Use `useSubscription` to check `isPro`. This immediately signals their status every time they open the menu.
 
-Move the billing management actions **outside and below** the Pro card, as a separate, clean section that only appears for Pro users. Remove it from inside the card border.
+### 2. Show a Pro badge in the Discover search bar area
+In `src/components/DiscoverPage.tsx`, when `isPro` is true, display a small "PRO" pill next to the search counter (instead of "X searches left", show "Unlimited" with a sparkle icon). Free users keep seeing "3 of 5 searches left" — this contrast makes Pro feel worth it.
 
-**New layout for Pro users:**
-- The Pro card stays clean — just features list + "Manage plan" CTA button (opens portal)
-- Below the plans grid, add a subtle "Subscription" section with:
-  - A clean row showing "You're on Pro" with the renewal date
-  - A text link "Manage billing" that opens the Stripe portal
-  - A subtle "Cancel subscription" text link in muted/destructive color
-- This section uses simple text links, no bordered box, no card — just clean typography with generous spacing
-- Non-Pro users don't see this section at all
+### 3. Remove the search limit counter for Pro users
+Currently the search limit UI shows for everyone. For Pro users, replace it with a subtle "PRO · Unlimited" indicator — no nagging, just a clean premium signal.
 
-### Changes to make
-- Remove lines 177-195 (the bordered billing box inside the Pro card)
-- Add a new section between the plans grid and the FAQ footer
-- Style it minimally: centered text, small font, link-style buttons
+### 4. Add a Pro indicator in the App Header
+In `src/components/AppHeader.tsx`, show a tiny crown or sparkle icon next to "SweetSpots" for Pro users. Subtle but always visible.
+
+### 5. Style the Subscription menu item in ProfileSlideMenu
+For Pro users, the "Subscription" row should show a gold "PRO" badge as the trailing element instead of a plain chevron. For free users, show "Free" in muted text.
+
+### 6. Add a "Pro member" banner on the Profile page
+In `src/components/ProfilePage.tsx`, add a small "Pro Member" badge or banner near the profile hero for subscribed users.
+
+### Files to modify
+- `src/components/ProfileSlideMenu.tsx` — add Pro badge next to username + subscription row badge
+- `src/components/DiscoverPage.tsx` — replace search counter with "PRO · Unlimited" for Pro users
+- `src/components/AppHeader.tsx` — add subtle Pro indicator (crown icon)
+- `src/components/profile/ProfileHero.tsx` — add Pro member badge
+- `src/hooks/useSearchLimit.tsx` — no changes needed (already handles `isPro`)
+
+### Visual approach
+- Gold/amber accent color for Pro badges (`bg-amber-500/15 text-amber-600 border-amber-500/30`)
+- Small crown (👑) or sparkle icons for Pro indicators
+- Keep it subtle and premium, not flashy
 
