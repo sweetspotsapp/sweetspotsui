@@ -274,6 +274,25 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : userMood || "");
 
+  // Rotating search placeholder hints
+  const searchHints = useMemo(() => [
+    "Try 'rooftop sunset drinks'",
+    "Try 'cozy café with wifi'",
+    "Try 'hidden gems near me'",
+    "Try 'date night vibes'",
+    "Try 'brunch with a view'",
+    "Try 'late night eats'",
+    "Try 'quiet spot to work'",
+    "Try 'best coffee in town'",
+  ], []);
+  const [hintIndex, setHintIndex] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHintIndex((i) => (i + 1) % searchHints.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [searchHints.length]);
+
   // Sync searchValue when userMood changes (from EntryScreen)
   useEffect(() => {
     if (userMood && !searchValue && !wasSkipMode.current) {
