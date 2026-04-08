@@ -1186,6 +1186,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                   isSaved={isSaved(place.id)}
                   onClick={() => handlePlaceClick(place)}
                   showDistance={true}
+                  saveCount={saveCounts[place.id] || 0}
                   isGridItem />
 
                 )}
@@ -1219,7 +1220,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 featured={false}
                 userLocation={userLocation}
                 onSeeAll={handleSeeAll}
-                showDistance={true} />
+                showDistance={true}
+                saveCounts={saveCounts} />
 
               )}
               </>
