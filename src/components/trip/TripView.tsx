@@ -60,6 +60,13 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
   const todayRef = useRef<HTMLDivElement>(null);
 
+  // Fetch weather for the trip destination
+  const { forecast } = useWeatherForecast(tripParams?.destination || null);
+  const todayWeather = useMemo(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return forecast.get(todayStr) || null;
+  }, [forecast]);
+
   // Ensure all activities have stable drag IDs
   useEffect(() => {
     const withIds = ensureDragIds(tripData);
