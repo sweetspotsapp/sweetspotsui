@@ -9,6 +9,21 @@ import type { TripData, TripDay, SwapAlternative, TripParams } from "@/hooks/use
 import type { ActivityStatus } from "@/hooks/useLiveTrip";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { useWeatherForecast, type DayForecast } from "@/hooks/useWeatherForecast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Small weather icon for trip info bar
+const WeatherIcon = ({ icon, size = 14 }: { icon: string; size?: number }) => {
+  const shared = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (icon) {
+    case "clear": return <svg {...shared}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
+    case "rain": return <svg {...shared}><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>;
+    case "clouds": return <svg {...shared}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
+    case "snow": return <svg {...shared}><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="8" y1="20" x2="8.01" y2="20"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="12" y1="22" x2="12.01" y2="22"/><line x1="16" y1="16" x2="16.01" y2="16"/><line x1="16" y1="20" x2="16.01" y2="20"/></svg>;
+    case "thunderstorm": return <svg {...shared}><path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"/><polyline points="13 11 9 17 15 17 11 23"/></svg>;
+    default: return <svg {...shared}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
+  }
+};
 
 interface TripViewProps {
   tripData: TripData;
@@ -57,6 +72,13 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
   const todayRef = useRef<HTMLDivElement>(null);
+
+  // Fetch weather for the trip destination
+  const { forecast } = useWeatherForecast(tripParams?.destination || null);
+  const todayWeather = useMemo(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return forecast.get(todayStr) || null;
+  }, [forecast]);
 
   // Ensure all activities have stable drag IDs
   useEffect(() => {
@@ -286,6 +308,21 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
               <MapPin className="w-3.5 h-3.5" />
               {tripParams?.destination}
             </p>
+            {todayWeather && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <WeatherIcon icon={todayWeather.icon} size={14} />
+                      {todayWeather.tempHigh}°C
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    {todayWeather.summary} · {todayWeather.tempLow}°–{todayWeather.tempHigh}°C
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           {tripData.summary && (
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2">{tripData.summary}</p>
