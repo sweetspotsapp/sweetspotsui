@@ -114,17 +114,17 @@ const Index = () => {
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Couldn't load Home">
-          <HomePage onNavigateToProfile={() => setActiveTab("profile")} onNavigateToTab={(tab) => setActiveTab(tab as TabType)} onTripTemplate={(template) => { setTripTemplate(template); setActiveTab("trip"); }} />
+          <HomePage onNavigateToTab={(tab) => setActiveTab(tab as TabType)} onTripTemplate={(template) => { setTripTemplate(template); setActiveTab("trip"); }} />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Couldn't load Discover">
-          <DiscoverPage onNavigateToProfile={() => setActiveTab("profile")} />
+          <DiscoverPage />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Couldn't load your saves">
-          <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
+          <SavedPage />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "trip" ? "block" : "none" }}>

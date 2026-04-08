@@ -15,8 +15,6 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
     { id: "trip" as const, label: "Trip", icon: CalendarDays },
   ];
 
-  const avatarUrl = user?.user_metadata?.avatar_url;
-  const initials = (user?.email?.[0] || "U").toUpperCase();
 
   return (
     <>
@@ -76,13 +74,8 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                     isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  {Icon ? (
+                  {Icon && (
                     <Icon className="w-4 h-4" fill={isActive && tab.id === "saved" ? "currentColor" : "none"} />
-                  ) : (
-                    <Avatar className="w-5 h-5">
-                      {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
-                      <AvatarFallback className="text-[8px] font-semibold bg-muted text-muted-foreground">{initials}</AvatarFallback>
-                    </Avatar>
                   )}
                   {tab.label}
                   {showBadge && (
