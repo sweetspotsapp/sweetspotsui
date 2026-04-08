@@ -1,5 +1,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
+// ============ RATE LIMITING ============
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20; // requests per window
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
+// Input validation schema
+const SearchInputSchema = z.object({
+  prompt: z.string().min(1).max(500),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  location_name: z.string().max(200).optional(),
+  radius_m: z.number().min(100).max(50000).optional().default(4000),
+  mode: z.enum(['drive', 'walk', 'transit', 'bike']).optional().default('drive'),
+  limit: z.number().min(1).max(100).optional().default(50),
+  userId: z.string().max(100).optional(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

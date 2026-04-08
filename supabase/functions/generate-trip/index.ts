@@ -1,16 +1,58 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Rate limiting
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(key: string, max = 5, windowMs = 60_000): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) { rateLimitMap.set(key, { count: 1, resetAt: now + windowMs }); return true; }
+  if (entry.count >= max) return false;
+  entry.count++;
+  return true;
+}
+
+const TripInputSchema = z.object({
+  destination: z.string().min(1).max(200),
+  startDate: z.string().min(1).max(30),
+  endDate: z.string().min(1).max(30),
+  budget: z.string().min(1).max(50).optional().default('moderate'),
+  groupSize: z.number().min(1).max(50).optional().default(2),
+  vibes: z.array(z.string().max(100)).max(10).optional(),
+  vibeDetails: z.string().max(1000).optional(),
+  mustIncludePlaceIds: z.array(z.string().max(200)).max(20).optional(),
+  accommodations: z.array(z.object({
+    name: z.string().max(200).optional(),
+    address: z.string().max(500).optional(),
+  })).max(5).optional(),
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { destination, startDate, endDate, budget, groupSize, vibes, vibeDetails, mustIncludePlaceIds, accommodations } = await req.json();
+    // Rate limit by IP
+    const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(`trip:${clientIp}`, 5, 60_000)) {
+      return new Response(JSON.stringify({ error: 'Rate limited. Please wait before generating another trip.' }), {
+        status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const rawBody = await req.json();
+    const parsed = TripInputSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { destination, startDate, endDate, budget, groupSize, vibes, vibeDetails, mustIncludePlaceIds, accommodations } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");

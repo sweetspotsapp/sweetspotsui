@@ -198,11 +198,26 @@ serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
-    if (!url || typeof url !== "string") {
-      return new Response(JSON.stringify({ error: "URL is required" }), {
+    // Rate limit by IP
+    const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkImportRateLimit(`import:${clientIp}`)) {
+      return new Response(JSON.stringify({ error: 'Too many import requests. Please wait a moment.' }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const rawBody = await req.json();
+    const { url } = rawBody;
+    if (!url || typeof url !== "string" || url.length > 2000) {
+      return new Response(JSON.stringify({ error: "A valid URL is required (max 2000 chars)" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Basic URL format validation
+    try { new URL(url); } catch {
+      return new Response(JSON.stringify({ error: "Invalid URL format" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
