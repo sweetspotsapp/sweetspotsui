@@ -735,21 +735,36 @@ const PlaceDetailsPage = () => {
       </div>;
   }
   if (error || !place) {
-    // Place genuinely not found
     return (
       <div className="min-h-screen bg-background max-w-[420px] mx-auto flex flex-col items-center justify-center p-6">
         <div className="text-center space-y-4">
-          <h2 className="text-xl font-semibold text-foreground">
-            {error || 'Place not found'}
+          {/* Illustration */}
+          <div className="relative mx-auto w-24 h-24 mb-2">
+            <div className="absolute inset-0 rounded-full bg-destructive/5" />
+            <div className="absolute inset-2 rounded-full bg-destructive/10 flex items-center justify-center">
+              <MapPin className="w-10 h-10 text-destructive/40" />
+            </div>
+          </div>
+          <h2 className="text-xl font-bold text-foreground">
+            Spot not found
           </h2>
-          <p className="text-muted-foreground">
-            We couldn't find the place you're looking for.
+          <p className="text-sm text-muted-foreground max-w-[260px] mx-auto">
+            {error === 'Place not found' 
+              ? "This place might have been removed or the link is incorrect."
+              : error || "We couldn't load this spot right now. Try again later."}
           </p>
-          <Button onClick={handleBack} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
-          </Button>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button onClick={handleBack} variant="default" className="rounded-full gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Go Back
+            </Button>
+            <Button onClick={() => navigate('/?tab=discover')} variant="outline" className="rounded-full gap-2">
+              <Search className="w-4 h-4" />
+              Discover Spots
+            </Button>
+          </div>
         </div>
+        <BottomNav />
       </div>
     );
   }
