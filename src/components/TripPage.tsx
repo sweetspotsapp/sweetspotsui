@@ -17,6 +17,9 @@ import TripView from "./trip/TripView";
 import GeneratingOverlay from "./trip/GeneratingOverlay";
 import { useTrip, type TripData, type TripParams, type SavedTrip } from "@/hooks/useTrip";
 import { useAuth } from "@/hooks/useAuth";
+import { useTripLimit } from "@/hooks/useTripLimit";
+import { useSubscription } from "@/hooks/useSubscription";
+import UpgradeModal from "./UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
 
 type Phase = "list" | "view";
@@ -31,11 +34,13 @@ interface TripPageProps {
 
 const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }: TripPageProps) => {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
   const {
     generate, swap, isGenerating, isSwapping,
     savedTrips, sharedTrips, pendingInvites, isLoading,
     saveTrip, deleteTrip, acceptInvite, ignoreInvite,
   } = useTrip();
+  const { hasReachedLimit: hasReachedTripLimit, tripsUsedThisMonth, monthlyLimit, increment: incrementTripCount } = useTripLimit(isPro);
 
   const [phase, setPhase] = useState<Phase>("list");
   const [tripData, setTripData] = useState<TripData | null>(null);
@@ -45,6 +50,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [shareTrip, setShareTrip] = useState<{ id: string; name: string } | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Resume a specific trip when returning from place details
   useEffect(() => {
@@ -244,10 +250,18 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
   };
 
   const handleGenerate = async (params: TripParams) => {
+    // Check trip limit for free users
+    if (hasReachedTripLimit) {
+      setShowCreateModal(false);
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setTripParams(params);
     setShowCreateModal(false);
     const result = await generate(params);
     if (result) {
+      incrementTripCount();
       const resultWithContext: TripData = {
         ...result,
         _meta: {
@@ -411,6 +425,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
         tripName={shareTrip.name}
       />
     )}
+    <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </>
   );
 };
