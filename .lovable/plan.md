@@ -1,119 +1,78 @@
 
 
-# Live Trip Mode — Revised Plan with Cancel & Real-Time Alerts
+# Weather Forecast on Trip Date Picker
 
-## What's New (vs. Previous Plan)
+## The Idea
 
-Two additions based on your feedback:
+After the user selects a destination, the calendar date cells show tiny weather icons (sun, cloud, rain) so they can pick the best days. No extra panels, no clutter — just small icons inside each date cell.
 
-### 1. Cancel/Skip Activity
-Users can **cancel** any upcoming activity during a live trip. Cancelled activities are visually struck through and excluded from progress calculations. They can also **undo** a cancel within the same session.
-
-This is free — no API cost, purely UI + database state.
-
-### 2. Real-Time Context Alerts
-
-Here's the honest breakdown of what's possible, what it costs, and what's worth it:
-
-| Feature | API Needed | Cost per Check | Worth It? |
-|---------|-----------|---------------|-----------|
-| **Place open/closed** | Google Places API | ~$0.017/call | **Yes** — we already store `opening_hours` and `is_open_now`. Just compare locally against device time. **Zero API cost.** |
-| **Weather alerts** | OpenWeatherMap free tier | Free (1,000 calls/day) | **Yes** — one call per trip per day. Shows rain/storm warning on outdoor activities. |
-| **Road/traffic conditions** | Google Routes API | ~$0.01/route | **Maybe** — we already call `compute-routes`. Could cache and refresh once per day. But adds complexity. |
-| **Place permanently closed** | Google Places API | ~$0.017/call | **Yes** — check once when trip goes live. Flag any place that's permanently closed. |
-| **Real-time crowd level** | Google Places API (Popular Times) | ~$0.025/call | **No** — expensive at scale, and we already store `popular_times` data. Just show the static chart. |
-
-### Recommendation: Build These (Low/Zero Cost)
-
-**Tier 1 — Free (use existing data)**
-- Open/closed status from stored `opening_hours` — compare against current time client-side
-- Popular times from stored `popular_times` — show "It's usually busy right now" badge
-- Activity cancel/skip/undo
-
-**Tier 2 — Cheap (one new API)**
-- Weather widget: one OpenWeatherMap call per destination per day (free tier = 1,000/day)
-- Show weather icon + temp on each day header
-- Flag outdoor activities when rain/storm expected
-
-**Tier 3 — Skip for Now**
-- Real-time traffic between activities (complex, moderate cost)
-- Live crowd data (expensive, marginal value over stored data)
-
----
-
-## Updated Implementation Plan
-
-### Phase 1: Database Migration
-Add `checked_activities` jsonb column to `trips` table.
-```sql
-ALTER TABLE public.trips
-ADD COLUMN checked_activities jsonb DEFAULT '{}';
+```text
+┌──────────────────────────────────────────┐
+│  ←        April 2026           →         │
+│  Su   Mo   Tu   We   Th   Fr   Sa       │
+│                   1    2    3    4        │
+│                  ☀️   ☀️   🌤   🌧        │
+│   5    6    7    8    9   10   11        │
+│  🌧   🌤   ☀️   ☀️   ☀️   🌤   🌤        │
+│  12   13   14   15   16   17   18        │
+│  ☀️   ☀️   🌧   🌧   🌤   ☀️   ☀️        │
+│  ...                                     │
+└──────────────────────────────────────────┘
+         ↑ tiny icons below each number
 ```
-Stores: `{ "1-0-0": "done", "1-1-0": "cancelled", "1-2-0": "skipped" }`
 
-### Phase 2: Detection & State (`useLiveTrip.tsx`)
-- New hook: detect if `today >= start_date && today <= end_date`
-- Return `isLive`, `currentDayIndex`, `progress`, `nextActivity`
-- `toggleActivity(key, status)` — cycle between done/cancelled/null
-- Debounced persistence to DB
+Each cell: date number on top, a 12px weather icon below. That's it. No temperatures, no text — just a visual hint. If the user hovers/taps, a tiny tooltip shows "24°C, Partly cloudy".
 
-### Phase 3: Activity Card States (`ActivityCard.tsx`)
-Add new props and visual states:
-- **Now**: accent border, action row with `Done | Skip | Cancel | Navigate`
-- **Done**: green checkmark overlay, collapsed
-- **Cancelled**: red strikethrough, "Undo" button, greyed out
-- **Skipped**: muted with skip icon
+## How It Works
 
-### Phase 4: Live Trip View (`TripView.tsx` + `DaySection.tsx`)
-- Progress bar at top (excludes cancelled activities from total)
-- Auto-scroll to current activity
-- Completed section collapsed
-- Cancelled activities shown at bottom of day with "Undo" option
+1. User types destination → selects from autocomplete
+2. On destination confirm, fetch 14-day forecast from OpenWeatherMap free tier (one API call)
+3. Cache result in `query_cache` table (reuse the existing caching pattern)
+4. Calendar renders tiny weather icons on each date cell that has forecast data
+5. No forecast data = no icon shown (graceful degradation)
 
-### Phase 5: Open/Closed Alerts (Zero Cost)
-- In `DaySection.tsx`, for today's activities, parse stored `opening_hours.weekday_text` against current time
-- Show red "Closed now" or amber "Closes soon" badge on activity cards
-- No API call needed — purely client-side time comparison
+## Implementation
 
-### Phase 6: Weather Widget (Free API)
-- New edge function `trip-weather/index.ts`
-- Calls OpenWeatherMap free API once per destination per day
-- Cache result in `query_cache` table (expires after 6 hours)
-- Show weather icon + temp in day header
-- Flag outdoor activities (category = "outdoors"/"park"/"beach") with rain warning
+### 1. Edge Function: `trip-weather/index.ts` (NEW)
+- Accepts `{ destination: string }`
+- Geocodes destination to lat/lng (use Google geocoding we already have, or OpenWeatherMap's built-in city search)
+- Calls OpenWeatherMap "One Call API 3.0" free tier — returns 8-day forecast (free tier limit)
+- Alternatively use OpenWeatherMap "16 Day/Daily Forecast" on the free plan for longer range
+- Returns: `{ daily: [{ date: "2026-04-09", icon: "clear", temp_high: 24, temp_low: 16, summary: "Clear sky" }, ...] }`
+- Caches in `query_cache` for 6 hours (same pattern as recommend-for-you)
+- Cost: **$0** — OpenWeatherMap free tier, 1 call per destination
 
-### Phase 7: Home Page Live Banner
-- Replace upcoming trip countdown with live banner when active
-- Show progress, next activity, weather summary
+### 2. Hook: `useWeatherForecast.ts` (NEW)
+- `useWeatherForecast(destination: string | null)`
+- Calls the edge function when destination is set and has length >= 3
+- Returns `{ forecast: Map<string, { icon: string, tempHigh: number, summary: string }>, isLoading: boolean }`
+- Only fetches once per destination (memoized)
+
+### 3. Custom Calendar Day Cell in `CreateTripModal.tsx`
+- Use react-day-picker's `components.Day` override to render custom cells
+- Each cell: date number + tiny weather icon (12px) below
+- Icon mapping: `clear` → ☀️, `clouds` → ☁️, `rain` → 🌧, `snow` → ❄️, `thunderstorm` → ⛈
+- Use actual tiny SVG icons (not emoji) for crisp rendering at 12px
+- Cells without forecast data render normally (no icon)
+- On tap/hover: show tooltip with "24°C, Partly cloudy"
+
+### 4. Visual Design
+- Weather icons are 12px, muted opacity (0.6) so they don't compete with date numbers
+- Selected date range still highlighted normally — weather icons stay visible
+- Loading state: subtle shimmer on cells while fetching (or just nothing until loaded)
+- Calendar cell height increases by ~8px to accommodate the icon
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| DB migration | Add `checked_activities` column |
-| `src/hooks/useLiveTrip.tsx` | **NEW** — detection + state management |
-| `src/hooks/useTrip.tsx` | Add checked state persistence |
-| `src/components/trip/ActivityCard.tsx` | Done/skip/cancel/navigate states |
-| `src/components/trip/DaySection.tsx` | Live layout + open/closed badges |
-| `src/components/trip/TripView.tsx` | Progress bar, auto-scroll, live header |
-| `src/components/TripPage.tsx` | LIVE badge on trip list |
-| `src/components/HomePage.tsx` | Live trip banner |
-| `supabase/functions/trip-weather/index.ts` | **NEW** — weather data fetcher |
+| `supabase/functions/trip-weather/index.ts` | **NEW** — fetch + cache weather |
+| `src/hooks/useWeatherForecast.ts` | **NEW** — call edge function |
+| `src/components/trip/CreateTripModal.tsx` | Pass forecast to calendar, custom Day cell |
+| `src/components/ui/calendar.tsx` | Add support for custom day content renderer |
 
-### Build Order
-1. DB migration
-2. `useLiveTrip.tsx` hook (detection + checked state)
-3. `ActivityCard.tsx` (cancel/done/skip/navigate UI)
-4. `DaySection.tsx` (live layout + open/closed badges)
-5. `TripView.tsx` (progress bar + auto-scroll)
-6. `TripPage.tsx` (LIVE badge)
-7. `HomePage.tsx` (live banner)
-8. `trip-weather` edge function + weather UI (can be Phase 2 release)
-
-### Cost Summary
-- Cancel/skip/done: **$0**
-- Open/closed alerts: **$0** (existing data)
-- Popular times badges: **$0** (existing data)
-- Weather: **$0** (OpenWeatherMap free tier, ~1 call/trip/day)
-- Total new API cost: **$0**
+### API Cost
+- OpenWeatherMap free tier: 1,000 calls/day, 1 call per destination
+- Cached for 6 hours — repeat visits don't re-fetch
+- **Total: $0**
 
