@@ -94,7 +94,16 @@ const Index = () => {
     setTimeout(() => { completeOnboarding("", []); setAppState("main"); }, 800);
   };
 
-  const handleTabChange = (tab: TabType) => setActiveTab(tab);
+  const handleTabChange = (tab: TabType) => {
+    if (tab === "trip") {
+      const storedId = sessionStorage.getItem('sweetspots_resume_trip');
+      if (storedId) {
+        setResumeTripId(storedId);
+        sessionStorage.removeItem('sweetspots_resume_trip');
+      }
+    }
+    setActiveTab(tab);
+  };
 
   if (authLoading) {
     return (
