@@ -17,7 +17,6 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
     { id: "discover" as const, label: "Discover", icon: Search },
     { id: "saved" as const, label: "Saved", icon: Heart },
     { id: "trip" as const, label: "Trip", icon: CalendarDays },
-    { id: "profile" as const, label: "Profile", icon: null },
   ];
 
   const avatarUrl = user?.user_metadata?.avatar_url;
