@@ -656,21 +656,13 @@ Respond with a JSON object:
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       places.forEach(p => relevanceMap.set(p.place_id, 50));
-      summary = JSON.stringify([
-        `Try our best picks because you like "${prompt}"`,
-        `Based on your keywords, we found some great matching spots`,
-        `I'd suggest you go for the top-rated options nearby`
-      ]);
+      summary = `We found some spots matching "${prompt}" — check out the top picks below.`;
     }
     
   } catch (error) {
     console.error('AI relevance check failed:', error);
     places.forEach(p => relevanceMap.set(p.place_id, 50));
-    summary = JSON.stringify([
-      `Try our best picks because you like "${prompt}"`,
-      `Based on your keywords, we found some great spots for you`,
-      `I'd suggest you go for the highest-rated places nearby`
-    ]);
+    summary = `We found some great spots for "${prompt}" — browse the top-rated ones below.`;
   }
 
   return { relevanceMap, summary };
