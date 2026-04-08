@@ -313,15 +313,6 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
       <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
         <AppHeader 
           onSettingsClick={() => setIsProfileMenuOpen(true)}
-          actions={
-            <button
-              onClick={() => setShowImportDialog(true)}
-              className="p-2 text-foreground hover:text-primary transition-colors"
-              aria-label="Import from link"
-            >
-              <Link2 className="w-5 h-5" />
-            </button>
-          }
         />
 
         {/* Page Title */}
