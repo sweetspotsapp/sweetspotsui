@@ -437,22 +437,6 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                             </span>
                           )}
                         </div>
-                    {/* Add a Spot CTA Card */}
-                    <button
-                      onClick={() => setShowAddSpotMenu(true)}
-                      className="aspect-square rounded-xl border-2 border-dashed border-primary/20 
-                                 bg-primary/5 flex flex-col items-center justify-center gap-2 
-                                 text-muted-foreground hover:border-primary/40 hover:bg-primary/10 
-                                 transition-all active:scale-[0.98] px-3"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Link2 className="w-5 h-5 text-primary" />
-                      </div>
-                      <span className="text-sm font-semibold text-foreground">Add a Spot</span>
-                      <span className="text-[10px] text-muted-foreground text-center leading-tight">
-                        Search or paste a link
-                      </span>
-                    </button>
                   </div>
                     </div>
                   ))}
