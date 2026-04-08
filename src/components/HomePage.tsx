@@ -236,6 +236,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation, setManualLocation } = useLocation();
   const { searchesLeft, hasReachedLimit, increment: incrementSearchCount } = useSearchLimit();
+  const placeIds = useMemo(() => searchResults.map((p) => p.id), [searchResults]);
+  const saveCounts = usePlaceSaveCounts(placeIds);
   const hasLoadedInitial = useRef(false);
   const hasConsumedSearchParam = useRef(false);
 
