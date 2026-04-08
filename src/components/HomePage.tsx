@@ -1016,12 +1016,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 onClick={() => {
                   setSearchValue(query);
                   setUserMood(query);
-                  const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-                  // Trigger search by setting value — the form submit will handle it
-                  setTimeout(() => {
-                    const form = document.querySelector('form[class]') as HTMLFormElement;
-                    form?.requestSubmit();
-                  }, 50);
                 }}
                 className="shrink-0 px-3 py-1.5 rounded-full bg-muted/70 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors border border-border/50"
               >
