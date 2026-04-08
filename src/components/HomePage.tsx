@@ -279,7 +279,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       {tripStatus?.type === "live" && tripStatus.live && (
         <div className="px-5 pt-4 pb-2 animate-fade-in" style={{ animationDelay: "50ms", animationFillMode: "both" }}>
           <button
-            onClick={handlePlanTrip}
+            onClick={() => handleGoToTrip(tripStatus.live!.id)}
             className="w-full relative overflow-hidden rounded-2xl bg-green-500/10 dark:bg-green-900/20 p-5 text-left transition-all hover:bg-green-500/15 active:scale-[0.98] border border-green-500/20"
           >
             <div className="flex items-center gap-2 mb-1">
