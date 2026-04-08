@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 import LocationPickerModal from "./LocationPickerModal";
+import { useSearchLimit } from "@/hooks/useSearchLimit";
 import BoardMapView from "./saved/BoardMapView";
 import { useFeedback } from "@/context/FeedbackContext";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -228,6 +229,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, onboardingData, setOnboardingData } = useApp();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation, setManualLocation } = useLocation();
+  const { searchesLeft, hasReachedLimit, increment: incrementSearchCount } = useSearchLimit();
   const hasLoadedInitial = useRef(false);
   const hasConsumedSearchParam = useRef(false);
 
@@ -548,6 +550,10 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
 
+    if (hasReachedLimit) {
+      toast.error("You've hit your daily search limit. Upgrade for unlimited searches!");
+      return;
+    }
 
     setUserMood(searchValue.trim());
     setNeedsLocationPermission(false);
@@ -583,6 +589,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       setSearchResults(result.places.map(unifiedToMockPlace));
       setAiSummary(result.summary || null);
       toast.success(`Found ${result.places.length} spots for you!`);
+      incrementSearchCount();
       trackSearch(searchValue.trim());
     } else if (result && result.places.length === 0) {
       toast.info("No places found. Try a different search.");
@@ -977,6 +984,13 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             </div>
           </form>
         </div>
+        {user && searchesLeft <= 3 && (
+          <p className="text-xs text-muted-foreground mt-1.5 px-1">
+            {hasReachedLimit
+              ? "Daily limit reached — upgrade for unlimited searches ✨"
+              : `${searchesLeft} search${searchesLeft === 1 ? "" : "es"} left today`}
+          </p>
+        )}
       </div>
 
       {/* Mobile: slide-out overlay filter */}
