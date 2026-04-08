@@ -1,89 +1,32 @@
 
 
-# Critical Assessment: 8 Feature Suggestions
+# Fix Profile Picture Consistency + Avatar Opens Slide-Out Menu
 
-## Current State Summary
-SweetSpots is a vibe-based travel discovery + itinerary builder. You have: Home (trip dashboard), Discover (search), Saved, Trip, Profile tabs. Trip templates exist in DB. Sharing works via SweetSpots ID/email. Free tier = 5 searches/day. No payments. No public pages.
+## Problems Identified
 
----
+1. **Profile pictures are inconsistent** because different components fetch the avatar from different sources:
+   - `HomePage.tsx` (line 94): reads `user?.user_metadata?.avatar_url` (Google OAuth metadata — stale, never updated when user changes their avatar)
+   - `ProfileSlideMenu.tsx` (line 37-46): queries `profiles` table for `avatar_url` (correct source)
+   - `ProfilePage.tsx`: likely also queries `profiles` table but may have its own fetch
 
-## Feature-by-Feature Verdict
+2. **Tapping the avatar on the Home page navigates to the Profile tab** — user wants it to open the slide-out menu (like image 3) instead.
 
-### 1. Stripe Integration (Subscription + Credits)
-**Verdict: DO IT — High priority, directly enables revenue**
+## Solution
 
-You already have the limit infrastructure (`useSearchLimit`, `FREE_DAILY_LIMIT = 5`). Stripe is natively supported in Lovable. This wires up real money to your existing freemium gates.
+### 1. Centralize avatar source — always use `profiles` table
+- In `HomePage.tsx`, replace `user?.user_metadata?.avatar_url` with a query to the `profiles` table (same as ProfileSlideMenu does), or better: create a small shared hook (`useProfileAvatar`) that fetches and caches `avatar_url` + `username` from `profiles` once, used by all components.
 
-- Create a Pro plan ($5.99/mo) that unlocks unlimited searches + more trip generations
-- Add trip credit packs as one-off purchases
-- Pricing page at `/pricing`
-- ~3-4 implementation steps using Lovable's Stripe tooling
+### 2. Avatar click on Home → open slide-out menu
+- Add `ProfileSlideMenu` to `HomePage.tsx`
+- Change the avatar button's `onClick` from `onNavigateToProfile` to toggling the slide-out menu open
+- Pass `onNavigateToProfile` into the slide-out's "View Profile" action so users can still reach the full Profile tab from the menu
 
-### 2. Pricing Page
-**Verdict: BUNDLE with #1 above — it's just the UI for Stripe**
+### Files to modify
+- **Create**: `src/hooks/useProfileInfo.tsx` — shared hook returning `{ avatarUrl, username, loading }` from `profiles` table
+- **Edit**: `src/components/HomePage.tsx` — use new hook, add slide-out menu, wire avatar click
+- **Edit**: `src/components/ProfileSlideMenu.tsx` — use shared hook instead of local fetch
+- **Edit**: `src/components/ProfilePage.tsx` — use shared hook for the header avatar (consistency)
 
-Simple page showing Free vs Pro comparison. Links to Stripe checkout. Not a separate task.
-
-### 3. Smart Trip Prefill from Saved Spots
-**Verdict: DO IT — Medium priority, good UX**
-
-You already have `useSavedPlaces`, `board_places`, and the trip creation modal accepts `must_include_place_ids`. The plumbing exists. Just need:
-- Query saved spots by destination city (parse address field)
-- Auto-populate `must_include_place_ids` when creating a trip for a city where user has saves
-- ~1 step, mostly logic in CreateTripModal
-
-### 4. "Build Trip" Nudge After 3+ Saves
-**Verdict: ALREADY PARTIALLY EXISTS — just needs threshold adjustment**
-
-You have the "Plan-It Nudge" on Home that triggers at 5+ saves in a city. Lower it to 3, or add a toast/banner after the 3rd save action. Minimal work.
-
-### 5. Shareable Trip Cards with OG Images
-**Verdict: SKIP FOR NOW — low ROI at current stage**
-
-This requires server-side rendering or an edge function that generates OG images (using something like Satori/Vercel OG). It's cool but:
-- You don't have public trip pages yet (see #6)
-- No organic traffic to benefit from OG cards
-- Complex to build properly
-- Better after you have public pages + actual users sharing
-
-### 6. Public Trip Pages (SEO-indexed)
-**Verdict: DEFER — needs architectural thought**
-
-Currently trips are behind auth (`auth.uid() = user_id` RLS). Making them public requires:
-- A new `is_public` flag on trips table
-- New RLS policy for anonymous SELECT on public trips
-- A `/trip/:id` public route (currently doesn't exist)
-- SSR/prerendering for SEO (Vite SPA = poor SEO without workarounds)
-- The SPA architecture makes true SEO indexing hard without a prerender service
-
-Not impossible, but the SEO part is a rabbit hole. Better to focus on core product first.
-
-### 7. "Spots You Might Like" Recommendations on Home
-**Verdict: DO IT — Medium priority, great engagement driver**
-
-You have `place_interactions` table tracking saves/views, `find-similar-vibes` edge function, and user vibe profiles. The data is there. Implementation:
-- Query user's saved place categories/vibes
-- Call `find-similar-vibes` or a simple DB query for places with matching `filter_tags`
-- Show 4-6 cards in a horizontal scroll on Home
-- ~2 steps
-
-### 8. Realtime Trip Sync + Conflict Resolution
-**Verdict: SKIP — premature optimization**
-
-Your memory notes say this is Sprint 4. You don't have collaborative editing yet, and shared trips are view-only. Building realtime sync before you have paying users collaborating is over-engineering. The `last-write-wins` model you've planned is fine, but there's no user demand yet.
-
----
-
-## Recommended Priority Order
-
-| Priority | Feature | Effort | Impact |
-|----------|---------|--------|--------|
-| 1 | **Stripe + Pricing Page** | Medium | Enables revenue |
-| 2 | **"Spots You Might Like" on Home** | Small | Engagement + stickiness |
-| 3 | **Smart Trip Prefill from Saves** | Small | Better conversion to trips |
-| 4 | **Lower "Build Trip" nudge to 3 saves** | Tiny | Quick win |
-| -- | OG images, public pages, realtime | -- | Defer until post-launch |
-
-### What I'd build next
-**Stripe + Pricing Page** first — it's the one that turns usage into revenue. Everything else is optimization. Want me to start with that?
+### Technical detail
+The hook will query `profiles` once on mount and subscribe to auth changes. All three surfaces (Home avatar, slide-out menu, Profile page header) will show the same image from the same source.
 
