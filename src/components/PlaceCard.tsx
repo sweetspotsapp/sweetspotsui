@@ -99,7 +99,7 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
           {/* Save button */}
           <button
             className={cn(
-              "absolute top-3 right-3 w-5 h-5 flex items-center justify-center rounded-full backdrop-blur-md bg-background/20 transition-all duration-300",
+              "absolute top-3 right-3 w-4 h-4 flex items-center justify-center rounded-full backdrop-blur-md bg-background/20 transition-all duration-300",
               saved ? "text-primary bg-primary/20" : "text-primary-foreground/80 hover:text-primary-foreground"
             )}
             onClick={handleSaveClick}
@@ -158,7 +158,7 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
         {/* Save button */}
         <button
           className={cn(
-            "absolute top-2.5 right-2.5 w-5 h-5 flex items-center justify-center rounded-full backdrop-blur-md bg-background/25 transition-all duration-300",
+            "absolute top-2.5 right-2.5 w-4 h-4 flex items-center justify-center rounded-full backdrop-blur-md bg-background/25 transition-all duration-300",
             saved && "text-primary bg-primary/25"
           )}
           onClick={handleSaveClick}
