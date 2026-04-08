@@ -130,6 +130,27 @@
 
   body {
     @apply bg-background text-foreground font-outfit antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+  }
+
+  /* Safe areas for notched phones */
+  html {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Minimum touch target size */
+  button, a, [role="button"], input[type="checkbox"], input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Exclude tiny inline elements */
+  span > button, .inline-touch-ok {
+    min-height: unset;
+    min-width: unset;
   }
 }
 
@@ -152,6 +173,17 @@
   .touch-pan-x {
     touch-action: pan-x;
     overscroll-behavior-x: contain;
+  }
+
+  /* Safe area utilities */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 

@@ -19,7 +19,7 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
   return (
     <>
       {/* Mobile Floating Pill Nav */}
-      <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 lg:hidden">
+      <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 lg:hidden mb-safe">
         <div className="flex items-center gap-3 px-4 py-3 rounded-full bg-foreground/90 backdrop-blur-md shadow-lg shadow-foreground/10">
           {tabs.map((tab) => {
             const Icon = tab.icon;
