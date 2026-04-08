@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useToast } from './use-toast';
-import { ToastAction } from '@/components/ui/toast';
+import { showErrorToast, showSuccessToast } from '@/lib/errorHandler';
+import { toast } from 'sonner';
 
 export interface Board {
   id: string;
@@ -28,7 +28,6 @@ interface UseBoardsReturn {
 
 export const useBoards = (): UseBoardsReturn => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [boards, setBoards] = useState<Board[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -102,15 +101,12 @@ export const useBoards = (): UseBoardsReturn => {
     placeIds: string[] = []
   ): Promise<Board | null> => {
     if (!user) {
-      toast({
-        title: 'Login required',
-        description: 'Please log in to create boards',
-        variant: 'destructive',
-        action: (
-          <ToastAction altText="Log in" onClick={() => navigate('/auth')}>
-            Log in
-          </ToastAction>
-        ),
+      toast.error("Login required", {
+        description: "Please log in to create boards",
+        action: {
+          label: "Log in",
+          onClick: () => navigate("/auth"),
+        },
       });
       return null;
     }
@@ -156,23 +152,13 @@ export const useBoards = (): UseBoardsReturn => {
       };
 
       setBoards(prev => [newBoard, ...prev]);
-      
-      toast({
-        title: 'Board created',
-        description: `"${name}" board created successfully`,
-      });
-
+      showSuccessToast('Board created', `"${name}" board created`);
       return newBoard;
     } catch (err) {
-      console.error('Error creating board:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to create board',
-        variant: 'destructive',
-      });
+      showErrorToast(err, "Create board");
       return null;
     }
-  }, [user, toast]);
+  }, [user, navigate]);
 
   const updateBoard = useCallback(async (
     id: string,
@@ -194,14 +180,9 @@ export const useBoards = (): UseBoardsReturn => {
         b.id === id ? { ...b, name, color, updated_at: new Date().toISOString() } : b
       ));
     } catch (err) {
-      console.error('Error updating board:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to update board',
-        variant: 'destructive',
-      });
+      showErrorToast(err, "Update board");
     }
-  }, [user, toast]);
+  }, [user]);
 
   const deleteBoard = useCallback(async (id: string) => {
     if (!user) return;
@@ -239,23 +220,13 @@ export const useBoards = (): UseBoardsReturn => {
       }
 
       setBoards(prev => prev.filter(b => b.id !== id));
-      
-      toast({
-        title: 'Board deleted',
-        description: 'Board and its unique spots have been removed',
-      });
-
+      showSuccessToast('Board deleted');
       return placesOnlyInThisBoard;
     } catch (err) {
-      console.error('Error deleting board:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete board',
-        variant: 'destructive',
-      });
+      showErrorToast(err, "Delete board");
       return [];
     }
-  }, [user, boards, toast]);
+  }, [user, boards]);
 
   const addPlaceToBoard = useCallback(async (boardId: string, placeId: string) => {
     if (!user) return;
@@ -320,14 +291,9 @@ export const useBoards = (): UseBoardsReturn => {
           : b
       ));
     } catch (err) {
-      console.error('Error removing place from board:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove place from board',
-        variant: 'destructive',
-      });
+      showErrorToast(err, "Remove from board");
     }
-  }, [user, toast]);
+  }, [user]);
 
   const getBoardPlaceIds = useCallback((boardId: string): string[] => {
     const board = boards.find(b => b.id === boardId);
