@@ -22,6 +22,7 @@ import LocationPickerModal from "./LocationPickerModal";
 import { useSearchLimit } from "@/hooks/useSearchLimit";
 import UpgradeModal from "./UpgradeModal";
 import { usePlaceSaveCounts } from "@/hooks/usePlaceSaveCounts";
+import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import BoardMapView from "./saved/BoardMapView";
 import { useFeedback } from "@/context/FeedbackContext";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -342,6 +343,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   });
   const placeIds = useMemo(() => searchResults.map((p) => p.id), [searchResults]);
   const saveCounts = usePlaceSaveCounts(placeIds);
+  const upcomingTrip = useUpcomingTrip();
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
     if (wasSkipMode.current) return true;
     return getCachedResults().length === 0;
@@ -1001,6 +1003,21 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
           </p>
         )}
       </div>
+
+      {/* Trip countdown banner */}
+      {upcomingTrip && (
+        <div className="px-4 pb-2 lg:hidden">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/10 border border-primary/20">
+            <span className="text-lg">🎒</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {upcomingTrip.destination} in {upcomingTrip.daysUntil === 0 ? "today!" : `${upcomingTrip.daysUntil} day${upcomingTrip.daysUntil === 1 ? "" : "s"}!`}
+              </p>
+              <p className="text-xs text-muted-foreground">Your trip is coming up</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile: slide-out overlay filter */}
       <div className="lg:hidden">
