@@ -537,6 +537,47 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           </div>
         )}
       </div>
+
+      {/* Add Spot Action Sheet */}
+      {showAddSpotMenu && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShowAddSpotMenu(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[60] bg-card rounded-t-2xl p-4 pb-28 max-w-md mx-auto shadow-lg animate-in slide-in-from-bottom duration-200">
+            <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-4" />
+            <h3 className="text-base font-semibold text-foreground mb-3">Add a Spot</h3>
+            <button
+              onClick={() => { setShowAddSpotMenu(false); navigate('/?tab=discover'); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Search className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-foreground">Search Places</span>
+                <p className="text-xs text-muted-foreground">Find hidden gems by vibe</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setShowAddSpotMenu(false); setShowImportDialog(true); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <ExternalLink className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-foreground">Paste a Link</span>
+                <p className="text-xs text-muted-foreground">From Instagram, TikTok, or Google Maps</p>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Import Link Dialog */}
+      <ImportLinkDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+      />
     </>
   );
 };
