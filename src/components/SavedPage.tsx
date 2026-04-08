@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb } from "lucide-react";
+import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
@@ -61,6 +61,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showAddSpotMenu, setShowAddSpotMenu] = useState(false);
   const [tipDismissed, setTipDismissed] = useState(() => 
     localStorage.getItem('sweetspots_import_tip_dismissed') === 'true'
   );
@@ -371,7 +372,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
             </div>
 
             {/* Import tip banner for users with few saves */}
-            {!tipDismissed && savedPlaces.length >= 1 && savedPlaces.length <= 3 && (
+            {!tipDismissed && savedPlaces.length >= 1 && (
               <div className="mx-4 mb-4 flex items-center gap-3 p-3 rounded-xl bg-accent/50 border border-border">
                 <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
                 <p className="text-xs text-muted-foreground flex-1">
@@ -435,6 +436,23 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
                   <Plus className="w-8 h-8" />
                   <span className="text-sm font-medium">New Board</span>
                 </button>
+
+                {/* Add a Spot CTA Card */}
+                <button
+                  onClick={() => setShowAddSpotMenu(true)}
+                  className="aspect-[4/5] rounded-2xl border-2 border-dashed border-primary/20 
+                             bg-primary/5 flex flex-col items-center justify-center gap-2 
+                             text-muted-foreground hover:border-primary/40 hover:bg-primary/10 
+                             transition-all active:scale-[0.98] px-3"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Link2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">Add a Spot</span>
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">
+                    Search or paste a link from Instagram, TikTok, or Maps
+                  </span>
+                </button>
               </div>
             </div>
           </>
@@ -480,6 +498,41 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
           editBoard={editingBoard}
           savedPlaces={savedPlaces}
         />
+      )}
+
+      {/* Add Spot Action Sheet */}
+      {showAddSpotMenu && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowAddSpotMenu(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl p-4 pb-8 max-w-md mx-auto shadow-lg animate-in slide-in-from-bottom duration-200">
+            <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-4" />
+            <h3 className="text-base font-semibold text-foreground mb-3">Add a Spot</h3>
+            <button
+              onClick={() => { setShowAddSpotMenu(false); navigate('/?tab=discover'); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Search className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-foreground">Search Places</span>
+                <p className="text-xs text-muted-foreground">Find hidden gems by vibe</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setShowAddSpotMenu(false); setShowImportDialog(true); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <ExternalLink className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-foreground">Paste a Link</span>
+                <p className="text-xs text-muted-foreground">From Instagram, TikTok, or Google Maps</p>
+              </div>
+            </button>
+          </div>
+        </>
       )}
 
       {/* Import Link Dialog */}
