@@ -705,6 +705,15 @@ serve(async (req) => {
 
   const startTime = Date.now();
 
+  // Rate limit by IP
+  const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
+  if (!checkRateLimit(`search:${clientIp}`)) {
+    return new Response(
+      JSON.stringify({ error: 'Rate limited. Please slow down.' }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -712,23 +721,9 @@ serve(async (req) => {
     const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!googleMapsApiKey) {
+    if (!googleMapsApiKey || !geoapifyApiKey || !lovableApiKey) {
       return new Response(
-        JSON.stringify({ error: 'Google Maps API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!geoapifyApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Geoapify API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!lovableApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Lovable API key not configured' }),
+        JSON.stringify({ error: 'Required API keys not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -744,17 +739,18 @@ serve(async (req) => {
     // Get auth header for later parallel fetch
     const authHeader = req.headers.get('Authorization');
 
-    // Parse request
-    const body: RequestBody = await req.json();
-    const { prompt, location_name, radius_m = 4000, mode = 'drive', limit = 50 } = body;
-    let { lat, lng } = body;
-
-    if (!prompt) {
+    // Parse and validate request
+    const rawBody = await req.json();
+    const parsed = SearchInputSchema.safeParse(rawBody);
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'Missing required field: prompt' }),
+        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    const { prompt, location_name, radius_m, mode, limit } = parsed.data;
+    let lat = parsed.data.lat;
+    let lng = parsed.data.lng;
 
     // ============ SERVER-SIDE SEARCH LIMIT ============
     const FREE_DAILY_LIMIT = 5;
