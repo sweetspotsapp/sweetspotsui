@@ -128,7 +128,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               Your next adventure awaits
             </p>
           </div>
-          <button onClick={onNavigateToProfile} className="shrink-0">
+          <button onClick={() => setIsProfileMenuOpen(true)} className="shrink-0">
             <Avatar className="w-11 h-11 ring-2 ring-border/50">
               {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
               <AvatarFallback className="text-sm font-semibold bg-muted text-muted-foreground">
@@ -138,6 +138,12 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           </button>
         </div>
       </div>
+
+      <ProfileSlideMenu
+        isOpen={isProfileMenuOpen}
+        onClose={() => setIsProfileMenuOpen(false)}
+        onNavigateToProfile={onNavigateToProfile}
+      />
 
       {/* Upcoming Trip Card */}
       {upcomingTrip && engagementLevel === "engaged" && (
