@@ -245,10 +245,16 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
           {tripParams?.name && (
             <h2 className="text-lg font-bold text-foreground">{tripParams.name}</h2>
           )}
-          <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-            <MapPin className="w-3.5 h-3.5" />
-            {tripParams?.destination}
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5" />
+              {tripParams?.destination}
+            </p>
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
+              <Compass className="w-3 h-3" />
+              Scoped area
+            </span>
+          </div>
           {tripData.summary && (
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2">{tripData.summary}</p>
           )}

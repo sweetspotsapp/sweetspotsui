@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft, DollarSign, Home, Plane, ChevronDown, ChevronUp, Navigation } from "lucide-react";
+import { MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, ArrowLeft, DollarSign, Home, Plane, ChevronDown, ChevronUp, Navigation, Compass } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -229,6 +229,12 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
             </div>
           )}
         </div>
+        {destination && destination !== "Nearby" && !showDestSuggestions && (
+          <div className="flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium w-fit">
+            <Compass className="w-3.5 h-3.5" />
+            Scoped to {destination}
+          </div>
+        )}
       </section>
 
       {/* Dates */}
