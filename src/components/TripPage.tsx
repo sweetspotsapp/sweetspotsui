@@ -218,6 +218,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
       timeSlot: slot.time,
       currentActivity: activity.name,
       category: activity.category,
+      activityDescription: activity.description,
     });
   };
 

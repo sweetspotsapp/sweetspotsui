@@ -9,18 +9,22 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { destination, vibes, vibeDetails, budget, dayLabel, timeSlot, currentActivity, category } = await req.json();
+    const { destination, vibes, vibeDetails, budget, dayLabel, timeSlot, currentActivity, category, activityDescription } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const prompt = `I'm visiting ${destination} and currently have "${currentActivity}" (${category}) planned for ${timeSlot} on ${dayLabel}.
+    const purposeContext = activityDescription
+      ? `\nThe PURPOSE of this activity in the itinerary is: "${activityDescription}". Replacements must serve the SAME purpose/role (e.g. if it's about grabbing snacks before a hike, suggest other food/supply stops — NOT hiking spots).`
+      : "";
 
+    const prompt = `I'm visiting ${destination} and currently have "${currentActivity}" (${category}) planned for ${timeSlot} on ${dayLabel}.
+${purposeContext}
 Trip vibes: ${(vibes || []).join(", ")}
 ${vibeDetails ? `Traveler's specific intent: ${vibeDetails}` : ""}
 Budget: ${budget}
 
-Suggest 3-4 alternative activities for this same time slot. Each should be a real place or activity in ${destination}, different from "${currentActivity}", matching the trip vibes, specific intent, and budget.`;
+Suggest 3-4 alternative activities for this same time slot that serve the SAME PURPOSE and role in the itinerary as "${currentActivity}". Each should be a real place or activity in ${destination}, different from "${currentActivity}". The alternatives must fulfill the same function — not just be in the same category.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
