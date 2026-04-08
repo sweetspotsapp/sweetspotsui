@@ -1004,6 +1004,21 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         )}
       </div>
 
+      {/* Trip countdown banner */}
+      {upcomingTrip && (
+        <div className="px-4 pb-2 lg:hidden">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/10 border border-primary/20">
+            <span className="text-lg">🎒</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {upcomingTrip.destination} in {upcomingTrip.daysUntil === 0 ? "today!" : `${upcomingTrip.daysUntil} day${upcomingTrip.daysUntil === 1 ? "" : "s"}!`}
+              </p>
+              <p className="text-xs text-muted-foreground">Your trip is coming up</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile: slide-out overlay filter */}
       <div className="lg:hidden">
         <SlideOutMenu
