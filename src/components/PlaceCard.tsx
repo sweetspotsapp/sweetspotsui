@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, Clock, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
+import { getStoragePhotoUrl, getEdgeFunctionPhotoUrl } from "@/lib/photoLoader";
 import type { RankedPlace } from "@/hooks/useSearch";
 
 interface PlaceCardProps {
@@ -11,11 +12,10 @@ interface PlaceCardProps {
   onClick?: () => void;
 }
 
-// Build photo URL from photo_name via our proxy edge function
+// Build photo URL — tries storage first, edge function as fallback
 const getPhotoUrl = (photoName: string | null, maxWidth = 400, maxHeight = 600): string | null => {
   if (!photoName) return null;
-  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-  return `${baseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}`;
+  return getEdgeFunctionPhotoUrl(photoName, maxWidth, maxHeight);
 };
 
 // Fallback placeholder image
