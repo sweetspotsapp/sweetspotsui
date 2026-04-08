@@ -212,14 +212,14 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       <div className="px-5 pt-6 pb-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
         <h2 className="text-base font-semibold text-foreground mb-3">Trip Ideas</h2>
         <div className="grid grid-cols-2 gap-3">
-          {TRIP_TEMPLATES.map((template, i) => (
+          {templates.map((template) => (
             <button
-              key={template.destination}
+              key={template.id}
               onClick={() => handleTemplateClick(template)}
               className="relative overflow-hidden rounded-2xl h-[160px] text-left transition-all hover:shadow-lg active:scale-[0.97] group"
             >
               <img
-                src={template.image}
+                src={TEMPLATE_IMAGES[template.destination] || tripTokyo}
                 alt={template.destination}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
@@ -231,7 +231,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               {/* Text */}
               <div className="relative h-full flex flex-col justify-end p-4">
                 <p className="text-[15px] font-bold text-white leading-tight">{template.destination}</p>
-                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} days · {template.vibe}</p>
+                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} days · {template.tagline}</p>
               </div>
             </button>
           ))}
