@@ -7,6 +7,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Rate limiting
+const importRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function checkImportRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = importRateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) { importRateLimitMap.set(key, { count: 1, resetAt: now + 60_000 }); return true; }
+  if (entry.count >= 10) return false;
+  entry.count++;
+  return true;
+}
+
 /** Fetch Open Graph / meta tags from a URL */
 async function fetchPageMeta(url: string): Promise<string> {
   try {
