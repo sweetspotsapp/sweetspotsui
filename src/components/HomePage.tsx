@@ -6,6 +6,7 @@ import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star } from "lucide-react";
+import { Skeleton } from "./ui/skeleton";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import ProfileSlideMenu from "./ProfileSlideMenu";
