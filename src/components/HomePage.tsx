@@ -174,6 +174,10 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   }, [savesCount, tripsCount]);
 
   const handlePlanTrip = () => onNavigateToTab?.("trip");
+  const handleGoToTrip = (tripId: string) => {
+    sessionStorage.setItem('sweetspots_resume_trip', tripId);
+    onNavigateToTab?.("trip");
+  };
   const handleDiscover = () => onNavigateToTab?.("discover");
   const handleTemplateClick = (template: DBTripTemplate) => {
     if (onTripTemplate) {
