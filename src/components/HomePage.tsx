@@ -1006,7 +1006,32 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         )}
       </div>
 
-      {/* Trip countdown banner */}
+      {/* Recent searches */}
+      {recentSearches.length > 0 && searchResults.length === 0 && !isSearching && (
+        <div className="px-4 pb-2 lg:hidden">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {recentSearches.map((query) => (
+              <button
+                key={query}
+                onClick={() => {
+                  setSearchValue(query);
+                  setUserMood(query);
+                  const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+                  // Trigger search by setting value — the form submit will handle it
+                  setTimeout(() => {
+                    const form = document.querySelector('form[class]') as HTMLFormElement;
+                    form?.requestSubmit();
+                  }, 50);
+                }}
+                className="shrink-0 px-3 py-1.5 rounded-full bg-muted/70 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors border border-border/50"
+              >
+                {query}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {upcomingTrip && (
         <div className="px-4 pb-2 lg:hidden">
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/10 border border-primary/20">
