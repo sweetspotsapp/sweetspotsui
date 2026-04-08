@@ -316,6 +316,11 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
             <h2 className="text-xl font-bold text-foreground">
               {tripStatus.upcoming.destination} in {tripStatus.upcoming.daysUntil === 0 ? "today!" : `${tripStatus.upcoming.daysUntil} day${tripStatus.upcoming.daysUntil === 1 ? "" : "s"}`}
             </h2>
+            {todayWeather && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                <WeatherIconSmall icon={todayWeather.icon} /> {todayWeather.tempHigh}°C, {todayWeather.summary}
+              </p>
+            )}
             <div className="flex items-center gap-1 mt-2 text-sm text-primary font-medium">
               View Itinerary <ArrowRight className="w-4 h-4" />
             </div>
