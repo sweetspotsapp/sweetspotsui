@@ -250,10 +250,18 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
   };
 
   const handleGenerate = async (params: TripParams) => {
+    // Check trip limit for free users
+    if (hasReachedTripLimit) {
+      setShowCreateModal(false);
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setTripParams(params);
     setShowCreateModal(false);
     const result = await generate(params);
     if (result) {
+      incrementTripCount();
       const resultWithContext: TripData = {
         ...result,
         _meta: {
