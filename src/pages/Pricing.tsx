@@ -173,26 +173,6 @@ const PricingPage = () => {
                 {plan.cta}
               </Button>
 
-              {/* Pro management actions */}
-              {plan.name === "Pro" && isPro && (
-                <div className="mt-4 space-y-1 rounded-xl border border-border overflow-hidden">
-                  <button
-                    onClick={openPortal}
-                    className="flex items-center gap-3 w-full p-3 hover:bg-muted/50 transition-colors"
-                  >
-                    <CreditCard className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground flex-1 text-left">Manage billing</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                  <Separator />
-                  <button
-                    onClick={() => setCancelDialogOpen(true)}
-                    className="flex items-center gap-3 w-full p-3 hover:bg-destructive/5 transition-colors"
-                  >
-                    <span className="text-sm font-medium text-destructive flex-1 text-left ml-7">Cancel subscription</span>
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
