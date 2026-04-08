@@ -11,6 +11,8 @@ import type { TripParams } from "@/hooks/useTrip";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
