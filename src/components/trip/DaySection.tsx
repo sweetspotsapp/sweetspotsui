@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Plus, Search, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Search, X, AlertTriangle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
@@ -9,6 +9,8 @@ import ActivityCard from "./ActivityCard";
 import DistanceConnector from "./DistanceConnector";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 import type { TripDay, Activity, SwapAlternative } from "@/hooks/useTrip";
+import type { ActivityStatus } from "@/hooks/useLiveTrip";
+import { activityKey } from "@/hooks/useLiveTrip";
 
 interface DaySectionProps {
   day: TripDay;
@@ -22,6 +24,12 @@ interface DaySectionProps {
   onAddActivity?: (dayIndex: number, slotIndex: number, newActivity: { name: string; placeId?: string; category: string; description: string }) => void;
   onMoveToDay?: (dayIndex: number, slotIndex: number, activityIndex: number, targetDayIndex: number) => void;
   totalDays?: TripDay[];
+  // Live mode props
+  isLive?: boolean;
+  isToday?: boolean;
+  checkedActivities?: Record<string, ActivityStatus>;
+  onToggleActivity?: (key: string, status: ActivityStatus) => void;
+  onUndoActivity?: (key: string) => void;
 }
 
 const TIME_LABELS: Record<string, string> = {
@@ -33,6 +41,12 @@ const TIME_LABELS: Record<string, string> = {
 interface RouteData {
   durationText: string;
   distanceText: string;
+}
+
+/** Check if a place is currently open based on stored opening_hours */
+function getOpenStatus(activity: Activity): { isOpen: boolean; label: string; variant: "open" | "closed" | "closing" } | null {
+  // We don't have opening_hours on Activity type directly, skip for now
+  return null;
 }
 
 const AddPlaceInput = ({ onAdd }: { onAdd: (place: { name: string; placeId?: string; category: string; description: string }) => void }) => {
@@ -201,10 +215,7 @@ const DroppableSlot = ({ dayIndex, slotIndex, children }: { dayIndex: number; sl
     return dropTargetForElements({
       element: el,
       getData: () => ({ dayIdx: dayIndex, slotIdx: slotIndex, actIdx: -1, isSlot: true }),
-      canDrop: ({ source }) => {
-        // Only accept drops if this slot is empty or the drag isn't from within this exact slot
-        return true;
-      },
+      canDrop: () => true,
       onDragEnter: () => setIsOver(true),
       onDragLeave: () => setIsOver(false),
       onDrop: () => setIsOver(false),
@@ -218,7 +229,7 @@ const DroppableSlot = ({ dayIndex, slotIndex, children }: { dayIndex: number; sl
   );
 };
 
-const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity, onAddActivity, onMoveToDay, totalDays }: DaySectionProps) => {
+const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity, onAddActivity, onMoveToDay, totalDays, isLive, isToday, checkedActivities, onToggleActivity, onUndoActivity }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
 
@@ -297,19 +308,61 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
     total + slot.activities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0), 0
   );
 
+  // For live mode: find first unchecked activity as "current"
+  const findFirstUnchecked = (): string | null => {
+    if (!isLive || !isToday || !checkedActivities) return null;
+    for (let si = 0; si < day.slots.length; si++) {
+      for (let ai = 0; ai < day.slots[si].activities.length; ai++) {
+        const key = activityKey(dayIndex, si, ai);
+        if (!checkedActivities[key]) return key;
+      }
+    }
+    return null;
+  };
+  const currentActivityKey = findFirstUnchecked();
+
+  // Live mode progress for this day
+  const liveProgress = (() => {
+    if (!isLive || !checkedActivities) return null;
+    let total = 0, done = 0;
+    day.slots.forEach((slot, si) => {
+      slot.activities.forEach((_, ai) => {
+        const key = activityKey(dayIndex, si, ai);
+        const status = checkedActivities[key];
+        if (status === "cancelled") return;
+        total++;
+        if (status === "done" || status === "skipped") done++;
+      });
+    });
+    return { done, total };
+  })();
+
   return (
-    <div className="rounded-2xl bg-card border border-border overflow-hidden">
+    <div className={cn(
+      "rounded-2xl bg-card border border-border overflow-hidden",
+      isLive && isToday && "ring-1 ring-primary/20 border-primary/30"
+    )}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 transition-colors"
       >
-        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-          <span className="text-sm font-bold text-primary">{dayIndex + 1}</span>
+        <div className={cn(
+          "w-9 h-9 rounded-xl flex items-center justify-center",
+          isLive && isToday ? "bg-primary text-primary-foreground" : "bg-primary/10"
+        )}>
+          <span className={cn("text-sm font-bold", isLive && isToday ? "text-primary-foreground" : "text-primary")}>{dayIndex + 1}</span>
         </div>
         <div className="flex-1">
-          <span className="text-sm font-semibold text-foreground">{day.label}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-foreground">{day.label}</span>
+            {isLive && isToday && (
+              <span className="text-[9px] font-bold text-primary-foreground bg-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider">Today</span>
+            )}
+          </div>
           <span className="text-xs text-muted-foreground block">
-            {day.slots.reduce((acc, s) => acc + s.activities.length, 0)} activities
+            {liveProgress
+              ? `${liveProgress.done}/${liveProgress.total} done`
+              : `${day.slots.reduce((acc, s) => acc + s.activities.length, 0)} activities`}
             {dayTotal > 0 && ` · ~$${dayTotal}/pp`}
           </span>
         </div>
@@ -386,11 +439,14 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                           nextActivity?.lat, nextActivity?.lng
                         );
 
-                        // Calculate global card index for alternating layout
                         let globalIdx = activityIndex;
                         for (let si = 0; si < slotIndex; si++) {
                           globalIdx += day.slots[si].activities.length;
                         }
+
+                        const key = activityKey(dayIndex, slotIndex, activityIndex);
+                        const liveStatus = checkedActivities?.[key] || null;
+                        const isCurrent = key === currentActivityKey;
 
                         return (
                           <div key={activityIndex}>
@@ -401,6 +457,13 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                               isSwapping={isSwapping}
                               cardIndex={globalIdx}
                               destination={destination}
+                              isLive={isLive && isToday}
+                              liveStatus={liveStatus}
+                              isCurrentActivity={isCurrent}
+                              onCheck={() => onToggleActivity?.(key, "done")}
+                              onSkip={() => onToggleActivity?.(key, "skipped")}
+                              onCancel={() => onToggleActivity?.(key, "cancelled")}
+                              onUndo={() => onUndoActivity?.(key)}
                             />
                             {activityIndex < slot.activities.length - 1 && (
                               <DistanceConnector
