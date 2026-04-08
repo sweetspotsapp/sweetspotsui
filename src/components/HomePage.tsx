@@ -1264,8 +1264,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         onClose={() => setIsLocationPickerOpen(false)}
         onSelectLocation={handleLocationChange}
         currentLocation={onboardingData?.explore_location} />
-      
-
+      <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />
 
     </div>);
 
