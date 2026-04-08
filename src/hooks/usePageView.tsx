@@ -1,19 +1,17 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import posthog from "@/lib/posthog";
 
 /**
- * Tracks page views. Currently logs to console in dev.
- * Replace the body with your analytics provider (Plausible, PostHog, GA4, etc.)
+ * Tracks page views via PostHog on every route change.
  */
 export function usePageView() {
   const location = useLocation();
 
   useEffect(() => {
-    // Future: send to analytics provider
-    // e.g. posthog.capture('$pageview')
-    // e.g. plausible('pageview')
-    if (import.meta.env.DEV) {
-      console.debug("[analytics] pageview:", location.pathname + location.search);
-    }
+    posthog.capture("$pageview", {
+      $current_url: window.location.href,
+      path: location.pathname,
+    });
   }, [location.pathname, location.search]);
 }
