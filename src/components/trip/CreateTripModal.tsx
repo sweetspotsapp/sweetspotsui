@@ -432,6 +432,7 @@ const Step1Content = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { predictions, isLoading } = usePlaceAutocomplete(showSuggestions ? destination : "");
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { forecast } = useWeatherForecast(destination && destination !== "Nearby" && destination.length >= 3 ? destination : null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
