@@ -155,19 +155,26 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
             </p>
           </div>
 
-          {/* Testimonials */}
-          <div className="w-full space-y-2.5 opacity-0 animate-fade-up delay-300">
-            {[
-              { quote: "Found the best hidden café in Bali in 2 mins 🤯", name: "Sarah K." },
-              { quote: "Planned my whole Tokyo trip from saved spots. Game changer.", name: "Marcus L." },
-              { quote: "It actually gets my vibe. Way better than Google Maps.", name: "Priya D." },
-            ].map((t) => (
-              <div key={t.name} className="flex items-start gap-2.5 px-3 py-2 rounded-xl bg-muted/40">
-                <span className="text-xs leading-relaxed text-muted-foreground flex-1">
-                  "{t.quote}" — <span className="font-medium text-foreground">{t.name}</span>
+          {/* Scrolling social proof ticker */}
+          <div className="w-full overflow-hidden opacity-0 animate-fade-up delay-300">
+            <div className="flex animate-marquee gap-4 whitespace-nowrap">
+              {[
+                "Found the best hidden café in Bali in 2 mins — Sarah K.",
+                "Planned my whole Tokyo trip from saved spots. Game changer. — Marcus L.",
+                "It actually gets my vibe. Way better than Google Maps. — Priya D.",
+                "Discovered a rooftop bar I'd never have found otherwise. — Jake T.",
+                "My go-to for every new city now. — Aisha M.",
+                "Found the best hidden café in Bali in 2 mins — Sarah K.",
+                "Planned my whole Tokyo trip from saved spots. Game changer. — Marcus L.",
+                "It actually gets my vibe. Way better than Google Maps. — Priya D.",
+                "Discovered a rooftop bar I'd never have found otherwise. — Jake T.",
+                "My go-to for every new city now. — Aisha M.",
+              ].map((text, i) => (
+                <span key={i} className="inline-block text-xs text-muted-foreground/70 px-4 py-1.5 rounded-full bg-muted/40 shrink-0">
+                  {text}
                 </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           {/* Auth actions */}
