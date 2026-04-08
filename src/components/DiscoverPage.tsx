@@ -619,11 +619,15 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
             </div>
           </form>
         </div>
-        {user && searchesLeft <= 3 && (
-          <p className="text-xs text-muted-foreground mt-1.5 px-1">
-            {hasReachedLimit ? "Daily limit reached — upgrade for unlimited searches ✨" : `${searchesLeft} search${searchesLeft === 1 ? "" : "es"} left today`}
+        {user && isPro ? (
+          <p className="text-xs mt-1.5 px-1 flex items-center gap-1 text-amber-600">
+            <Sparkles className="w-3 h-3" /> PRO · Unlimited searches
           </p>
-        )}
+        ) : user && searchesLeft <= 3 ? (
+          <p className="text-xs text-muted-foreground mt-1.5 px-1">
+            {hasReachedLimit ? "Daily limit reached — upgrade for unlimited searches" : `${searchesLeft} search${searchesLeft === 1 ? "" : "es"} left today`}
+          </p>
+        ) : null}
       </div>
 
       {/* Recent searches */}
