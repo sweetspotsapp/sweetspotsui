@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X, MapPin, Calendar, Users, Compass } from "lucide-react";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
@@ -6,7 +6,9 @@ import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/clo
 import DaySection from "./DaySection";
 import TripMapView from "./TripMapView";
 import type { TripData, TripDay, SwapAlternative, TripParams } from "@/hooks/useTrip";
+import type { ActivityStatus } from "@/hooks/useLiveTrip";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 interface TripViewProps {
   tripData: TripData;
@@ -22,6 +24,13 @@ interface TripViewProps {
   onRegenerate: () => void;
   onSave?: () => void;
   onSaveEdits?: (editedTrip: TripData) => void;
+  // Live mode props
+  isLive?: boolean;
+  currentDayIndex?: number;
+  checkedActivities?: Record<string, ActivityStatus>;
+  liveProgress?: { done: number; total: number; percentage: number };
+  onToggleActivity?: (key: string, status: ActivityStatus) => void;
+  onUndoActivity?: (key: string) => void;
 }
 
 // Assign stable drag IDs to all activities
@@ -43,10 +52,11 @@ function ensureDragIds(trip: TripData): TripData {
   return changed ? updated : trip;
 }
 
-const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits }: TripViewProps) => {
+const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity }: TripViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
+  const todayRef = useRef<HTMLDivElement>(null);
 
   // Ensure all activities have stable drag IDs
   useEffect(() => {
@@ -55,6 +65,15 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
       onSaveEdits(withIds);
     }
   }, [tripData]);
+
+  // Auto-scroll to today's section in live mode
+  useEffect(() => {
+    if (isLive && todayRef.current && !showMap && !isEditing) {
+      setTimeout(() => {
+        todayRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [isLive, showMap, isEditing]);
 
   // Monitor for drag-and-drop events globally with edge detection
   useEffect(() => {
@@ -68,16 +87,13 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
         const srcData = source.data as { dayIdx: number; slotIdx: number; actIdx: number };
         const destData = dest.data as { dayIdx: number; slotIdx: number; actIdx: number; isSlot?: boolean };
 
-        // Don't reorder onto itself
         if (srcData.dayIdx === destData.dayIdx && srcData.slotIdx === destData.slotIdx && srcData.actIdx === destData.actIdx) return;
 
         let toActIdx: number;
 
         if (destData.isSlot) {
-          // Dropped on empty slot area — append to end
           toActIdx = tripData.days[destData.dayIdx]?.slots[destData.slotIdx]?.activities?.length || 0;
         } else {
-          // Use closest edge to determine insert position
           const edge = extractClosestEdge(dest.data);
           toActIdx = edge === "bottom" ? destData.actIdx + 1 : destData.actIdx;
         }
@@ -239,6 +255,26 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
         </div>
       )}
 
+      {/* Live Mode Progress Bar */}
+      {isLive && !isEditing && liveProgress && (
+        <div className="px-4 py-3 rounded-2xl bg-primary/5 border border-primary/20">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+              </span>
+              <span className="text-sm font-semibold text-foreground">Day {currentDayIndex + 1} of {tripData.days.length}</span>
+            </div>
+            <span className="text-xs font-medium text-muted-foreground">{liveProgress.done}/{liveProgress.total} done</span>
+          </div>
+          <Progress value={liveProgress.percentage} className="h-2" />
+          {liveProgress.percentage === 100 && (
+            <p className="text-xs font-medium text-primary mt-2 text-center">🎉 All done for today! Great day!</p>
+          )}
+        </div>
+      )}
+
       {/* ─── Compact Trip Info Bar (replaces hero) ─── */}
       {!isEditing && (
         <div className="px-4 py-3 rounded-2xl bg-card border border-border">
@@ -305,20 +341,26 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
         </div>
       ) : (
         tripData.days.map((day, dayIndex) => (
-          <DaySection
-            key={dayIndex}
-            day={day}
-            dayIndex={dayIndex}
-            destination={tripParams?.destination}
-            onSwap={onSwap}
-            onReplace={onReplace}
-            isSwapping={isSwapping}
-            isEditing={isEditing}
-            onRemoveActivity={onRemoveActivity}
-            onAddActivity={onAddActivity}
-            onMoveToDay={isEditing ? handleMoveToDay : undefined}
-            totalDays={isEditing ? tripData.days : undefined}
-          />
+          <div key={dayIndex} ref={isLive && dayIndex === currentDayIndex ? todayRef : undefined}>
+            <DaySection
+              day={day}
+              dayIndex={dayIndex}
+              destination={tripParams?.destination}
+              onSwap={onSwap}
+              onReplace={onReplace}
+              isSwapping={isSwapping}
+              isEditing={isEditing}
+              onRemoveActivity={onRemoveActivity}
+              onAddActivity={onAddActivity}
+              onMoveToDay={isEditing ? handleMoveToDay : undefined}
+              totalDays={isEditing ? tripData.days : undefined}
+              isLive={isLive}
+              isToday={isLive && dayIndex === currentDayIndex}
+              checkedActivities={checkedActivities}
+              onToggleActivity={onToggleActivity}
+              onUndoActivity={onUndoActivity}
+            />
+          </div>
         ))
       )}
     </div>
