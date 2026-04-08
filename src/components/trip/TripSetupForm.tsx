@@ -100,6 +100,7 @@ interface TripSetupFormProps {
 const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: TripSetupFormProps) => {
   const [name, setName] = useState(initialParams?.name || "");
   const [destination, setDestination] = useState(initialParams?.destination || "");
+  const { forecast } = useWeatherForecast(destination && destination !== "Nearby" && destination.length >= 3 ? destination : null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(
     initialParams?.startDate && initialParams?.endDate
       ? { from: parseISO(initialParams.startDate), to: parseISO(initialParams.endDate) }
