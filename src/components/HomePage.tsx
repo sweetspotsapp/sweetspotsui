@@ -91,9 +91,9 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
 
   const handlePlanTrip = () => onNavigateToTab?.("trip");
   const handleDiscover = () => onNavigateToTab?.("discover");
-  const handleTemplateClick = (destination: string) => {
+  const handleTemplateClick = (template: TripTemplate) => {
     if (onTripTemplate) {
-      onTripTemplate(destination);
+      onTripTemplate(template);
     } else {
       onNavigateToTab?.("trip");
     }
@@ -220,7 +220,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               {/* Text */}
               <div className="relative h-full flex flex-col justify-end p-4">
                 <p className="text-[15px] font-bold text-white leading-tight">{template.destination}</p>
-                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} · {template.vibe}</p>
+                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} days · {template.vibe}</p>
               </div>
             </button>
           ))}
