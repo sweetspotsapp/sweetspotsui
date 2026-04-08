@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb } from "lucide-react";
+import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
