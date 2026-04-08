@@ -535,6 +535,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      lookup_profile_by_sweetspots_id: {
+        Args: { lookup_id: string }
+        Returns: {
+          avatar_url: string
+          id: string
+          sweetspots_id: string
+          username: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
