@@ -28,12 +28,10 @@ const ShareTripDialog = ({ isOpen, onClose, tripId, tripName }: ShareTripDialogP
 
       // Check if input looks like a SweetSpots ID (SS-XXXXXX)
       if (/^SS-[A-Z0-9]{6}$/i.test(trimmed)) {
-        const { data } = await (supabase
-          .from("profiles") as any)
-          .select("id")
-          .eq("sweetspots_id", trimmed.toUpperCase())
-          .single();
-        if (data) targetUserId = data.id;
+        const { data } = await supabase.rpc("lookup_profile_by_sweetspots_id", {
+          lookup_id: trimmed.toUpperCase(),
+        });
+        if (data && data.length > 0) targetUserId = data[0].id;
       } else {
         // Treat as email — look up via auth metadata isn't possible,
         // so we search profiles by checking auth users via edge function
