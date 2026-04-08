@@ -609,7 +609,6 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await triggerSearch(searchValue);
-    }
   };
 
   const handleFilterConfirm = async (filters: FilterState) => {
