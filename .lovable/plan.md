@@ -1,43 +1,32 @@
 
 
-# Upgrade Map to Roamy-Quality Design
+# Settings: Change Email, Change Password, Remove Toggle, Wire Recommendations
 
-## What Roamy Uses
-Roamy almost certainly uses **Mapbox GL JS** — it's the industry standard for travel apps that need beautiful, highly customizable maps. Mapbox lets you design completely custom map styles in **Mapbox Studio** (colors, fonts, terrain, labels, 3D buildings) — which is why their maps look so polished compared to default Google Maps.
+## Changes
 
-## Our Options
+### 1. Settings.tsx — Add Change Email dialog
+- Click the Email row → open a Dialog with a single "New email" input + Save button
+- On save: call `supabase.auth.updateUser({ email: newEmail })`
+- Show toast: "Check both your old and new email to confirm the change"
 
-| Approach | Effort | Result |
-|----------|--------|--------|
-| **A. Custom Google Maps styling** | Low | Good — muted tones, hidden POIs, brand colors. Limited by Google's style options. |
-| **B. Switch to Mapbox GL JS** | Medium | Great — full visual control, smooth animations, 3D terrain, vector tiles. Free tier: 50k loads/month. |
+### 2. Settings.tsx — Add Change Password dialog
+- Click the Password row → open a Dialog with "New password" + "Confirm password" inputs
+- Validate match, min 6 chars
+- On save: call `supabase.auth.updateUser({ password: newPassword })`
+- Show success toast
 
-**Recommendation: Option A first, Option B later.** We already have Google Maps wired up with API key infrastructure. We can make it look 80% as good as Roamy by applying a polished custom style JSON. Switching to Mapbox is a bigger lift (new dependency, new API key, rewrite map components) — worth doing later if maps become a core feature.
+### 3. Settings.tsx — Remove "New Places Nearby" toggle
+- Delete the entire row (lines 274-286) and the preceding Separator
+- Keep `newPlaces` in the interface/defaults so existing DB values don't break on load
 
-## Plan: Apply Premium Google Maps Styling
-
-### 1. Create a custom map style
-Add a comprehensive style JSON to `BoardMapView.tsx` (and `TripMapView.tsx`) that:
-- Softens land/water colors to warm neutrals (cream, soft blue)
-- Hides default POI icons and labels (we show our own markers)
-- Mutes road colors to light gray
-- Keeps transit/highway labels subtle
-- Uses a palette that matches SweetSpots branding
-
-### 2. Upgrade map markers
-Replace the plain red circles with **branded pill markers** showing:
-- Place name as a label (like Roamy does)
-- Or a category icon inside a styled pin
-- Selected state with an expanded card preview
-- Smooth transitions on selection
-
-### 3. Improve the MapPage
-Replace the "Coming Soon" placeholder on the Map tab with an actual full-screen map showing all saved places across all boards — making it a global map view.
+### 4. Wire Personalized Recommendations toggle
+- In `HomePage.tsx`, fetch the user's `notification_settings` from the profile (already fetched via `useProfileInfo` or a direct query)
+- Before the recommend-for-you fetch, check if `recommendations` is `false` → skip the fetch
+- Before rendering the "Spots You Might Like" section, check the same flag → hide if disabled
 
 ### Files to modify
-- `src/components/saved/BoardMapView.tsx` — apply custom style JSON, upgrade markers
-- `src/components/trip/TripMapView.tsx` — same style for consistency
-- `src/components/MapPage.tsx` — replace placeholder with real map
+- `src/pages/Settings.tsx` — add two Dialog components for email/password, remove "New Places Nearby" row
+- `src/components/HomePage.tsx` — read `notification_settings.recommendations` from profile, conditionally skip fetch and hide section
 
-### No database changes needed.
+### No database changes needed
 
