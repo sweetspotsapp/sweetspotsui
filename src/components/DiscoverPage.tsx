@@ -590,8 +590,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
             <SlidersHorizontal className="w-6 h-6" />
             {activeFilters.size > 0 && <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">{activeFilters.size}</span>}
           </button>
-          <div className="flex flex-col items-center lg:hidden">
-            <h1 className="text-xl font-bold text-primary tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>Discover</h1>
+          <div className="flex flex-col items-center -space-y-0.5 lg:hidden">
+            <h1 className="text-xl font-bold text-primary tracking-tight leading-tight" style={{ fontFamily: "'Inter', sans-serif" }}>Discover</h1>
             <button onClick={() => setIsLocationPickerOpen(true)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
               <MapPin className="w-3 h-3" />
               <span>{onboardingData?.explore_location ? (onboardingData.explore_location === "nearby" ? "Nearby" : onboardingData.explore_location) : "Set location"}</span>
