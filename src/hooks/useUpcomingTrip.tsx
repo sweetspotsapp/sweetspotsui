@@ -72,16 +72,37 @@ export const useUpcomingTrip = (): TripStatus | null => {
         return;
       }
 
-      // Otherwise find upcoming
-      const upcoming = data.find((t) => parseISO(t.start_date) > today);
+      // Otherwise find upcoming (start_date is in the future)
+      const upcoming = data.find((t) => startOfDay(parseISO(t.start_date)) > todayStart);
       if (upcoming) {
-        const daysUntil = differenceInDays(parseISO(upcoming.start_date), today);
+        const daysUntil = differenceInDays(startOfDay(parseISO(upcoming.start_date)), todayStart);
         setStatus({
           type: "upcoming",
           upcoming: {
             id: upcoming.id,
             destination: upcoming.destination,
             daysUntil: Math.max(0, daysUntil),
+          },
+        });
+        return;
+      }
+
+      // Edge case: trip starts today but isWithinInterval missed it (e.g. no end_date issue)
+      const startsToday = data.find((t) => {
+        try {
+          return startOfDay(parseISO(t.start_date)).getTime() === todayStart.getTime();
+        } catch { return false; }
+      });
+      if (startsToday) {
+        const totalDays = (startsToday.trip_data as any)?.days?.length ||
+          differenceInDays(parseISO(startsToday.end_date), parseISO(startsToday.start_date)) + 1;
+        setStatus({
+          type: "live",
+          live: {
+            id: startsToday.id,
+            destination: startsToday.destination,
+            currentDay: 1,
+            totalDays,
           },
         });
       }

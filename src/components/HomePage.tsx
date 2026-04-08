@@ -5,7 +5,8 @@ import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star } from "lucide-react";
+import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning } from "lucide-react";
+import { useWeatherForecast } from "@/hooks/useWeatherForecast";
 import { Skeleton } from "./ui/skeleton";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
@@ -47,6 +48,18 @@ const TEMPLATE_IMAGES: Record<string, string> = {
   Melbourne: tripMelbourne,
   Bangkok: tripBangkok,
 };
+// Small weather icon using lucide icons
+const WeatherIconSmall = ({ icon }: { icon: string }) => {
+  const cls = "w-3.5 h-3.5";
+  switch (icon) {
+    case "clear": return <Sun className={cls} />;
+    case "rain": return <CloudRain className={cls} />;
+    case "clouds": return <Cloud className={cls} />;
+    case "snow": return <CloudSnow className={cls} />;
+    case "thunderstorm": return <CloudLightning className={cls} />;
+    default: return <Cloud className={cls} />;
+  }
+};
 
 const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: HomePageProps) => {
   const navigate = useNavigate();
@@ -54,6 +67,14 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const { onboardingData } = useApp();
   const tripStatus = useUpcomingTrip();
   const { avatarUrl: profileAvatarUrl, username: profileUsername } = useProfileInfo();
+
+  // Weather for trip banner
+  const tripDestination = tripStatus?.live?.destination || tripStatus?.upcoming?.destination || null;
+  const { forecast: tripWeather } = useWeatherForecast(tripDestination);
+  const todayWeather = useMemo(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return tripWeather.get(todayStr) || null;
+  }, [tripWeather]);
 
   const [recentlySaved, setRecentlySaved] = useState<SavedPlaceWithDetails[]>([]);
   const [savesCount, setSavesCount] = useState(0);
@@ -267,9 +288,16 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
             <h2 className="text-xl font-bold text-foreground">
               You're in {tripStatus.live.destination}!
             </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Day {tripStatus.live.currentDay} of {tripStatus.live.totalDays}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-sm text-muted-foreground">
+                Day {tripStatus.live.currentDay} of {tripStatus.live.totalDays}
+              </p>
+              {todayWeather && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <WeatherIconSmall icon={todayWeather.icon} /> {todayWeather.tempHigh}°C, {todayWeather.summary}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1 mt-2 text-sm text-green-700 dark:text-green-400 font-medium">
               Open Live View <ArrowRight className="w-4 h-4" />
             </div>
@@ -288,6 +316,11 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
             <h2 className="text-xl font-bold text-foreground">
               {tripStatus.upcoming.destination} in {tripStatus.upcoming.daysUntil === 0 ? "today!" : `${tripStatus.upcoming.daysUntil} day${tripStatus.upcoming.daysUntil === 1 ? "" : "s"}`}
             </h2>
+            {todayWeather && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                <WeatherIconSmall icon={todayWeather.icon} /> {todayWeather.tempHigh}°C, {todayWeather.summary}
+              </p>
+            )}
             <div className="flex items-center gap-1 mt-2 text-sm text-primary font-medium">
               View Itinerary <ArrowRight className="w-4 h-4" />
             </div>
