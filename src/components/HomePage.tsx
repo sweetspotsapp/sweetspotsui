@@ -98,6 +98,17 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     fetchData();
   }, [user]);
 
+  // Fetch personalized recommendations
+  useEffect(() => {
+    if (!user || savesCount === 0) return;
+    setRecsLoading(true);
+    supabase.functions.invoke("recommend-for-you", {
+      body: { limit: 6 },
+    }).then(({ data }) => {
+      if (data?.recommendations) setRecommendations(data.recommendations);
+    }).catch(() => {}).finally(() => setRecsLoading(false));
+  }, [user, savesCount]);
+
   const userName = profileUsername || user?.user_metadata?.full_name?.split(" ")[0] || "Explorer";
   const avatarUrl = profileAvatarUrl || user?.user_metadata?.avatar_url;
   const initials = (user?.email?.[0] || "E").toUpperCase();
