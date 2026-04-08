@@ -2,10 +2,12 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
+import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+import ProfileSlideMenu from "./ProfileSlideMenu";
 
 import tripTokyo from "@/assets/trip-tokyo.jpg";
 import tripBali from "@/assets/trip-bali.jpg";
@@ -48,12 +50,14 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const { user } = useAuth();
   const { onboardingData } = useApp();
   const upcomingTrip = useUpcomingTrip();
+  const { avatarUrl: profileAvatarUrl, username: profileUsername } = useProfileInfo();
 
   const [recentlySaved, setRecentlySaved] = useState<SavedPlaceWithDetails[]>([]);
   const [savesCount, setSavesCount] = useState(0);
   const [tripsCount, setTripsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<DBTripTemplate[]>([]);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Fetch trip templates from DB (public, no auth needed)
@@ -90,8 +94,8 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     fetchData();
   }, [user]);
 
-  const userName = user?.user_metadata?.full_name?.split(" ")[0] || user?.user_metadata?.name?.split(" ")[0] || "Explorer";
-  const avatarUrl = user?.user_metadata?.avatar_url;
+  const userName = profileUsername || user?.user_metadata?.full_name?.split(" ")[0] || "Explorer";
+  const avatarUrl = profileAvatarUrl || user?.user_metadata?.avatar_url;
   const initials = (user?.email?.[0] || "E").toUpperCase();
 
   const engagementLevel = useMemo(() => {
@@ -124,7 +128,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               Your next adventure awaits
             </p>
           </div>
-          <button onClick={onNavigateToProfile} className="shrink-0">
+          <button onClick={() => setIsProfileMenuOpen(true)} className="shrink-0">
             <Avatar className="w-11 h-11 ring-2 ring-border/50">
               {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
               <AvatarFallback className="text-sm font-semibold bg-muted text-muted-foreground">
@@ -134,6 +138,12 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           </button>
         </div>
       </div>
+
+      <ProfileSlideMenu
+        isOpen={isProfileMenuOpen}
+        onClose={() => setIsProfileMenuOpen(false)}
+        onNavigateToProfile={onNavigateToProfile}
+      />
 
       {/* Upcoming Trip Card */}
       {upcomingTrip && engagementLevel === "engaged" && (
