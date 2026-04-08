@@ -11,6 +11,8 @@ import type { TripParams } from "@/hooks/useTrip";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
@@ -39,7 +41,9 @@ const CreateTripModal = ({
   isGenerating,
   initialParams,
 }: CreateTripModalProps) => {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
+  const [prefillApplied, setPrefillApplied] = useState<string | null>(null);
 
   // Step 1: Trip Setup
   const [name, setName] = useState(initialParams?.name || "");
@@ -87,10 +91,57 @@ const CreateTripModal = ({
     return () => { cancelled = true; };
   }, [budgetCurrency]);
 
+  // Smart prefill: auto-include saved spots in the destination city
+  useEffect(() => {
+    if (!user || !destination || destination === "Nearby" || destination.trim().length < 3) return;
+    if (prefillApplied === destination) return;
+
+    const cityName = destination.split(",")[0].trim().toLowerCase();
+    if (cityName.length < 2) return;
+
+    let cancelled = false;
+    (async () => {
+      const { data: savedRows } = await supabase
+        .from("saved_places")
+        .select("place_id")
+        .eq("user_id", user.id)
+        .limit(100);
+
+      if (cancelled || !savedRows?.length) return;
+
+      const savedIds = savedRows.map((r) => r.place_id);
+      const { data: places } = await supabase
+        .from("places")
+        .select("place_id, address")
+        .in("place_id", savedIds);
+
+      if (cancelled || !places?.length) return;
+
+      const matchingIds = places
+        .filter((p) => p.address && p.address.toLowerCase().includes(cityName))
+        .map((p) => p.place_id);
+
+      if (matchingIds.length > 0) {
+        setMustIncludePlaceIds((prev) => {
+          const existing = new Set(prev);
+          const merged = [...prev];
+          for (const id of matchingIds) {
+            if (!existing.has(id)) merged.push(id);
+          }
+          return merged;
+        });
+        setPrefillApplied(destination);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user, destination, prefillApplied]);
+
   // Reset when opening
   useEffect(() => {
     if (isOpen) {
       setStep(1);
+      setPrefillApplied(null);
       if (initialParams) {
         setName(initialParams.name || "");
         setDestination(initialParams.destination || "");
