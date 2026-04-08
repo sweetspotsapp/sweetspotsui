@@ -98,6 +98,7 @@ interface SwapParams {
   timeSlot: string;
   currentActivity: string;
   category: string;
+  activityDescription?: string;
 }
 
 const LOCAL_STORAGE_KEY = "sweetspots_local_trips";
