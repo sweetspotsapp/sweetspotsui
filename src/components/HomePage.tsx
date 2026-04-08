@@ -52,7 +52,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const navigate = useNavigate();
   const { user } = useAuth();
   const { onboardingData } = useApp();
-  const upcomingTrip = useUpcomingTrip();
+  const tripStatus = useUpcomingTrip();
   const { avatarUrl: profileAvatarUrl, username: profileUsername } = useProfileInfo();
 
   const [recentlySaved, setRecentlySaved] = useState<SavedPlaceWithDetails[]>([]);
