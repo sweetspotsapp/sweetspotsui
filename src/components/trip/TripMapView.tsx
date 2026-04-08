@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindowF } from "@react-google-maps/api";
 import { Loader2, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { premiumMapStyle } from "@/lib/mapStyle";
 
 interface MapActivity {
   name: string;
@@ -135,7 +136,7 @@ const MapInner = ({ apiKey, activities }: { apiKey: string; activities: MapActiv
       options={{
         disableDefaultUI: true,
         zoomControl: true,
-        styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }],
+        styles: premiumMapStyle,
       }}
     >
       {activities.map((act, i) => (
@@ -143,27 +144,43 @@ const MapInner = ({ apiKey, activities }: { apiKey: string; activities: MapActiv
           key={`${act.name}-${i}`}
           position={{ lat: act.lat, lng: act.lng }}
           mapPaneName={OverlayView.FLOAT_PANE}
-          getPixelPositionOffset={() => ({ x: -14, y: -14 })}
+          getPixelPositionOffset={(w, h) => ({ x: -(w || 0) / 2, y: -(h || 32) })}
         >
           <div
             onClick={() => setSelectedActivity(act)}
             style={{
-              width: 28,
-              height: 28,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              backgroundColor: selectedActivity?.name === act.name ? '#1a1a1a' : '#FFFFFF',
+              color: selectedActivity?.name === act.name ? '#FFFFFF' : '#1a1a1a',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              border: '1px solid rgba(0,0,0,0.06)',
+              whiteSpace: 'nowrap',
+              fontSize: '11px',
+              fontWeight: 600,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <span style={{
+              width: 18,
+              height: 18,
               borderRadius: '50%',
               backgroundColor: CATEGORY_COLORS[act.category] || '#E11D48',
-              border: '2px solid #FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
               color: '#FFFFFF',
-              fontSize: '11px',
+              fontSize: '10px',
               fontWeight: 'bold',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-            }}
-          >
-            {i + 1}
+              flexShrink: 0,
+            }}>
+              {i + 1}
+            </span>
+            {act.name.length > 18 ? act.name.slice(0, 16) + '…' : act.name}
           </div>
         </OverlayViewF>
       ))}

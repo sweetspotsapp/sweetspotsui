@@ -3,6 +3,7 @@ import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindowF } fro
 import { Star, MapPin, Loader2, Navigation } from "lucide-react";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { supabase } from "@/integrations/supabase/client";
+import { premiumMapStyle } from "@/lib/mapStyle";
 
 interface BoardMapViewProps {
   places: RankedPlace[];
@@ -72,13 +73,7 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: false,
-    styles: [
-      {
-        featureType: "poi",
-        elementType: "labels",
-        stylers: [{ visibility: "off" }],
-      },
-    ],
+    styles: premiumMapStyle,
   }), []);
 
   return (
@@ -118,21 +113,37 @@ const MapContent = ({ places, userLocation, onPlaceClick, getPlaceImage, center,
             key={place.place_id}
             position={{ lat: place.lat!, lng: place.lng! }}
             mapPaneName={OverlayView.FLOAT_PANE}
-            getPixelPositionOffset={() => ({ x: -10, y: -10 })}
+            getPixelPositionOffset={(w, h) => ({ x: -(w || 0) / 2, y: -(h || 36) })}
           >
             <div
               onClick={() => setSelectedPlace(place)}
               style={{
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                backgroundColor: '#E11D48',
-                border: '2px solid #FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '5px 10px',
+                borderRadius: '20px',
+                backgroundColor: selectedPlace?.place_id === place.place_id ? '#1a1a1a' : '#FFFFFF',
+                color: selectedPlace?.place_id === place.place_id ? '#FFFFFF' : '#1a1a1a',
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                border: '1px solid rgba(0,0,0,0.06)',
+                whiteSpace: 'nowrap',
+                fontSize: '12px',
+                fontWeight: 600,
+                transition: 'all 0.15s ease',
               }}
               title={place.name}
-            />
+            >
+              <span style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: selectedPlace?.place_id === place.place_id ? '#f97316' : '#E11D48',
+                flexShrink: 0,
+              }} />
+              {place.name.length > 20 ? place.name.slice(0, 18) + '…' : place.name}
+            </div>
           </OverlayViewF>
         ))}
 
