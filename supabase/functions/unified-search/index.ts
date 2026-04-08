@@ -511,11 +511,7 @@ async function getAIRelevanceAndSummary(
       relevanceMap.set(p.place_id, isFood ? 80 : 40);
     });
     const type = prompt.toLowerCase().includes('restaurant') ? 'restaurants' : prompt.toLowerCase().includes('cafe') || prompt.toLowerCase().includes('coffee') ? 'cafes' : 'spots';
-    summary = JSON.stringify([
-      `Try our best picks because you like "${prompt}"`,
-      `Based on your keywords, some places you might find are ${type}, cafes, and local favorites`,
-      `I'd suggest you go for the top-rated ${type} that locals love`
-    ]);
+    summary = `We found some great ${type} based on "${prompt}" — check out the top-rated ones below.`;
     return { relevanceMap, summary };
   }
 
