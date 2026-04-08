@@ -12,7 +12,7 @@ import TopPickCard from "./TopPickCard";
 import TopPicksSection from "./TopPicksSection";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
-import AISummaryCard from "./AISummaryCard";
+
 import { useUnifiedSearch, UnifiedPlace } from "@/hooks/useUnifiedSearch";
 import { useLocation } from "@/hooks/useLocation";
 import { toast } from "sonner";
@@ -718,7 +718,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
             </div>
           ) : (
             <>
-              {aiSummary && <AISummaryCard summary={aiSummary} searchQuery={userMood || searchValue} location={onboardingData?.explore_location} />}
+              
               {isMapView && mapPlaces.length > 0 ? (
                 <div className="lg:flex lg:flex-col lg:gap-6 lg:px-8">
                   <div className="h-[calc(100vh-280px)] lg:h-[400px] mx-4 lg:mx-0 rounded-xl overflow-hidden border border-border">
