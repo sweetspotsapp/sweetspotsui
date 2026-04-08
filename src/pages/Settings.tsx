@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
-import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2, Loader2, Crown, CreditCard } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -304,6 +307,14 @@ const Settings = () => {
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
+        </section>
+
+        {/* Subscription Section */}
+        <section className="px-4 py-6">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+            Subscription
+          </h2>
+          <SubscriptionSection />
         </section>
 
         {/* Notifications Section */}
