@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IceCreamCone, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 
 interface AISummaryCardProps {
   summary: string;
@@ -7,70 +7,52 @@ interface AISummaryCardProps {
   location?: string | null;
 }
 
-const AISummaryCard = ({ summary, searchQuery, location }: AISummaryCardProps) => {
+const AISummaryCard = ({ summary }: AISummaryCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getBulletPoints = (): string[] => {
-    // Try to parse as JSON array first (new format)
+  const getBlurb = (): string => {
+    // Try to parse as JSON array (legacy bullet format) → join into paragraph
     try {
       const parsed = JSON.parse(summary);
       if (Array.isArray(parsed)) {
-        return parsed.filter((s: string) => typeof s === 'string' && s.length > 0).slice(0, 3);
+        return parsed.filter((s: string) => typeof s === 'string' && s.length > 0).join(' ');
       }
     } catch {
+      // Not JSON — use as-is
+    }
+    return summary.trim();
+  };
 
+  const blurb = getBlurb();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      // Not JSON, fall back to sentence splitting
-    } // Legacy: split by sentences
-    let cleaned = summary;if (location && location !== "nearby") {cleaned = cleaned.replace(/\s*nearby\.?/gi, '.');cleaned = cleaned.replace(/\s*within \d+(\.\d+)?\s*(km|miles?)\.?/gi, '.');cleaned = cleaned.replace(/\.\./g, '.').trim();}return cleaned.split(/(?<=\.)\s+/).map((s) => s.trim()).filter((s) => s.length > 5).slice(0, 3);};const bullets = getBulletPoints();return <div className="mx-4 mb-6 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 bg-[#fff1cc]">
-      <button onClick={() => setIsExpanded(!isExpanded)} className="w-full gap-3 p-4 text-left rounded-2xl transition-colors py-[8px] flex items-center justify-center bg-[#fef7e1]">
-        
+  return (
+    <div className="mx-4 mb-6 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full gap-3 p-4 text-left rounded-2xl transition-colors py-[10px] flex items-center justify-center bg-[#fef7e1]"
+      >
         <div className="relative p-2 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 shrink-0">
-          <IceCreamCone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          <Sparkles className="w-2.5 h-2.5 text-amber-500 dark:text-amber-300 absolute -top-0.5 -right-0.5" />
+          <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
         </div>
         <span className="text-sm font-medium text-amber-700 dark:text-amber-300 flex-1">
-          Here's the scoop
+          Our take
         </span>
-        {isExpanded ? <ChevronUp className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" /> :
-      <ChevronDown className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-      }
+        {isExpanded ? (
+          <ChevronUp className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+        )}
       </button>
 
-      {isExpanded &&
-    <div className="px-4 pb-4 pt-0">
-          <ul className="space-y-2">
-            {bullets.map((point, i) =>
-        <li key={i} className="flex items-start gap-2 text-sm text-foreground/80 leading-relaxed">
-                <span className="text-amber-500 mt-1 shrink-0">•</span>
-                <span>{point}</span>
-              </li>
-        )}
-          </ul>
+      {isExpanded && (
+        <div className="px-4 pb-4 pt-2">
+          <p className="text-sm text-foreground/80 leading-relaxed">
+            {blurb}
+          </p>
         </div>
-    }
-    </div>;
-
+      )}
+    </div>
+  );
 };
 
 export default AISummaryCard;
