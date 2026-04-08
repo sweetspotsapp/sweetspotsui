@@ -23,6 +23,7 @@ import { useSearchLimit } from "@/hooks/useSearchLimit";
 import UpgradeModal from "./UpgradeModal";
 import { usePlaceSaveCounts } from "@/hooks/usePlaceSaveCounts";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
 import BoardMapView from "./saved/BoardMapView";
 import { useFeedback } from "@/context/FeedbackContext";
 import type { RankedPlace } from "@/hooks/useSearch";
