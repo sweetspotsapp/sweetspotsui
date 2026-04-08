@@ -42,6 +42,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     saveTrip, deleteTrip, acceptInvite, ignoreInvite,
   } = useTrip();
   const { hasReachedLimit: hasReachedTripLimit, tripsUsedThisMonth, monthlyLimit, increment: incrementTripCount } = useTripLimit(isPro);
+  const liveTrip = useLiveTrip(savedTrips);
 
   const [phase, setPhase] = useState<Phase>("list");
   const [tripData, setTripData] = useState<TripData | null>(null);
