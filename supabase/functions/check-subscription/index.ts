@@ -37,6 +37,22 @@ serve(async (req) => {
     const email = claimsData.claims.email as string;
     if (!email) throw new Error("User not authenticated or email not available");
 
+    // --- Testing override: grant Pro to specific emails ---
+    const PRO_TEST_EMAILS = ["ilhamrazakofficial@gmail.com"];
+    if (PRO_TEST_EMAILS.includes(email.toLowerCase())) {
+      const fakeEnd = new Date();
+      fakeEnd.setMonth(fakeEnd.getMonth() + 1);
+      return new Response(JSON.stringify({
+        subscribed: true,
+        product_id: PRO_PRODUCT_ID,
+        subscription_end: fakeEnd.toISOString(),
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+    // --- End testing override ---
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email, limit: 1 });
 
