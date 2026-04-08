@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePendingInvites } from "@/hooks/usePendingInvites";
 import type { OnboardingData } from "@/context/AppContext";
 
-type TabType = "home" | "discover" | "saved" | "trip" | "profile";
+type TabType = "home" | "discover" | "saved" | "trip";
 type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
@@ -130,11 +130,6 @@ const Index = () => {
       <div style={{ display: activeTab === "trip" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Trip planner hit a snag">
           <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} tripTemplate={tripTemplate} onTemplateConsumed={() => setTripTemplate(null)} />
-        </ErrorBoundary>
-      </div>
-      <div style={{ display: activeTab === "profile" ? "block" : "none" }}>
-        <ErrorBoundary fallbackTitle="Profile couldn't load">
-          <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />
         </ErrorBoundary>
       </div>
       

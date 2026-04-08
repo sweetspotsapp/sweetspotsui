@@ -1,7 +1,5 @@
 import { Home, Heart, CalendarDays, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface BottomNavProps {
   activeTab: "home" | "discover" | "saved" | "trip";
@@ -10,8 +8,6 @@ interface BottomNavProps {
 }
 
 const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProps) => {
-  const { user } = useAuth();
-
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "discover" as const, label: "Discover", icon: Search },
@@ -42,17 +38,12 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                   isActive ? "bg-background" : "bg-transparent"
                 )}
               >
-                {isProfile ? (
-                  <Avatar className={cn("w-6 h-6", isActive && "ring-2 ring-primary")}>
-                    {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
-                    <AvatarFallback className="text-[10px] font-semibold bg-muted text-muted-foreground">{initials}</AvatarFallback>
-                  </Avatar>
-                ) : Icon ? (
+                {Icon && (
                   <Icon
                     className={cn("w-5 h-5 transition-colors duration-200", isActive ? "text-primary" : "text-background/70")}
                     fill={isActive && tab.id === "saved" ? "currentColor" : "none"}
                   />
-                ) : null}
+                )}
                 {showBadge && (
                   <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 border-2 border-foreground/90">
                     {tripBadgeCount > 9 ? "9+" : tripBadgeCount}
