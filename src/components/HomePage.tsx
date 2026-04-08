@@ -12,10 +12,19 @@ import tripBali from "@/assets/trip-bali.jpg";
 import tripMelbourne from "@/assets/trip-melbourne.jpg";
 import tripBangkok from "@/assets/trip-bangkok.jpg";
 
+export interface TripTemplate {
+  destination: string;
+  duration: number;
+  vibes: string[];
+  budget: string;
+  vibe: string;
+  image: string;
+}
+
 interface HomePageProps {
   onNavigateToProfile?: () => void;
   onNavigateToTab?: (tab: string) => void;
-  onTripTemplate?: (destination: string) => void;
+  onTripTemplate?: (template: TripTemplate) => void;
 }
 
 interface SavedPlaceWithDetails {
@@ -25,11 +34,11 @@ interface SavedPlaceWithDetails {
   rating: number | null;
 }
 
-const TRIP_TEMPLATES = [
-  { destination: "Tokyo", duration: "5 days", vibe: "Culture & street food", image: tripTokyo },
-  { destination: "Bali", duration: "7 days", vibe: "Beaches & hidden gems", image: tripBali },
-  { destination: "Melbourne", duration: "3 days", vibe: "Cafés & laneways", image: tripMelbourne },
-  { destination: "Bangkok", duration: "4 days", vibe: "Night markets & temples", image: tripBangkok },
+const TRIP_TEMPLATES: TripTemplate[] = [
+  { destination: "Tokyo", duration: 5, vibes: ["Culture", "Foodie"], budget: "$$", vibe: "Culture & street food", image: tripTokyo },
+  { destination: "Bali", duration: 7, vibes: ["Chill", "Nature", "Adventure"], budget: "$$", vibe: "Beaches & hidden gems", image: tripBali },
+  { destination: "Melbourne", duration: 3, vibes: ["Foodie", "Culture"], budget: "$$", vibe: "Cafés & laneways", image: tripMelbourne },
+  { destination: "Bangkok", duration: 4, vibes: ["Foodie", "Nightlife", "Culture"], budget: "$", vibe: "Night markets & temples", image: tripBangkok },
 ];
 
 const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: HomePageProps) => {
@@ -82,9 +91,9 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
 
   const handlePlanTrip = () => onNavigateToTab?.("trip");
   const handleDiscover = () => onNavigateToTab?.("discover");
-  const handleTemplateClick = (destination: string) => {
+  const handleTemplateClick = (template: TripTemplate) => {
     if (onTripTemplate) {
-      onTripTemplate(destination);
+      onTripTemplate(template);
     } else {
       onNavigateToTab?.("trip");
     }
@@ -195,7 +204,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           {TRIP_TEMPLATES.map((template, i) => (
             <button
               key={template.destination}
-              onClick={() => handleTemplateClick(template.destination)}
+              onClick={() => handleTemplateClick(template)}
               className="relative overflow-hidden rounded-2xl h-[160px] text-left transition-all hover:shadow-lg active:scale-[0.97] group"
             >
               <img
@@ -211,7 +220,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               {/* Text */}
               <div className="relative h-full flex flex-col justify-end p-4">
                 <p className="text-[15px] font-bold text-white leading-tight">{template.destination}</p>
-                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} · {template.vibe}</p>
+                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} days · {template.vibe}</p>
               </div>
             </button>
           ))}
