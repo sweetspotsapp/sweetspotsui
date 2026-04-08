@@ -4,7 +4,7 @@ import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight } from "lucide-react";
+import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -58,6 +58,10 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<DBTripTemplate[]>([]);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [recommendations, setRecommendations] = useState<Array<{
+    place_id: string; name: string; rating: number | null; photo_name: string | null; ai_reason: string;
+  }>>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
 
   useEffect(() => {
     // Fetch trip templates from DB (public, no auth needed)
@@ -93,6 +97,17 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     };
     fetchData();
   }, [user]);
+
+  // Fetch personalized recommendations
+  useEffect(() => {
+    if (!user || savesCount === 0) return;
+    setRecsLoading(true);
+    supabase.functions.invoke("recommend-for-you", {
+      body: { limit: 6 },
+    }).then(({ data }) => {
+      if (data?.recommendations) setRecommendations(data.recommendations);
+    }).catch(() => {}).finally(() => setRecsLoading(false));
+  }, [user, savesCount]);
 
   const userName = profileUsername || user?.user_metadata?.full_name?.split(" ")[0] || "Explorer";
   const avatarUrl = profileAvatarUrl || user?.user_metadata?.avatar_url;
@@ -214,6 +229,56 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Spots You Might Like */}
+      {recommendations.length > 0 && (
+        <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "180ms", animationFillMode: "both" }}>
+          <div className="flex items-center justify-between px-5 mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <h2 className="text-base font-semibold text-foreground">Spots You Might Like</h2>
+            </div>
+            <button onClick={handleDiscover} className="flex items-center gap-0.5 text-sm text-primary font-medium">
+              More <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+            {recommendations.map((rec) => {
+              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+              const imgSrc = rec.photo_name
+                ? `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(rec.photo_name)}&maxWidthPx=400`
+                : null;
+              return (
+                <div
+                  key={rec.place_id}
+                  className="shrink-0 w-[160px] rounded-2xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-all active:scale-[0.97] border border-border/40"
+                  onClick={() => window.location.href = `/place/${rec.place_id}`}
+                >
+                  <div className="h-[110px] bg-muted relative">
+                    {imgSrc ? (
+                      <img src={imgSrc} alt={rec.name} className="w-full h-full object-cover" loading="lazy" width={160} height={110} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-muted">
+                        <Star className="w-6 h-6 text-muted-foreground/40" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-xs font-semibold text-foreground truncate">{rec.name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{rec.ai_reason}</p>
+                    {rec.rating && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                        <span className="text-[11px] text-muted-foreground">{rec.rating.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
