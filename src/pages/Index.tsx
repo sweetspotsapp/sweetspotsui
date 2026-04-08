@@ -123,7 +123,7 @@ const Index = () => {
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Couldn't load Home">
-          <HomePage onNavigateToTab={(tab) => setActiveTab(tab as TabType)} onTripTemplate={(template) => { setTripTemplate(template); setActiveTab("trip"); }} />
+          <HomePage onNavigateToTab={(tab) => handleTabChange(tab as TabType)} onTripTemplate={(template) => { setTripTemplate(template); handleTabChange("trip"); }} />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
