@@ -4,6 +4,8 @@ import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useWeatherForecast, type DayForecast } from "@/hooks/useWeatherForecast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import BoardPicker from "./BoardPicker";
 import CurrencyPicker, { CURRENCIES } from "./CurrencyPicker";
 import BrowseForTrip from "./BrowseForTrip";
