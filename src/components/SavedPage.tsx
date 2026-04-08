@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, User, Settings, SortAsc, Loader2, Link2 } from "lucide-react";
+import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb } from "lucide-react";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
@@ -61,6 +61,9 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [tipDismissed, setTipDismissed] = useState(() => 
+    localStorage.getItem('sweetspots_import_tip_dismissed') === 'true'
+  );
   // Handle openBoard state from navigation (e.g., when returning from place details)
   useEffect(() => {
     const state = routerLocation.state as { openBoard?: string | "all" } | null;
