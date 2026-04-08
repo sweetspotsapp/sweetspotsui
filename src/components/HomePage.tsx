@@ -113,14 +113,32 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     });
   }, [user]);
 
-  // Fetch personalized recommendations
+  // Fetch personalized recommendations (cached for 30 minutes)
   useEffect(() => {
     if (!user || savesCount === 0 || !recsEnabled) return;
+
+    const CACHE_KEY = `recs_cache_${user.id}`;
+    const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data: cachedData, ts } = JSON.parse(cached);
+        if (Date.now() - ts < CACHE_TTL && cachedData?.length > 0) {
+          setRecommendations(cachedData);
+          return;
+        }
+      }
+    } catch { /* ignore parse errors */ }
+
     setRecsLoading(true);
     supabase.functions.invoke("recommend-for-you", {
       body: { limit: 6 },
     }).then(({ data }) => {
-      if (data?.recommendations) setRecommendations(data.recommendations);
+      if (data?.recommendations) {
+        setRecommendations(data.recommendations);
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data.recommendations, ts: Date.now() }));
+      }
     }).catch(() => {}).finally(() => setRecsLoading(false));
   }, [user, savesCount, recsEnabled]);
 
