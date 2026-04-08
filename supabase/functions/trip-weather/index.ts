@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
     const geoData = await geoRes.json();
 
     if (!geoData?.length) {
+      console.log("Geocoding returned no results for:", destination, "Response:", JSON.stringify(geoData));
       return new Response(JSON.stringify({ daily: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
