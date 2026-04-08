@@ -48,6 +48,7 @@ const TEMPLATE_IMAGES: Record<string, string> = {
 };
 
 const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: HomePageProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { onboardingData } = useApp();
   const upcomingTrip = useUpcomingTrip();
@@ -229,7 +230,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               <div
                 key={place.place_id}
                 className="shrink-0 w-[140px] rounded-2xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-all active:scale-[0.97]"
-                onClick={() => window.location.href = `/place/${place.place_id}`}
+                onClick={() => navigate(`/place/${place.place_id}`)}
               >
                 <div className="h-[100px] bg-muted">
                   <img src={place.image} alt={place.name} className="w-full h-full object-cover" loading="lazy" width={140} height={100} />
@@ -268,7 +269,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
                 <div
                   key={rec.place_id}
                   className="shrink-0 w-[160px] rounded-2xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-all active:scale-[0.97] border border-border/40"
-                  onClick={() => window.location.href = `/place/${rec.place_id}`}
+                  onClick={() => navigate(`/place/${rec.place_id}`)}
                 >
                   <div className="h-[110px] bg-muted relative">
                     {imgSrc ? (
