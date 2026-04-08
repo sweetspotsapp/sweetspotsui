@@ -189,7 +189,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     if (saved.trip_data) {
       const savedVibeDetails = (saved.trip_data as any)?._meta?.vibeDetails || undefined;
       setTripData(saved.trip_data);
-      setTripParams({
+      const params: TripParams = {
         name: saved.name || undefined,
         destination: saved.destination,
         startDate: saved.start_date,
@@ -202,9 +202,23 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
         boardIds: saved.board_ids || [],
         accommodations: saved.accommodation || undefined,
         flightDetails: saved.flight_details || undefined,
-      });
+      };
+      setTripParams(params);
       setEditingId(saved.id);
       setPhase("view");
+
+      // Background enrich if activities lack coordinates
+      const hasAnyMissing = saved.trip_data.days?.some((d: any) =>
+        d.slots?.some((s: any) => s.activities?.some((a: any) => !a.lat || !a.lng))
+      );
+      if (hasAnyMissing) {
+        enrichActivitiesWithCoords(saved.trip_data, saved.destination).then((enriched) => {
+          if (enriched !== saved.trip_data) {
+            setTripData(enriched);
+            saveTrip(params, enriched, saved.id);
+          }
+        });
+      }
     }
   };
 
