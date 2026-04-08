@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List, Link2, Search, ExternalLink } from "lucide-react";
+import ImportLinkDialog from "./ImportLinkDialog";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
 import BoardMapView from "./BoardMapView";
@@ -48,7 +49,9 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [filterBy] = useState<FilterOption>("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
-  const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places); // Local state to keep All Saved in sync
+  const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places);
+  const [showAddSpotMenu, setShowAddSpotMenu] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   
   // AI Suggestions state
   const [suggestions, setSuggestions] = useState<RankedPlace[]>([]);
