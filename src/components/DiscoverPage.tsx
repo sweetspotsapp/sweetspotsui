@@ -20,6 +20,7 @@ import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 import LocationPickerModal from "./LocationPickerModal";
 import { useSearchLimit } from "@/hooks/useSearchLimit";
+import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "./UpgradeModal";
 import { usePlaceSaveCounts } from "@/hooks/usePlaceSaveCounts";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
