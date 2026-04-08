@@ -293,15 +293,13 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
           onSettingsClick={() => setIsProfileMenuOpen(true)}
         />
         <LoginReminderBanner />
-        <div className="flex flex-col items-center justify-center px-6 pt-20">
-          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-            <User className="w-10 h-10 text-muted-foreground" />
-          </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">Save your favorite spots</h2>
-          <p className="text-muted-foreground text-center mb-6">
-            Discover and save places to organize them into boards
+        <div className="px-4 pt-6 pb-4">
+          <h1 className="text-2xl font-bold text-foreground">Saved Spots</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Sign in to save and organize your favorite places
           </p>
         </div>
+        <EmptyState type="boards" onImportClick={() => navigate('/auth')} />
         <ProfileSlideMenu isOpen={isProfileMenuOpen} onClose={() => setIsProfileMenuOpen(false)} />
       </div>
     );
@@ -336,7 +334,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : !hasBoards ? (
-          <EmptyState type="boards" />
+          <EmptyState type="boards" onImportClick={() => setShowImportDialog(true)} />
         ) : (
           <>
             {/* Sort Bar */}
