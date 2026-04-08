@@ -1,28 +1,31 @@
 
 
-# Make Profile Page Accessible via Its Own Route
+# Pro Subscriber Experience + Subscription Management
 
-## The Problem
-You have a rich ProfilePage component (vibe DNA, personality traits, character match, search history, cover photos, avatar) but it's orphaned — no route points to it. Clicking your profile card in the slide menu dumps you into the Settings page, which feels disconnected.
+## Current State
+The Pricing page already toggles text ("Manage plan" vs "Upgrade to Pro") based on `isPro`, but there's no rich "you're a Pro member" experience, and no cancel/downgrade flow. The Settings page has no subscription section at all.
 
-## What Travel Apps Do
-Apps like Roamy, Wanderlog, and AllTrails all have a dedicated **profile screen** separate from settings. It serves as your "travel identity" — showing your stats, activity, personality, and social presence. Settings is purely functional (email, password, toggles).
+## Plan
 
-## The Plan
+### 1. Enhance Pricing page for Pro subscribers
+- When `isPro`: show a **green "Active" badge** on the Pro card instead of just "Current"
+- Add subscription end date text below the price (e.g. "Renews on Jul 15, 2026")
+- Change the Free card CTA from disabled "Your current plan" to **"Downgrade to Free"** which opens the Stripe customer portal (where they can cancel)
+- Keep "Manage plan" on Pro card → opens Stripe portal
 
-### 1. Add `/profile` route
-Register a new route in `App.tsx` that renders the existing `ProfilePage` component. No new component needed — it already has everything: vibe DNA breakdown, personality traits, character match, search/places history, cover/avatar editing, interaction stats.
-
-### 2. Update slide menu navigation
-Change `handleViewProfile` in `ProfileSlideMenu.tsx` to navigate to `/profile` instead of `/settings`. The Settings menu item already has its own row — so both are accessible independently.
-
-### 3. Add a "Settings" link on the Profile page
-Add a small gear icon or "Settings" link at the top of ProfilePage so users can easily jump to Settings from their profile (instead of going back to the menu).
+### 2. Add Subscription section to Settings page
+- New section between "Account" and "Notifications" called **"Subscription"**
+- Shows current plan name (Free / Pro) with a colored badge
+- If Pro: shows renewal date, and two actions:
+  - "Manage billing" → opens Stripe customer portal
+  - "Cancel subscription" → confirmation dialog, then opens Stripe portal's cancellation flow
+- If Free: shows "Upgrade to Pro" button → navigates to `/pricing`
+- This is the natural place users expect to find subscription management (like Spotify, Netflix settings)
 
 ### Files to modify
-- `src/App.tsx` — add `/profile` route pointing to `ProfilePage`
-- `src/components/ProfileSlideMenu.tsx` — change `handleViewProfile` fallback from `/settings` to `/profile`
-- `src/components/ProfilePage.tsx` — minor: ensure it works as a standalone route (it currently receives `onNavigateToSaved` prop which can be optional)
+- `src/pages/Pricing.tsx` — enhance Pro subscriber UI (active badge, renewal date, downgrade CTA)
+- `src/pages/Settings.tsx` — add Subscription section with plan status, manage/cancel actions
 
-### No database changes needed.
+### No database changes needed
+All subscription data comes from the existing `useSubscription` hook which queries Stripe.
 
