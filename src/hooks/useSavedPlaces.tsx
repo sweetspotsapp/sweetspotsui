@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useToast } from './use-toast';
+import { showErrorToast, showSuccessToast } from '@/lib/errorHandler';
 
 interface UseSavedPlacesReturn {
   savedPlaceIds: Set<string>;
@@ -14,7 +14,6 @@ interface UseSavedPlacesReturn {
 
 export const useSavedPlaces = (): UseSavedPlacesReturn => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
@@ -118,11 +117,7 @@ export const useSavedPlaces = (): UseSavedPlacesReturn => {
         // Log unsave interaction
         await logInteraction(placeId, 'unsave', -2);
 
-        // Show success toast for unsave
-        toast({
-          title: 'Removed from saved',
-          description: 'Place has been removed from your saved list',
-        });
+        showSuccessToast('Removed from saved');
       } else {
         // Save: insert into saved_places
         const { error } = await supabase
@@ -139,8 +134,6 @@ export const useSavedPlaces = (): UseSavedPlacesReturn => {
         await logInteraction(placeId, 'save', 3);
       }
     } catch (err) {
-      console.error('Error toggling save:', err);
-      
       // Rollback optimistic update
       setSavedPlaceIds(prev => {
         const next = new Set(prev);
@@ -152,13 +145,9 @@ export const useSavedPlaces = (): UseSavedPlacesReturn => {
         return next;
       });
 
-      toast({
-        title: 'Error',
-        description: wasSaved ? 'Failed to unsave place' : 'Failed to save place',
-        variant: 'destructive',
-      });
+      showErrorToast(err, wasSaved ? "Unsave" : "Save");
     }
-  }, [user, savedPlaceIds, logInteraction, toast]);
+  }, [user, savedPlaceIds, logInteraction]);
 
   const isSaved = useCallback((placeId: string) => savedPlaceIds.has(placeId), [savedPlaceIds]);
 

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { withRetry } from "@/lib/errorHandler";
 
 export interface RankedPlace {
   place_id: string;
@@ -118,24 +119,23 @@ export const useSearch = (): UseSearchReturn => {
         const city = await getCityFromCoords(location.lat, location.lng);
         console.log("City context:", city);
 
-        // Step 3: Call AI discover to get smart recommendations
+        // Step 3: Call AI discover with retry
         console.log("Calling ai-discover...");
-        const { data: aiData, error: aiError } = await supabase.functions.invoke(
-          "ai-discover",
-          {
-            body: {
-              prompt,
-              lat: location.lat,
-              lng: location.lng,
-              city,
-            },
-          }
-        );
-
-        if (aiError) {
-          console.error("ai-discover error:", aiError);
-          throw new Error(aiError.message || "Failed to get AI recommendations");
-        }
+        const aiData = await withRetry(async () => {
+          const { data, error: aiError } = await supabase.functions.invoke(
+            "ai-discover",
+            {
+              body: {
+                prompt,
+                lat: location.lat,
+                lng: location.lng,
+                city,
+              },
+            }
+          );
+          if (aiError) throw new Error(aiError.message || "Failed to get AI recommendations");
+          return data;
+        }, 1);
 
         if (!aiData?.places?.length) {
           console.log("No AI recommendations found");
@@ -146,21 +146,20 @@ export const useSearch = (): UseSearchReturn => {
 
         // Step 4: Enrich places with Google Places data
         console.log("Calling enrich-places...");
-        const { data: enrichData, error: enrichError } = await supabase.functions.invoke(
-          "enrich-places",
-          {
-            body: {
-              places: aiData.places,
-              lat: location.lat,
-              lng: location.lng,
-            },
-          }
-        );
-
-        if (enrichError) {
-          console.error("enrich-places error:", enrichError);
-          throw new Error(enrichError.message || "Failed to enrich places");
-        }
+        const enrichData = await withRetry(async () => {
+          const { data, error: enrichError } = await supabase.functions.invoke(
+            "enrich-places",
+            {
+              body: {
+                places: aiData.places,
+                lat: location.lat,
+                lng: location.lng,
+              },
+            }
+          );
+          if (enrichError) throw new Error(enrichError.message || "Failed to enrich places");
+          return data;
+        }, 1);
 
         if (!enrichData?.places?.length) {
           console.log("No places could be enriched");
