@@ -585,13 +585,8 @@ Respond with a JSON object:
         console.log('Credits exhausted, using fallback scoring');
       }
       
-      // Fallback: give all places a neutral score
       places.forEach(p => relevanceMap.set(p.place_id, 50));
-      summary = JSON.stringify([
-        `Try our best picks because you like "${prompt}"`,
-        `Based on your keywords, some places you might find are restaurants, cafes, and bars`,
-        `I'd suggest you go for the highest-rated spots nearby`
-      ]);
+      summary = `We found some spots matching "${prompt}" — take a look at what's nearby.`;
       return { relevanceMap, summary };
     }
 
