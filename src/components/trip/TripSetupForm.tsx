@@ -4,11 +4,54 @@ import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import BoardPicker from "./BoardPicker";
 import type { TripParams } from "@/hooks/useTrip";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
+import { useWeatherForecast, type DayForecast } from "@/hooks/useWeatherForecast";
+
+// Tiny SVG weather icons for calendar cells
+const WeatherIcon = ({ type }: { type: string }) => {
+  const size = 12;
+  const shared = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (type) {
+    case "clear":
+      return <svg {...shared} className="text-amber-400 opacity-70"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
+    case "clouds":
+      return <svg {...shared} className="text-slate-400 opacity-70"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
+    case "rain":
+      return <svg {...shared} className="text-blue-400 opacity-70"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>;
+    case "snow":
+      return <svg {...shared} className="text-sky-300 opacity-70"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="8" y1="20" x2="8.01" y2="20"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="12" y1="22" x2="12.01" y2="22"/><line x1="16" y1="16" x2="16.01" y2="16"/><line x1="16" y1="20" x2="16.01" y2="20"/></svg>;
+    case "thunderstorm":
+      return <svg {...shared} className="text-yellow-500 opacity-70"><path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"/><polyline points="13 11 9 17 15 17 11 23"/></svg>;
+    default:
+      return <svg {...shared} className="text-slate-400 opacity-70"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
+  }
+};
+
+const SetupWeatherDay = ({ date, forecast }: { date: Date; forecast: Map<string, DayForecast> }) => {
+  const dateKey = format(date, "yyyy-MM-dd");
+  const weather = forecast.get(dateKey);
+  if (!weather) return <span>{date.getDate()}</span>;
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex flex-col items-center gap-0.5 leading-none">
+            <span>{date.getDate()}</span>
+            <WeatherIcon type={weather.icon} />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="text-xs px-2 py-1">
+          {weather.tempHigh}°C · {weather.summary || weather.icon}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
 
 const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
@@ -57,6 +100,7 @@ interface TripSetupFormProps {
 const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: TripSetupFormProps) => {
   const [name, setName] = useState(initialParams?.name || "");
   const [destination, setDestination] = useState(initialParams?.destination || "");
+  const { forecast } = useWeatherForecast(destination && destination !== "Nearby" && destination.length >= 3 ? destination : null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(
     initialParams?.startDate && initialParams?.endDate
       ? { from: parseISO(initialParams.startDate), to: parseISO(initialParams.endDate) }
@@ -264,7 +308,6 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
               selected={dateRange}
               onSelect={(range) => {
                 setDateRange(range);
-                // Auto-close when both dates are selected
                 if (range?.from && range?.to) {
                   setTimeout(() => setDatePickerOpen(false), 250);
                 }
@@ -272,6 +315,9 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
               numberOfMonths={1}
               disabled={(date) => date < new Date()}
               className="p-3 pointer-events-auto"
+              components={{
+                DayContent: ({ date }) => <SetupWeatherDay date={date} forecast={forecast} />,
+              }}
             />
           </PopoverContent>
         </Popover>
