@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
+
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
-import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2, Loader2, Crown, CreditCard, Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -55,123 +53,6 @@ const defaultPrivacy: PrivacySettings = {
   shareLocation: true,
   personalizedAds: false,
   analyticsEnabled: true,
-};
-
-const SubscriptionSection = () => {
-  const navigate = useNavigate();
-  const { isPro, subscribed, subscriptionEnd, openPortal, isLoading } = useSubscription();
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-
-  const renewalText = subscriptionEnd
-    ? format(new Date(subscriptionEnd), "MMM d, yyyy")
-    : null;
-
-  if (isLoading) {
-    return (
-      <div className="bg-card rounded-xl border border-border p-4 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="space-y-1 bg-card rounded-xl border border-border overflow-hidden">
-        <div className="flex items-center gap-4 p-4">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Crown className="w-5 h-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className="font-medium text-foreground">
-                {isPro ? "Pro Plan" : "Free Plan"}
-              </p>
-              {isPro ? (
-                <Badge className="bg-green-500/15 text-green-600 border-green-500/30 hover:bg-green-500/15 text-[10px] px-1.5 py-0">
-                  Active
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Free</Badge>
-              )}
-            </div>
-            {isPro && renewalText && (
-              <p className="text-sm text-muted-foreground">Renews on {renewalText}</p>
-            )}
-            {!isPro && (
-              <p className="text-sm text-muted-foreground">Upgrade to unlock unlimited searches</p>
-            )}
-          </div>
-        </div>
-
-        <Separator />
-
-        {isPro ? (
-          <>
-            <button
-              onClick={openPortal}
-              className="flex items-center gap-4 w-full p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-foreground" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-medium text-foreground">Manage billing</p>
-                <p className="text-sm text-muted-foreground">Update payment method or view invoices</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </button>
-
-            <Separator />
-
-            <button
-              onClick={() => setCancelDialogOpen(true)}
-              className="flex items-center gap-4 w-full p-4 hover:bg-destructive/5 transition-colors"
-            >
-              <div className="w-10 h-10" />
-              <div className="flex-1 text-left">
-                <p className="font-medium text-destructive">Cancel subscription</p>
-                <p className="text-sm text-muted-foreground">Downgrade to the free plan</p>
-              </div>
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => navigate("/pricing")}
-            className="flex items-center gap-4 w-full p-4 hover:bg-muted/50 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-medium text-foreground">Upgrade to Pro</p>
-              <p className="text-sm text-muted-foreground">$5.99/mo · Unlimited searches & trips</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
-        )}
-      </div>
-
-      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel your Pro subscription?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You'll keep Pro features until {renewalText || "the end of your billing period"}, then revert to the Free plan with limited searches and trip plans.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Pro</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={openPortal}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Cancel Subscription
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
 };
 
 const Settings = () => {
@@ -426,13 +307,6 @@ const Settings = () => {
           </div>
         </section>
 
-        {/* Subscription Section */}
-        <section className="px-4 py-6">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-            Subscription
-          </h2>
-          <SubscriptionSection />
-        </section>
 
         {/* Notifications Section */}
         <section className="px-4 py-6">
