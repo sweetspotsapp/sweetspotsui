@@ -8,6 +8,7 @@ import ProfilePage from "@/components/ProfilePage";
 import MapPage from "@/components/MapPage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -134,19 +135,29 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
-        <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
+        <ErrorBoundary fallbackTitle="Couldn't load Discover">
+          <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
+        </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "map" ? "block" : "none" }}>
-        <MapPage />
+        <ErrorBoundary fallbackTitle="Map ran into an issue">
+          <MapPage />
+        </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
-        <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
+        <ErrorBoundary fallbackTitle="Couldn't load your saves">
+          <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
+        </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "trip" ? "block" : "none" }}>
-        <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} />
+        <ErrorBoundary fallbackTitle="Trip planner hit a snag">
+          <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} />
+        </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "profile" ? "block" : "none" }}>
-        <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />
+        <ErrorBoundary fallbackTitle="Profile couldn't load">
+          <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />
+        </ErrorBoundary>
       </div>
       
       <BottomNav 
