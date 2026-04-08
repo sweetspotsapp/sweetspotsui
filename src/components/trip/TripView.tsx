@@ -295,6 +295,21 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
               <MapPin className="w-3.5 h-3.5" />
               {tripParams?.destination}
             </p>
+            {todayWeather && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <WeatherIcon icon={todayWeather.icon} size={14} />
+                      {todayWeather.tempHigh}°C
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    {todayWeather.summary} · {todayWeather.tempLow}°–{todayWeather.tempHigh}°C
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           {tripData.summary && (
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2">{tripData.summary}</p>
