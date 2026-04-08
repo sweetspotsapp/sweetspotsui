@@ -82,7 +82,13 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
 
   const handlePlanTrip = () => onNavigateToTab?.("trip");
   const handleDiscover = () => onNavigateToTab?.("discover");
-  const handleTemplateClick = (destination: string) => onNavigateToTab?.("trip");
+  const handleTemplateClick = (destination: string) => {
+    if (onTripTemplate) {
+      onTripTemplate(destination);
+    } else {
+      onNavigateToTab?.("trip");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] lg:max-w-3xl mx-auto relative pb-24 lg:pb-8">
