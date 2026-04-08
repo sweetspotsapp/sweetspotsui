@@ -308,7 +308,6 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
               selected={dateRange}
               onSelect={(range) => {
                 setDateRange(range);
-                // Auto-close when both dates are selected
                 if (range?.from && range?.to) {
                   setTimeout(() => setDatePickerOpen(false), 250);
                 }
@@ -316,6 +315,9 @@ const TripSetupForm = ({ onGenerate, isGenerating, initialParams, onBack }: Trip
               numberOfMonths={1}
               disabled={(date) => date < new Date()}
               className="p-3 pointer-events-auto"
+              components={{
+                DayContent: ({ date }) => <SetupWeatherDay date={date} forecast={forecast} />,
+              }}
             />
           </PopoverContent>
         </Popover>
