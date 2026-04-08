@@ -38,7 +38,7 @@ serve(async (req) => {
     const { queries } = parsed.data;
 
     const results = await Promise.allSettled(
-      limited.map(async (q: { name: string; destination: string; index: number }) => {
+      queries.map(async (q) => {
         const query = `${q.name} ${q.destination}`;
         const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${googleMapsApiKey}`;
         const res = await fetch(url);
