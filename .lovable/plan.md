@@ -2,30 +2,25 @@
 
 ## Problem
 
-There are two separate subscription UIs causing confusion:
-1. **Settings page** — has a "Subscription" section with Free/Pro status and "Upgrade to Pro" button that links to /pricing
-2. **Pricing page** — full plan comparison with Free vs Pro cards
-
-The user clicks "Subscription" from the profile menu → goes to /pricing. But Settings also shows subscription info. Two places = confusing.
+The Pro card's "Manage billing" and "Cancel subscription" section is crammed inside the card border, looking cluttered and cheap. It needs to be pulled out and redesigned.
 
 ## Plan
 
-### 1. Consolidate: Profile menu "Subscription" → /pricing (already done, no change needed)
+### Redesign the Pro management section in `src/pages/Pricing.tsx`
 
-### 2. Remove the Subscription section from Settings page
-- Delete the `SubscriptionSection` component from `src/pages/Settings.tsx` (lines 60-175)
-- Remove the Subscription `<section>` block (lines 429-435)
-- Remove unused imports (`Crown`, `CreditCard`, `Sparkles`, `useSubscription`, `format`, `Badge`)
+Move the billing management actions **outside and below** the Pro card, as a separate, clean section that only appears for Pro users. Remove it from inside the card border.
 
-### 3. Enhance the Pricing page to be the single subscription hub
-- Add current plan status prominently at the top (badge showing "Your current plan" on the active tier)
-- For Pro users: add "Manage billing" and "Cancel subscription" actions directly on the Pro card (move that logic from Settings into Pricing page)
-- Keep the plan comparison cards but make the active plan more visually distinct
-- Add renewal date display for Pro subscribers
+**New layout for Pro users:**
+- The Pro card stays clean — just features list + "Manage plan" CTA button (opens portal)
+- Below the plans grid, add a subtle "Subscription" section with:
+  - A clean row showing "You're on Pro" with the renewal date
+  - A text link "Manage billing" that opens the Stripe portal
+  - A subtle "Cancel subscription" text link in muted/destructive color
+- This section uses simple text links, no bordered box, no card — just clean typography with generous spacing
+- Non-Pro users don't see this section at all
 
-This means `/pricing` becomes the one-stop subscription page — accessible from both the profile slide menu and anywhere else. Settings stays focused on account, notifications, and privacy.
-
-### Files to modify
-- `src/pages/Settings.tsx` — remove SubscriptionSection component and its section
-- `src/pages/Pricing.tsx` — add manage billing / cancel subscription buttons for Pro users
+### Changes to make
+- Remove lines 177-195 (the bordered billing box inside the Pro card)
+- Add a new section between the plans grid and the FAQ footer
+- Style it minimally: centered text, small font, link-style buttons
 
