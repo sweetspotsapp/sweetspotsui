@@ -173,29 +173,34 @@ const PricingPage = () => {
                 {plan.cta}
               </Button>
 
-              {/* Pro management actions */}
-              {plan.name === "Pro" && isPro && (
-                <div className="mt-4 space-y-1 rounded-xl border border-border overflow-hidden">
-                  <button
-                    onClick={openPortal}
-                    className="flex items-center gap-3 w-full p-3 hover:bg-muted/50 transition-colors"
-                  >
-                    <CreditCard className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground flex-1 text-left">Manage billing</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                  <Separator />
-                  <button
-                    onClick={() => setCancelDialogOpen(true)}
-                    className="flex items-center gap-3 w-full p-3 hover:bg-destructive/5 transition-colors"
-                  >
-                    <span className="text-sm font-medium text-destructive flex-1 text-left ml-7">Cancel subscription</span>
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
+
+        {/* Pro subscription management — outside cards */}
+        {isPro && (
+          <div className="max-w-3xl mx-auto mt-10 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              You're on <span className="font-semibold text-foreground">Pro</span>
+              {renewalText && <> · Renews {renewalText}</>}
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={openPortal}
+                className="text-sm text-primary hover:underline font-medium"
+              >
+                Manage billing
+              </button>
+              <span className="text-muted-foreground/40">·</span>
+              <button
+                onClick={() => setCancelDialogOpen(true)}
+                className="text-sm text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Cancel subscription
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* FAQ */}
         <div className="mt-16 text-center">
