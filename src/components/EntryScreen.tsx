@@ -171,7 +171,7 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
           </div>
 
           {/* Auth actions */}
-          <div className="w-full space-y-3 opacity-0 animate-fade-up delay-400">
+          <div className="w-full space-y-3 opacity-0 animate-fade-up delay-500">
             <Button
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading}
