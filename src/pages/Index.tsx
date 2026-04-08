@@ -9,7 +9,6 @@ import MapPage from "@/components/MapPage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import LoadingTransition from "@/components/LoadingTransition";
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
