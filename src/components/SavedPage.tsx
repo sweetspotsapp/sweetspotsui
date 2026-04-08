@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
+import { Skeleton } from "./ui/skeleton";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
@@ -466,7 +467,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
                     Search or paste a link from Instagram, TikTok, or Maps
                   </span>
                 </button>
-              </div>
+              </div>}
             </div>
           </>
         )}
