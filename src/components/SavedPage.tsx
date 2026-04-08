@@ -61,6 +61,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showAddSpotMenu, setShowAddSpotMenu] = useState(false);
   const [tipDismissed, setTipDismissed] = useState(() => 
     localStorage.getItem('sweetspots_import_tip_dismissed') === 'true'
   );
