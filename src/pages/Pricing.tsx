@@ -177,6 +177,31 @@ const PricingPage = () => {
           ))}
         </div>
 
+        {/* Pro subscription management — outside cards */}
+        {isPro && (
+          <div className="max-w-3xl mx-auto mt-10 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              You're on <span className="font-semibold text-foreground">Pro</span>
+              {renewalText && <> · Renews {renewalText}</>}
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={openPortal}
+                className="text-sm text-primary hover:underline font-medium"
+              >
+                Manage billing
+              </button>
+              <span className="text-muted-foreground/40">·</span>
+              <button
+                onClick={() => setCancelDialogOpen(true)}
+                className="text-sm text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Cancel subscription
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* FAQ */}
         <div className="mt-16 text-center">
           <p className="text-sm text-muted-foreground">
@@ -204,31 +229,7 @@ const PricingPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-        {/* Pro subscription management — outside cards */}
-        {isPro && (
-          <div className="max-w-3xl mx-auto mt-10 text-center space-y-2">
-            <p className="text-sm text-muted-foreground">
-              You're on <span className="font-semibold text-foreground">Pro</span>
-              {renewalText && <> · Renews {renewalText}</>}
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <button
-                onClick={openPortal}
-                className="text-sm text-primary hover:underline font-medium"
-              >
-                Manage billing
-              </button>
-              <span className="text-muted-foreground/40">·</span>
-              <button
-                onClick={() => setCancelDialogOpen(true)}
-                className="text-sm text-muted-foreground hover:text-destructive transition-colors"
-              >
-                Cancel subscription
-              </button>
-            </div>
-          </div>
-        )}
+    </div>
   );
 };
 
