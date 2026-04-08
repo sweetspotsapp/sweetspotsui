@@ -183,6 +183,7 @@ const DraggableActivityCard = ({
         onMoveToDay={onMoveToDay}
         availableDays={availableDays}
         currentDayIndex={currentDayIndex}
+        destination={destination}
       />
     </div>
   );
