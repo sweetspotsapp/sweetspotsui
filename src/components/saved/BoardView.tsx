@@ -576,7 +576,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
       {/* Import Link Dialog */}
       <ImportLinkDialog
         open={showImportDialog}
-        onOpenChange={setShowImportDialog}
+        onClose={() => setShowImportDialog(false)}
       />
     </>
   );
