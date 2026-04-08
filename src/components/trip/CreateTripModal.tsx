@@ -584,6 +584,9 @@ const Step1Content = ({
               }}
               disabled={(date) => date < new Date()}
               className="p-3 pointer-events-auto"
+              components={{
+                DayContent: ({ date }) => <WeatherDayCell date={date} forecast={forecast} />,
+              }}
             />
           </PopoverContent>
         </Popover>
@@ -603,13 +606,16 @@ const Step1Content = ({
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-[70]" align="start">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={setEndDate}
-                disabled={(date) => date < (startDate || new Date())}
-                className="p-3 pointer-events-auto"
-              />
+            <Calendar
+              mode="single"
+              selected={endDate}
+              onSelect={setEndDate}
+              disabled={(date) => date < (startDate || new Date())}
+              className="p-3 pointer-events-auto"
+              components={{
+                DayContent: ({ date }) => <WeatherDayCell date={date} forecast={forecast} />,
+              }}
+            />
             </PopoverContent>
           </Popover>
         ) : (
