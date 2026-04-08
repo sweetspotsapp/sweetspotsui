@@ -1,5 +1,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
+// ============ RATE LIMITING ============
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20; // requests per window
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
+// Input validation schema
+const SearchInputSchema = z.object({
+  prompt: z.string().min(1).max(500),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  location_name: z.string().max(200).optional(),
+  radius_m: z.number().min(100).max(50000).optional().default(4000),
+  mode: z.enum(['drive', 'walk', 'transit', 'bike']).optional().default('drive'),
+  limit: z.number().min(1).max(100).optional().default(50),
+  userId: z.string().max(100).optional(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -675,6 +705,15 @@ serve(async (req) => {
 
   const startTime = Date.now();
 
+  // Rate limit by IP
+  const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
+  if (!checkRateLimit(`search:${clientIp}`)) {
+    return new Response(
+      JSON.stringify({ error: 'Rate limited. Please slow down.' }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -682,23 +721,9 @@ serve(async (req) => {
     const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!googleMapsApiKey) {
+    if (!googleMapsApiKey || !geoapifyApiKey || !lovableApiKey) {
       return new Response(
-        JSON.stringify({ error: 'Google Maps API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!geoapifyApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Geoapify API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!lovableApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Lovable API key not configured' }),
+        JSON.stringify({ error: 'Required API keys not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -714,17 +739,18 @@ serve(async (req) => {
     // Get auth header for later parallel fetch
     const authHeader = req.headers.get('Authorization');
 
-    // Parse request
-    const body: RequestBody = await req.json();
-    const { prompt, location_name, radius_m = 4000, mode = 'drive', limit = 50 } = body;
-    let { lat, lng } = body;
-
-    if (!prompt) {
+    // Parse and validate request
+    const rawBody = await req.json();
+    const parsed = SearchInputSchema.safeParse(rawBody);
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'Missing required field: prompt' }),
+        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    const { prompt, location_name, radius_m, mode, limit } = parsed.data;
+    let lat = parsed.data.lat;
+    let lng = parsed.data.lng;
 
     // ============ SERVER-SIDE SEARCH LIMIT ============
     const FREE_DAILY_LIMIT = 5;
