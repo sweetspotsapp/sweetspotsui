@@ -56,6 +56,7 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
   savedTabRef,
   showDistance = true,
   isGridItem = false,
+  saveCount = 0,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
