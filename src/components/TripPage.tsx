@@ -17,6 +17,7 @@ import TripView from "./trip/TripView";
 import GeneratingOverlay from "./trip/GeneratingOverlay";
 import { useTrip, type TripData, type TripParams, type SavedTrip } from "@/hooks/useTrip";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 type Phase = "list" | "view";
 type TripFilter = "all" | "upcoming" | "current" | "past";
