@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
 const FREE_DAILY_LIMIT = 5;
-const ADMIN_USER_IDS = ["335117fc-f79d-474a-87b7-6abfdd462eb3"];
 
 interface UseSearchLimitReturn {
   searchesUsed: number;
@@ -11,6 +10,7 @@ interface UseSearchLimitReturn {
   dailyLimit: number;
   hasReachedLimit: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
   increment: () => void;
   refresh: () => Promise<void>;
 }
@@ -19,6 +19,7 @@ export const useSearchLimit = (isPro: boolean = false): UseSearchLimitReturn => 
   const { user } = useAuth();
   const [searchesUsed, setSearchesUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchTodayCount = useCallback(async () => {
     if (!user) {
