@@ -24,7 +24,7 @@ type TripFilter = "all" | "upcoming" | "current" | "past";
 interface TripPageProps {
   resumeTripId?: string | null;
   onResumed?: () => void;
-  tripTemplate?: { destination: string; duration: number; vibes: string[]; budget: string } | null;
+  tripTemplate?: { destination: string; duration: number; vibes: string[]; budget: string; group_size: number; trip_data: any } | null;
   onTemplateConsumed?: () => void;
 }
 
