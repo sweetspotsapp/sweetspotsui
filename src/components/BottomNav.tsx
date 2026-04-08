@@ -30,7 +30,6 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const isProfile = tab.id === "profile";
             const showBadge = tab.id === "trip" && tripBadgeCount > 0;
 
             return (
