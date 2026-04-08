@@ -12,19 +12,21 @@ import tripBali from "@/assets/trip-bali.jpg";
 import tripMelbourne from "@/assets/trip-melbourne.jpg";
 import tripBangkok from "@/assets/trip-bangkok.jpg";
 
-export interface TripTemplate {
+export interface DBTripTemplate {
+  id: string;
   destination: string;
   duration: number;
   vibes: string[];
   budget: string;
-  vibe: string;
-  image: string;
+  group_size: number;
+  tagline: string | null;
+  trip_data: any;
 }
 
 interface HomePageProps {
   onNavigateToProfile?: () => void;
   onNavigateToTab?: (tab: string) => void;
-  onTripTemplate?: (template: TripTemplate) => void;
+  onTripTemplate?: (template: DBTripTemplate) => void;
 }
 
 interface SavedPlaceWithDetails {
@@ -34,12 +36,13 @@ interface SavedPlaceWithDetails {
   rating: number | null;
 }
 
-const TRIP_TEMPLATES: TripTemplate[] = [
-  { destination: "Tokyo", duration: 5, vibes: ["Culture", "Foodie"], budget: "$$", vibe: "Culture & street food", image: tripTokyo },
-  { destination: "Bali", duration: 7, vibes: ["Chill", "Nature", "Adventure"], budget: "$$", vibe: "Beaches & hidden gems", image: tripBali },
-  { destination: "Melbourne", duration: 3, vibes: ["Foodie", "Culture"], budget: "$$", vibe: "Cafés & laneways", image: tripMelbourne },
-  { destination: "Bangkok", duration: 4, vibes: ["Foodie", "Nightlife", "Culture"], budget: "$", vibe: "Night markets & temples", image: tripBangkok },
-];
+// Fallback images keyed by destination
+const TEMPLATE_IMAGES: Record<string, string> = {
+  Tokyo: tripTokyo,
+  Bali: tripBali,
+  Melbourne: tripMelbourne,
+  Bangkok: tripBangkok,
+};
 
 const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: HomePageProps) => {
   const { user } = useAuth();
@@ -50,6 +53,14 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [savesCount, setSavesCount] = useState(0);
   const [tripsCount, setTripsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [templates, setTemplates] = useState<DBTripTemplate[]>([]);
+
+  useEffect(() => {
+    // Fetch trip templates from DB (public, no auth needed)
+    supabase.from("trip_templates" as any).select("id, destination, duration, vibes, budget, group_size, tagline, trip_data").eq("is_active", true).then(({ data }) => {
+      if (data) setTemplates(data as any[]);
+    });
+  }, []);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -91,7 +102,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
 
   const handlePlanTrip = () => onNavigateToTab?.("trip");
   const handleDiscover = () => onNavigateToTab?.("discover");
-  const handleTemplateClick = (template: TripTemplate) => {
+  const handleTemplateClick = (template: DBTripTemplate) => {
     if (onTripTemplate) {
       onTripTemplate(template);
     } else {
@@ -201,14 +212,14 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       <div className="px-5 pt-6 pb-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
         <h2 className="text-base font-semibold text-foreground mb-3">Trip Ideas</h2>
         <div className="grid grid-cols-2 gap-3">
-          {TRIP_TEMPLATES.map((template, i) => (
+          {templates.map((template) => (
             <button
-              key={template.destination}
+              key={template.id}
               onClick={() => handleTemplateClick(template)}
               className="relative overflow-hidden rounded-2xl h-[160px] text-left transition-all hover:shadow-lg active:scale-[0.97] group"
             >
               <img
-                src={template.image}
+                src={TEMPLATE_IMAGES[template.destination] || tripTokyo}
                 alt={template.destination}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
@@ -220,7 +231,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               {/* Text */}
               <div className="relative h-full flex flex-col justify-end p-4">
                 <p className="text-[15px] font-bold text-white leading-tight">{template.destination}</p>
-                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} days · {template.vibe}</p>
+                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} days · {template.tagline}</p>
               </div>
             </button>
           ))}

@@ -24,7 +24,7 @@ type TripFilter = "all" | "upcoming" | "current" | "past";
 interface TripPageProps {
   resumeTripId?: string | null;
   onResumed?: () => void;
-  tripTemplate?: { destination: string; duration: number; vibes: string[]; budget: string } | null;
+  tripTemplate?: { destination: string; duration: number; vibes: string[]; budget: string; group_size: number; trip_data: any } | null;
   onTemplateConsumed?: () => void;
 }
 
@@ -63,12 +63,12 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     }
   }, [phase, editingId]);
 
-  // Auto-generate trip from home page template
+  // Instantly save a pre-built template trip (no AI generation)
   useEffect(() => {
     if (tripTemplate) {
-      const { destination, duration, vibes, budget } = tripTemplate;
+      const { destination, duration, vibes, budget, group_size, trip_data } = tripTemplate;
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() + 7); // Start a week from now
+      startDate.setDate(startDate.getDate() + 7);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + duration - 1);
 
@@ -78,31 +78,25 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0],
         budget,
-        groupSize: 2,
+        groupSize: group_size || 2,
         vibes,
         mustIncludePlaceIds: [],
         boardIds: [],
       };
 
+      const tripDataTyped: TripData = trip_data as TripData;
+
       setEditingId(null);
-      setTripData(null);
+      setTripData(tripDataTyped);
       setTripParams(params);
       setShowCreateModal(false);
       onTemplateConsumed?.();
 
-      // Trigger generation
+      // Save directly — no AI call
       (async () => {
-        const result = await generate(params);
-        if (result) {
-          const resultWithContext: TripData = {
-            ...result,
-            _meta: { ...(result._meta || {}) },
-          };
-          setTripData(resultWithContext);
-          const id = await saveTrip(params, resultWithContext);
-          if (id) setEditingId(id);
-          setPhase("view");
-        }
+        const id = await saveTrip(params, tripDataTyped);
+        if (id) setEditingId(id);
+        setPhase("view");
       })();
     }
   }, [tripTemplate]);
