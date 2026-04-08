@@ -343,6 +343,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   });
   const placeIds = useMemo(() => searchResults.map((p) => p.id), [searchResults]);
   const saveCounts = usePlaceSaveCounts(placeIds);
+  const upcomingTrip = useUpcomingTrip();
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
     if (wasSkipMode.current) return true;
     return getCachedResults().length === 0;
