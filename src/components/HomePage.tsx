@@ -6,6 +6,7 @@ import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star } from "lucide-react";
+import { Skeleton } from "./ui/skeleton";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -143,6 +144,63 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     }
   };
 
+  // Skeleton for recently saved section
+  const RecentSavedSkeleton = () => (
+    <div className="pt-6 pb-2">
+      <div className="flex items-center justify-between px-5 mb-3">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-4 w-14" />
+      </div>
+      <div className="flex gap-3 overflow-hidden px-5">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="shrink-0 w-[140px] rounded-2xl overflow-hidden">
+            <Skeleton className="h-[100px] w-full" />
+            <div className="p-2.5 space-y-1.5">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Skeleton for recommendations section
+  const RecsSkeleton = () => (
+    <div className="pt-6 pb-2">
+      <div className="flex items-center justify-between px-5 mb-3">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-4 rounded-full" />
+          <Skeleton className="h-5 w-40" />
+        </div>
+      </div>
+      <div className="flex gap-3 overflow-hidden px-5">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="shrink-0 w-[160px] rounded-2xl overflow-hidden border border-border/40">
+            <Skeleton className="h-[110px] w-full" />
+            <div className="p-2.5 space-y-1.5">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-3 w-10" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Skeleton for trip ideas
+  const TripIdeasSkeleton = () => (
+    <div className="px-5 pt-6 pb-4">
+      <Skeleton className="h-5 w-20 mb-3" />
+      <div className="grid grid-cols-2 gap-3">
+        {[1, 2, 3, 4].map(i => (
+          <Skeleton key={i} className="rounded-2xl h-[160px]" />
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background max-w-[420px] lg:max-w-3xl mx-auto relative pb-24 lg:pb-8">
 
@@ -217,7 +275,8 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       </div>
 
       {/* Recently Saved */}
-      {recentlySaved.length > 0 && (
+      {loading && user && <RecentSavedSkeleton />}
+      {!loading && recentlySaved.length > 0 && (
         <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "150ms", animationFillMode: "both" }}>
           <div className="flex items-center justify-between px-5 mb-3">
             <h2 className="text-base font-semibold text-foreground">Recently Saved</h2>
@@ -248,7 +307,8 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       )}
 
       {/* Spots You Might Like */}
-      {recsEnabled && recommendations.length > 0 && (
+      {recsEnabled && recsLoading && <RecsSkeleton />}
+      {recsEnabled && !recsLoading && recommendations.length > 0 && (
         <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "180ms", animationFillMode: "both" }}>
           <div className="flex items-center justify-between px-5 mb-3">
             <div className="flex items-center gap-2">
@@ -298,7 +358,8 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       )}
 
       {/* Trip Ideas — photo cards */}
-      <div className="px-5 pt-6 pb-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
+      {templates.length === 0 && <TripIdeasSkeleton />}
+      {templates.length > 0 && <div className="px-5 pt-6 pb-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
         <h2 className="text-base font-semibold text-foreground mb-3">Trip Ideas</h2>
         <div className="grid grid-cols-2 gap-3">
           {templates.map((template) => (
@@ -325,7 +386,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* New user CTA */}
       {engagementLevel === "new" && !loading && (

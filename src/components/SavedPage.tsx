@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
+import { Skeleton } from "./ui/skeleton";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
@@ -398,7 +399,20 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
             {/* Pinterest-Style Masonry Grid */}
             <div className="px-4 pb-6">
-              <div className="grid grid-cols-2 gap-3">
+              {(boardsLoading || isLoadingPlaces) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="rounded-2xl overflow-hidden">
+                      <Skeleton className="h-[160px] w-full rounded-2xl" />
+                      <div className="pt-2 space-y-1">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-3 w-12" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!boardsLoading && !isLoadingPlaces && <div className="grid grid-cols-2 gap-3">
                 {/* All Saved Board - Always First */}
                 <BoardCard
                   isAllSaved
@@ -453,7 +467,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
                     Search or paste a link from Instagram, TikTok, or Maps
                   </span>
                 </button>
-              </div>
+              </div>}
             </div>
           </>
         )}
