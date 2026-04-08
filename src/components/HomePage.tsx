@@ -984,6 +984,13 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             </div>
           </form>
         </div>
+        {user && searchesLeft <= 3 && (
+          <p className="text-xs text-muted-foreground mt-1.5 px-1">
+            {hasReachedLimit
+              ? "Daily limit reached — upgrade for unlimited searches ✨"
+              : `${searchesLeft} search${searchesLeft === 1 ? "" : "es"} left today`}
+          </p>
+        )}
       </div>
 
       {/* Mobile: slide-out overlay filter */}
