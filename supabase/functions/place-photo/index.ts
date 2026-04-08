@@ -69,13 +69,20 @@ serve(async (req) => {
       });
     }
 
-    // === CACHE MISS: Fetch from Google Places API ===
+    // === CACHE MISS: Fetch from Google Places API (with retry for 429) ===
     console.log('Cache MISS — fetching from Google:', photoName);
     const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}&key=${googleMapsApiKey}`;
-    const response = await fetch(photoUrl);
+    
+    let response: Response | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      response = await fetch(photoUrl);
+      if (response.status !== 429) break;
+      console.log(`Rate limited (attempt ${attempt + 1}/3), waiting ${(attempt + 1) * 500}ms...`);
+      await new Promise(r => setTimeout(r, (attempt + 1) * 500));
+    }
 
-    if (!response.ok) {
-      console.error('Google photo fetch failed:', response.status);
+    if (!response || !response.ok) {
+      console.error('Google photo fetch failed:', response?.status);
       return new Response(TRANSPARENT_PIXEL, {
         headers: { ...corsHeaders, 'Content-Type': 'image/gif', 'Cache-Control': 'no-cache' },
       });
