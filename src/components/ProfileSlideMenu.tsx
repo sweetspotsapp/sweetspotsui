@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
+import { useSubscription } from "@/hooks/useSubscription";
 import { 
   User, 
   Settings, 
