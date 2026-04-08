@@ -19,6 +19,7 @@ import { useTrip, type TripData, type TripParams, type SavedTrip } from "@/hooks
 import { useAuth } from "@/hooks/useAuth";
 import { useTripLimit } from "@/hooks/useTripLimit";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useLiveTrip } from "@/hooks/useLiveTrip";
 import UpgradeModal from "./UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
 
