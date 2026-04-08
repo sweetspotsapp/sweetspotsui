@@ -17,6 +17,7 @@ import TripView from "./trip/TripView";
 import GeneratingOverlay from "./trip/GeneratingOverlay";
 import { useTrip, type TripData, type TripParams, type SavedTrip } from "@/hooks/useTrip";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 type Phase = "list" | "view";
 type TripFilter = "all" | "upcoming" | "current" | "past";
@@ -63,6 +64,50 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     }
   }, [phase, editingId]);
 
+  // Enrich trip activities that lack lat/lng (e.g. from pre-built templates)
+  const enrichActivitiesWithCoords = useCallback(async (data: TripData, destination: string): Promise<TripData> => {
+    // Collect activities missing coords
+    const missing: { dayIdx: number; slotIdx: number; actIdx: number; name: string }[] = [];
+    data.days.forEach((day, di) => {
+      day.slots.forEach((slot, si) => {
+        slot.activities.forEach((act, ai) => {
+          if (!act.lat || !act.lng) {
+            missing.push({ dayIdx: di, slotIdx: si, actIdx: ai, name: act.name });
+          }
+        });
+      });
+    });
+
+    if (missing.length === 0) return data;
+
+    try {
+      const queries = missing.map((m, i) => ({ name: m.name, destination, index: i }));
+      const { data: result, error } = await supabase.functions.invoke('batch-geocode', {
+        body: { queries },
+      });
+
+      if (error || !result?.results) return data;
+
+      const enriched = JSON.parse(JSON.stringify(data)) as TripData;
+
+      for (const r of result.results) {
+        const m = missing[r.index];
+        if (!m) continue;
+        const act = enriched.days[m.dayIdx].slots[m.slotIdx].activities[m.actIdx];
+        if (r.lat) act.lat = r.lat;
+        if (r.lng) act.lng = r.lng;
+        if (r.placeId) act.placeId = r.placeId;
+        if (r.address) act.address = r.address;
+        if (r.photoName) act.photoName = r.photoName;
+      }
+
+      return enriched;
+    } catch (err) {
+      console.error('Failed to enrich template activities:', err);
+      return data;
+    }
+  }, []);
+
   // Instantly save a pre-built template trip (no AI generation)
   useEffect(() => {
     if (tripTemplate) {
@@ -92,11 +137,21 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
       setShowCreateModal(false);
       onTemplateConsumed?.();
 
-      // Save directly — no AI call
+      // Save directly then enrich with coordinates in background
       (async () => {
         const id = await saveTrip(params, tripDataTyped);
         if (id) setEditingId(id);
         setPhase("view");
+
+        // Enrich with coordinates in background
+        const enriched = await enrichActivitiesWithCoords(tripDataTyped, destination);
+        if (enriched !== tripDataTyped) {
+          setTripData(enriched);
+          // Update saved trip with enriched data
+          if (id) {
+            await saveTrip(params, enriched, id);
+          }
+        }
       })();
     }
   }, [tripTemplate]);
@@ -113,7 +168,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     if (saved.trip_data) {
       const savedVibeDetails = (saved.trip_data as any)?._meta?.vibeDetails || undefined;
       setTripData(saved.trip_data);
-      setTripParams({
+      const params: TripParams = {
         name: saved.name || undefined,
         destination: saved.destination,
         startDate: saved.start_date,
@@ -126,9 +181,23 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
         boardIds: saved.board_ids || [],
         accommodations: saved.accommodation || undefined,
         flightDetails: saved.flight_details || undefined,
-      });
+      };
+      setTripParams(params);
       setEditingId(saved.id);
       setPhase("view");
+
+      // Background enrich if activities lack coordinates
+      const hasAnyMissing = saved.trip_data.days?.some((d: any) =>
+        d.slots?.some((s: any) => s.activities?.some((a: any) => !a.lat || !a.lng))
+      );
+      if (hasAnyMissing) {
+        enrichActivitiesWithCoords(saved.trip_data, saved.destination).then((enriched) => {
+          if (enriched !== saved.trip_data) {
+            setTripData(enriched);
+            saveTrip(params, enriched, saved.id);
+          }
+        });
+      }
     }
   };
 
