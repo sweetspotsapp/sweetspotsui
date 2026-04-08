@@ -1,13 +1,19 @@
-import { Check, Sparkles, X, Crown, Zap, MapPin, Infinity, Star } from "lucide-react";
+import { Check, Sparkles, X, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription, STRIPE_CONFIG } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 
 const PricingPage = () => {
   const { user } = useAuth();
-  const { isPro, subscribed, openCheckout, openPortal } = useSubscription();
+  const { isPro, subscribed, subscriptionEnd, openCheckout, openPortal } = useSubscription();
   const navigate = useNavigate();
+
+  const renewalText = subscriptionEnd
+    ? `Renews on ${format(new Date(subscriptionEnd), "MMM d, yyyy")}`
+    : null;
 
   const plans = [
     {
@@ -26,7 +32,7 @@ const PricingPage = () => {
         { text: "Early access features", included: false },
       ],
       current: !subscribed,
-      cta: subscribed ? "Current basics" : "Your current plan",
+      cta: isPro ? "Downgrade to Free" : "Your current plan",
     },
     {
       name: "Pro",
@@ -58,6 +64,8 @@ const PricingPage = () => {
       } else {
         openCheckout();
       }
+    } else if (plan.name === "Free" && isPro) {
+      openPortal();
     }
   };
 
@@ -98,8 +106,16 @@ const PricingPage = () => {
               )}
 
               {plan.current && (
-                <div className="absolute top-4 right-4 px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
-                  Current
+                <div className="absolute top-4 right-4">
+                  {plan.name === "Pro" && isPro ? (
+                    <Badge className="bg-green-500/15 text-green-600 border-green-500/30 hover:bg-green-500/15">
+                      ✓ Active
+                    </Badge>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+                      Current
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -110,6 +126,9 @@ const PricingPage = () => {
                   <span className="text-4xl font-bold text-foreground">{plan.price}</span>
                   <span className="text-muted-foreground text-sm">/{plan.period}</span>
                 </div>
+                {plan.name === "Pro" && isPro && renewalText && (
+                  <p className="text-xs text-muted-foreground mt-1">{renewalText}</p>
+                )}
               </div>
 
               <div className="space-y-3 mb-8">
