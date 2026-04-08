@@ -13,6 +13,7 @@ import type { TripDay, Activity, SwapAlternative } from "@/hooks/useTrip";
 interface DaySectionProps {
   day: TripDay;
   dayIndex: number;
+  destination?: string;
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
   isSwapping: boolean;
@@ -115,7 +116,7 @@ const DropIndicator = ({ edge }: { edge: Edge }) => (
 
 // Draggable + drop-target wrapper for each activity in edit mode
 const DraggableActivityCard = ({
-  activity, dayIndex, slotIndex, activityIndex, onSwap, onReplace, isSwapping, onRemoveActivity, onMoveToDay, availableDays, currentDayIndex,
+  activity, dayIndex, slotIndex, activityIndex, onSwap, onReplace, isSwapping, onRemoveActivity, onMoveToDay, availableDays, currentDayIndex, destination,
 }: {
   activity: Activity;
   dayIndex: number;
@@ -128,6 +129,7 @@ const DraggableActivityCard = ({
   onMoveToDay?: (targetDayIndex: number) => void;
   availableDays?: Array<{ dayIndex: number; label: string }>;
   currentDayIndex?: number;
+  destination?: string;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -181,6 +183,7 @@ const DraggableActivityCard = ({
         onMoveToDay={onMoveToDay}
         availableDays={availableDays}
         currentDayIndex={currentDayIndex}
+        destination={destination}
       />
     </div>
   );
@@ -215,7 +218,7 @@ const DroppableSlot = ({ dayIndex, slotIndex, children }: { dayIndex: number; sl
   );
 };
 
-const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity, onAddActivity, onMoveToDay, totalDays }: DaySectionProps) => {
+const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity, onAddActivity, onMoveToDay, totalDays }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
 
@@ -367,6 +370,7 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                           onMoveToDay={onMoveToDay ? (targetDayIdx) => onMoveToDay(dayIndex, slotIndex, activityIndex, targetDayIdx) : undefined}
                           availableDays={totalDays?.map((d, i) => ({ dayIndex: i, label: d.label }))}
                           currentDayIndex={dayIndex}
+                          destination={destination}
                         />
                       ))}
                       {onAddActivity && (
@@ -396,6 +400,7 @@ const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, o
                               onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
                               isSwapping={isSwapping}
                               cardIndex={globalIdx}
+                              destination={destination}
                             />
                             {activityIndex < slot.activities.length - 1 && (
                               <DistanceConnector
