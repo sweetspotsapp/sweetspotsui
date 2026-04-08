@@ -961,7 +961,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 onChange={(e) => setSearchValue(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
-                placeholder="Ask anything: rooftop bars, date spots..."
+                placeholder={searchHints[hintIndex]}
                 className="pl-11 pr-11 h-14 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
                 disabled={isSearching} />
               
@@ -1045,7 +1045,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                     onChange={(e) => setSearchValue(e.target.value)}
                     onFocus={() => setIsSearchFocused(true)}
                     onBlur={() => setIsSearchFocused(false)}
-                    placeholder="Ask anything: rooftop bars, date spots..."
+                    placeholder={searchHints[hintIndex]}
                     className="pl-11 pr-11 h-16 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm"
                     disabled={isSearching} />
                   
