@@ -99,12 +99,12 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
           {/* Save button */}
           <button
             className={cn(
-              "absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-md bg-background/20 transition-all duration-300 min-h-[44px] min-w-[44px] flex items-center justify-center",
+              "absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full backdrop-blur-md bg-background/20 transition-all duration-300",
               saved ? "text-primary bg-primary/20" : "text-primary-foreground/80 hover:text-primary-foreground"
             )}
             onClick={handleSaveClick}
           >
-            <Heart className={cn("w-5 h-5 transition-all", saved && "fill-current scale-110")} />
+            <Heart className={cn("w-4 h-4 transition-all", saved && "fill-current scale-110")} />
           </button>
           
           {/* Content overlay */}
@@ -158,7 +158,7 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
         {/* Save button */}
         <button
           className={cn(
-            "absolute top-2 right-2 p-2 rounded-full backdrop-blur-md bg-background/25 transition-all duration-300 min-h-[44px] min-w-[44px] flex items-center justify-center",
+            "absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center rounded-full backdrop-blur-md bg-background/25 transition-all duration-300",
             saved && "text-primary bg-primary/25"
           )}
           onClick={handleSaveClick}
