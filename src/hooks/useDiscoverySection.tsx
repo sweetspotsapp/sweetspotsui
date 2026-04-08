@@ -74,11 +74,11 @@ export const useDiscoverySection = (
     setError(null);
 
     try {
-      // Step 1: Discover candidates (fetch up to 60 places)
+      // Step 1: Discover candidates (fetch up to 30 places)
       const { data: discoverData, error: discoverError } = await supabase.functions.invoke(
         'discover_candidates',
         {
-          body: { prompt, lat: origin.lat, lng: origin.lng, radius_m: radiusM, max_results: 60 },
+          body: { prompt, lat: origin.lat, lng: origin.lng, radius_m: radiusM, max_results: 30 },
         }
       );
 
@@ -94,11 +94,11 @@ export const useDiscoverySection = (
 
       const placeIds = discoverData.place_ids as string[];
 
-      // Step 2: Rank with travel time (return up to 60 places)
+      // Step 2: Rank with travel time (return up to 30 places)
       const { data: rankData, error: rankError } = await supabase.functions.invoke(
         'rank_with_travel_time',
         {
-          body: { prompt, origin, place_ids: placeIds, mode, limit: 60 },
+          body: { prompt, origin, place_ids: placeIds, mode, limit: 30 },
         }
       );
 
