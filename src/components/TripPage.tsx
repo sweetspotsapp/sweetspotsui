@@ -543,18 +543,6 @@ const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdi
         </div>
       )}
 
-  // Open create modal with pre-filled destination from home page template
-  useEffect(() => {
-    if (prefillDestination) {
-      setEditingId(null);
-      setTripData(null);
-      setTripParams(null);
-      setPrefillParams({ destination: prefillDestination } as TripParams);
-      setShowCreateModal(true);
-      onPrefillConsumed?.();
-    }
-  }, [prefillDestination]);
-
 
       {filtered.length === 0 && (
         <p className="text-center text-sm text-muted-foreground py-8">
