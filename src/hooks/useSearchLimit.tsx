@@ -55,13 +55,14 @@ export const useSearchLimit = (): UseSearchLimitReturn => {
     setSearchesUsed((prev) => prev + 1);
   }, []);
 
-  const searchesLeft = Math.max(0, FREE_DAILY_LIMIT - searchesUsed);
+  const isAdmin = !!user && ADMIN_USER_IDS.includes(user.id);
+  const searchesLeft = isAdmin ? Infinity : Math.max(0, FREE_DAILY_LIMIT - searchesUsed);
 
   return {
     searchesUsed,
     searchesLeft,
     dailyLimit: FREE_DAILY_LIMIT,
-    hasReachedLimit: searchesUsed >= FREE_DAILY_LIMIT,
+    hasReachedLimit: isAdmin ? false : searchesUsed >= FREE_DAILY_LIMIT,
     isLoading,
     increment,
     refresh: fetchTodayCount,
