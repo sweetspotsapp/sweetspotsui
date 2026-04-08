@@ -42,7 +42,7 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
     if (onNavigateToProfile) {
       onNavigateToProfile();
     } else {
-      navigate("/settings");
+      navigate("/profile");
     }
   };
 

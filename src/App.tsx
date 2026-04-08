@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import HelpSupport from "./pages/HelpSupport";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
+import ProfilePage from "./components/ProfilePage";
 
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
                 </Route>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/help-support" element={<HelpSupport />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
