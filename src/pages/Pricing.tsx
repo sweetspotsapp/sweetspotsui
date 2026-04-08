@@ -1,6 +1,18 @@
-import { Check, Sparkles, X, Crown } from "lucide-react";
+import { useState } from "react";
+import { Check, Sparkles, X, Crown, CreditCard, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription, STRIPE_CONFIG } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
@@ -10,9 +22,10 @@ const PricingPage = () => {
   const { user } = useAuth();
   const { isPro, subscribed, subscriptionEnd, openCheckout, openPortal } = useSubscription();
   const navigate = useNavigate();
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const renewalText = subscriptionEnd
-    ? `Renews on ${format(new Date(subscriptionEnd), "MMM d, yyyy")}`
+    ? format(new Date(subscriptionEnd), "MMM d, yyyy")
     : null;
 
   const plans = [
@@ -111,11 +124,9 @@ const PricingPage = () => {
                     <Badge className="bg-green-500/15 text-green-600 border-green-500/30 hover:bg-green-500/15">
                       ✓ Active
                     </Badge>
-                  ) : (
-                    <span className="px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
-                      Current
-                    </span>
-                  )}
+                  ) : !subscribed && plan.name === "Free" ? (
+                    <Badge variant="secondary">Current</Badge>
+                  ) : null}
                 </div>
               )}
 
@@ -127,7 +138,7 @@ const PricingPage = () => {
                   <span className="text-muted-foreground text-sm">/{plan.period}</span>
                 </div>
                 {plan.name === "Pro" && isPro && renewalText && (
-                  <p className="text-xs text-muted-foreground mt-1">{renewalText}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Renews on {renewalText}</p>
                 )}
               </div>
 
@@ -161,6 +172,27 @@ const PricingPage = () => {
                 {plan.highlighted && <Sparkles className="w-4 h-4" />}
                 {plan.cta}
               </Button>
+
+              {/* Pro management actions */}
+              {plan.name === "Pro" && isPro && (
+                <div className="mt-4 space-y-1 rounded-xl border border-border overflow-hidden">
+                  <button
+                    onClick={openPortal}
+                    className="flex items-center gap-3 w-full p-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <CreditCard className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground flex-1 text-left">Manage billing</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <Separator />
+                  <button
+                    onClick={() => setCancelDialogOpen(true)}
+                    className="flex items-center gap-3 w-full p-3 hover:bg-destructive/5 transition-colors"
+                  >
+                    <span className="text-sm font-medium text-destructive flex-1 text-left ml-7">Cancel subscription</span>
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -172,6 +204,26 @@ const PricingPage = () => {
           </p>
         </div>
       </div>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel your Pro subscription?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll keep Pro features until {renewalText || "the end of your billing period"}, then revert to the Free plan with limited searches and trip plans.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Pro</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={openPortal}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Cancel Subscription
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
