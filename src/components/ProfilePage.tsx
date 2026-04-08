@@ -423,7 +423,16 @@ const ProfilePage = ({ onNavigateToSaved }: ProfilePageProps) => {
   return (
     <>
     <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
-      <AppHeader onSettingsClick={() => setIsProfileMenuOpen(true)} />
+      {/* Header with back and settings */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors">
+          <ChevronRight className="w-5 h-5 rotate-180 text-foreground" />
+        </button>
+        <h1 className="text-base font-semibold text-foreground">Profile</h1>
+        <button onClick={() => navigate("/settings")} className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors">
+          <Settings className="w-5 h-5 text-muted-foreground" />
+        </button>
+      </div>
 
         <LoginReminderBanner />
 
