@@ -726,6 +726,44 @@ serve(async (req) => {
       );
     }
 
+    // ============ SERVER-SIDE SEARCH LIMIT ============
+    const FREE_DAILY_LIMIT = 5;
+    let userId: string | null = null;
+    let isPro = false;
+    let isAdminUser = false;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData } = await supabaseAdmin.auth.getClaims(token);
+      if (claimsData?.claims?.sub) {
+        userId = claimsData.claims.sub as string;
+
+        // Check admin role and search count in parallel
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const [roleResult, countResult, subResult] = await Promise.all([
+          supabaseAdmin.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle(),
+          supabaseAdmin.from('searches').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', todayStart.toISOString()),
+          fetch(`${supabaseUrl}/functions/v1/check-subscription`, {
+            method: 'POST',
+            headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
+          }).then(r => r.json()).catch(() => ({ isPro: false })),
+        ]);
+
+        isAdminUser = !!roleResult.data;
+        isPro = subResult?.isPro === true;
+        const searchCount = countResult.count ?? 0;
+
+        if (!isAdminUser && !isPro && searchCount >= FREE_DAILY_LIMIT) {
+          return new Response(
+            JSON.stringify({ error: 'daily_limit_reached', message: 'You have reached your daily search limit. Upgrade to Pro for unlimited searches.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+
     // If location_name provided (but not lat/lng), geocode it
     if (location_name && (lat === undefined || lng === undefined || (lat === 0 && lng === 0))) {
       console.log(`Geocoding location: ${location_name}`);
