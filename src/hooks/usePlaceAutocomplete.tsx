@@ -37,15 +37,13 @@ export function usePlaceAutocomplete(input: string) {
       return;
     }
 
-    // Show local matches immediately (no API call needed)
+    // Show local matches immediately as placeholders while Google loads
     const localMatches = getLocalCityMatches(input);
     if (localMatches.length > 0) {
       setPredictions(localMatches);
-      setIsLoading(false);
-      return;
     }
 
-    // Only call Google if local data has no matches
+    // Always call Google for richer results (suburbs, districts, etc.)
     setIsLoading(true);
     debounceRef.current = setTimeout(async () => {
       try {

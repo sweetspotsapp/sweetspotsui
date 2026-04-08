@@ -29,7 +29,7 @@ serve(async (req) => {
 
     const body: Record<string, unknown> = {
       input: input.trim(),
-      includedPrimaryTypes: ["(cities)"],
+      includedPrimaryTypes: ["(regions)"],
     };
 
     if (lat && lng) {
