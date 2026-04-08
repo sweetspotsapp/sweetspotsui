@@ -56,6 +56,14 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const tripStatus = useUpcomingTrip();
   const { avatarUrl: profileAvatarUrl, username: profileUsername } = useProfileInfo();
 
+  // Weather for trip banner
+  const tripDestination = tripStatus?.live?.destination || tripStatus?.upcoming?.destination || null;
+  const { forecast: tripWeather } = useWeatherForecast(tripDestination);
+  const todayWeather = useMemo(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return tripWeather.get(todayStr) || null;
+  }, [tripWeather]);
+
   const [recentlySaved, setRecentlySaved] = useState<SavedPlaceWithDetails[]>([]);
   const [savesCount, setSavesCount] = useState(0);
   const [tripsCount, setTripsCount] = useState(0);
