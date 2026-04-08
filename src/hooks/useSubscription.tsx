@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { toast } from "sonner";
 
 export const STRIPE_CONFIG = {
   pro: {
@@ -82,11 +83,15 @@ export const useSubscription = () => {
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal");
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       if (data?.url) {
         window.open(data.url, "_blank");
+      } else {
+        toast.error("Could not open billing portal. Please try again.");
       }
     } catch (err) {
       console.error("Failed to open customer portal:", err);
+      toast.error("Unable to open billing portal. Please try again later.");
     }
   };
 
