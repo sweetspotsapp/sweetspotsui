@@ -17,6 +17,9 @@ import TripView from "./trip/TripView";
 import GeneratingOverlay from "./trip/GeneratingOverlay";
 import { useTrip, type TripData, type TripParams, type SavedTrip } from "@/hooks/useTrip";
 import { useAuth } from "@/hooks/useAuth";
+import { useTripLimit } from "@/hooks/useTripLimit";
+import { useSubscription } from "@/hooks/useSubscription";
+import UpgradeModal from "./UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
 
 type Phase = "list" | "view";
