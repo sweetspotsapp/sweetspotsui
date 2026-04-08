@@ -1,27 +1,20 @@
 import { Home, Heart, CalendarDays, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface BottomNavProps {
-  activeTab: "home" | "discover" | "saved" | "trip" | "profile";
-  onTabChange: (tab: "home" | "discover" | "saved" | "trip" | "profile") => void;
+  activeTab: "home" | "discover" | "saved" | "trip";
+  onTabChange: (tab: "home" | "discover" | "saved" | "trip") => void;
   tripBadgeCount?: number;
 }
 
 const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProps) => {
-  const { user } = useAuth();
-
   const tabs = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "discover" as const, label: "Discover", icon: Search },
     { id: "saved" as const, label: "Saved", icon: Heart },
     { id: "trip" as const, label: "Trip", icon: CalendarDays },
-    { id: "profile" as const, label: "Profile", icon: null },
   ];
 
-  const avatarUrl = user?.user_metadata?.avatar_url;
-  const initials = (user?.email?.[0] || "U").toUpperCase();
 
   return (
     <>
@@ -31,7 +24,6 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const isProfile = tab.id === "profile";
             const showBadge = tab.id === "trip" && tripBadgeCount > 0;
 
             return (
@@ -44,17 +36,12 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                   isActive ? "bg-background" : "bg-transparent"
                 )}
               >
-                {isProfile ? (
-                  <Avatar className={cn("w-6 h-6", isActive && "ring-2 ring-primary")}>
-                    {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
-                    <AvatarFallback className="text-[10px] font-semibold bg-muted text-muted-foreground">{initials}</AvatarFallback>
-                  </Avatar>
-                ) : Icon ? (
+                {Icon && (
                   <Icon
                     className={cn("w-5 h-5 transition-colors duration-200", isActive ? "text-primary" : "text-background/70")}
                     fill={isActive && tab.id === "saved" ? "currentColor" : "none"}
                   />
-                ) : null}
+                )}
                 {showBadge && (
                   <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 border-2 border-foreground/90">
                     {tripBadgeCount > 9 ? "9+" : tripBadgeCount}
@@ -87,13 +74,8 @@ const BottomNav = ({ activeTab, onTabChange, tripBadgeCount = 0 }: BottomNavProp
                     isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  {Icon ? (
+                  {Icon && (
                     <Icon className="w-4 h-4" fill={isActive && tab.id === "saved" ? "currentColor" : "none"} />
-                  ) : (
-                    <Avatar className="w-5 h-5">
-                      {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
-                      <AvatarFallback className="text-[8px] font-semibold bg-muted text-muted-foreground">{initials}</AvatarFallback>
-                    </Avatar>
                   )}
                   {tab.label}
                   {showBadge && (

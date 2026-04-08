@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePendingInvites } from "@/hooks/usePendingInvites";
 import type { OnboardingData } from "@/context/AppContext";
 
-type TabType = "home" | "discover" | "saved" | "trip" | "profile";
+type TabType = "home" | "discover" | "saved" | "trip";
 type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
@@ -114,27 +114,22 @@ const Index = () => {
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Couldn't load Home">
-          <HomePage onNavigateToProfile={() => setActiveTab("profile")} onNavigateToTab={(tab) => setActiveTab(tab as TabType)} onTripTemplate={(template) => { setTripTemplate(template); setActiveTab("trip"); }} />
+          <HomePage onNavigateToTab={(tab) => setActiveTab(tab as TabType)} onTripTemplate={(template) => { setTripTemplate(template); setActiveTab("trip"); }} />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Couldn't load Discover">
-          <DiscoverPage onNavigateToProfile={() => setActiveTab("profile")} />
+          <DiscoverPage />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Couldn't load your saves">
-          <SavedPage onNavigateToProfile={() => setActiveTab("profile")} />
+          <SavedPage />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "trip" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Trip planner hit a snag">
           <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} tripTemplate={tripTemplate} onTemplateConsumed={() => setTripTemplate(null)} />
-        </ErrorBoundary>
-      </div>
-      <div style={{ display: activeTab === "profile" ? "block" : "none" }}>
-        <ErrorBoundary fallbackTitle="Profile couldn't load">
-          <ProfilePage onNavigateToSaved={() => setActiveTab("saved")} />
         </ErrorBoundary>
       </div>
       
