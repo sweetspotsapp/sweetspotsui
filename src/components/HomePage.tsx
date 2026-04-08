@@ -550,6 +550,10 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
 
+    if (hasReachedLimit) {
+      toast.error("You've hit your daily search limit. Upgrade for unlimited searches!");
+      return;
+    }
 
     setUserMood(searchValue.trim());
     setNeedsLocationPermission(false);
