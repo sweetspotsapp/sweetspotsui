@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List, Link2, Search, ExternalLink } from "lucide-react";
+import ImportLinkDialog from "./ImportLinkDialog";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
 import BoardMapView from "./BoardMapView";
@@ -48,7 +49,9 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [filterBy] = useState<FilterOption>("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
-  const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places); // Local state to keep All Saved in sync
+  const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places);
+  const [showAddSpotMenu, setShowAddSpotMenu] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   
   // AI Suggestions state
   const [suggestions, setSuggestions] = useState<RankedPlace[]>([]);
@@ -358,9 +361,15 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                   <MapPin className="w-7 h-7 text-muted-foreground" />
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-1">No spots yet</h3>
-                <p className="text-sm text-muted-foreground max-w-[220px]">
+                <p className="text-sm text-muted-foreground max-w-[220px] mb-4">
                   Save some places and add them to this board
                 </p>
+                <button
+                  onClick={() => setShowAddSpotMenu(true)}
+                  className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Add a Spot
+                </button>
               </div>
             ) : (
               <>
@@ -428,7 +437,23 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                             </span>
                           )}
                         </div>
+                    {/* Add a Spot CTA Card */}
+                    <button
+                      onClick={() => setShowAddSpotMenu(true)}
+                      className="aspect-square rounded-xl border-2 border-dashed border-primary/20 
+                                 bg-primary/5 flex flex-col items-center justify-center gap-2 
+                                 text-muted-foreground hover:border-primary/40 hover:bg-primary/10 
+                                 transition-all active:scale-[0.98] px-3"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Link2 className="w-5 h-5 text-primary" />
                       </div>
+                      <span className="text-sm font-semibold text-foreground">Add a Spot</span>
+                      <span className="text-[10px] text-muted-foreground text-center leading-tight">
+                        Search or paste a link
+                      </span>
+                    </button>
+                  </div>
                     </div>
                   ))}
                 </div>
@@ -518,6 +543,47 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           </div>
         )}
       </div>
+
+      {/* Add Spot Action Sheet */}
+      {showAddSpotMenu && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShowAddSpotMenu(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[60] bg-card rounded-t-2xl p-4 pb-28 max-w-md mx-auto shadow-lg animate-in slide-in-from-bottom duration-200">
+            <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-4" />
+            <h3 className="text-base font-semibold text-foreground mb-3">Add a Spot</h3>
+            <button
+              onClick={() => { setShowAddSpotMenu(false); navigate('/?tab=discover'); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Search className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-foreground">Search Places</span>
+                <p className="text-xs text-muted-foreground">Find hidden gems by vibe</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setShowAddSpotMenu(false); setShowImportDialog(true); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <ExternalLink className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-foreground">Paste a Link</span>
+                <p className="text-xs text-muted-foreground">From Instagram, TikTok, or Google Maps</p>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Import Link Dialog */}
+      <ImportLinkDialog
+        open={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+      />
     </>
   );
 };
