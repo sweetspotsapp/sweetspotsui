@@ -163,7 +163,7 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
           )}
           onClick={handleSaveClick}
         >
-          <Heart className={cn("w-4 h-4", saved && "fill-current")} />
+          <Heart className={cn("w-3 h-3", saved && "fill-current")} />
         </button>
         
         {/* Vibe tag */}
