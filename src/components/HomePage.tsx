@@ -276,6 +276,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : userMood || "");
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Rotating search placeholder hints
   const searchHints = useMemo(() => [
