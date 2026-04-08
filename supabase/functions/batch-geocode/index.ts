@@ -1,9 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const QuerySchema = z.object({
+  name: z.string().min(1).max(300),
+  destination: z.string().min(1).max(200),
+  index: z.number().int().min(0).max(100),
+});
+const BatchGeocodeSchema = z.object({
+  queries: z.array(QuerySchema).min(1).max(30),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,15 +28,14 @@ serve(async (req) => {
       });
     }
 
-    const { queries } = await req.json();
-    if (!Array.isArray(queries) || queries.length === 0) {
-      return new Response(JSON.stringify({ results: [] }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const rawBody = await req.json();
+    const parsed = BatchGeocodeSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    // Limit to 30 queries max
-    const limited = queries.slice(0, 30);
+    const { queries } = parsed.data;
 
     const results = await Promise.allSettled(
       limited.map(async (q: { name: string; destination: string; index: number }) => {

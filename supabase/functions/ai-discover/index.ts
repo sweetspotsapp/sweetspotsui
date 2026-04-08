@@ -1,9 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limiting
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) { rateLimitMap.set(key, { count: 1, resetAt: now + 60_000 }); return true; }
+  if (entry.count >= 15) return false;
+  entry.count++;
+  return true;
+}
+
+const DiscoverInputSchema = z.object({
+  prompt: z.string().min(1).max(500),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  city: z.string().max(200).optional(),
+});
 
 interface AIPlace {
   name: string;
@@ -22,14 +41,22 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, lat, lng, city } = await req.json();
-    
-    if (!prompt) {
-      return new Response(JSON.stringify({ error: 'Prompt is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Rate limit
+    const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(`discover:${clientIp}`)) {
+      return new Response(JSON.stringify({ error: 'Rate limited. Please wait.' }), {
+        status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const rawBody = await req.json();
+    const parsed = DiscoverInputSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { prompt, lat, lng, city } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
