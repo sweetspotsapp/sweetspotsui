@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
-import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2, Loader2, Crown, CreditCard } from "lucide-react";
+import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2, Loader2, Crown, CreditCard, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Switch } from "@/components/ui/switch";
