@@ -58,6 +58,10 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<DBTripTemplate[]>([]);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [recommendations, setRecommendations] = useState<Array<{
+    place_id: string; name: string; rating: number | null; photo_name: string | null; ai_reason: string;
+  }>>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
 
   useEffect(() => {
     // Fetch trip templates from DB (public, no auth needed)
