@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Sparkles } from "lucide-react";
+
 import TopPickCard from "./TopPickCard";
 import { MockPlace } from "./PlaceCardCompact";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -33,8 +33,8 @@ const TopPicksSection: React.FC<TopPicksSectionProps> = ({
     <div className="mb-8 px-4 lg:px-8">
       {/* Section Header */}
       <div className="flex items-center gap-2 mb-4">
-        <Sparkles className="w-5 h-5 text-primary" />
-        <h2 className="text-lg font-bold text-foreground">Top Picks for You</h2>
+        <img src="/sweetspots-logo.svg" alt="SweetSpots" className="w-5 h-5" />
+        <h2 className="text-lg font-bold text-foreground">These might be your SweetSpots</h2>
       </div>
 
       {/* Mobile: swipeable carousel */}
