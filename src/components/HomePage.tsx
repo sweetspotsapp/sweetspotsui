@@ -48,6 +48,18 @@ const TEMPLATE_IMAGES: Record<string, string> = {
   Melbourne: tripMelbourne,
   Bangkok: tripBangkok,
 };
+// Small weather icon using lucide icons
+const WeatherIconSmall = ({ icon }: { icon: string }) => {
+  const cls = "w-3.5 h-3.5";
+  switch (icon) {
+    case "clear": return <Sun className={cls} />;
+    case "rain": return <CloudRain className={cls} />;
+    case "clouds": return <Cloud className={cls} />;
+    case "snow": return <CloudSnow className={cls} />;
+    case "thunderstorm": return <CloudLightning className={cls} />;
+    default: return <Cloud className={cls} />;
+  }
+};
 
 const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: HomePageProps) => {
   const navigate = useNavigate();
