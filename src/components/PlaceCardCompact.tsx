@@ -157,7 +157,7 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
         {/* Save button */}
         <button
           onClick={handleSave}
-          className={`absolute top-2.5 right-2.5 w-6 h-6 flex items-center justify-center bg-card/90 backdrop-blur-sm rounded-full transition-all duration-200 hover:scale-110 ${
+          className={`absolute top-2.5 right-2.5 w-5 h-5 flex items-center justify-center bg-card/90 backdrop-blur-sm rounded-full transition-all duration-200 hover:scale-110 ${
             isSaved ? 'animate-pulse-once' : ''
           }`}
         >
