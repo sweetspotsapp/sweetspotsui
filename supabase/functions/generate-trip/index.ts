@@ -52,12 +52,14 @@ Trip details:
 - Budget level: ${budget} ($ = budget, $$ = moderate, $$$ = upscale, $$$$ = luxury)
 - Group size: ${groupSize} people${vibeChipsInstruction}${vibeInstruction}${mustIncludeSection}${accommodationSection}
 
-Generate a structured trip plan with Morning, Afternoon, and Evening slots for each day. Each activity should have:
-- A realistic name of a real place or activity
-- A brief description
+Generate a structured trip plan with Morning, Afternoon, and Evening slots for each day. Each activity MUST be:
+- The FULL, EXACT name of a REAL, SPECIFIC establishment or attraction that EXISTS in ${destination}. For example: "Little Creatures Geelong" NOT "Coffee". "Geelong Gallery" NOT "Art Museum". "Pakington Strand" NOT "Shopping Street". NEVER use generic category names as activity names.
+- A brief description mentioning what makes this specific place special
 - A category
 - An optional time range
 - An estimated cost per person in USD (be realistic based on the budget level and destination)
+
+CRITICAL: Every single activity name must be a real, Googleable business or landmark in ${destination}. If you're unsure a place exists there, pick one you're confident about. NEVER invent or use placeholder names like "Local Cafe", "Beach Walk", "Coffee Shop", "Night Market" — always use the actual venue name.
 
 IMPORTANT: The traveler's vibes and description are the MOST important input. Build the entire itinerary around what they asked for. If they said "sunset", prioritize sunset viewpoints, rooftop bars at golden hour, sunset cruises, etc. If they said "foodie", focus on food experiences. Do NOT default to generic city tours or random cafes.
 
