@@ -12,10 +12,10 @@ interface PlaceCardProps {
   onClick?: () => void;
 }
 
-// Build photo URL — tries storage first, edge function as fallback
+// Build photo URL — use storage URL directly, let <img> onError handle fallback
 const getPhotoUrl = (photoName: string | null, maxWidth = 400, maxHeight = 600): string | null => {
   if (!photoName) return null;
-  return getEdgeFunctionPhotoUrl(photoName, maxWidth, maxHeight);
+  return getStoragePhotoUrl(photoName, maxWidth, maxHeight);
 };
 
 // Fallback placeholder image
