@@ -32,7 +32,7 @@ const TRIP_TEMPLATES = [
   { destination: "Bangkok", duration: "4 days", vibe: "Night markets & temples", image: tripBangkok },
 ];
 
-const HomePage = ({ onNavigateToProfile, onNavigateToTab }: HomePageProps) => {
+const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: HomePageProps) => {
   const { user } = useAuth();
   const { onboardingData } = useApp();
   const upcomingTrip = useUpcomingTrip();
