@@ -19,6 +19,7 @@ import { useTrip, type TripData, type TripParams, type SavedTrip } from "@/hooks
 import { useAuth } from "@/hooks/useAuth";
 import { useTripLimit } from "@/hooks/useTripLimit";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useLiveTrip } from "@/hooks/useLiveTrip";
 import UpgradeModal from "./UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -41,6 +42,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     saveTrip, deleteTrip, acceptInvite, ignoreInvite,
   } = useTrip();
   const { hasReachedLimit: hasReachedTripLimit, tripsUsedThisMonth, monthlyLimit, increment: incrementTripCount } = useTripLimit(isPro);
+  const liveTrip = useLiveTrip(savedTrips);
 
   const [phase, setPhase] = useState<Phase>("list");
   const [tripData, setTripData] = useState<TripData | null>(null);
@@ -396,6 +398,12 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
               await saveTrip(tripParams, edited, editingId || undefined);
             }
           }}
+          isLive={liveTrip.isLive && editingId === liveTrip.trip?.id}
+          currentDayIndex={liveTrip.currentDayIndex}
+          checkedActivities={liveTrip.checkedActivities}
+          liveProgress={liveTrip.progress}
+          onToggleActivity={liveTrip.toggleActivity}
+          onUndoActivity={liveTrip.undoActivity}
         />
       )}
 
@@ -818,14 +826,23 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare,
         <div className="flex-1 p-4 pr-2 flex flex-col justify-between min-w-0">
           {/* Status badge */}
           <div className="mb-1.5">
-            <span className={cn(
-              "inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full",
-              category === "upcoming" && "bg-primary/10 text-primary",
-              category === "current" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-              category === "past" && "bg-muted text-muted-foreground",
-            )}>
-              {category}
-            </span>
+            {category === "current" ? (
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                </span>
+                LIVE
+              </span>
+            ) : (
+              <span className={cn(
+                "inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                category === "upcoming" && "bg-primary/10 text-primary",
+                category === "past" && "bg-muted text-muted-foreground",
+              )}>
+                {category}
+              </span>
+            )}
           </div>
 
           {/* Title */}

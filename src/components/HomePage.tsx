@@ -52,7 +52,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const navigate = useNavigate();
   const { user } = useAuth();
   const { onboardingData } = useApp();
-  const upcomingTrip = useUpcomingTrip();
+  const tripStatus = useUpcomingTrip();
   const { avatarUrl: profileAvatarUrl, username: profileUsername } = useProfileInfo();
 
   const [recentlySaved, setRecentlySaved] = useState<SavedPlaceWithDetails[]>([]);
@@ -250,8 +250,35 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         onNavigateToProfile={onNavigateToProfile}
       />
 
+      {/* Live Trip Banner */}
+      {tripStatus?.type === "live" && tripStatus.live && (
+        <div className="px-5 pt-4 pb-2 animate-fade-in" style={{ animationDelay: "50ms", animationFillMode: "both" }}>
+          <button
+            onClick={handlePlanTrip}
+            className="w-full relative overflow-hidden rounded-2xl bg-green-500/10 dark:bg-green-900/20 p-5 text-left transition-all hover:bg-green-500/15 active:scale-[0.98] border border-green-500/20"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+              </span>
+              <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-widest">Live Trip</p>
+            </div>
+            <h2 className="text-xl font-bold text-foreground">
+              You're in {tripStatus.live.destination}!
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Day {tripStatus.live.currentDay} of {tripStatus.live.totalDays}
+            </p>
+            <div className="flex items-center gap-1 mt-2 text-sm text-green-700 dark:text-green-400 font-medium">
+              Open Live View <ArrowRight className="w-4 h-4" />
+            </div>
+          </button>
+        </div>
+      )}
+
       {/* Upcoming Trip Card */}
-      {upcomingTrip && engagementLevel === "engaged" && (
+      {tripStatus?.type === "upcoming" && tripStatus.upcoming && engagementLevel === "engaged" && (
         <div className="px-5 pt-4 pb-2 animate-fade-in" style={{ animationDelay: "50ms", animationFillMode: "both" }}>
           <button
             onClick={handlePlanTrip}
@@ -259,7 +286,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           >
             <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Upcoming</p>
             <h2 className="text-xl font-bold text-foreground">
-              {upcomingTrip.destination} in {upcomingTrip.daysUntil === 0 ? "today!" : `${upcomingTrip.daysUntil} day${upcomingTrip.daysUntil === 1 ? "" : "s"}`}
+              {tripStatus.upcoming.destination} in {tripStatus.upcoming.daysUntil === 0 ? "today!" : `${tripStatus.upcoming.daysUntil} day${tripStatus.upcoming.daysUntil === 1 ? "" : "s"}`}
             </h2>
             <div className="flex items-center gap-1 mt-2 text-sm text-primary font-medium">
               View Itinerary <ArrowRight className="w-4 h-4" />

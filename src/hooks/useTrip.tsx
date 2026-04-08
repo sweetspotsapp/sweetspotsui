@@ -78,6 +78,7 @@ export interface SavedTrip {
   trip_data: TripData | null;
   accommodation: AccommodationEntry[] | null;
   flight_details: { outbound?: string; returnFlight?: string; price?: number; currency?: string } | null;
+  checked_activities?: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 }

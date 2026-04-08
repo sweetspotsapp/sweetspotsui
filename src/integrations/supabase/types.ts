@@ -474,6 +474,7 @@ export type Database = {
           accommodation: Json | null
           board_ids: string[] | null
           budget: string
+          checked_activities: Json | null
           created_at: string
           destination: string
           documents: Json | null
@@ -493,6 +494,7 @@ export type Database = {
           accommodation?: Json | null
           board_ids?: string[] | null
           budget?: string
+          checked_activities?: Json | null
           created_at?: string
           destination: string
           documents?: Json | null
@@ -512,6 +514,7 @@ export type Database = {
           accommodation?: Json | null
           board_ids?: string[] | null
           budget?: string
+          checked_activities?: Json | null
           created_at?: string
           destination?: string
           documents?: Json | null
