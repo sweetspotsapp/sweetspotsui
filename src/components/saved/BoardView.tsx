@@ -361,9 +361,15 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
                   <MapPin className="w-7 h-7 text-muted-foreground" />
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-1">No spots yet</h3>
-                <p className="text-sm text-muted-foreground max-w-[220px]">
+                <p className="text-sm text-muted-foreground max-w-[220px] mb-4">
                   Save some places and add them to this board
                 </p>
+                <button
+                  onClick={() => setShowAddSpotMenu(true)}
+                  className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Add a Spot
+                </button>
               </div>
             ) : (
               <>
