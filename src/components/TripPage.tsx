@@ -24,9 +24,11 @@ type TripFilter = "all" | "upcoming" | "current" | "past";
 interface TripPageProps {
   resumeTripId?: string | null;
   onResumed?: () => void;
+  prefillDestination?: string | null;
+  onPrefillConsumed?: () => void;
 }
 
-const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
+const TripPage = ({ resumeTripId, onResumed, prefillDestination, onPrefillConsumed }: TripPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
