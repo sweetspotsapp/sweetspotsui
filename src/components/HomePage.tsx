@@ -98,16 +98,28 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     fetchData();
   }, [user]);
 
+  // Fetch notification_settings to check recommendations preference
+  const [recsEnabled, setRecsEnabled] = useState(true);
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("notification_settings").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.notification_settings) {
+        const ns = data.notification_settings as any;
+        if (ns.recommendations === false) setRecsEnabled(false);
+      }
+    });
+  }, [user]);
+
   // Fetch personalized recommendations
   useEffect(() => {
-    if (!user || savesCount === 0) return;
+    if (!user || savesCount === 0 || !recsEnabled) return;
     setRecsLoading(true);
     supabase.functions.invoke("recommend-for-you", {
       body: { limit: 6 },
     }).then(({ data }) => {
       if (data?.recommendations) setRecommendations(data.recommendations);
     }).catch(() => {}).finally(() => setRecsLoading(false));
-  }, [user, savesCount]);
+  }, [user, savesCount, recsEnabled]);
 
   const userName = profileUsername || user?.user_metadata?.full_name?.split(" ")[0] || "Explorer";
   const avatarUrl = profileAvatarUrl || user?.user_metadata?.avatar_url;
