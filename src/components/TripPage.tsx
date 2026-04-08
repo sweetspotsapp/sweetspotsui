@@ -63,6 +63,71 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     }
   }, [phase, editingId]);
 
+  // Enrich trip activities that lack lat/lng (e.g. from pre-built templates)
+  const enrichActivitiesWithCoords = useCallback(async (data: TripData, destination: string): Promise<TripData> => {
+    // Collect activities missing coords
+    const missing: { dayIdx: number; slotIdx: number; actIdx: number; name: string }[] = [];
+    data.days.forEach((day, di) => {
+      day.slots.forEach((slot, si) => {
+        slot.activities.forEach((act, ai) => {
+          if (!act.lat || !act.lng) {
+            missing.push({ dayIdx: di, slotIdx: si, actIdx: ai, name: act.name });
+          }
+        });
+      });
+    });
+
+    if (missing.length === 0) return data;
+
+    try {
+      // Get Google Maps API key
+      const { data: keyData } = await supabase.functions.invoke('get-maps-key');
+      if (!keyData?.apiKey) return data;
+
+      // Batch geocode (up to 25 at a time to avoid rate limits)
+      const enriched = JSON.parse(JSON.stringify(data)) as TripData;
+      const batch = missing.slice(0, 25);
+
+      const results = await Promise.allSettled(
+        batch.map(async (item) => {
+          const query = `${item.name} ${destination}`;
+          const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${keyData.apiKey}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (json.results?.[0]) {
+            const place = json.results[0];
+            return {
+              ...item,
+              lat: place.geometry?.location?.lat,
+              lng: place.geometry?.location?.lng,
+              placeId: place.place_id,
+              address: place.formatted_address,
+              photoName: place.photos?.[0]?.photo_reference || null,
+            };
+          }
+          return null;
+        })
+      );
+
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value) {
+          const r = result.value;
+          const act = enriched.days[r.dayIdx].slots[r.slotIdx].activities[r.actIdx];
+          act.lat = r.lat;
+          act.lng = r.lng;
+          if (r.placeId) act.placeId = r.placeId;
+          if (r.address) act.address = r.address;
+          if (r.photoName) act.photoName = r.photoName;
+        }
+      }
+
+      return enriched;
+    } catch (err) {
+      console.error('Failed to enrich template activities:', err);
+      return data;
+    }
+  }, []);
+
   // Instantly save a pre-built template trip (no AI generation)
   useEffect(() => {
     if (tripTemplate) {
@@ -92,11 +157,21 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
       setShowCreateModal(false);
       onTemplateConsumed?.();
 
-      // Save directly — no AI call
+      // Save directly then enrich with coordinates in background
       (async () => {
         const id = await saveTrip(params, tripDataTyped);
         if (id) setEditingId(id);
         setPhase("view");
+
+        // Enrich with coordinates in background
+        const enriched = await enrichActivitiesWithCoords(tripDataTyped, destination);
+        if (enriched !== tripDataTyped) {
+          setTripData(enriched);
+          // Update saved trip with enriched data
+          if (id) {
+            await saveTrip(params, enriched, id);
+          }
+        }
       })();
     }
   }, [tripTemplate]);
