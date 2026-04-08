@@ -1013,10 +1013,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
             {recentSearches.map((query) => (
               <button
                 key={query}
-                onClick={() => {
-                  setSearchValue(query);
-                  setUserMood(query);
-                }}
+                onClick={() => triggerSearch(query)}
                 className="shrink-0 px-3 py-1.5 rounded-full bg-muted/70 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors border border-border/50"
               >
                 {query}
