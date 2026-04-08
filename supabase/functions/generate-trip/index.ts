@@ -194,16 +194,53 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
     // Enrich activities with real place data using Google Places API
     const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY_BE");
 
-    // First try matching from DB cache
-    const { data: cachedPlaces } = await sb
-      .from("places")
-      .select("place_id, name, photo_name, lat, lng, address, photos")
-      .limit(500);
+    // Geocode the destination to get a location bias for searches
+    let destLat: number | null = null;
+    let destLng: number | null = null;
+    if (GOOGLE_MAPS_API_KEY) {
+      try {
+        const geoRes = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(destination)}&key=${GOOGLE_MAPS_API_KEY}`
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const loc = geoData.results?.[0]?.geometry?.location;
+          if (loc) { destLat = loc.lat; destLng = loc.lng; }
+        }
+      } catch (e) { console.error("Geocode failed:", e); }
+    }
 
-    const placeCache = new Map<string, { place_id: string; photo_name: string | null; lat: number | null; lng: number | null; address: string | null; photos: string[] | null }>();
-    if (cachedPlaces) {
-      for (const p of cachedPlaces) {
-        placeCache.set(p.name.toLowerCase().trim(), p);
+    // Haversine distance in km
+    function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+      const toRad = (d: number) => d * Math.PI / 180;
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // Max distance from destination center (km) — generous for large metro areas
+    const MAX_DISTANCE_KM = 100;
+
+    // First try matching from DB cache — only places near the destination
+    let placeCache = new Map<string, { place_id: string; photo_name: string | null; lat: number | null; lng: number | null; address: string | null; photos: string[] | null }>();
+    if (destLat && destLng) {
+      // Rough bounding box to limit DB query
+      const latRange = MAX_DISTANCE_KM / 111;
+      const lngRange = MAX_DISTANCE_KM / (111 * Math.cos(destLat * Math.PI / 180));
+      const { data: cachedPlaces } = await sb
+        .from("places")
+        .select("place_id, name, photo_name, lat, lng, address, photos")
+        .gte("lat", destLat - latRange)
+        .lte("lat", destLat + latRange)
+        .gte("lng", destLng - lngRange)
+        .lte("lng", destLng + lngRange)
+        .limit(500);
+      if (cachedPlaces) {
+        for (const p of cachedPlaces) {
+          placeCache.set(p.name.toLowerCase().trim(), p);
+        }
       }
     }
 
@@ -213,17 +250,8 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         for (const act of slot.activities) {
           const normalizedName = act.name.toLowerCase().trim();
 
-          // Try exact match from cache
-          let match = placeCache.get(normalizedName);
-          // Fuzzy match
-          if (!match) {
-            for (const [key, val] of placeCache) {
-              if (key.includes(normalizedName) || normalizedName.includes(key)) {
-                match = val;
-                break;
-              }
-            }
-          }
+          // Try exact match from cache (already location-filtered)
+          const match = placeCache.get(normalizedName);
 
           if (match) {
             act.placeId = match.place_id;
@@ -234,11 +262,22 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
             continue;
           }
 
-          // No cache hit — use Google Places Text Search
+          // No cache hit — use Google Places Text Search with location bias
           if (!GOOGLE_MAPS_API_KEY) continue;
 
           try {
-            const searchQuery = `${act.name} ${destination}`;
+            const searchQuery = `${act.name} in ${destination}`;
+            const searchBody: Record<string, unknown> = {
+              textQuery: searchQuery,
+              maxResultCount: 3,
+            };
+            // Add location bias so results are near the destination
+            if (destLat && destLng) {
+              searchBody.locationBias = {
+                circle: { center: { latitude: destLat, longitude: destLng }, radius: MAX_DISTANCE_KM * 1000 },
+              };
+            }
+
             const gRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
               method: "POST",
               headers: {
@@ -246,12 +285,28 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
                 "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
                 "X-Goog-FieldMask": "places.name,places.displayName,places.photos,places.location,places.formattedAddress",
               },
-              body: JSON.stringify({ textQuery: searchQuery, maxResultCount: 1 }),
+              body: JSON.stringify(searchBody),
             });
 
             if (gRes.ok) {
               const gData = await gRes.json();
-              const place = gData.places?.[0];
+              // Pick the first result that's actually near the destination
+              let place = null;
+              for (const candidate of gData.places || []) {
+                const cLat = candidate.location?.latitude;
+                const cLng = candidate.location?.longitude;
+                if (destLat && destLng && cLat && cLng) {
+                  const dist = haversineKm(destLat, destLng, cLat, cLng);
+                  if (dist <= MAX_DISTANCE_KM) {
+                    place = candidate;
+                    break;
+                  }
+                } else {
+                  place = candidate; // no coords to verify, use first
+                  break;
+                }
+              }
+
               if (place) {
                 const photoName = place.photos?.[0]?.name || null;
                 const lat = place.location?.latitude || null;
