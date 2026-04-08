@@ -11,11 +11,12 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    const rawBody = await req.json();
+    const prompt = rawBody?.prompt;
     
-    if (!prompt || typeof prompt !== 'string') {
+    if (!prompt || typeof prompt !== 'string' || prompt.length > 500) {
       return new Response(
-        JSON.stringify({ error: 'Prompt is required' }),
+        JSON.stringify({ error: 'Prompt is required (max 500 chars)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
