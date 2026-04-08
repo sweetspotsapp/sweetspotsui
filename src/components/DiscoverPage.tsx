@@ -293,16 +293,24 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     }
   }, [aiSummary]);
 
+  // Track location changes separately — don't auto-search, just clear stale cache
+  useEffect(() => {
+    const cachedLocation = sessionStorage.getItem(CACHED_LOCATION_KEY) || "";
+    const currentLocation = onboardingData?.explore_location || "";
+    if (currentLocation && currentLocation !== cachedLocation) {
+      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(SUMMARY_CACHE_KEY);
+      sessionStorage.setItem(CACHED_LOCATION_KEY, currentLocation);
+    }
+  }, [onboardingData?.explore_location]);
+
   useEffect(() => {
     const cachedMood = sessionStorage.getItem(CACHED_MOOD_KEY) || "";
-    const cachedLocation = sessionStorage.getItem(CACHED_LOCATION_KEY) || "";
     const currentMood = userMood?.trim() || "";
-    const currentLocation = onboardingData?.explore_location || "";
     const moodChanged = currentMood !== "" && currentMood !== cachedMood;
-    const locationChanged = currentLocation !== "" && currentLocation !== cachedLocation;
 
-    if (hasLoadedInitial.current && !moodChanged && !locationChanged && !wasSkipMode.current) return;
-    if (!wasSkipMode.current && !moodChanged && !locationChanged && searchResults.length > 0) {
+    if (hasLoadedInitial.current && !moodChanged && !wasSkipMode.current) return;
+    if (!wasSkipMode.current && !moodChanged && searchResults.length > 0) {
       hasLoadedInitial.current = true;
       setIsInitialLoading(false);
       return;
@@ -311,11 +319,11 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
 
     const loadInitialPlaces = async () => {
       setIsInitialLoading(true);
-      if (locationChanged || moodChanged) {
+      const currentLocation = onboardingData?.explore_location || "";
+      if (moodChanged) {
         sessionStorage.removeItem(CACHE_KEY);
         sessionStorage.removeItem(SUMMARY_CACHE_KEY);
         sessionStorage.removeItem(CACHED_MOOD_KEY);
-        sessionStorage.removeItem(CACHED_LOCATION_KEY);
         setSearchResults([]);
         setAiSummary(null);
       }
@@ -327,7 +335,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
         } else {
           searchPrompt = currentMood || "popular restaurants and cafes nearby";
         }
-        const searchOptions: { locationName?: string; skipCache?: boolean } = { skipCache: moodChanged || locationChanged };
+        const searchOptions: { locationName?: string; skipCache?: boolean } = { skipCache: moodChanged };
         if (currentLocation && currentLocation !== "nearby") searchOptions.locationName = currentLocation;
         const result = await search(searchPrompt, searchOptions);
         if (result && result.places.length > 0) {
@@ -343,9 +351,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     };
 
     if (currentMood) sessionStorage.setItem(CACHED_MOOD_KEY, currentMood);
-    if (currentLocation) sessionStorage.setItem(CACHED_LOCATION_KEY, currentLocation);
     loadInitialPlaces();
-  }, [search, userMood, onboardingData?.explore_location]);
+  }, [search, userMood]);
 
   useEffect(() => {
     if (searchError) {
