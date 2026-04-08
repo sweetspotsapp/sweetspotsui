@@ -636,18 +636,14 @@ Respond with a JSON object:
         }
       }
       
-      // Extract bullets - convert array to JSON string for transport
-      const bullets = parsed.bullets || parsed.summary;
-      if (Array.isArray(bullets)) {
-        summary = JSON.stringify(bullets);
-      } else if (typeof bullets === 'string') {
-        summary = bullets;
+      // Extract blurb (new format) or bullets (legacy)
+      const blurb = parsed.blurb || parsed.bullets || parsed.summary;
+      if (typeof blurb === 'string') {
+        summary = blurb;
+      } else if (Array.isArray(blurb)) {
+        summary = blurb.join(' ');
       } else {
-        summary = JSON.stringify([
-          `Try our best picks because you like "${prompt}"`,
-          `Based on your keywords, we found some great matching spots`,
-          `I'd suggest you go for the top-rated options`
-        ]);
+        summary = `We found some great spots matching "${prompt}" — take a look below.`;
       }
       
       console.log(`AI scored ${relevanceMap.size}/${places.length} places`);
