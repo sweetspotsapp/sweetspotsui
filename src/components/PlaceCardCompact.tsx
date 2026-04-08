@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Star, Heart, Navigation, Clock } from "lucide-react";
+import { Star, Heart, Navigation, Clock, Users } from "lucide-react";
 
 // Dummy place type for mock data
 export interface MockPlace {
@@ -26,6 +26,7 @@ interface PlaceCardCompactProps {
   savedTabRef?: React.RefObject<HTMLElement>;
   showDistance?: boolean;
   isGridItem?: boolean;
+  saveCount?: number;
 }
 
 // Get vibe tag from categories or AI category
