@@ -196,22 +196,6 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
     // Enrich activities with real place data using Google Places API
     const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY_BE");
 
-    // Geocode the destination to get a location bias for searches
-    let destLat: number | null = null;
-    let destLng: number | null = null;
-    if (GOOGLE_MAPS_API_KEY) {
-      try {
-        const geoRes = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(destination)}&key=${GOOGLE_MAPS_API_KEY}`
-        );
-        if (geoRes.ok) {
-          const geoData = await geoRes.json();
-          const loc = geoData.results?.[0]?.geometry?.location;
-          if (loc) { destLat = loc.lat; destLng = loc.lng; }
-        }
-      } catch (e) { console.error("Geocode failed:", e); }
-    }
-
     // Haversine distance in km
     function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
       const toRad = (d: number) => d * Math.PI / 180;
@@ -222,15 +206,94 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    // Max distance from destination center (km) — generous for large metro areas
-    const MAX_DISTANCE_KM = 100;
+    function isWithinBounds(
+      lat: number,
+      lng: number,
+      bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number },
+      paddingKm = 2,
+    ): boolean {
+      const avgLat = (bounds.minLat + bounds.maxLat) / 2;
+      const latPad = paddingKm / 111;
+      const lngPad = paddingKm / (111 * Math.max(Math.cos(avgLat * Math.PI / 180), 0.2));
 
-    // First try matching from DB cache — only places near the destination
+      return (
+        lat >= bounds.minLat - latPad &&
+        lat <= bounds.maxLat + latPad &&
+        lng >= bounds.minLng - lngPad &&
+        lng <= bounds.maxLng + lngPad
+      );
+    }
+
+    // Geocode the destination to get precise suburb/city bounds for trip scoping
+    let destLat: number | null = null;
+    let destLng: number | null = null;
+    let destinationBounds: { minLat: number; maxLat: number; minLng: number; maxLng: number } | null = null;
+    let searchRadiusMeters = 15000;
+
+    if (GOOGLE_MAPS_API_KEY) {
+      try {
+        const geoRes = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(destination)}&key=${GOOGLE_MAPS_API_KEY}`
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const result = geoData.results?.[0];
+          const loc = result?.geometry?.location;
+          const viewport = result?.geometry?.viewport;
+
+          if (loc) {
+            destLat = loc.lat;
+            destLng = loc.lng;
+          }
+
+          if (viewport?.southwest && viewport?.northeast) {
+            destinationBounds = {
+              minLat: viewport.southwest.lat,
+              maxLat: viewport.northeast.lat,
+              minLng: viewport.southwest.lng,
+              maxLng: viewport.northeast.lng,
+            };
+
+            if (destLat !== null && destLng !== null) {
+              const northKm = haversineKm(destLat, destLng, destinationBounds.maxLat, destLng);
+              const eastKm = haversineKm(destLat, destLng, destLat, destinationBounds.maxLng);
+              searchRadiusMeters = Math.min(
+                Math.max(Math.ceil(Math.max(northKm, eastKm) * 1000 * 1.25), 3000),
+                40000,
+              );
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Geocode failed:", e);
+      }
+    }
+
+    // Fallback max distance only when viewport bounds are unavailable
+    const MAX_DISTANCE_KM = 25;
+
+    // First try matching from DB cache — scoped to the destination bounds when possible
     let placeCache = new Map<string, { place_id: string; photo_name: string | null; lat: number | null; lng: number | null; address: string | null; photos: string[] | null }>();
-    if (destLat && destLng) {
-      // Rough bounding box to limit DB query
+    if (destinationBounds) {
+      const { data: cachedPlaces } = await sb
+        .from("places")
+        .select("place_id, name, photo_name, lat, lng, address, photos")
+        .gte("lat", destinationBounds.minLat - 0.03)
+        .lte("lat", destinationBounds.maxLat + 0.03)
+        .gte("lng", destinationBounds.minLng - 0.03)
+        .lte("lng", destinationBounds.maxLng + 0.03)
+        .limit(500);
+
+      if (cachedPlaces) {
+        for (const p of cachedPlaces) {
+          if (p.lat !== null && p.lng !== null && isWithinBounds(p.lat, p.lng, destinationBounds)) {
+            placeCache.set(p.name.toLowerCase().trim(), p);
+          }
+        }
+      }
+    } else if (destLat !== null && destLng !== null) {
       const latRange = MAX_DISTANCE_KM / 111;
-      const lngRange = MAX_DISTANCE_KM / (111 * Math.cos(destLat * Math.PI / 180));
+      const lngRange = MAX_DISTANCE_KM / (111 * Math.max(Math.cos(destLat * Math.PI / 180), 0.2));
       const { data: cachedPlaces } = await sb
         .from("places")
         .select("place_id, name, photo_name, lat, lng, address, photos")
@@ -239,6 +302,7 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
         .gte("lng", destLng - lngRange)
         .lte("lng", destLng + lngRange)
         .limit(500);
+
       if (cachedPlaces) {
         for (const p of cachedPlaces) {
           placeCache.set(p.name.toLowerCase().trim(), p);
@@ -272,9 +336,13 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
                 textQuery: `${act.name} in ${destination}`,
                 maxResultCount: 3,
               };
-              if (destLat && destLng) {
+
+              if (destLat !== null && destLng !== null) {
                 searchBody.locationBias = {
-                  circle: { center: { latitude: destLat, longitude: destLng }, radius: MAX_DISTANCE_KM * 1000 },
+                  circle: {
+                    center: { latitude: destLat, longitude: destLng },
+                    radius: searchRadiusMeters,
+                  },
                 };
               }
 
@@ -291,12 +359,25 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
               if (gRes.ok) {
                 const gData = await gRes.json();
                 let place = null;
+
                 for (const candidate of gData.places || []) {
                   const cLat = candidate.location?.latitude;
                   const cLng = candidate.location?.longitude;
-                  if (destLat && destLng && cLat && cLng) {
-                    if (haversineKm(destLat, destLng, cLat, cLng) <= MAX_DISTANCE_KM) { place = candidate; break; }
-                  } else { place = candidate; break; }
+
+                  if (typeof cLat !== "number" || typeof cLng !== "number") continue;
+
+                  if (destinationBounds) {
+                    if (isWithinBounds(cLat, cLng, destinationBounds)) {
+                      place = candidate;
+                      break;
+                    }
+                    continue;
+                  }
+
+                  if (destLat !== null && destLng !== null && haversineKm(destLat, destLng, cLat, cLng) <= MAX_DISTANCE_KM) {
+                    place = candidate;
+                    break;
+                  }
                 }
 
                 if (place) {
@@ -317,10 +398,17 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
                     act.placeId = googlePlaceId;
                     try {
                       await sb.from("places").upsert({
-                        place_id: googlePlaceId, name: displayName, photo_name: photoName,
-                        lat, lng, address: addr, categories: [act.category],
+                        place_id: googlePlaceId,
+                        name: displayName,
+                        photo_name: photoName,
+                        lat,
+                        lng,
+                        address: addr,
+                        categories: [act.category],
                       }, { onConflict: "place_id", ignoreDuplicates: true });
-                    } catch (e) { console.error(`Upsert failed for "${act.name}":`, e); }
+                    } catch (e) {
+                      console.error(`Upsert failed for "${act.name}":`, e);
+                    }
                   }
                 }
               }
@@ -332,7 +420,6 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       }
     }
 
-    // Run all Google lookups in parallel
     await Promise.all(enrichTasks);
 
     return new Response(JSON.stringify(tripPlan), {
