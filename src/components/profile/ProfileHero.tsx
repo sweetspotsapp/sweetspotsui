@@ -1,7 +1,6 @@
-import { User, Loader2, Camera, Pencil, Check, Sparkles } from "lucide-react";
+import { User, Loader2, Camera, Pencil, Check } from "lucide-react";
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useSubscription } from "@/hooks/useSubscription";
 
 interface ProfileHeroProps {
   user: any;
