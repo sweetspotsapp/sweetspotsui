@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Mail, Users, Search, TrendingUp, Eye, CheckCircle, Trash2, Clock, BarChart3 } from "lucide-react";
+import { ArrowLeft, Mail, Users, Search, TrendingUp, Eye, CheckCircle, Trash2, Clock, BarChart3, DollarSign, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -29,15 +29,25 @@ interface Stats {
   searchesThisWeek: number;
 }
 
+interface RevenueData {
+  totalRevenue: number;
+  activeSubscriptions: number;
+  customers: { email: string; status: string; plan: string; amount: number; currency: string; currentPeriodEnd: string }[];
+}
+
+type TabKey = "overview" | "submissions" | "users" | "revenue";
+
 const Admin = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "users">("overview");
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<any[]>([]);
+  const [revenue, setRevenue] = useState<RevenueData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [revenueLoading, setRevenueLoading] = useState(false);
 
   // Check admin role
   useEffect(() => {
@@ -59,7 +69,28 @@ const Admin = () => {
   useEffect(() => {
     if (!isAdmin) return;
     fetchData();
+  }, [isAdmin]);
+
+  // Fetch revenue when tab changes
+  useEffect(() => {
+    if (isAdmin && activeTab === "revenue" && !revenue) {
+      fetchRevenue();
+    }
   }, [isAdmin, activeTab]);
+
+  const fetchRevenue = async () => {
+    setRevenueLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-revenue");
+      if (error) throw error;
+      setRevenue(data);
+    } catch (err) {
+      console.error("Revenue fetch error:", err);
+      toast({ title: "Error", description: "Failed to load revenue data.", variant: "destructive" });
+    } finally {
+      setRevenueLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -94,7 +125,6 @@ const Admin = () => {
 
       setSubmissions(subs || []);
 
-      // Fetch user profiles
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -130,6 +160,11 @@ const Admin = () => {
       toast({ title: "Deleted", description: "Submission removed." });
     }
   };
+
+  // Estimated cost calculations
+  const estimatedSearchCost = (stats?.totalSearches || 0) * 0.015; // ~$0.015 per AI search call
+  const estimatedTripCost = (stats?.totalTrips || 0) * 0.05; // ~$0.05 per trip generation
+  const totalEstimatedCost = estimatedSearchCost + estimatedTripCost;
 
   if (isAdmin === null) {
     return (
@@ -172,16 +207,17 @@ const Admin = () => {
       </header>
 
       {/* Tabs */}
-      <div className="flex border-b border-border px-4 lg:px-8 gap-1">
+      <div className="flex border-b border-border px-4 lg:px-8 gap-1 overflow-x-auto">
         {[
-          { key: "overview", label: "Overview", icon: BarChart3 },
-          { key: "submissions", label: "Messages", icon: Mail },
-          { key: "users", label: "Users", icon: Users },
+          { key: "overview" as TabKey, label: "Overview", icon: BarChart3 },
+          { key: "revenue" as TabKey, label: "Revenue", icon: DollarSign },
+          { key: "submissions" as TabKey, label: "Messages", icon: Mail },
+          { key: "users" as TabKey, label: "Users", icon: Users },
         ].map(({ key, label, icon: Icon }) => (
           <button
             key={key}
-            onClick={() => setActiveTab(key as any)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            onClick={() => setActiveTab(key)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
               activeTab === key
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -220,6 +256,31 @@ const Admin = () => {
               ))}
             </div>
 
+            {/* Estimated API costs */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-500" />
+                Estimated API Usage Costs
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="bg-card rounded-2xl p-4 border border-border/50">
+                  <p className="text-xs text-muted-foreground mb-1">AI Search Calls</p>
+                  <p className="text-lg font-bold text-foreground">{stats?.totalSearches || 0} calls</p>
+                  <p className="text-xs text-muted-foreground">~${estimatedSearchCost.toFixed(2)}</p>
+                </div>
+                <div className="bg-card rounded-2xl p-4 border border-border/50">
+                  <p className="text-xs text-muted-foreground mb-1">Trip Generations</p>
+                  <p className="text-lg font-bold text-foreground">{stats?.totalTrips || 0} trips</p>
+                  <p className="text-xs text-muted-foreground">~${estimatedTripCost.toFixed(2)}</p>
+                </div>
+                <div className="bg-card rounded-2xl p-4 border border-border/50">
+                  <p className="text-xs text-muted-foreground mb-1">Total Estimated Cost</p>
+                  <p className="text-lg font-bold text-primary">${totalEstimatedCost.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">AI + Maps API calls</p>
+                </div>
+              </div>
+            </div>
+
             {/* Recent submissions preview */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">Recent Messages</h3>
@@ -245,6 +306,88 @@ const Admin = () => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Revenue Tab */}
+        {activeTab === "revenue" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Revenue & Subscriptions</h2>
+              <Button size="sm" variant="outline" onClick={fetchRevenue} disabled={revenueLoading}>
+                {revenueLoading ? "Loading..." : "Refresh"}
+              </Button>
+            </div>
+
+            {revenueLoading ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Skeleton className="h-24 rounded-2xl" />
+                  <Skeleton className="h-24 rounded-2xl" />
+                </div>
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+              </div>
+            ) : revenue ? (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-card rounded-2xl p-5 border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      <span className="text-xs text-muted-foreground">Monthly Revenue</span>
+                    </div>
+                    <p className="text-3xl font-bold text-foreground">
+                      ${(revenue.totalRevenue / 100).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-card rounded-2xl p-5 border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="w-4 h-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">Active Subscribers</span>
+                    </div>
+                    <p className="text-3xl font-bold text-foreground">
+                      {revenue.activeSubscriptions}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Subscribers</h3>
+                  {revenue.customers.length === 0 ? (
+                    <div className="text-center py-8">
+                      <DollarSign className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground">No subscribers yet.</p>
+                      <p className="text-xs text-muted-foreground mt-1">Revenue data will appear here once users subscribe.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {revenue.customers.map((c, i) => (
+                        <div key={i} className="flex items-center justify-between gap-3 bg-card rounded-xl p-3 border border-border/50">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{c.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {c.plan} · Renews {format(new Date(c.currentPeriodEnd), "MMM d, yyyy")}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-semibold text-foreground">
+                              ${(c.amount / 100).toFixed(2)}/{c.currency.toUpperCase()}
+                            </p>
+                            <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-600 border-green-500/20">
+                              {c.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <DollarSign className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">Click Refresh to load revenue data.</p>
+              </div>
+            )}
           </div>
         )}
 
