@@ -12,10 +12,10 @@ interface PlaceCardProps {
   onClick?: () => void;
 }
 
-// Build photo URL — tries storage first, edge function as fallback
+// Build photo URL — use storage URL directly, let <img> onError handle fallback
 const getPhotoUrl = (photoName: string | null, maxWidth = 400, maxHeight = 600): string | null => {
   if (!photoName) return null;
-  return getEdgeFunctionPhotoUrl(photoName, maxWidth, maxHeight);
+  return getStoragePhotoUrl(photoName, maxWidth, maxHeight);
 };
 
 // Fallback placeholder image
@@ -53,16 +53,23 @@ const getVibeTag = (categories: string[] | null): string => {
 const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardProps) => {
   const { isSaved, toggleSave } = useApp();
   const saved = isSaved(place.place_id);
+  const [imgSrc, setImgSrc] = useState<string | null>(() => getPhotoUrl(place.photo_name));
+  const [triedEdge, setTriedEdge] = useState(false);
   const [imgError, setImgError] = useState(false);
   
-  // Use Google photo if available, otherwise fallback to placeholder
-  const googlePhotoUrl = getPhotoUrl(place.photo_name);
   const placeholderUrl = getPlaceholderImage(place.name, place.categories);
-  const imageUrl = (!imgError && googlePhotoUrl) ? googlePhotoUrl : placeholderUrl;
+  const imageUrl = (!imgError && imgSrc) ? imgSrc : placeholderUrl;
   
   const vibeTag = getVibeTag(place.categories);
   
-  const handleImgError = () => setImgError(true);
+  const handleImgError = () => {
+    if (!triedEdge && place.photo_name) {
+      setImgSrc(getEdgeFunctionPhotoUrl(place.photo_name, 400, 600));
+      setTriedEdge(true);
+    } else {
+      setImgError(true);
+    }
+  };
 
   const handleSaveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
