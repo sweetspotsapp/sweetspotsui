@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AppProvider } from "@/context/AppContext";
 import { FeedbackProvider } from "@/context/FeedbackContext";
 import { AuthProvider } from "@/hooks/useAuth";
+import { usePageView } from "@/hooks/usePageView";
 import PersistentLayout from "./components/PersistentLayout";
 
 import Auth from "./pages/Auth";
@@ -18,8 +19,12 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import ProfilePage from "./components/ProfilePage";
 
-
 const queryClient = new QueryClient();
+
+function PageViewTracker() {
+  usePageView();
+  return null;
+}
 
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
@@ -31,6 +36,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <PageViewTracker />
               <Routes>
                 <Route element={<PersistentLayout />}>
                   <Route path="/" element={null} />
