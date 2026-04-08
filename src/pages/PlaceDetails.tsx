@@ -764,7 +764,7 @@ const PlaceDetailsPage = () => {
             </Button>
           </div>
         </div>
-        <BottomNav />
+        <BottomNav activeTab="discover" onTabChange={(tab) => navigate(`/?tab=${tab}`)} />
       </div>
     );
   }
