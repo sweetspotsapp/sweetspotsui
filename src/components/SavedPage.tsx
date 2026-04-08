@@ -504,7 +504,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
       {showAddSpotMenu && (
         <>
           <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowAddSpotMenu(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl p-4 pb-8 max-w-md mx-auto shadow-lg animate-in slide-in-from-bottom duration-200">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl p-4 pb-28 max-w-md mx-auto shadow-lg animate-in slide-in-from-bottom duration-200">
             <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-4" />
             <h3 className="text-base font-semibold text-foreground mb-3">Add a Spot</h3>
             <button
