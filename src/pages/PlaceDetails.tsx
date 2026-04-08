@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, DollarSign } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, DollarSign, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
