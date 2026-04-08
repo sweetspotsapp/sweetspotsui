@@ -98,16 +98,28 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     fetchData();
   }, [user]);
 
+  // Fetch notification_settings to check recommendations preference
+  const [recsEnabled, setRecsEnabled] = useState(true);
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("notification_settings").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.notification_settings) {
+        const ns = data.notification_settings as any;
+        if (ns.recommendations === false) setRecsEnabled(false);
+      }
+    });
+  }, [user]);
+
   // Fetch personalized recommendations
   useEffect(() => {
-    if (!user || savesCount === 0) return;
+    if (!user || savesCount === 0 || !recsEnabled) return;
     setRecsLoading(true);
     supabase.functions.invoke("recommend-for-you", {
       body: { limit: 6 },
     }).then(({ data }) => {
       if (data?.recommendations) setRecommendations(data.recommendations);
     }).catch(() => {}).finally(() => setRecsLoading(false));
-  }, [user, savesCount]);
+  }, [user, savesCount, recsEnabled]);
 
   const userName = profileUsername || user?.user_metadata?.full_name?.split(" ")[0] || "Explorer";
   const avatarUrl = profileAvatarUrl || user?.user_metadata?.avatar_url;
@@ -234,7 +246,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       )}
 
       {/* Spots You Might Like */}
-      {recommendations.length > 0 && (
+      {recsEnabled && recommendations.length > 0 && (
         <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "180ms", animationFillMode: "both" }}>
           <div className="flex items-center justify-between px-5 mb-3">
             <div className="flex items-center gap-2">

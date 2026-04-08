@@ -7,6 +7,7 @@ import { ArrowLeft, User, Bell, Shield, ChevronRight, Mail, Lock, Trash2, Loader
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
 interface NotificationSettings {
@@ -56,6 +64,17 @@ const Settings = () => {
   const [privacy, setPrivacy] = useState<PrivacySettings>(defaultPrivacy);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [username, setUsername] = useState<string>("Explorer");
+
+  // Change email dialog state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+
+  // Change password dialog state
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   // Load settings from database
   useEffect(() => {
@@ -146,6 +165,55 @@ const Settings = () => {
     saveSettings(notifications, updated);
   };
 
+  const handleChangeEmail = async () => {
+    if (!newEmail.trim()) return;
+    setEmailSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        toast({
+          title: "Confirmation sent",
+          description: "Check both your old and new email to confirm the change.",
+        });
+        setEmailDialogOpen(false);
+        setNewEmail("");
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Something went wrong.", variant: "destructive" });
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast({ title: "Too short", description: "Password must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Mismatch", description: "Passwords don't match.", variant: "destructive" });
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Password updated", description: "Your password has been changed." });
+        setPasswordDialogOpen(false);
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Something went wrong.", variant: "destructive" });
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   const handleDeleteAccount = () => {
     toast({
       title: "Account deletion requested",
@@ -204,7 +272,10 @@ const Settings = () => {
 
             <Separator />
 
-            <button className="flex items-center gap-4 w-full p-4 hover:bg-muted/50 transition-colors">
+            <button
+              onClick={() => setEmailDialogOpen(true)}
+              className="flex items-center gap-4 w-full p-4 hover:bg-muted/50 transition-colors"
+            >
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                 <Mail className="w-5 h-5 text-foreground" />
               </div>
@@ -219,7 +290,10 @@ const Settings = () => {
 
             <Separator />
 
-            <button className="flex items-center gap-4 w-full p-4 hover:bg-muted/50 transition-colors">
+            <button
+              onClick={() => setPasswordDialogOpen(true)}
+              className="flex items-center gap-4 w-full p-4 hover:bg-muted/50 transition-colors"
+            >
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                 <Lock className="w-5 h-5 text-foreground" />
               </div>
@@ -266,21 +340,6 @@ const Settings = () => {
               <Switch
                 checked={notifications.emailDigest}
                 onCheckedChange={() => handleNotificationChange("emailDigest")}
-                disabled={isSaving}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center gap-4 p-4">
-              <div className="w-10 h-10" />
-              <div className="flex-1">
-                <p className="font-medium text-foreground">New Places Nearby</p>
-                <p className="text-sm text-muted-foreground">Alert when new spots open</p>
-              </div>
-              <Switch
-                checked={notifications.newPlaces}
-                onCheckedChange={() => handleNotificationChange("newPlaces")}
                 disabled={isSaving}
               />
             </div>
@@ -397,6 +456,80 @@ const Settings = () => {
           </div>
         </section>
       </div>
+
+      {/* Change Email Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change Email</DialogTitle>
+            <DialogDescription>
+              A confirmation link will be sent to both your current and new email address.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Current email</p>
+              <p className="text-sm font-medium text-foreground">{user?.email}</p>
+            </div>
+            <Input
+              type="email"
+              placeholder="New email address"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleChangeEmail()}
+            />
+            <Button
+              onClick={handleChangeEmail}
+              disabled={emailSaving || !newEmail.trim()}
+              className="w-full"
+            >
+              {emailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Update Email
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={(open) => {
+        setPasswordDialogOpen(open);
+        if (!open) { setNewPassword(""); setConfirmPassword(""); }
+      }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter a new password with at least 6 characters.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input
+              type="password"
+              placeholder="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <Input
+              type="password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleChangePassword()}
+            />
+            {newPassword && confirmPassword && newPassword !== confirmPassword && (
+              <p className="text-xs text-destructive">Passwords don't match</p>
+            )}
+            <Button
+              onClick={handleChangePassword}
+              disabled={passwordSaving || newPassword.length < 6 || newPassword !== confirmPassword}
+              className="w-full"
+            >
+              {passwordSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Update Password
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
