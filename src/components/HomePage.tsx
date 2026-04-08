@@ -12,10 +12,19 @@ import tripBali from "@/assets/trip-bali.jpg";
 import tripMelbourne from "@/assets/trip-melbourne.jpg";
 import tripBangkok from "@/assets/trip-bangkok.jpg";
 
+export interface TripTemplate {
+  destination: string;
+  duration: number;
+  vibes: string[];
+  budget: string;
+  vibe: string;
+  image: string;
+}
+
 interface HomePageProps {
   onNavigateToProfile?: () => void;
   onNavigateToTab?: (tab: string) => void;
-  onTripTemplate?: (destination: string) => void;
+  onTripTemplate?: (template: TripTemplate) => void;
 }
 
 interface SavedPlaceWithDetails {
@@ -25,11 +34,11 @@ interface SavedPlaceWithDetails {
   rating: number | null;
 }
 
-const TRIP_TEMPLATES = [
-  { destination: "Tokyo", duration: "5 days", vibe: "Culture & street food", image: tripTokyo },
-  { destination: "Bali", duration: "7 days", vibe: "Beaches & hidden gems", image: tripBali },
-  { destination: "Melbourne", duration: "3 days", vibe: "Cafés & laneways", image: tripMelbourne },
-  { destination: "Bangkok", duration: "4 days", vibe: "Night markets & temples", image: tripBangkok },
+const TRIP_TEMPLATES: TripTemplate[] = [
+  { destination: "Tokyo", duration: 5, vibes: ["Culture", "Foodie"], budget: "$$", vibe: "Culture & street food", image: tripTokyo },
+  { destination: "Bali", duration: 7, vibes: ["Chill", "Nature", "Adventure"], budget: "$$", vibe: "Beaches & hidden gems", image: tripBali },
+  { destination: "Melbourne", duration: 3, vibes: ["Foodie", "Culture"], budget: "$$", vibe: "Cafés & laneways", image: tripMelbourne },
+  { destination: "Bangkok", duration: 4, vibes: ["Foodie", "Nightlife", "Culture"], budget: "$", vibe: "Night markets & temples", image: tripBangkok },
 ];
 
 const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: HomePageProps) => {
