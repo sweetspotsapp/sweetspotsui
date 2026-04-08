@@ -340,6 +340,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     if (wasSkipMode.current) return [];
     return getCachedResults();
   });
+  const placeIds = useMemo(() => searchResults.map((p) => p.id), [searchResults]);
+  const saveCounts = usePlaceSaveCounts(placeIds);
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
     if (wasSkipMode.current) return true;
     return getCachedResults().length === 0;
