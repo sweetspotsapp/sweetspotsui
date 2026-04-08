@@ -1,6 +1,5 @@
-import { Settings, Link2 } from "lucide-react";
+import { Settings } from "lucide-react";
 import { ReactNode } from "react";
-import { useSubscription } from "@/hooks/useSubscription";
 
 interface AppHeaderProps {
   onSettingsClick: () => void;
@@ -14,7 +13,7 @@ interface AppHeaderProps {
  * Hidden on desktop (≥lg) since the top nav handles branding there.
  */
 const AppHeader = ({ onSettingsClick, actions }: AppHeaderProps) => {
-  const { isPro } = useSubscription();
+  
 
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40 lg:hidden pt-safe">
@@ -24,9 +23,6 @@ const AppHeader = ({ onSettingsClick, actions }: AppHeaderProps) => {
           <h1 className="text-xl font-bold text-primary tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>
             SweetSpots
           </h1>
-          {isPro && (
-            <img src="/sweetspots-logo.svg" alt="" className="w-5 h-5" />
-          )}
         </div>
         <div className="flex items-center gap-1">
           {actions}
