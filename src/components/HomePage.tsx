@@ -21,6 +21,7 @@ import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 import LocationPickerModal from "./LocationPickerModal";
 import { useSearchLimit } from "@/hooks/useSearchLimit";
 import UpgradeModal from "./UpgradeModal";
+import { usePlaceSaveCounts } from "@/hooks/usePlaceSaveCounts";
 import BoardMapView from "./saved/BoardMapView";
 import { useFeedback } from "@/context/FeedbackContext";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -85,6 +86,7 @@ interface SectionRowProps {
   userLocation?: {lat: number;lng: number;} | null;
   onSeeAll?: (allPlaces: MockPlaceWithCoords[]) => void;
   showDistance?: boolean;
+  saveCounts?: Record<string, number>;
 }
 
 const SectionRow: React.FC<SectionRowProps> = ({
@@ -97,7 +99,8 @@ const SectionRow: React.FC<SectionRowProps> = ({
   featured = false,
   userLocation,
   onSeeAll,
-  showDistance = true
+  showDistance = true,
+  saveCounts = {},
 }) => {
   const handleSeeAll = () => {
     if (onSeeAll) {
@@ -168,7 +171,8 @@ const SectionRow: React.FC<SectionRowProps> = ({
             isSaved={isSaved(place.id)}
             onClick={() => onPlaceClick(place)}
             featured={featured}
-            showDistance={showDistance} />
+            showDistance={showDistance}
+            saveCount={saveCounts[place.id] || 0} />
 
           )}
         </div>
@@ -185,6 +189,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
           onClick={() => onPlaceClick(place)}
           featured={featured}
           showDistance={showDistance}
+          saveCount={saveCounts[place.id] || 0}
           isGridItem />
 
         )}
@@ -335,6 +340,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     if (wasSkipMode.current) return [];
     return getCachedResults();
   });
+  const placeIds = useMemo(() => searchResults.map((p) => p.id), [searchResults]);
+  const saveCounts = usePlaceSaveCounts(placeIds);
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
     if (wasSkipMode.current) return true;
     return getCachedResults().length === 0;
@@ -1179,6 +1186,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                   isSaved={isSaved(place.id)}
                   onClick={() => handlePlaceClick(place)}
                   showDistance={true}
+                  saveCount={saveCounts[place.id] || 0}
                   isGridItem />
 
                 )}
@@ -1212,7 +1220,8 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
                 featured={false}
                 userLocation={userLocation}
                 onSeeAll={handleSeeAll}
-                showDistance={true} />
+                showDistance={true}
+                saveCounts={saveCounts} />
 
               )}
               </>

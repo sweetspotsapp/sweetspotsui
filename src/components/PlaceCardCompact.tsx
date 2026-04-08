@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Star, Heart, Navigation, Clock } from "lucide-react";
+import { Star, Heart, Navigation, Clock, Users } from "lucide-react";
 
 // Dummy place type for mock data
 export interface MockPlace {
@@ -26,6 +26,7 @@ interface PlaceCardCompactProps {
   savedTabRef?: React.RefObject<HTMLElement>;
   showDistance?: boolean;
   isGridItem?: boolean;
+  saveCount?: number;
 }
 
 // Get vibe tag from categories or AI category
@@ -55,6 +56,7 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
   savedTabRef,
   showDistance = true,
   isGridItem = false,
+  saveCount = 0,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -171,6 +173,16 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
           <div className="absolute top-2 left-2">
             <span className="px-2 py-1 bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground rounded-full max-w-[100px] truncate block">
               {vibeTag}
+            </span>
+          </div>
+        )}
+
+        {/* Social proof badge */}
+        {saveCount > 0 && (
+          <div className="absolute bottom-2 left-2">
+            <span className="flex items-center gap-1 px-2 py-1 bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground rounded-full">
+              <Users className="w-3 h-3 text-primary" />
+              {saveCount} saved
             </span>
           </div>
         )}

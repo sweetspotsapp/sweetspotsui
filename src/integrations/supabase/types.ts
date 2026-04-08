@@ -458,6 +458,13 @@ export type Database = {
     Functions: {
       clean_expired_cache: { Args: never; Returns: number }
       generate_sweetspots_id: { Args: never; Returns: string }
+      get_place_save_counts: {
+        Args: { place_ids: string[] }
+        Returns: {
+          place_id: string
+          save_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
