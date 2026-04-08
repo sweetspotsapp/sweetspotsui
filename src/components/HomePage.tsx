@@ -589,6 +589,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       setSearchResults(result.places.map(unifiedToMockPlace));
       setAiSummary(result.summary || null);
       toast.success(`Found ${result.places.length} spots for you!`);
+      incrementSearchCount();
       trackSearch(searchValue.trim());
     } else if (result && result.places.length === 0) {
       toast.info("No places found. Try a different search.");
