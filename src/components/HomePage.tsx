@@ -50,12 +50,14 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const { user } = useAuth();
   const { onboardingData } = useApp();
   const upcomingTrip = useUpcomingTrip();
+  const { avatarUrl: profileAvatarUrl, username: profileUsername } = useProfileInfo();
 
   const [recentlySaved, setRecentlySaved] = useState<SavedPlaceWithDetails[]>([]);
   const [savesCount, setSavesCount] = useState(0);
   const [tripsCount, setTripsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<DBTripTemplate[]>([]);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Fetch trip templates from DB (public, no auth needed)
@@ -92,8 +94,8 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     fetchData();
   }, [user]);
 
-  const userName = user?.user_metadata?.full_name?.split(" ")[0] || user?.user_metadata?.name?.split(" ")[0] || "Explorer";
-  const avatarUrl = user?.user_metadata?.avatar_url;
+  const userName = profileUsername || user?.user_metadata?.full_name?.split(" ")[0] || "Explorer";
+  const avatarUrl = profileAvatarUrl || user?.user_metadata?.avatar_url;
   const initials = (user?.email?.[0] || "E").toUpperCase();
 
   const engagementLevel = useMemo(() => {
