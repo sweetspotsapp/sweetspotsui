@@ -49,7 +49,7 @@ const MapPage = () => {
           .in("place_id", placeIds);
 
         if (placeRows) {
-          setPlaces(placeRows as RankedPlace[]);
+          setPlaces(placeRows as unknown as RankedPlace[]);
         }
       } catch (err) {
         console.error("Failed to load saved places for map:", err);
