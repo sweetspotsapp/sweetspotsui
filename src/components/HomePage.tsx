@@ -307,7 +307,8 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       )}
 
       {/* Spots You Might Like */}
-      {recsEnabled && recommendations.length > 0 && (
+      {recsEnabled && recsLoading && <RecsSkeleton />}
+      {recsEnabled && !recsLoading && recommendations.length > 0 && (
         <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "180ms", animationFillMode: "both" }}>
           <div className="flex items-center justify-between px-5 mb-3">
             <div className="flex items-center gap-2">
