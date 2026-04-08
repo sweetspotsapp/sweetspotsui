@@ -559,38 +559,33 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     return prompt;
   };
 
-  const handleSearchSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchValue.trim()) return;
+  const triggerSearch = async (query: string) => {
+    if (!query.trim()) return;
 
     if (hasReachedLimit) {
       setShowUpgrade(true);
       return;
     }
 
-    setUserMood(searchValue.trim());
+    setSearchValue(query.trim());
+    setUserMood(query.trim());
     setNeedsLocationPermission(false);
 
-    // Clear old cache and results before new search to prevent stale data
     setAiSummary(null);
-    setSearchResults([]); // Clear old results immediately so stale data isn't shown
+    setSearchResults([]);
     try {
       sessionStorage.removeItem(CACHE_KEY);
       sessionStorage.removeItem(SUMMARY_CACHE_KEY);
-      // Sync the new mood into cache BEFORE setUserMood triggers the initial load effect.
-      // This ensures the effect sees moodChanged=false and doesn't fire a second search.
-      sessionStorage.setItem(CACHED_MOOD_KEY, searchValue.trim());
+      sessionStorage.setItem(CACHED_MOOD_KEY, query.trim());
     } catch (e) {
       console.error('Failed to clear cache:', e);
     }
 
-    // Build prompt with filters
-    const searchPrompt = buildSearchPrompt(searchValue.trim(), appliedFilters);
+    const searchPrompt = buildSearchPrompt(query.trim(), appliedFilters);
     console.log("Search with filters:", searchPrompt);
 
-    // Build search options based on onboarding location
     const searchOptions: {locationName?: string;skipCache?: boolean;} = {
-      skipCache: true // Always skip cache on new search to get fresh results
+      skipCache: true
     };
     const exploreLocation = onboardingData?.explore_location;
     if (exploreLocation && exploreLocation !== "nearby") {
@@ -603,11 +598,17 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       setAiSummary(result.summary || null);
       toast.success(`Found ${result.places.length} spots for you!`);
       incrementSearchCount();
-      trackSearch(searchValue.trim());
+      trackSearch(query.trim());
     } else if (result && result.places.length === 0) {
       toast.info("No places found. Try a different search.");
       setSearchResults([]);
       setAiSummary(result.summary || null);
+    }
+  };
+
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await triggerSearch(searchValue);
     }
   };
 
