@@ -881,6 +881,15 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare,
             <Clock className="w-3 h-3" />
             {startDate} – {endDate}
           </p>
+
+          {/* Go Now button for current trips */}
+          {category === "current" && trip.trip_data && (
+            <div className="mt-2.5">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full">
+                Go Now <ChevronRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Image area */}
