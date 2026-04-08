@@ -276,9 +276,16 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
             <h2 className="text-xl font-bold text-foreground">
               You're in {tripStatus.live.destination}!
             </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Day {tripStatus.live.currentDay} of {tripStatus.live.totalDays}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-sm text-muted-foreground">
+                Day {tripStatus.live.currentDay} of {tripStatus.live.totalDays}
+              </p>
+              {todayWeather && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <WeatherIconSmall icon={todayWeather.icon} /> {todayWeather.tempHigh}°C, {todayWeather.summary}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1 mt-2 text-sm text-green-700 dark:text-green-400 font-medium">
               Open Live View <ArrowRight className="w-4 h-4" />
             </div>
