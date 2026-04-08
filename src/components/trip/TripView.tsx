@@ -9,6 +9,8 @@ import type { TripData, TripDay, SwapAlternative, TripParams } from "@/hooks/use
 import type { ActivityStatus } from "@/hooks/useLiveTrip";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { useWeatherForecast, type DayForecast } from "@/hooks/useWeatherForecast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TripViewProps {
   tripData: TripData;
