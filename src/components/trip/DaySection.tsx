@@ -218,7 +218,7 @@ const DroppableSlot = ({ dayIndex, slotIndex, children }: { dayIndex: number; sl
   );
 };
 
-const DaySection = ({ day, dayIndex, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity, onAddActivity, onMoveToDay, totalDays }: DaySectionProps) => {
+const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity, onAddActivity, onMoveToDay, totalDays }: DaySectionProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
 
