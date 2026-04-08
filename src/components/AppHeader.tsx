@@ -1,4 +1,4 @@
-import { Settings, Link2, Sparkles } from "lucide-react";
+import { Settings, Link2 } from "lucide-react";
 import { ReactNode } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
 
@@ -25,7 +25,7 @@ const AppHeader = ({ onSettingsClick, actions }: AppHeaderProps) => {
             SweetSpots
           </h1>
           {isPro && (
-            <Sparkles className="w-4 h-4 text-amber-500" />
+            <img src="/sweetspots-logo.svg" alt="" className="w-5 h-5" />
           )}
         </div>
         <div className="flex items-center gap-1">
