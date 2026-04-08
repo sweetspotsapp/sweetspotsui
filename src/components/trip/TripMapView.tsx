@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindowF } from "@react-google-maps/api";
 import { Loader2, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { premiumMapStyle } from "@/lib/mapStyle";
 
 interface MapActivity {
   name: string;
@@ -135,7 +136,7 @@ const MapInner = ({ apiKey, activities }: { apiKey: string; activities: MapActiv
       options={{
         disableDefaultUI: true,
         zoomControl: true,
-        styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }],
+        styles: premiumMapStyle,
       }}
     >
       {activities.map((act, i) => (
