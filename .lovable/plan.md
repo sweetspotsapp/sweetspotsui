@@ -1,32 +1,28 @@
 
 
-# Settings: Change Email, Change Password, Remove Toggle, Wire Recommendations
+# Make Profile Page Accessible via Its Own Route
 
-## Changes
+## The Problem
+You have a rich ProfilePage component (vibe DNA, personality traits, character match, search history, cover photos, avatar) but it's orphaned — no route points to it. Clicking your profile card in the slide menu dumps you into the Settings page, which feels disconnected.
 
-### 1. Settings.tsx — Add Change Email dialog
-- Click the Email row → open a Dialog with a single "New email" input + Save button
-- On save: call `supabase.auth.updateUser({ email: newEmail })`
-- Show toast: "Check both your old and new email to confirm the change"
+## What Travel Apps Do
+Apps like Roamy, Wanderlog, and AllTrails all have a dedicated **profile screen** separate from settings. It serves as your "travel identity" — showing your stats, activity, personality, and social presence. Settings is purely functional (email, password, toggles).
 
-### 2. Settings.tsx — Add Change Password dialog
-- Click the Password row → open a Dialog with "New password" + "Confirm password" inputs
-- Validate match, min 6 chars
-- On save: call `supabase.auth.updateUser({ password: newPassword })`
-- Show success toast
+## The Plan
 
-### 3. Settings.tsx — Remove "New Places Nearby" toggle
-- Delete the entire row (lines 274-286) and the preceding Separator
-- Keep `newPlaces` in the interface/defaults so existing DB values don't break on load
+### 1. Add `/profile` route
+Register a new route in `App.tsx` that renders the existing `ProfilePage` component. No new component needed — it already has everything: vibe DNA breakdown, personality traits, character match, search/places history, cover/avatar editing, interaction stats.
 
-### 4. Wire Personalized Recommendations toggle
-- In `HomePage.tsx`, fetch the user's `notification_settings` from the profile (already fetched via `useProfileInfo` or a direct query)
-- Before the recommend-for-you fetch, check if `recommendations` is `false` → skip the fetch
-- Before rendering the "Spots You Might Like" section, check the same flag → hide if disabled
+### 2. Update slide menu navigation
+Change `handleViewProfile` in `ProfileSlideMenu.tsx` to navigate to `/profile` instead of `/settings`. The Settings menu item already has its own row — so both are accessible independently.
+
+### 3. Add a "Settings" link on the Profile page
+Add a small gear icon or "Settings" link at the top of ProfilePage so users can easily jump to Settings from their profile (instead of going back to the menu).
 
 ### Files to modify
-- `src/pages/Settings.tsx` — add two Dialog components for email/password, remove "New Places Nearby" row
-- `src/components/HomePage.tsx` — read `notification_settings.recommendations` from profile, conditionally skip fetch and hide section
+- `src/App.tsx` — add `/profile` route pointing to `ProfilePage`
+- `src/components/ProfileSlideMenu.tsx` — change `handleViewProfile` fallback from `/settings` to `/profile`
+- `src/components/ProfilePage.tsx` — minor: ensure it works as a standalone route (it currently receives `onNavigateToSaved` prop which can be optional)
 
-### No database changes needed
+### No database changes needed.
 
