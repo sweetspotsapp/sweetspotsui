@@ -2,10 +2,12 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
+import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+import ProfileSlideMenu from "./ProfileSlideMenu";
 
 import tripTokyo from "@/assets/trip-tokyo.jpg";
 import tripBali from "@/assets/trip-bali.jpg";
