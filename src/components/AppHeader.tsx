@@ -13,7 +13,7 @@ interface AppHeaderProps {
  * Hidden on desktop (≥lg) since the top nav handles branding there.
  */
 const AppHeader = ({ onSettingsClick, actions }: AppHeaderProps) => (
-  <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40 lg:hidden">
+  <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40 lg:hidden pt-safe">
     <div className="max-w-md mx-auto flex items-center justify-between px-4 py-3">
       <div className="w-10" />
       <h1 className="text-xl font-bold text-primary tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>
