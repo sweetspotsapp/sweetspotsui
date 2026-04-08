@@ -155,6 +155,21 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
             </p>
           </div>
 
+          {/* Testimonials */}
+          <div className="w-full space-y-2.5 opacity-0 animate-fade-up delay-300">
+            {[
+              { quote: "Found the best hidden café in Bali in 2 mins 🤯", name: "Sarah K." },
+              { quote: "Planned my whole Tokyo trip from saved spots. Game changer.", name: "Marcus L." },
+              { quote: "It actually gets my vibe. Way better than Google Maps.", name: "Priya D." },
+            ].map((t) => (
+              <div key={t.name} className="flex items-start gap-2.5 px-3 py-2 rounded-xl bg-muted/40">
+                <span className="text-xs leading-relaxed text-muted-foreground flex-1">
+                  "{t.quote}" — <span className="font-medium text-foreground">{t.name}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+
           {/* Auth actions */}
           <div className="w-full space-y-3 opacity-0 animate-fade-up delay-400">
             <Button
