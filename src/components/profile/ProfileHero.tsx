@@ -1,6 +1,7 @@
-import { User, Loader2, Camera, Pencil, Check } from "lucide-react";
+import { User, Loader2, Camera, Pencil, Check, Sparkles } from "lucide-react";
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface ProfileHeroProps {
   user: any;
@@ -27,6 +28,7 @@ const ProfileHero = ({
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
+  const { isPro } = useSubscription();
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -127,6 +129,13 @@ const ProfileHero = ({
           <button onClick={onCopyId} className="text-[11px] font-mono text-primary/70 bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors">
             {sweetSpotsId} 📋
           </button>
+        )}
+
+        {isPro && (
+          <div className="flex items-center gap-1 mt-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+            <Sparkles className="w-3 h-3 text-amber-500" />
+            <span className="text-[11px] font-semibold tracking-wide text-amber-600">Pro Member</span>
+          </div>
         )}
 
         <p className="text-xs text-muted-foreground">

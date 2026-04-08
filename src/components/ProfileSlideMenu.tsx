@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
+import { useSubscription } from "@/hooks/useSubscription";
 import { 
   User, 
   Settings, 
@@ -30,6 +31,7 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const { avatarUrl, username } = useProfileInfo();
+  const { isPro } = useSubscription();
 
   const handleLogout = async () => {
     await signOut();
@@ -79,7 +81,13 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
         onClose();
         navigate("/pricing");
       },
-      trailing: <ChevronRight className="w-4 h-4 text-muted-foreground" />,
+      trailing: isPro ? (
+        <span className="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 border border-amber-500/30">
+          PRO
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground">Free</span>
+      ),
     },
     {
       id: "help",
@@ -145,9 +153,16 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
                 )}
               </div>
               <div className="flex-1 text-left">
-                <p className="font-medium text-foreground">
-                  {username || user?.email?.split("@")[0] || "User"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-foreground">
+                    {username || user?.email?.split("@")[0] || "User"}
+                  </p>
+                  {isPro && (
+                    <span className="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 border border-amber-500/30">
+                      PRO
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground truncate max-w-[180px]">
                   {user?.email || "No email"}
                 </p>
