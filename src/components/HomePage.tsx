@@ -358,7 +358,8 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
       )}
 
       {/* Trip Ideas — photo cards */}
-      <div className="px-5 pt-6 pb-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
+      {templates.length === 0 && <TripIdeasSkeleton />}
+      {templates.length > 0 && <div className="px-5 pt-6 pb-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
         <h2 className="text-base font-semibold text-foreground mb-3">Trip Ideas</h2>
         <div className="grid grid-cols-2 gap-3">
           {templates.map((template) => (
