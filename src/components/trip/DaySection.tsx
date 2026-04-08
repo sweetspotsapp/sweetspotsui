@@ -13,6 +13,7 @@ import type { TripDay, Activity, SwapAlternative } from "@/hooks/useTrip";
 interface DaySectionProps {
   day: TripDay;
   dayIndex: number;
+  destination?: string;
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
   isSwapping: boolean;
@@ -115,7 +116,7 @@ const DropIndicator = ({ edge }: { edge: Edge }) => (
 
 // Draggable + drop-target wrapper for each activity in edit mode
 const DraggableActivityCard = ({
-  activity, dayIndex, slotIndex, activityIndex, onSwap, onReplace, isSwapping, onRemoveActivity, onMoveToDay, availableDays, currentDayIndex,
+  activity, dayIndex, slotIndex, activityIndex, onSwap, onReplace, isSwapping, onRemoveActivity, onMoveToDay, availableDays, currentDayIndex, destination,
 }: {
   activity: Activity;
   dayIndex: number;
