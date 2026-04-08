@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Loader2, ExternalLink, Heart, Trash2, MoreVertical } from "lucide-react";
+import { ArrowLeftRight, Loader2, ExternalLink, Heart, Trash2, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
-import SwapSheet from "./SwapSheet";
+import ReplaceSheet from "./ReplaceSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useTrip";
 
 interface ActivityCardProps {
   activity: Activity;
   onSwap: () => Promise<SwapAlternative[] | undefined>;
-  onReplace: (newActivity: { name: string; description: string; category: string }) => void;
+  onReplace: (newActivity: { name: string; description: string; category: string; placeId?: string; photoName?: string; lat?: number; lng?: number; address?: string }) => void;
   isSwapping: boolean;
   isEditing?: boolean;
   onRemove?: () => void;
@@ -16,20 +16,17 @@ interface ActivityCardProps {
   onMoveToDay?: (targetDayIndex: number) => void;
   availableDays?: Array<{ dayIndex: number; label: string }>;
   currentDayIndex?: number;
-  /** Used for alternating card layout (image left vs right) */
   cardIndex?: number;
+  destination?: string;
 }
 
-const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, isDragging, onMoveToDay, availableDays, currentDayIndex, cardIndex = 0 }: ActivityCardProps) => {
+const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRemove, isDragging, onMoveToDay, availableDays, currentDayIndex, cardIndex = 0, destination = "" }: ActivityCardProps) => {
   const navigate = useNavigate();
-  const [showSwap, setShowSwap] = useState(false);
-  const [alternatives, setAlternatives] = useState<SwapAlternative[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [showReplace, setShowReplace] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const moveMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close move menu on outside click
   useEffect(() => {
     if (!showMoveMenu) return;
     const handler = (e: MouseEvent) => {
@@ -47,19 +44,8 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
     }
   };
 
-  const handleSwapClick = async () => {
-    setLoading(true);
-    const alts = await onSwap();
-    setLoading(false);
-    if (alts && alts.length > 0) {
-      setAlternatives(alts);
-      setShowSwap(true);
-    }
-  };
-
-  const handleSelect = (alt: SwapAlternative) => {
-    onReplace({ name: alt.name, description: alt.description, category: alt.category });
-    setShowSwap(false);
+  const handleSelectPlace = (place: { name: string; placeId?: string; category: string; description: string; photoName?: string; lat?: number; lng?: number; address?: string }) => {
+    onReplace(place);
   };
 
   const categoryLabel = activity.category ? activity.category.charAt(0).toUpperCase() + activity.category.slice(1) : "Place";
@@ -85,11 +71,8 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
   };
 
   const fallbackGradient = CATEGORY_GRADIENTS[activity.category] || "from-muted to-muted-foreground/20";
-
-  // Alternate image position: even = image left, odd = image right
   const imageOnRight = cardIndex % 2 !== 0;
 
-  // ─── Image element (shared) ───
   const imageElement = (
     <div
       className={cn(
@@ -115,7 +98,6 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
     </div>
   );
 
-  // ─── Text content element (shared) ───
   const textElement = (
     <div className="flex-1 min-w-0 flex flex-col justify-center">
       <div className="flex items-center gap-1.5">
@@ -155,7 +137,6 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
         isEditing ? "bg-card border border-primary/20 shadow-sm select-none" : "bg-card border border-border/50 hover:border-border",
         isDragging && "opacity-30 border-dashed border-2 border-primary/40 shadow-none scale-[0.98]"
       )}>
-        {/* Edit buttons */}
         {isEditing && (
           <div className="absolute top-2 right-2 flex items-center gap-1.5 z-30" ref={moveMenuRef}>
             <div className="relative">
@@ -200,36 +181,31 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
           </div>
         )}
 
-        {/* Horizontal card: image + text side by side, alternating */}
         <div className={cn("flex items-stretch gap-3 p-2.5", imageOnRight && "flex-row-reverse")}>
           {imageElement}
           {textElement}
 
-          {/* Swap button — only when not editing */}
           {!isEditing && (
             <div className="flex items-center flex-shrink-0">
               <button
-                onClick={handleSwapClick}
-                disabled={loading}
+                onClick={() => setShowReplace(true)}
                 className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                title="Replace activity"
               >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 text-primary" />
-                )}
+                <ArrowLeftRight className="w-4 h-4 text-primary" />
               </button>
             </div>
           )}
         </div>
       </div>
 
-      <SwapSheet
-        isOpen={showSwap}
-        onClose={() => setShowSwap(false)}
-        alternatives={alternatives}
-        onSelect={handleSelect}
+      <ReplaceSheet
+        isOpen={showReplace}
+        onClose={() => setShowReplace(false)}
         currentName={activity.name}
+        destination={destination}
+        onSelectPlace={handleSelectPlace}
+        onFetchSuggestions={onSwap}
       />
     </>
   );
