@@ -28,7 +28,7 @@ interface TripPageProps {
   onTemplateConsumed?: () => void;
 }
 
-const TripPage = ({ resumeTripId, onResumed, prefillDestination, onPrefillConsumed }: TripPageProps) => {
+const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }: TripPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
