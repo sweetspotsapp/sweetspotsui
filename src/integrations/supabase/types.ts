@@ -391,6 +391,51 @@ export type Database = {
           },
         ]
       }
+      trip_templates: {
+        Row: {
+          budget: string
+          cover_image: string | null
+          created_at: string
+          destination: string
+          duration: number
+          group_size: number
+          id: string
+          is_active: boolean
+          tagline: string | null
+          trip_data: Json
+          updated_at: string
+          vibes: string[]
+        }
+        Insert: {
+          budget?: string
+          cover_image?: string | null
+          created_at?: string
+          destination: string
+          duration: number
+          group_size?: number
+          id?: string
+          is_active?: boolean
+          tagline?: string | null
+          trip_data: Json
+          updated_at?: string
+          vibes?: string[]
+        }
+        Update: {
+          budget?: string
+          cover_image?: string | null
+          created_at?: string
+          destination?: string
+          duration?: number
+          group_size?: number
+          id?: string
+          is_active?: boolean
+          tagline?: string | null
+          trip_data?: Json
+          updated_at?: string
+          vibes?: string[]
+        }
+        Relationships: []
+      }
       trips: {
         Row: {
           accommodation: Json | null
