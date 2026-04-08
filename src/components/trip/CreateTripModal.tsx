@@ -141,6 +141,7 @@ const CreateTripModal = ({
   useEffect(() => {
     if (isOpen) {
       setStep(1);
+      setPrefillApplied(null);
       if (initialParams) {
         setName(initialParams.name || "");
         setDestination(initialParams.destination || "");
