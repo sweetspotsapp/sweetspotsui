@@ -15,6 +15,7 @@ import tripBangkok from "@/assets/trip-bangkok.jpg";
 interface HomePageProps {
   onNavigateToProfile?: () => void;
   onNavigateToTab?: (tab: string) => void;
+  onTripTemplate?: (destination: string) => void;
 }
 
 interface SavedPlaceWithDetails {
