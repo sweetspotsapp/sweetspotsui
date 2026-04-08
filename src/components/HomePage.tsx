@@ -171,7 +171,8 @@ const SectionRow: React.FC<SectionRowProps> = ({
             isSaved={isSaved(place.id)}
             onClick={() => onPlaceClick(place)}
             featured={featured}
-            showDistance={showDistance} />
+            showDistance={showDistance}
+            saveCount={saveCounts[place.id] || 0} />
 
           )}
         </div>
@@ -188,6 +189,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
           onClick={() => onPlaceClick(place)}
           featured={featured}
           showDistance={showDistance}
+          saveCount={saveCounts[place.id] || 0}
           isGridItem />
 
         )}
