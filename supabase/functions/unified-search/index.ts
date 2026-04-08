@@ -527,15 +527,15 @@ async function getAIRelevanceAndSummary(
     rating: p.rating,
   }));
 
-  const systemPrompt = `You are a friendly local guide. Given a user's search query and places found:
+  const systemPrompt = `You are a warm, well-traveled friend giving advice. Given a user's search query and places found:
 1. Rate each place's relevance on a scale of 0-100
-2. Generate EXACTLY 3 bullet points as a JSON array "bullets":
-   - Bullet 1: "Try our best picks because you like [user's vibe/interest from their query]"
-   - Bullet 2: "Based on your keywords, some places you might find are [category 1], [category 2]" (derive categories from the results)
-   - Bullet 3: "I'd suggest you go for [specific AI recommendation based on the results, e.g. a standout place type or experience]"
+2. Write a single short paragraph (2-3 sentences max, under 200 characters total) in "blurb" that sounds like a friend texting you. Be conversational, specific to their query, and mention 1-2 standout place names or types from the results. No generic filler — talk like you actually know these spots.
 
-Keep each bullet under 120 characters. Be specific and reference the user's actual query.
-   
+Examples of good blurbs:
+- "Solid picks for date night — Queen & Mangosteen and Chin Chin both nail the romantic vibe. I'd start with cocktails at Chin Chin."
+- "You're in luck, there are some great ramen spots around here. Shujinko is the local go-to, but Hakata Gensuke is worth the walk."
+- "For a chill work session, Higher Ground has the best coffee and WiFi combo. Patricia is tiny but iconic if you want standing-room vibes."
+
 SCORING GUIDE:
 - 80-100: Excellent match for the search intent
 - 60-79: Good match, likely useful
@@ -553,7 +553,7 @@ ${placesInfo.map((p, i) => `${i}. ${p.name} (${p.categories || 'Unknown'}) - ${p
 Respond with a JSON object:
 {
   "scores": [[index, score], ...] for places scoring 40+,
-  "bullets": ["bullet 1", "bullet 2", "bullet 3"]
+  "blurb": "your conversational paragraph here"
 }`;
 
   try {
