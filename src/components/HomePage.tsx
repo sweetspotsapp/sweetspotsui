@@ -559,16 +559,26 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     return prompt;
   };
 
+  const searchInFlightRef = useRef(false);
+  const lastSearchQueryRef = useRef("");
+
   const triggerSearch = async (query: string) => {
     if (!query.trim()) return;
+
+    // Prevent duplicate rapid taps
+    const trimmed = query.trim();
+    if (searchInFlightRef.current && trimmed === lastSearchQueryRef.current) return;
 
     if (hasReachedLimit) {
       setShowUpgrade(true);
       return;
     }
 
-    setSearchValue(query.trim());
-    setUserMood(query.trim());
+    searchInFlightRef.current = true;
+    lastSearchQueryRef.current = trimmed;
+
+    setSearchValue(trimmed);
+    setUserMood(trimmed);
     setNeedsLocationPermission(false);
 
     setAiSummary(null);
@@ -576,12 +586,12 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     try {
       sessionStorage.removeItem(CACHE_KEY);
       sessionStorage.removeItem(SUMMARY_CACHE_KEY);
-      sessionStorage.setItem(CACHED_MOOD_KEY, query.trim());
+      sessionStorage.setItem(CACHED_MOOD_KEY, trimmed);
     } catch (e) {
       console.error('Failed to clear cache:', e);
     }
 
-    const searchPrompt = buildSearchPrompt(query.trim(), appliedFilters);
+    const searchPrompt = buildSearchPrompt(trimmed, appliedFilters);
     console.log("Search with filters:", searchPrompt);
 
     const searchOptions: {locationName?: string;skipCache?: boolean;} = {
@@ -592,17 +602,21 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
       searchOptions.locationName = exploreLocation;
     }
 
-    const result = await search(searchPrompt, searchOptions);
-    if (result && result.places.length > 0) {
-      setSearchResults(result.places.map(unifiedToMockPlace));
-      setAiSummary(result.summary || null);
-      toast.success(`Found ${result.places.length} spots for you!`);
-      incrementSearchCount();
-      trackSearch(query.trim());
-    } else if (result && result.places.length === 0) {
-      toast.info("No places found. Try a different search.");
-      setSearchResults([]);
-      setAiSummary(result.summary || null);
+    try {
+      const result = await search(searchPrompt, searchOptions);
+      if (result && result.places.length > 0) {
+        setSearchResults(result.places.map(unifiedToMockPlace));
+        setAiSummary(result.summary || null);
+        toast.success(`Found ${result.places.length} spots for you!`);
+        incrementSearchCount();
+        trackSearch(trimmed);
+      } else if (result && result.places.length === 0) {
+        toast.info("No places found. Try a different search.");
+        setSearchResults([]);
+        setAiSummary(result.summary || null);
+      }
+    } finally {
+      searchInFlightRef.current = false;
     }
   };
 
