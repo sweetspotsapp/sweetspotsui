@@ -1,32 +1,25 @@
 
 
-# Fix Profile Picture Consistency + Avatar Opens Slide-Out Menu
+# Fix Destination Picker to Support Suburbs & Districts
 
-## Problems Identified
+## The Problem
+The current autocomplete has a fatal flaw: if your query matches anything in the hardcoded `WORLD_CITIES` list, it **short-circuits and never calls Google**. So typing "Mel" returns "Melbourne, Australia" from the local list and stops — you'll never see "Melton", "Melbourne CBD", or suburbs. Ironically, typing "Geelong" (not in the list) *does* hit Google and works fine.
 
-1. **Profile pictures are inconsistent** because different components fetch the avatar from different sources:
-   - `HomePage.tsx` (line 94): reads `user?.user_metadata?.avatar_url` (Google OAuth metadata — stale, never updated when user changes their avatar)
-   - `ProfileSlideMenu.tsx` (line 37-46): queries `profiles` table for `avatar_url` (correct source)
-   - `ProfilePage.tsx`: likely also queries `profiles` table but may have its own fetch
+## The Fix
+**Always call Google Places Autocomplete, use local cities only as instant placeholders while loading.**
 
-2. **Tapping the avatar on the Home page navigates to the Profile tab** — user wants it to open the slide-out menu (like image 3) instead.
+### Changes to `src/hooks/usePlaceAutocomplete.tsx`:
+1. Show local matches **immediately** as temporary results (fast UX)
+2. **Always** fire the Google API call after the 300ms debounce, regardless of local matches
+3. When Google results arrive, **replace** local results with the richer Google results
+4. Google Places Autocomplete already returns suburbs, districts, neighborhoods — no config change needed
 
-## Solution
+### Optionally restrict to `(regions)` type filter
+The `place-autocomplete` edge function can pass `types: "(regions)"` to Google, which returns cities, suburbs, districts, states — but excludes businesses/addresses. This keeps results relevant for trip destinations. Worth checking if this filter is already applied.
 
-### 1. Centralize avatar source — always use `profiles` table
-- In `HomePage.tsx`, replace `user?.user_metadata?.avatar_url` with a query to the `profiles` table (same as ProfileSlideMenu does), or better: create a small shared hook (`useProfileAvatar`) that fetches and caches `avatar_url` + `username` from `profiles` once, used by all components.
+### Files to modify:
+- `src/hooks/usePlaceAutocomplete.tsx` — remove the early return on local match, always call Google
+- `supabase/functions/place-autocomplete/index.ts` — verify/add `types` filter for regions
 
-### 2. Avatar click on Home → open slide-out menu
-- Add `ProfileSlideMenu` to `HomePage.tsx`
-- Change the avatar button's `onClick` from `onNavigateToProfile` to toggling the slide-out menu open
-- Pass `onNavigateToProfile` into the slide-out's "View Profile" action so users can still reach the full Profile tab from the menu
-
-### Files to modify
-- **Create**: `src/hooks/useProfileInfo.tsx` — shared hook returning `{ avatarUrl, username, loading }` from `profiles` table
-- **Edit**: `src/components/HomePage.tsx` — use new hook, add slide-out menu, wire avatar click
-- **Edit**: `src/components/ProfileSlideMenu.tsx` — use shared hook instead of local fetch
-- **Edit**: `src/components/ProfilePage.tsx` — use shared hook for the header avatar (consistency)
-
-### Technical detail
-The hook will query `profiles` once on mount and subscribe to auth changes. All three surfaces (Home avatar, slide-out menu, Profile page header) will show the same image from the same source.
+### No database changes needed.
 
