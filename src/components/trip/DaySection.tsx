@@ -370,6 +370,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                           onMoveToDay={onMoveToDay ? (targetDayIdx) => onMoveToDay(dayIndex, slotIndex, activityIndex, targetDayIdx) : undefined}
                           availableDays={totalDays?.map((d, i) => ({ dayIndex: i, label: d.label }))}
                           currentDayIndex={dayIndex}
+                          destination={destination}
                         />
                       ))}
                       {onAddActivity && (
@@ -399,6 +400,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                               onReplace={(newAct) => onReplace(dayIndex, slotIndex, activityIndex, newAct)}
                               isSwapping={isSwapping}
                               cardIndex={globalIdx}
+                              destination={destination}
                             />
                             {activityIndex < slot.activities.length - 1 && (
                               <DistanceConnector
