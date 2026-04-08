@@ -41,7 +41,9 @@ const CreateTripModal = ({
   isGenerating,
   initialParams,
 }: CreateTripModalProps) => {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
+  const [prefillApplied, setPrefillApplied] = useState<string | null>(null);
 
   // Step 1: Trip Setup
   const [name, setName] = useState(initialParams?.name || "");
