@@ -386,7 +386,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* New user CTA */}
       {engagementLevel === "new" && !loading && (
