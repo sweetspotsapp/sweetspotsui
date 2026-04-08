@@ -20,6 +20,7 @@ import { Button } from "./ui/button";
 import { useClientFilters, ExtendedMockPlace } from "@/hooks/useClientFilters";
 import LocationPickerModal from "./LocationPickerModal";
 import { useSearchLimit } from "@/hooks/useSearchLimit";
+import UpgradeModal from "./UpgradeModal";
 import BoardMapView from "./saved/BoardMapView";
 import { useFeedback } from "@/context/FeedbackContext";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -275,6 +276,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : userMood || "");
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Rotating search placeholder hints
   const searchHints = useMemo(() => [
@@ -551,7 +553,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
     if (!searchValue.trim()) return;
 
     if (hasReachedLimit) {
-      toast.error("You've hit your daily search limit. Upgrade for unlimited searches!");
+      setShowUpgrade(true);
       return;
     }
 
@@ -1262,8 +1264,7 @@ const HomePage = ({ onNavigateToProfile }: HomePageProps) => {
         onClose={() => setIsLocationPickerOpen(false)}
         onSelectLocation={handleLocationChange}
         currentLocation={onboardingData?.explore_location} />
-      
-
+      <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />
 
     </div>);
 
