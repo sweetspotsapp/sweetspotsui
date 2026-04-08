@@ -313,6 +313,7 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
             key={dayIndex}
             day={day}
             dayIndex={dayIndex}
+            destination={tripParams?.destination}
             onSwap={onSwap}
             onReplace={onReplace}
             isSwapping={isSwapping}
