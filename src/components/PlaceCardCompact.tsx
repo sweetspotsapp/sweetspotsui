@@ -176,6 +176,16 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
             </span>
           </div>
         )}
+
+        {/* Social proof badge */}
+        {saveCount > 0 && (
+          <div className="absolute bottom-2 left-2">
+            <span className="flex items-center gap-1 px-2 py-1 bg-card/90 backdrop-blur-sm text-xs font-medium text-foreground rounded-full">
+              <Users className="w-3 h-3 text-primary" />
+              {saveCount} saved
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Info */}
