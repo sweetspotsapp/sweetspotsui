@@ -86,6 +86,7 @@ interface SectionRowProps {
   userLocation?: {lat: number;lng: number;} | null;
   onSeeAll?: (allPlaces: MockPlaceWithCoords[]) => void;
   showDistance?: boolean;
+  saveCounts?: Record<string, number>;
 }
 
 const SectionRow: React.FC<SectionRowProps> = ({
@@ -98,7 +99,8 @@ const SectionRow: React.FC<SectionRowProps> = ({
   featured = false,
   userLocation,
   onSeeAll,
-  showDistance = true
+  showDistance = true,
+  saveCounts = {},
 }) => {
   const handleSeeAll = () => {
     if (onSeeAll) {
