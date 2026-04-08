@@ -398,6 +398,12 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
               await saveTrip(tripParams, edited, editingId || undefined);
             }
           }}
+          isLive={liveTrip.isLive && editingId === liveTrip.trip?.id}
+          currentDayIndex={liveTrip.currentDayIndex}
+          checkedActivities={liveTrip.checkedActivities}
+          liveProgress={liveTrip.progress}
+          onToggleActivity={liveTrip.toggleActivity}
+          onUndoActivity={liveTrip.undoActivity}
         />
       )}
 
