@@ -131,7 +131,7 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
           }`}
         >
           <Heart 
-            className={`w-3 h-3 transition-all duration-200 ${
+            className={`w-4 h-4 transition-all duration-200 ${
               isSaved ? 'fill-primary text-primary scale-110' : 'text-muted-foreground'
             }`} 
           />
