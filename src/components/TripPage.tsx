@@ -63,17 +63,49 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     }
   }, [phase, editingId]);
 
-  // Open create modal with pre-filled destination from home page template
+  // Auto-generate trip from home page template
   useEffect(() => {
-    if (prefillDestination) {
+    if (tripTemplate) {
+      const { destination, duration, vibes, budget } = tripTemplate;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + 7); // Start a week from now
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + duration - 1);
+
+      const params: TripParams = {
+        name: `${destination} Trip`,
+        destination,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        budget,
+        groupSize: 2,
+        vibes,
+        mustIncludePlaceIds: [],
+        boardIds: [],
+      };
+
       setEditingId(null);
       setTripData(null);
-      setTripParams(null);
-      setPrefillParams({ destination: prefillDestination } as TripParams);
-      setShowCreateModal(true);
-      onPrefillConsumed?.();
+      setTripParams(params);
+      setShowCreateModal(false);
+      onTemplateConsumed?.();
+
+      // Trigger generation
+      (async () => {
+        const result = await generate(params);
+        if (result) {
+          const resultWithContext: TripData = {
+            ...result,
+            _meta: { ...(result._meta || {}) },
+          };
+          setTripData(resultWithContext);
+          const id = await saveTrip(params, resultWithContext);
+          if (id) setEditingId(id);
+          setPhase("view");
+        }
+      })();
     }
-  }, [prefillDestination]);
+  }, [tripTemplate]);
 
   const handleNewTrip = () => {
     setEditingId(null);
