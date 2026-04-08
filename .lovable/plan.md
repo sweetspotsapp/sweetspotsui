@@ -1,28 +1,43 @@
 
 
-# Add Persistent "Import from Social" Prompt for Active Users
+# Upgrade Map to Roamy-Quality Design
 
-## Problem
-The current import tip banner only shows for users with 1-3 saved spots, then disappears forever. Users with more spots never learn about the social import feature.
+## What Roamy Uses
+Roamy almost certainly uses **Mapbox GL JS** — it's the industry standard for travel apps that need beautiful, highly customizable maps. Mapbox lets you design completely custom map styles in **Mapbox Studio** (colors, fonts, terrain, labels, 3D buildings) — which is why their maps look so polished compared to default Google Maps.
 
-## Approach
-Add a subtle, non-intrusive **"Add Spot" action card** as the last item in the board grid — styled like a board card but acting as a CTA. This keeps it aesthetic and contextual without being a banner that feels like an ad.
+## Our Options
 
-### Design
-- A card in the board grid (same size as other board cards) placed **after all boards**
-- Soft dashed border, muted background
-- Icon: `+` or a link icon
-- Two lines of copy: **"Add a Spot"** (title) and **"Search or paste a link from Instagram, TikTok, or Maps"** (subtitle)
-- On tap: open a small bottom sheet or inline menu with two options: "Search Places" (→ Discover tab) and "Paste a Link" (→ ImportLinkDialog)
-- Blends with the masonry grid naturally — doesn't feel like a banner or ad
+| Approach | Effort | Result |
+|----------|--------|--------|
+| **A. Custom Google Maps styling** | Low | Good — muted tones, hidden POIs, brand colors. Limited by Google's style options. |
+| **B. Switch to Mapbox GL JS** | Medium | Great — full visual control, smooth animations, 3D terrain, vector tiles. Free tier: 50k loads/month. |
 
-### Also
-- Remove the `savedPlaces.length <= 3` upper bound on the existing tip banner — keep it showing (dismissible) for all users until they dismiss it
-- This way there are two touchpoints: the tip banner (dismissible, one-time) and the permanent grid card
+**Recommendation: Option A first, Option B later.** We already have Google Maps wired up with API key infrastructure. We can make it look 80% as good as Roamy by applying a polished custom style JSON. Switching to Mapbox is a bigger lift (new dependency, new API key, rewrite map components) — worth doing later if maps become a core feature.
+
+## Plan: Apply Premium Google Maps Styling
+
+### 1. Create a custom map style
+Add a comprehensive style JSON to `BoardMapView.tsx` (and `TripMapView.tsx`) that:
+- Softens land/water colors to warm neutrals (cream, soft blue)
+- Hides default POI icons and labels (we show our own markers)
+- Mutes road colors to light gray
+- Keeps transit/highway labels subtle
+- Uses a palette that matches SweetSpots branding
+
+### 2. Upgrade map markers
+Replace the plain red circles with **branded pill markers** showing:
+- Place name as a label (like Roamy does)
+- Or a category icon inside a styled pin
+- Selected state with an expanded card preview
+- Smooth transitions on selection
+
+### 3. Improve the MapPage
+Replace the "Coming Soon" placeholder on the Map tab with an actual full-screen map showing all saved places across all boards — making it a global map view.
 
 ### Files to modify
-- `src/components/SavedPage.tsx` — add the CTA card after the board grid, widen tip banner threshold
-- Possibly extract a small `AddSpotCard` component, or inline it in the grid
+- `src/components/saved/BoardMapView.tsx` — apply custom style JSON, upgrade markers
+- `src/components/trip/TripMapView.tsx` — same style for consistency
+- `src/components/MapPage.tsx` — replace placeholder with real map
 
 ### No database changes needed.
 
