@@ -603,8 +603,10 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
           <form onSubmit={handleSearchSubmit} className="relative flex-1">
             <div className={`relative flex items-center transition-all duration-200 ${isSearchFocused ? "ring-2 ring-primary/50 rounded-2xl" : ""}`}>
               {isSearching ? <Loader2 className="absolute left-4 w-5 h-5 text-primary animate-spin pointer-events-none" /> : <Sparkles className="absolute left-4 w-5 h-5 text-primary pointer-events-none" />}
-              <Input type="text" value={searchValue} onChange={(e) => setSearchValue(e.target.value)} onFocus={() => setIsSearchFocused(true)} onBlur={() => setIsSearchFocused(false)} placeholder={searchHints[hintIndex]} className="pl-11 pr-11 h-14 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm" disabled={isSearching} />
-              {searchValue && !isSearching && <button type="button" onClick={handleClearSearch} className="absolute right-4 p-1 text-muted-foreground hover:text-foreground transition-colors"><X className="w-5 h-5" /></button>}
+              <Input type="text" value={searchValue} onChange={(e) => setSearchValue(e.target.value)} onFocus={() => setIsSearchFocused(true)} onBlur={() => setIsSearchFocused(false)} placeholder={searchHints[hintIndex]} className="pl-11 pr-12 h-14 rounded-2xl bg-muted/50 border-border/50 text-base placeholder:text-muted-foreground/70 shadow-sm" disabled={isSearching} />
+              <button type="submit" disabled={isSearching || !searchValue.trim()} className={`absolute right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all ${searchValue.trim() ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground/50'}`}>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </form>
         </div>
