@@ -126,7 +126,7 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
         {/* Save button */}
         <button
           onClick={handleSave}
-          className={`absolute top-2 right-2 p-2 bg-card/90 backdrop-blur-sm rounded-full shadow-soft transition-all duration-200 hover:scale-110 ${
+          className={`absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center bg-card/90 backdrop-blur-sm rounded-full transition-all duration-200 hover:scale-110 ${
             isSaved ? 'animate-pulse-once' : ''
           }`}
         >
