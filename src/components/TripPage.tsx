@@ -75,7 +75,7 @@ const TripPage = ({ resumeTripId, onResumed, prefillDestination, onPrefillConsum
     }
   }, [prefillDestination]);
 
-
+  const handleNewTrip = () => {
     setEditingId(null);
     setPrefillParams(null);
     setTripData(null);
