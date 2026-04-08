@@ -87,12 +87,11 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
       id: "subscription",
       label: "Subscription",
       icon: Crown,
-      onClick: () => {},
-      trailing: (
-        <Badge variant="secondary" className="text-xs font-medium">
-          Coming Soon
-        </Badge>
-      ),
+      onClick: () => {
+        onClose();
+        navigate("/pricing");
+      },
+      trailing: <ChevronRight className="w-4 h-4 text-muted-foreground" />,
     },
     {
       id: "help",
