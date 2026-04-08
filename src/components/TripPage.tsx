@@ -63,7 +63,19 @@ const TripPage = ({ resumeTripId, onResumed, prefillDestination, onPrefillConsum
     }
   }, [phase, editingId]);
 
-  const handleNewTrip = () => {
+  // Open create modal with pre-filled destination from home page template
+  useEffect(() => {
+    if (prefillDestination) {
+      setEditingId(null);
+      setTripData(null);
+      setTripParams(null);
+      setPrefillParams({ destination: prefillDestination } as TripParams);
+      setShowCreateModal(true);
+      onPrefillConsumed?.();
+    }
+  }, [prefillDestination]);
+
+
     setEditingId(null);
     setPrefillParams(null);
     setTripData(null);
