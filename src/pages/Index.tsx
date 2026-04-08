@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/HomePage";
+import DiscoverPage from "@/components/DiscoverPage";
 import SavedPage from "@/components/SavedPage";
 import TripPage from "@/components/TripPage";
 import ProfilePage from "@/components/ProfilePage";
@@ -15,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePendingInvites } from "@/hooks/usePendingInvites";
 import type { OnboardingData } from "@/context/AppContext";
 
+type TabType = "home" | "discover" | "saved" | "trip" | "profile";
 type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
@@ -29,17 +31,17 @@ const Index = () => {
   const location = useLocation();
   const { pendingCount, markSeen } = usePendingInvites();
   
-  const getInitialTab = (): "home" | "map" | "saved" | "trip" | "profile" => {
+  const getInitialTab = (): TabType => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) return "trip";
     if (location.pathname === "/saved") return "saved";
     if (location.pathname === "/trip") return "trip";
     const params = new URLSearchParams(location.search);
-    if (params.get('search')) return "home";
+    if (params.get('search')) return "discover";
     return "home";
   };
   
-  const [activeTab, setActiveTab] = useState<"home" | "map" | "saved" | "trip" | "profile">(getInitialTab);
+  const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,15 +57,12 @@ const Index = () => {
     }
     const params = new URLSearchParams(location.search);
     if (params.get('search')) {
-      setActiveTab("home");
+      setActiveTab("discover");
     }
   }, [location.state, location.search]);
 
-  // Mark invites as seen when user visits trip tab
   useEffect(() => {
-    if (activeTab === "trip") {
-      markSeen();
-    }
+    if (activeTab === "trip") markSeen();
   }, [activeTab, markSeen]);
 
   const [appState, setAppState] = useState<AppState>(
@@ -71,49 +70,30 @@ const Index = () => {
   );
 
   useEffect(() => {
-    if (hasCompletedOnboarding && appState === "onboarding") {
-      setAppState("main");
-    } else if (!hasCompletedOnboarding && appState === "main") {
-      setAppState("onboarding");
-    }
+    if (hasCompletedOnboarding && appState === "onboarding") setAppState("main");
+    else if (!hasCompletedOnboarding && appState === "main") setAppState("onboarding");
   }, [hasCompletedOnboarding, appState]);
 
   const handleOnboardingComplete = (data: OnboardingData) => {
     setOnboardingData(data);
-    if (data.mood) {
-      setUserMood(data.mood);
-    }
+    if (data.mood) setUserMood(data.mood);
     setAppState("loading");
-    
-    setTimeout(() => {
-      completeOnboarding(data.mood || "", []);
-      setAppState("main");
-    }, 800);
+    setTimeout(() => { completeOnboarding(data.mood || "", []); setAppState("main"); }, 800);
   };
 
   const handleMoodSubmit = (mood: string) => {
     setUserMood(mood);
     setAppState("loading");
-    
-    setTimeout(() => {
-      completeOnboarding(mood, []);
-      setAppState("main");
-    }, 1000);
+    setTimeout(() => { completeOnboarding(mood, []); setAppState("main"); }, 1000);
   };
 
   const handleSkip = () => {
     sessionStorage.setItem('sweetspots_skip_mode', 'true');
     setAppState("loading");
-    
-    setTimeout(() => {
-      completeOnboarding("", []);
-      setAppState("main");
-    }, 800);
+    setTimeout(() => { completeOnboarding("", []); setAppState("main"); }, 800);
   };
 
-  const handleTabChange = (tab: "home" | "map" | "saved" | "trip" | "profile") => {
-    setActiveTab(tab);
-  };
+  const handleTabChange = (tab: TabType) => setActiveTab(tab);
 
   if (authLoading) {
     return (
@@ -123,10 +103,7 @@ const Index = () => {
     );
   }
 
-  if (appState === "onboarding") {
-    return <EntryScreen onComplete={handleOnboardingComplete} onSkip={handleSkip} />;
-  }
-
+  if (appState === "onboarding") return <EntryScreen onComplete={handleOnboardingComplete} onSkip={handleSkip} />;
   if (appState === "loading") {
     const isSkipMode = sessionStorage.getItem('sweetspots_skip_mode') === 'true';
     return <LoadingTransition isSkipMode={isSkipMode} />;
@@ -135,13 +112,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
-        <ErrorBoundary fallbackTitle="Couldn't load Discover">
-          <HomePage onNavigateToProfile={() => setActiveTab("profile")} />
+        <ErrorBoundary fallbackTitle="Couldn't load Home">
+          <HomePage onNavigateToProfile={() => setActiveTab("profile")} onNavigateToTab={(tab) => setActiveTab(tab as TabType)} />
         </ErrorBoundary>
       </div>
-      <div style={{ display: activeTab === "map" ? "block" : "none" }}>
-        <ErrorBoundary fallbackTitle="Map ran into an issue">
-          <MapPage />
+      <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
+        <ErrorBoundary fallbackTitle="Couldn't load Discover">
+          <DiscoverPage onNavigateToProfile={() => setActiveTab("profile")} />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "saved" ? "block" : "none" }}>
