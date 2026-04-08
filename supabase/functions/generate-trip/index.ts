@@ -246,13 +246,13 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       }
     }
 
-    // Enrich each activity - try DB cache first, then Google Places API
+    // Enrich each activity - try DB cache first, then Google Places API (PARALLEL)
+    const enrichTasks: Promise<void>[] = [];
+
     for (const day of tripPlan.days) {
       for (const slot of day.slots) {
         for (const act of slot.activities) {
           const normalizedName = act.name.toLowerCase().trim();
-
-          // Try exact match from cache (already location-filtered)
           const match = placeCache.get(normalizedName);
 
           if (match) {
@@ -264,89 +264,76 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
             continue;
           }
 
-          // No cache hit — use Google Places Text Search with location bias
           if (!GOOGLE_MAPS_API_KEY) continue;
 
-          try {
-            const searchQuery = `${act.name} in ${destination}`;
-            const searchBody: Record<string, unknown> = {
-              textQuery: searchQuery,
-              maxResultCount: 3,
-            };
-            // Add location bias so results are near the destination
-            if (destLat && destLng) {
-              searchBody.locationBias = {
-                circle: { center: { latitude: destLat, longitude: destLng }, radius: MAX_DISTANCE_KM * 1000 },
+          enrichTasks.push((async () => {
+            try {
+              const searchBody: Record<string, unknown> = {
+                textQuery: `${act.name} in ${destination}`,
+                maxResultCount: 3,
               };
-            }
-
-            const gRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
-                "X-Goog-FieldMask": "places.name,places.displayName,places.photos,places.location,places.formattedAddress",
-              },
-              body: JSON.stringify(searchBody),
-            });
-
-            if (gRes.ok) {
-              const gData = await gRes.json();
-              // Pick the first result that's actually near the destination
-              let place = null;
-              for (const candidate of gData.places || []) {
-                const cLat = candidate.location?.latitude;
-                const cLng = candidate.location?.longitude;
-                if (destLat && destLng && cLat && cLng) {
-                  const dist = haversineKm(destLat, destLng, cLat, cLng);
-                  if (dist <= MAX_DISTANCE_KM) {
-                    place = candidate;
-                    break;
-                  }
-                } else {
-                  place = candidate; // no coords to verify, use first
-                  break;
-                }
+              if (destLat && destLng) {
+                searchBody.locationBias = {
+                  circle: { center: { latitude: destLat, longitude: destLng }, radius: MAX_DISTANCE_KM * 1000 },
+                };
               }
 
-              if (place) {
-                const photoName = place.photos?.[0]?.name || null;
-                const lat = place.location?.latitude || null;
-                const lng = place.location?.longitude || null;
-                const addr = place.formattedAddress || null;
-                const displayName = place.displayName?.text || act.name;
+              const gRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+                  "X-Goog-FieldMask": "places.name,places.displayName,places.photos,places.location,places.formattedAddress",
+                },
+                body: JSON.stringify(searchBody),
+              });
 
-                const resourceName = place.name as string | undefined;
-                const googlePlaceId = resourceName?.startsWith("places/") ? resourceName.slice(7) : null;
+              if (gRes.ok) {
+                const gData = await gRes.json();
+                let place = null;
+                for (const candidate of gData.places || []) {
+                  const cLat = candidate.location?.latitude;
+                  const cLng = candidate.location?.longitude;
+                  if (destLat && destLng && cLat && cLng) {
+                    if (haversineKm(destLat, destLng, cLat, cLng) <= MAX_DISTANCE_KM) { place = candidate; break; }
+                  } else { place = candidate; break; }
+                }
 
-                act.photoName = photoName;
-                act.lat = lat;
-                act.lng = lng;
-                act.address = addr;
+                if (place) {
+                  const photoName = place.photos?.[0]?.name || null;
+                  const lat = place.location?.latitude || null;
+                  const lng = place.location?.longitude || null;
+                  const addr = place.formattedAddress || null;
+                  const displayName = place.displayName?.text || act.name;
+                  const resourceName = place.name as string | undefined;
+                  const googlePlaceId = resourceName?.startsWith("places/") ? resourceName.slice(7) : null;
 
-                if (googlePlaceId) {
-                  act.placeId = googlePlaceId;
-                  try {
-                    await sb.from("places").upsert({
-                      place_id: googlePlaceId,
-                      name: displayName,
-                      photo_name: photoName,
-                      lat, lng,
-                      address: addr,
-                      categories: [act.category],
-                    }, { onConflict: "place_id", ignoreDuplicates: true });
-                  } catch (upsertErr) {
-                    console.error(`Upsert failed for "${act.name}":`, upsertErr);
+                  act.photoName = photoName;
+                  act.lat = lat;
+                  act.lng = lng;
+                  act.address = addr;
+
+                  if (googlePlaceId) {
+                    act.placeId = googlePlaceId;
+                    try {
+                      await sb.from("places").upsert({
+                        place_id: googlePlaceId, name: displayName, photo_name: photoName,
+                        lat, lng, address: addr, categories: [act.category],
+                      }, { onConflict: "place_id", ignoreDuplicates: true });
+                    } catch (e) { console.error(`Upsert failed for "${act.name}":`, e); }
                   }
                 }
               }
+            } catch (err) {
+              console.error(`Google Places lookup failed for "${act.name}":`, err);
             }
-          } catch (err) {
-            console.error(`Google Places lookup failed for "${act.name}":`, err);
-          }
+          })());
         }
       }
     }
+
+    // Run all Google lookups in parallel
+    await Promise.all(enrichTasks);
 
     return new Response(JSON.stringify(tripPlan), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
