@@ -14,6 +14,7 @@ import PlaceDetails from "./pages/PlaceDetails";
 import CategorySeeAll from "./pages/CategorySeeAll";
 import Settings from "./pages/Settings";
 import HelpSupport from "./pages/HelpSupport";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 
@@ -38,6 +39,7 @@ const App = () => (
                   <Route path="/see-all" element={<CategorySeeAll />} />
                 </Route>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/pricing" element={<Pricing />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/help-support" element={<HelpSupport />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

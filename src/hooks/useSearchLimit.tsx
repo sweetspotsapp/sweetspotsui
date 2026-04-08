@@ -15,7 +15,7 @@ interface UseSearchLimitReturn {
   refresh: () => Promise<void>;
 }
 
-export const useSearchLimit = (): UseSearchLimitReturn => {
+export const useSearchLimit = (isPro: boolean = false): UseSearchLimitReturn => {
   const { user } = useAuth();
   const [searchesUsed, setSearchesUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,13 +56,14 @@ export const useSearchLimit = (): UseSearchLimitReturn => {
   }, []);
 
   const isAdmin = !!user && ADMIN_USER_IDS.includes(user.id);
-  const searchesLeft = isAdmin ? Infinity : Math.max(0, FREE_DAILY_LIMIT - searchesUsed);
+  const isUnlimited = isAdmin || isPro;
+  const searchesLeft = isUnlimited ? Infinity : Math.max(0, FREE_DAILY_LIMIT - searchesUsed);
 
   return {
     searchesUsed,
     searchesLeft,
     dailyLimit: FREE_DAILY_LIMIT,
-    hasReachedLimit: isAdmin ? false : searchesUsed >= FREE_DAILY_LIMIT,
+    hasReachedLimit: isUnlimited ? false : searchesUsed >= FREE_DAILY_LIMIT,
     isLoading,
     increment,
     refresh: fetchTodayCount,
