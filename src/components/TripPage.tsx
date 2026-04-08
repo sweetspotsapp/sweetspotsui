@@ -425,6 +425,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
         tripName={shareTrip.name}
       />
     )}
+    <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </>
   );
 };
