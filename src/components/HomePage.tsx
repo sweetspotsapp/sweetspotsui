@@ -204,7 +204,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           {TRIP_TEMPLATES.map((template, i) => (
             <button
               key={template.destination}
-              onClick={() => handleTemplateClick(template.destination)}
+              onClick={() => handleTemplateClick(template)}
               className="relative overflow-hidden rounded-2xl h-[160px] text-left transition-all hover:shadow-lg active:scale-[0.97] group"
             >
               <img

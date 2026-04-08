@@ -43,7 +43,7 @@ const Index = () => {
   
   const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
-  const [tripPrefillDestination, setTripPrefillDestination] = useState<string | null>(null);
+  const [tripTemplate, setTripTemplate] = useState<any>(null);
 
   useEffect(() => {
     const state = location.state as { openTrip?: boolean } | null;
