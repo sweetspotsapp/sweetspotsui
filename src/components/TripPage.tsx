@@ -24,9 +24,11 @@ type TripFilter = "all" | "upcoming" | "current" | "past";
 interface TripPageProps {
   resumeTripId?: string | null;
   onResumed?: () => void;
+  prefillDestination?: string | null;
+  onPrefillConsumed?: () => void;
 }
 
-const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
+const TripPage = ({ resumeTripId, onResumed, prefillDestination, onPrefillConsumed }: TripPageProps) => {
   const { user } = useAuth();
   const {
     generate, swap, isGenerating, isSwapping,
@@ -60,6 +62,18 @@ const TripPage = ({ resumeTripId, onResumed }: TripPageProps) => {
       sessionStorage.setItem('sweetspots_resume_trip', editingId);
     }
   }, [phase, editingId]);
+
+  // Open create modal with pre-filled destination from home page template
+  useEffect(() => {
+    if (prefillDestination) {
+      setEditingId(null);
+      setTripData(null);
+      setTripParams(null);
+      setPrefillParams({ destination: prefillDestination } as TripParams);
+      setShowCreateModal(true);
+      onPrefillConsumed?.();
+    }
+  }, [prefillDestination]);
 
   const handleNewTrip = () => {
     setEditingId(null);

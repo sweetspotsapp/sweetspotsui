@@ -15,6 +15,7 @@ import tripBangkok from "@/assets/trip-bangkok.jpg";
 interface HomePageProps {
   onNavigateToProfile?: () => void;
   onNavigateToTab?: (tab: string) => void;
+  onTripTemplate?: (destination: string) => void;
 }
 
 interface SavedPlaceWithDetails {
@@ -31,7 +32,7 @@ const TRIP_TEMPLATES = [
   { destination: "Bangkok", duration: "4 days", vibe: "Night markets & temples", image: tripBangkok },
 ];
 
-const HomePage = ({ onNavigateToProfile, onNavigateToTab }: HomePageProps) => {
+const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: HomePageProps) => {
   const { user } = useAuth();
   const { onboardingData } = useApp();
   const upcomingTrip = useUpcomingTrip();
@@ -81,7 +82,13 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab }: HomePageProps) => {
 
   const handlePlanTrip = () => onNavigateToTab?.("trip");
   const handleDiscover = () => onNavigateToTab?.("discover");
-  const handleTemplateClick = (destination: string) => onNavigateToTab?.("trip");
+  const handleTemplateClick = (destination: string) => {
+    if (onTripTemplate) {
+      onTripTemplate(destination);
+    } else {
+      onNavigateToTab?.("trip");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background max-w-[420px] lg:max-w-3xl mx-auto relative pb-24 lg:pb-8">

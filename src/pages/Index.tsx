@@ -43,6 +43,7 @@ const Index = () => {
   
   const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
   const [resumeTripId, setResumeTripId] = useState<string | null>(null);
+  const [tripPrefillDestination, setTripPrefillDestination] = useState<string | null>(null);
 
   useEffect(() => {
     const state = location.state as { openTrip?: boolean } | null;
@@ -113,7 +114,7 @@ const Index = () => {
     <div className="min-h-screen bg-background lg:pt-16">
       <div style={{ display: activeTab === "home" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Couldn't load Home">
-          <HomePage onNavigateToProfile={() => setActiveTab("profile")} onNavigateToTab={(tab) => setActiveTab(tab as TabType)} />
+          <HomePage onNavigateToProfile={() => setActiveTab("profile")} onNavigateToTab={(tab) => setActiveTab(tab as TabType)} onTripTemplate={(dest) => { setTripPrefillDestination(dest); setActiveTab("trip"); }} />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "discover" ? "block" : "none" }}>
@@ -128,7 +129,7 @@ const Index = () => {
       </div>
       <div style={{ display: activeTab === "trip" ? "block" : "none" }}>
         <ErrorBoundary fallbackTitle="Trip planner hit a snag">
-          <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} />
+          <TripPage resumeTripId={resumeTripId} onResumed={() => setResumeTripId(null)} prefillDestination={tripPrefillDestination} onPrefillConsumed={() => setTripPrefillDestination(null)} />
         </ErrorBoundary>
       </div>
       <div style={{ display: activeTab === "profile" ? "block" : "none" }}>
