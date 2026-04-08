@@ -104,7 +104,7 @@ const PlaceCard = ({ place, index = 0, variant = "poster", onClick }: PlaceCardP
             )}
             onClick={handleSaveClick}
           >
-            <Heart className={cn("w-3.5 h-3.5 transition-all", saved && "fill-current scale-110")} />
+            <Heart className={cn("w-3 h-3 transition-all", saved && "fill-current scale-110")} />
           </button>
           
           {/* Content overlay */}
