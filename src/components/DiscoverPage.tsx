@@ -174,7 +174,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, onboardingData, setOnboardingData } = useApp();
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation, setManualLocation } = useLocation();
-  const { searchesLeft, hasReachedLimit, increment: incrementSearchCount } = useSearchLimit();
+  const { isPro } = useSubscription();
+  const { searchesLeft, hasReachedLimit, increment: incrementSearchCount } = useSearchLimit(isPro);
   const hasLoadedInitial = useRef(false);
   const hasConsumedSearchParam = useRef(false);
 
