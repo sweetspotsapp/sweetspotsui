@@ -485,6 +485,7 @@ export type Database = {
           must_include_place_ids: string[] | null
           name: string | null
           start_date: string
+          status: string
           trip_data: Json | null
           updated_at: string
           user_id: string
@@ -505,6 +506,7 @@ export type Database = {
           must_include_place_ids?: string[] | null
           name?: string | null
           start_date: string
+          status?: string
           trip_data?: Json | null
           updated_at?: string
           user_id: string
@@ -525,6 +527,7 @@ export type Database = {
           must_include_place_ids?: string[] | null
           name?: string | null
           start_date?: string
+          status?: string
           trip_data?: Json | null
           updated_at?: string
           user_id?: string

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2 } from "lucide-react";
+import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2, CheckCircle2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +24,7 @@ import UpgradeModal from "./UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
 
 type Phase = "list" | "view";
-type TripFilter = "all" | "upcoming" | "current" | "past";
+type TripFilter = "all" | "upcoming" | "current" | "past" | "completed";
 
 interface TripPageProps {
   resumeTripId?: string | null;
@@ -39,7 +39,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
   const {
     generate, swap, isGenerating, isSwapping,
     savedTrips, sharedTrips, pendingInvites, isLoading,
-    saveTrip, deleteTrip, acceptInvite, ignoreInvite,
+    saveTrip, deleteTrip, completeTrip, acceptInvite, ignoreInvite,
   } = useTrip();
   const { hasReachedLimit: hasReachedTripLimit, tripsUsedThisMonth, monthlyLimit, increment: incrementTripCount } = useTripLimit(isPro);
   const liveTrip = useLiveTrip(savedTrips);
@@ -371,6 +371,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
           onEdit={handleEditTrip}
           onDuplicate={handleDuplicate}
           onDelete={deleteTrip}
+          onComplete={completeTrip}
           onShare={(trip) => setShareTrip({ id: trip.id, name: trip.name || trip.destination })}
           onCreateNew={handleNewTrip}
           onAcceptInvite={acceptInvite}
@@ -439,7 +440,8 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
 };
 
 // ─── Helper: classify trip by dates ──────────────────────
-function classifyTrip(trip: SavedTrip): "upcoming" | "current" | "past" {
+function classifyTrip(trip: SavedTrip): "upcoming" | "current" | "past" | "completed" {
+  if ((trip as any).status === "completed") return "completed";
   const now = new Date();
   const start = parseISO(trip.start_date);
   const end = parseISO(trip.end_date);
@@ -493,6 +495,7 @@ const FILTERS: { id: TripFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "upcoming", label: "Upcoming" },
   { id: "current", label: "Current" },
+  { id: "completed", label: "Completed" },
   { id: "past", label: "Past" },
 ];
 
@@ -506,13 +509,14 @@ interface TripListProps {
   onEdit: (it: SavedTrip) => void;
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
+  onComplete: (id: string) => void;
   onShare: (trip: SavedTrip) => void;
   onCreateNew: () => void;
   onAcceptInvite: (inviteId: string) => Promise<void>;
   onIgnoreInvite: (inviteId: string) => Promise<void>;
 }
 
-const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew, onAcceptInvite, onIgnoreInvite }: TripListProps) => {
+const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdit, onDuplicate, onDelete, onComplete, onShare, onCreateNew, onAcceptInvite, onIgnoreInvite }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -692,6 +696,7 @@ const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdi
             onEdit={onEdit}
             onDuplicate={onDuplicate}
             onDelete={() => setConfirmDeleteId(it.id)}
+            onComplete={() => onComplete(it.id)}
             onShare={onShare}
           />
         ))}
@@ -764,11 +769,12 @@ interface TripCardProps {
   onEdit: (it: SavedTrip) => void;
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
+  onComplete?: (id: string) => void;
   onShare: (trip: SavedTrip) => void;
   isShared?: boolean;
 }
 
-const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare, isShared }: TripCardProps) => {
+const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComplete, onShare, isShared }: TripCardProps) => {
   const startDate = trip.start_date ? format(parseISO(trip.start_date), "MMM d") : "";
   const endDate = trip.end_date ? format(parseISO(trip.end_date), "MMM d, yyyy") : "";
   const heroImage = getTripHeroImage(trip);
@@ -807,6 +813,11 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare,
             <DropdownMenuItem onClick={() => onShare(trip)}>
               <Share2 className="w-4 h-4 mr-2" /> Share Trip
             </DropdownMenuItem>
+            {(category === "current" || category === "upcoming") && onComplete && (
+              <DropdownMenuItem onClick={() => onComplete(trip.id)} className="text-green-600 focus:text-green-600">
+                <CheckCircle2 className="w-4 h-4 mr-2" /> Complete Trip
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={() => onDelete(trip.id)}
               className="text-destructive focus:text-destructive"
@@ -839,8 +850,9 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare,
                 "inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full",
                 category === "upcoming" && "bg-primary/10 text-primary",
                 category === "past" && "bg-muted text-muted-foreground",
+                category === "completed" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
               )}>
-                {category}
+                {category === "completed" ? "✓ Completed" : category}
               </span>
             )}
           </div>
