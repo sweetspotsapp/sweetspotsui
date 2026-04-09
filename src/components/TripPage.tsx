@@ -24,7 +24,7 @@ import UpgradeModal from "./UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
 
 type Phase = "list" | "view";
-type TripFilter = "all" | "upcoming" | "current" | "past";
+type TripFilter = "all" | "upcoming" | "current" | "past" | "completed";
 
 interface TripPageProps {
   resumeTripId?: string | null;
@@ -495,6 +495,7 @@ const FILTERS: { id: TripFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "upcoming", label: "Upcoming" },
   { id: "current", label: "Current" },
+  { id: "completed", label: "Completed" },
   { id: "past", label: "Past" },
 ];
 
