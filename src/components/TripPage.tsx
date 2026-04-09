@@ -39,7 +39,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
   const {
     generate, swap, isGenerating, isSwapping,
     savedTrips, sharedTrips, pendingInvites, isLoading,
-    saveTrip, deleteTrip, acceptInvite, ignoreInvite,
+    saveTrip, deleteTrip, completeTrip, acceptInvite, ignoreInvite,
   } = useTrip();
   const { hasReachedLimit: hasReachedTripLimit, tripsUsedThisMonth, monthlyLimit, increment: incrementTripCount } = useTripLimit(isPro);
   const liveTrip = useLiveTrip(savedTrips);
@@ -439,7 +439,8 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
 };
 
 // ─── Helper: classify trip by dates ──────────────────────
-function classifyTrip(trip: SavedTrip): "upcoming" | "current" | "past" {
+function classifyTrip(trip: SavedTrip): "upcoming" | "current" | "past" | "completed" {
+  if ((trip as any).status === "completed") return "completed";
   const now = new Date();
   const start = parseISO(trip.start_date);
   const end = parseISO(trip.end_date);
