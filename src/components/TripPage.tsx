@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2 } from "lucide-react";
+import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2, CheckCircle2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -371,6 +371,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
           onEdit={handleEditTrip}
           onDuplicate={handleDuplicate}
           onDelete={deleteTrip}
+          onComplete={completeTrip}
           onShare={(trip) => setShareTrip({ id: trip.id, name: trip.name || trip.destination })}
           onCreateNew={handleNewTrip}
           onAcceptInvite={acceptInvite}
@@ -507,13 +508,14 @@ interface TripListProps {
   onEdit: (it: SavedTrip) => void;
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
+  onComplete: (id: string) => void;
   onShare: (trip: SavedTrip) => void;
   onCreateNew: () => void;
   onAcceptInvite: (inviteId: string) => Promise<void>;
   onIgnoreInvite: (inviteId: string) => Promise<void>;
 }
 
-const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdit, onDuplicate, onDelete, onShare, onCreateNew, onAcceptInvite, onIgnoreInvite }: TripListProps) => {
+const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdit, onDuplicate, onDelete, onComplete, onShare, onCreateNew, onAcceptInvite, onIgnoreInvite }: TripListProps) => {
   const [activeFilter, setActiveFilter] = useState<TripFilter>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
