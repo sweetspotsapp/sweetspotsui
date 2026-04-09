@@ -695,6 +695,7 @@ const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdi
             onEdit={onEdit}
             onDuplicate={onDuplicate}
             onDelete={() => setConfirmDeleteId(it.id)}
+            onComplete={() => onComplete(it.id)}
             onShare={onShare}
           />
         ))}
@@ -767,11 +768,12 @@ interface TripCardProps {
   onEdit: (it: SavedTrip) => void;
   onDuplicate: (it: SavedTrip) => void;
   onDelete: (id: string) => void;
+  onComplete?: (id: string) => void;
   onShare: (trip: SavedTrip) => void;
   isShared?: boolean;
 }
 
-const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onShare, isShared }: TripCardProps) => {
+const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComplete, onShare, isShared }: TripCardProps) => {
   const startDate = trip.start_date ? format(parseISO(trip.start_date), "MMM d") : "";
   const endDate = trip.end_date ? format(parseISO(trip.end_date), "MMM d, yyyy") : "";
   const heroImage = getTripHeroImage(trip);
