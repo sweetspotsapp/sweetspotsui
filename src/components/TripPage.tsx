@@ -849,8 +849,9 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
                 "inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full",
                 category === "upcoming" && "bg-primary/10 text-primary",
                 category === "past" && "bg-muted text-muted-foreground",
+                category === "completed" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
               )}>
-                {category}
+                {category === "completed" ? "✓ Completed" : category}
               </span>
             )}
           </div>
