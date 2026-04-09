@@ -405,6 +405,10 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
           liveProgress={liveTrip.progress}
           onToggleActivity={liveTrip.toggleActivity}
           onUndoActivity={liveTrip.undoActivity}
+          onCompleteTrip={editingId ? async () => {
+            await completeTrip(editingId);
+            handleBackToList();
+          } : undefined}
         />
       )}
 
