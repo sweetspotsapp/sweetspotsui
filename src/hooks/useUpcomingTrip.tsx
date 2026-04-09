@@ -55,8 +55,8 @@ export const useUpcomingTrip = (): TripStatus | null => {
       const todayStart = startOfDay(today);
       const liveTrip = data.find((t) => {
         try {
-          const start = startOfDay(parseISO(t.start_date));
-          const end = startOfDay(parseISO(t.end_date));
+          const start = startOfDay(parseLocalDate(t.start_date));
+          const end = startOfDay(parseLocalDate(t.end_date));
           return isWithinInterval(todayStart, { start, end });
         } catch {
           return false;
@@ -64,9 +64,9 @@ export const useUpcomingTrip = (): TripStatus | null => {
       });
 
       if (liveTrip) {
-        const currentDay = differenceInDays(todayStart, startOfDay(parseISO(liveTrip.start_date))) + 1;
+        const currentDay = differenceInDays(todayStart, startOfDay(parseLocalDate(liveTrip.start_date))) + 1;
         const totalDays = (liveTrip.trip_data as any)?.days?.length || 
-          differenceInDays(parseISO(liveTrip.end_date), parseISO(liveTrip.start_date)) + 1;
+          differenceInDays(parseLocalDate(liveTrip.end_date), parseLocalDate(liveTrip.start_date)) + 1;
         setStatus({
           type: "live",
           live: {
@@ -80,9 +80,9 @@ export const useUpcomingTrip = (): TripStatus | null => {
       }
 
       // Otherwise find upcoming (start_date is in the future)
-      const upcoming = data.find((t) => startOfDay(parseISO(t.start_date)) > todayStart);
+      const upcoming = data.find((t) => startOfDay(parseLocalDate(t.start_date)) > todayStart);
       if (upcoming) {
-        const daysUntil = differenceInDays(startOfDay(parseISO(upcoming.start_date)), todayStart);
+        const daysUntil = differenceInDays(startOfDay(parseLocalDate(upcoming.start_date)), todayStart);
         setStatus({
           type: "upcoming",
           upcoming: {
@@ -97,12 +97,12 @@ export const useUpcomingTrip = (): TripStatus | null => {
       // Edge case: trip starts today but isWithinInterval missed it (e.g. no end_date issue)
       const startsToday = data.find((t) => {
         try {
-          return startOfDay(parseISO(t.start_date)).getTime() === todayStart.getTime();
+          return startOfDay(parseLocalDate(t.start_date)).getTime() === todayStart.getTime();
         } catch { return false; }
       });
       if (startsToday) {
         const totalDays = (startsToday.trip_data as any)?.days?.length ||
-          differenceInDays(parseISO(startsToday.end_date), parseISO(startsToday.start_date)) + 1;
+          differenceInDays(parseLocalDate(startsToday.end_date), parseLocalDate(startsToday.start_date)) + 1;
         setStatus({
           type: "live",
           live: {
