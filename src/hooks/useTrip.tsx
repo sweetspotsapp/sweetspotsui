@@ -313,6 +313,25 @@ export const useTrip = () => {
     }
   };
 
+  const completeTrip = async (id: string) => {
+    if (!user) {
+      const updated = loadLocalTrips().map(i => i.id === id ? { ...i, status: 'completed' } : i);
+      saveLocalTrips(updated);
+      setSavedTrips(updated as SavedTrip[]);
+      toast({ title: "Trip completed! 🎉" });
+      return;
+    }
+    try {
+      const { error } = await (supabase.from("trips" as any) as any).update({ status: 'completed' }).eq("id", id).eq("user_id", user.id);
+      if (error) throw error;
+      setSavedTrips(prev => prev.map(i => i.id === id ? { ...i, status: 'completed' } as any : i));
+      toast({ title: "Trip completed! 🎉" });
+    } catch (err) {
+      console.error("Error completing trip:", err);
+      toast({ title: "Could not complete trip", variant: "destructive" });
+    }
+  };
+
   const deleteTrip = async (id: string) => {
     if (!user) {
       const updated = loadLocalTrips().filter(i => i.id !== id);
@@ -398,6 +417,6 @@ export const useTrip = () => {
   return {
     generate, swap, isGenerating, isSwapping,
     savedTrips, sharedTrips, pendingInvites, isLoading, loadTrips,
-    saveTrip, deleteTrip, acceptInvite, ignoreInvite,
+    saveTrip, deleteTrip, completeTrip, acceptInvite, ignoreInvite,
   };
 };

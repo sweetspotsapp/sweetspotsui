@@ -36,8 +36,9 @@ export const useUpcomingTrip = (): TripStatus | null => {
       // Fetch trips that are current or upcoming
       const { data } = await supabase
         .from("trips")
-        .select("id, destination, start_date, end_date, trip_data")
+        .select("id, destination, start_date, end_date, trip_data, status")
         .eq("user_id", user.id)
+        .neq("status", "completed")
         .gte("end_date", todayStr)
         .order("start_date", { ascending: true })
         .limit(5);
