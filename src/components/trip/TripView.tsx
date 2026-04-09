@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X, MapPin, Calendar, Users, Compass } from "lucide-react";
+import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X, MapPin, Calendar, Users, Compass, CheckCircle2 } from "lucide-react";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
 import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
@@ -46,6 +46,7 @@ interface TripViewProps {
   liveProgress?: { done: number; total: number; percentage: number };
   onToggleActivity?: (key: string, status: ActivityStatus) => void;
   onUndoActivity?: (key: string) => void;
+  onCompleteTrip?: () => void;
 }
 
 // Assign stable drag IDs to all activities
@@ -67,7 +68,7 @@ function ensureDragIds(trip: TripData): TripData {
   return changed ? updated : trip;
 }
 
-const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity }: TripViewProps) => {
+const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity, onCompleteTrip }: TripViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
@@ -291,8 +292,8 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
             <span className="text-xs font-medium text-muted-foreground">{liveProgress.done}/{liveProgress.total} done</span>
           </div>
           <Progress value={liveProgress.percentage} className="h-2" />
-          {liveProgress.percentage === 100 && (
-            <p className="text-xs font-medium text-primary mt-2 text-center">🎉 All done for today! Great day!</p>
+           {liveProgress.percentage === 100 && (
+            <p className="text-xs font-medium text-primary mt-2 text-center">🎉 What a day!</p>
           )}
         </div>
       )}
@@ -399,6 +400,50 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
             />
           </div>
         ))
+      )}
+
+      {/* Finish Trip section — only in live mode */}
+      {isLive && !isEditing && onCompleteTrip && (
+        <FinishTripSection onComplete={onCompleteTrip} />
+      )}
+    </div>
+  );
+};
+
+// Inline "Finish Trip" section with confirmation
+const FinishTripSection = ({ onComplete }: { onComplete: () => void }) => {
+  const [confirming, setConfirming] = useState(false);
+
+  return (
+    <div className="mt-6 mb-4 px-4 py-5 rounded-2xl bg-card border border-border text-center space-y-3">
+      {!confirming ? (
+        <>
+          <p className="text-sm text-muted-foreground">🎉 Ready to wrap up?</p>
+          <button
+            onClick={() => setConfirming(true)}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all active:scale-[0.97]"
+          >
+            <CheckCircle2 className="w-4 h-4" /> Finish This Trip
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-sm font-medium text-foreground">Mark this trip as finished?</p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => setConfirming(false)}
+              className="px-5 py-2 rounded-full text-sm font-medium border border-border text-muted-foreground hover:bg-muted transition-all"
+            >
+              Not yet
+            </button>
+            <button
+              onClick={onComplete}
+              className="px-5 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all active:scale-[0.97]"
+            >
+              Yes, finish ✓
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

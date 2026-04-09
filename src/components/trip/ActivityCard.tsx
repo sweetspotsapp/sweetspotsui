@@ -247,9 +247,9 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
                 Undo
               </button>
             )}
-            {isDone && (
+             {isDone && (
               <div className="flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-green-600 dark:text-green-400">
-                <Check className="w-3.5 h-3.5" /> Completed
+                <Check className="w-3.5 h-3.5" /> Been there ✓
               </div>
             )}
             {!liveStatus && (
@@ -258,7 +258,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
                   onClick={onCheck}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-500/20 transition-colors"
                 >
-                  <Check className="w-3.5 h-3.5" /> Done
+                  <Check className="w-3.5 h-3.5" /> Been here ✓
                 </button>
                 <button
                   onClick={onSkip}
@@ -270,7 +270,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
                   onClick={onCancel}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
                 >
-                  <X className="w-3.5 h-3.5" /> Cancel
+                  <X className="w-3.5 h-3.5" /> Not going
                 </button>
                 {(activity.lat || activity.address) && (
                   <button
