@@ -155,28 +155,6 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
             </p>
           </div>
 
-          {/* Scrolling social proof ticker */}
-          <div className="w-full overflow-hidden opacity-0 animate-fade-up delay-300">
-            <div className="flex animate-marquee gap-4 whitespace-nowrap">
-              {[
-                "Found the best hidden café in Bali in 2 mins — Sarah K.",
-                "Planned my whole Tokyo trip from saved spots. Game changer. — Marcus L.",
-                "It actually gets my vibe. Way better than Google Maps. — Priya D.",
-                "Discovered a rooftop bar I'd never have found otherwise. — Jake T.",
-                "My go-to for every new city now. — Aisha M.",
-                "Found the best hidden café in Bali in 2 mins — Sarah K.",
-                "Planned my whole Tokyo trip from saved spots. Game changer. — Marcus L.",
-                "It actually gets my vibe. Way better than Google Maps. — Priya D.",
-                "Discovered a rooftop bar I'd never have found otherwise. — Jake T.",
-                "My go-to for every new city now. — Aisha M.",
-              ].map((text, i) => (
-                <span key={i} className="inline-block text-xs text-muted-foreground/70 px-4 py-1.5 rounded-full bg-muted/40 shrink-0">
-                  {text}
-                </span>
-              ))}
-            </div>
-          </div>
-
           {/* Auth actions */}
           <div className="w-full space-y-3 opacity-0 animate-fade-up delay-500">
             <Button
@@ -229,6 +207,28 @@ const EntryScreen = ({ onComplete, onSkip }: EntryScreenProps) => {
         >
           Skip
         </button>
+
+        {/* Scrolling social proof ticker */}
+        <div className="w-full overflow-hidden mt-6 opacity-0 animate-fade-up delay-700">
+          <div className="flex animate-marquee gap-4 whitespace-nowrap">
+            {[
+              "Found the best hidden café in Bali in 2 mins — Sarah K.",
+              "Planned my whole Tokyo trip from saved spots. Game changer. — Marcus L.",
+              "It actually gets my vibe. Way better than Google Maps. — Priya D.",
+              "Discovered a rooftop bar I'd never have found otherwise. — Jake T.",
+              "My go-to for every new city now. — Aisha M.",
+              "Found the best hidden café in Bali in 2 mins — Sarah K.",
+              "Planned my whole Tokyo trip from saved spots. Game changer. — Marcus L.",
+              "It actually gets my vibe. Way better than Google Maps. — Priya D.",
+              "Discovered a rooftop bar I'd never have found otherwise. — Jake T.",
+              "My go-to for every new city now. — Aisha M.",
+            ].map((text, i) => (
+              <span key={i} className="inline-block text-xs text-muted-foreground/70 px-4 py-1.5 rounded-full bg-muted/40 shrink-0">
+                {text}
+              </span>
+            ))}
+          </div>
+        </div>
 
         <AuthDialog
           open={showAuthDialog}
