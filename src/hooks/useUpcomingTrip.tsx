@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
-import { differenceInDays, parseISO, isWithinInterval, startOfDay } from "date-fns";
+import { differenceInDays, isWithinInterval, startOfDay } from "date-fns";
+
+// Parse date-only string (YYYY-MM-DD) as local midnight, not UTC
+const parseLocalDate = (dateStr: string) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
 
 interface UpcomingTrip {
   destination: string;
