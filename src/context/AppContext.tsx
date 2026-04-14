@@ -1,14 +1,12 @@
-import { useState, createContext, useContext, ReactNode, useCallback } from "react";
+import { useState, useEffect, useRef, createContext, useContext, ReactNode, useCallback } from "react";
 import { extractVibes } from "@/data/mockPlaces";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { useSavedPlaces } from "@/hooks/useSavedPlaces";
 import { useAuth } from "@/hooks/useAuth";
+import { LS_ONBOARDING_DONE, lsOnboardingKey, SS_FREE_ACTIONS, SS_CACHED_LOCATION, SS_SEARCH_CACHE, SS_SUMMARY_CACHE } from "@/lib/storageKeys";
 
 // Onboarding data structure (defined here to avoid circular deps)
 export interface OnboardingData {
-  trip_intention: string | null;
-  budget: string | null;
-  travel_personality: string[];
   explore_location: string | null; // City/area name or "nearby" for GPS
   mood?: string; // User's mood/search intent from onboarding
 }
@@ -18,13 +16,6 @@ export interface PlaceCategory {
   placeIds: string[];
   color: string;
   createdAt: Date;
-}
-
-// Section configuration based on onboarding answers
-export interface SectionConfig {
-  key: string;
-  title: string;
-  prompt: string;
 }
 
 interface AppContextType {
@@ -63,9 +54,6 @@ interface AppContextType {
   onboardingData: OnboardingData | null;
   setOnboardingData: (data: OnboardingData) => void;
   
-  // Dynamic sections based on onboarding
-  sections: SectionConfig[];
-  
   // Travel mode
   travelMode: "drive" | "walk" | "bike";
   setTravelMode: (mode: "drive" | "walk" | "bike") => void;
@@ -89,60 +77,9 @@ const categoryColors = [
   "from-red-500 to-rose-600",
 ];
 
-// Map onboarding answers to section titles and prompts
-const INTENTION_SECTIONS: Record<string, SectionConfig> = {
-  relax: { key: 'intention', title: 'Perfect spots to relax', prompt: 'relaxing calm peaceful places to unwind' },
-  friends: { key: 'intention', title: 'Great for friend groups', prompt: 'fun places for friend groups hangout social' },
-  explore: { key: 'intention', title: 'Hidden gems to explore', prompt: 'hidden gems unique local spots off the beaten path' },
-  cultural: { key: 'intention', title: 'Cultural experiences', prompt: 'cultural historical museums art galleries heritage' },
-  discover: { key: 'intention', title: 'Cool spots to discover', prompt: 'cool trendy popular instagram-worthy spots' },
-};
-
-const BUDGET_SECTIONS: Record<string, SectionConfig> = {
-  under50: { key: 'budget', title: 'Best under $50', prompt: 'cheap affordable places under $50 budget-friendly' },
-  '50to100': { key: 'budget', title: 'Worth the $50-100', prompt: 'mid-range quality places $50 to $100' },
-  over100: { key: 'budget', title: 'Premium experiences', prompt: 'luxury premium upscale high-end places' },
-};
-
-const PERSONALITY_SECTIONS: Record<string, SectionConfig> = {
-  planner: { key: 'personality', title: 'Top-rated & reviewed', prompt: 'highly rated well reviewed popular reliable spots' },
-  spontaneous: { key: 'personality', title: 'Surprise finds', prompt: 'unique quirky unexpected surprise spots' },
-  balanced: { key: 'personality', title: 'Flexible favorites', prompt: 'versatile casual easygoing relaxed atmosphere' },
-};
-
-// Default sections when no onboarding data
-const DEFAULT_SECTIONS: SectionConfig[] = [
-  { key: 'budget', title: 'Hidden gems under $50', prompt: 'cheap affordable places under $50' },
-  { key: 'cbd', title: 'Chill spots near the CBD', prompt: 'chill relaxed spots near CBD city center' },
-  { key: 'friends', title: 'Great for friend groups', prompt: 'fun places for friend groups hangout' },
-];
-
-const generateSections = (data: OnboardingData | null): SectionConfig[] => {
-  if (!data) return DEFAULT_SECTIONS;
-
-  const sections: SectionConfig[] = [];
-
-  // Add section based on trip intention
-  if (data.trip_intention && INTENTION_SECTIONS[data.trip_intention]) {
-    sections.push(INTENTION_SECTIONS[data.trip_intention]);
-  }
-
-  // Add section based on budget
-  if (data.budget && BUDGET_SECTIONS[data.budget]) {
-    sections.push(BUDGET_SECTIONS[data.budget]);
-  }
-
-  // Add section based on personality (use first selected)
-  if (data.travel_personality.length > 0) {
-    const firstPersonality = data.travel_personality[0];
-    if (PERSONALITY_SECTIONS[firstPersonality]) {
-      sections.push(PERSONALITY_SECTIONS[firstPersonality]);
-    }
-  }
-
-  // Fallback to defaults if nothing selected
-  return sections.length > 0 ? sections : DEFAULT_SECTIONS;
-};
+// Helper to get user-scoped localStorage key for onboarding
+const getOnboardingKey = (userId?: string) =>
+  userId ? lsOnboardingKey(userId) : LS_ONBOARDING_DONE;
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
@@ -153,16 +90,50 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [userVibes, setUserVibes] = useState<string[]>([]);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(() => {
     try {
-      return localStorage.getItem('sweetspots_onboarding_done') === 'true';
+      // Check both legacy key and any user-scoped key
+      return localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
     } catch {
       return false;
     }
   });
+  // Track previous user to detect login/logout transitions
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const prevUserId = prevUserIdRef.current;
+    prevUserIdRef.current = user?.id ?? null;
+
+    // Skip initial mount
+    if (prevUserId === undefined) {
+      // On mount, check user-scoped key if logged in
+      if (user?.id) {
+        const scoped = localStorage.getItem(getOnboardingKey(user.id)) === 'true';
+        setHasCompletedOnboarding(scoped);
+      }
+      return;
+    }
+
+    if (!user && prevUserId) {
+      // User logged out — reset onboarding state
+      setHasCompletedOnboarding(false);
+      setUserMood("");
+      setUserVibes([]);
+      setRankedPlaces([]);
+      setOnboardingDataState(null);
+    } else if (user?.id && user.id !== prevUserId) {
+      // New user logged in — read their scoped onboarding state
+      try {
+        const scoped = localStorage.getItem(getOnboardingKey(user.id)) === 'true';
+        setHasCompletedOnboarding(scoped);
+      } catch {
+        setHasCompletedOnboarding(false);
+      }
+    }
+  }, [user?.id]);
+
   const [travelMode, setTravelMode] = useState<"drive" | "walk" | "bike">("drive");
   const [categories, setCategories] = useState<PlaceCategory[]>([]);
   const [onboardingData, setOnboardingDataState] = useState<OnboardingData | null>(null);
-  const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
-  
+
   // Auth dialog state for prompting login when saving
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [pendingSavePlaceId, setPendingSavePlaceId] = useState<string | null>(null);
@@ -170,7 +141,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Free actions tracking for soft wall (persisted in sessionStorage)
   const [freeActionsUsed, setFreeActionsUsed] = useState<number>(() => {
     try {
-      const stored = sessionStorage.getItem('sweetspots_free_actions');
+      const stored = sessionStorage.getItem(SS_FREE_ACTIONS);
       return stored ? parseInt(stored, 10) : 0;
     } catch {
       return 0;
@@ -181,7 +152,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setFreeActionsUsed(prev => {
       const newCount = prev + 1;
       try {
-        sessionStorage.setItem('sweetspots_free_actions', String(newCount));
+        sessionStorage.setItem(SS_FREE_ACTIONS, String(newCount));
       } catch {}
       return newCount;
     });
@@ -191,24 +162,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return false; // No auth wall
   }, []);
 
-  // Direct save without auth check
   const toggleSave = useCallback(async (placeId: string) => {
+    // Gate anonymous saves — allow 3, then require auth
+    if (!user) {
+      const count = parseInt(localStorage.getItem("ss_anon_saves") || "0", 10);
+      if (count >= 3) {
+        setShowAuthDialog(true);
+        return;
+      }
+      // For anon users, saves don't persist to DB but we still count them
+      localStorage.setItem("ss_anon_saves", String(count + 1));
+    }
     await originalToggleSave(placeId);
-  }, [originalToggleSave]);
+  }, [originalToggleSave, user]);
 
   const setOnboardingData = useCallback((data: OnboardingData) => {
     // Clear search cache when location changes
     try {
-      const cachedLocation = sessionStorage.getItem('sweetspots_cached_location') || "";
+      const cachedLocation = sessionStorage.getItem(SS_CACHED_LOCATION) || "";
       if (data.explore_location && data.explore_location !== cachedLocation) {
-        sessionStorage.removeItem('sweetspots_search_cache');
-        sessionStorage.removeItem('sweetspots_summary_cache');
-        sessionStorage.removeItem('sweetspots_cached_location');
+        sessionStorage.removeItem(SS_SEARCH_CACHE);
+        sessionStorage.removeItem(SS_SUMMARY_CACHE);
+        sessionStorage.removeItem(SS_CACHED_LOCATION);
       }
     } catch {}
     
     setOnboardingDataState(data);
-    setSections(generateSections(data));
   }, []);
 
 
@@ -217,18 +196,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUserVibes(extractVibes(mood));
     setRankedPlaces(places);
     setHasCompletedOnboarding(true);
-    try { localStorage.setItem('sweetspots_onboarding_done', 'true'); } catch {}
-  }, []);
+    try {
+      localStorage.setItem(LS_ONBOARDING_DONE, 'true');
+      if (user?.id) localStorage.setItem(getOnboardingKey(user.id), 'true');
+    } catch {}
+  }, [user?.id]);
 
   const resetOnboarding = useCallback(() => {
     setHasCompletedOnboarding(false);
-    try { localStorage.removeItem('sweetspots_onboarding_done'); } catch {}
+    try {
+      localStorage.removeItem(LS_ONBOARDING_DONE);
+      if (user?.id) localStorage.removeItem(getOnboardingKey(user.id));
+    } catch {}
     setUserMood("");
     setUserVibes([]);
     setRankedPlaces([]);
     setOnboardingDataState(null);
-    setSections(DEFAULT_SECTIONS);
-  }, []);
+  }, [user?.id]);
 
   const createCategory = useCallback((name: string, placeIds: string[], color: string) => {
     const newCategory: PlaceCategory = {
@@ -282,7 +266,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       resetOnboarding,
       onboardingData,
       setOnboardingData,
-      sections,
       travelMode,
       setTravelMode,
       categories,

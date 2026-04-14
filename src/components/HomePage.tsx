@@ -5,17 +5,18 @@ import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning } from "lucide-react";
+import { SS_RESUME_TRIP, lsRecsCache } from "@/lib/storageKeys";
+import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning, Link2 } from "lucide-react";
+import ImportLinkDialog from "./saved/ImportLinkDialog";
 import { useWeatherForecast } from "@/hooks/useWeatherForecast";
 import { Skeleton } from "./ui/skeleton";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 
-import tripTokyo from "@/assets/trip-tokyo.jpg";
-import tripBali from "@/assets/trip-bali.jpg";
-import tripMelbourne from "@/assets/trip-melbourne.jpg";
-import tripBangkok from "@/assets/trip-bangkok.jpg";
+import { useLocation as useGeoLocation } from "@/hooks/useLocation";
+import { CURATED_SECTIONS, detectRegion } from "@/data/curatedTrips";
+import type { CuratedTrip, TripSection } from "@/data/curatedTrips";
 
 export interface DBTripTemplate {
   id: string;
@@ -41,13 +42,6 @@ interface SavedPlaceWithDetails {
   rating: number | null;
 }
 
-// Fallback images keyed by destination
-const TEMPLATE_IMAGES: Record<string, string> = {
-  Tokyo: tripTokyo,
-  Bali: tripBali,
-  Melbourne: tripMelbourne,
-  Bangkok: tripBangkok,
-};
 // Small weather icon using lucide icons
 const WeatherIconSmall = ({ icon }: { icon: string }) => {
   const cls = "w-3.5 h-3.5";
@@ -65,6 +59,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const navigate = useNavigate();
   const { user } = useAuth();
   const { onboardingData } = useApp();
+  const { location: geoLocation } = useGeoLocation();
   const tripStatus = useUpcomingTrip();
   const { avatarUrl: profileAvatarUrl, username: profileUsername } = useProfileInfo();
 
@@ -80,19 +75,13 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [savesCount, setSavesCount] = useState(0);
   const [tripsCount, setTripsCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [templates, setTemplates] = useState<DBTripTemplate[]>([]);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<Array<{
     place_id: string; name: string; rating: number | null; photo_name: string | null; ai_reason: string;
   }>>([]);
   const [recsLoading, setRecsLoading] = useState(false);
-
-  useEffect(() => {
-    // Fetch trip templates from DB (public, no auth needed)
-    supabase.from("trip_templates" as any).select("id, destination, duration, vibes, budget, group_size, tagline, trip_data").eq("is_active", true).then(({ data }) => {
-      if (data) setTemplates(data as any[]);
-    });
-  }, []);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showDiscoverMenu, setShowDiscoverMenu] = useState(false);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -138,7 +127,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   useEffect(() => {
     if (!user || savesCount === 0 || !recsEnabled) return;
 
-    const CACHE_KEY = `recs_cache_${user.id}`;
+    const CACHE_KEY = lsRecsCache(user.id);
     const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
     try {
@@ -173,19 +162,18 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     return "new";
   }, [savesCount, tripsCount]);
 
+  // Personalized trip ideas based on user's location
+  const tripSections = useMemo((): TripSection[] => {
+    const region = detectRegion(onboardingData?.explore_location, geoLocation?.lat);
+    return CURATED_SECTIONS[region] || CURATED_SECTIONS.global;
+  }, [onboardingData?.explore_location, geoLocation?.lat]);
+
   const handlePlanTrip = () => onNavigateToTab?.("trip");
   const handleGoToTrip = (tripId: string) => {
-    sessionStorage.setItem('sweetspots_resume_trip', tripId);
+    sessionStorage.setItem(SS_RESUME_TRIP, tripId);
     onNavigateToTab?.("trip");
   };
   const handleDiscover = () => onNavigateToTab?.("discover");
-  const handleTemplateClick = (template: DBTripTemplate) => {
-    if (onTripTemplate) {
-      onTripTemplate(template);
-    } else {
-      onNavigateToTab?.("trip");
-    }
-  };
 
   // Skeleton for recently saved section
   const RecentSavedSkeleton = () => (
@@ -227,18 +215,6 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               <Skeleton className="h-3 w-10" />
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // Skeleton for trip ideas
-  const TripIdeasSkeleton = () => (
-    <div className="px-5 pt-6 pb-4">
-      <Skeleton className="h-5 w-20 mb-3" />
-      <div className="grid grid-cols-2 gap-3">
-        {[1, 2, 3, 4].map(i => (
-          <Skeleton key={i} className="rounded-2xl h-[160px]" />
         ))}
       </div>
     </div>
@@ -345,7 +321,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
             <span className="text-sm font-semibold text-foreground">Plan a Trip</span>
           </button>
           <button
-            onClick={handleDiscover}
+            onClick={() => setShowDiscoverMenu(true)}
             className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-muted/40 transition-all hover:bg-muted/60 active:scale-[0.97] group"
           >
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
@@ -355,6 +331,43 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           </button>
         </div>
       </div>
+
+      {/* Discover Action Sheet */}
+      {showDiscoverMenu && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-[55]" onClick={() => setShowDiscoverMenu(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[60] bg-card rounded-t-2xl p-4 pb-28 max-w-md mx-auto shadow-lg animate-in slide-in-from-bottom duration-200">
+            <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-4" />
+            <h3 className="text-base font-semibold text-foreground mb-3">Discover Spots</h3>
+            <button
+              onClick={() => { setShowDiscoverMenu(false); handleDiscover(); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Search className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-foreground">Search by Vibe</span>
+                <p className="text-xs text-muted-foreground">Find places that match your mood</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setShowDiscoverMenu(false); setShowImportDialog(true); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Link2 className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-foreground">Save from Link</span>
+                <p className="text-xs text-muted-foreground">Paste a TikTok, Instagram, or Google Maps link</p>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+
+      <ImportLinkDialog open={showImportDialog} onClose={() => setShowImportDialog(false)} />
 
       {/* Recently Saved */}
       {loading && user && <RecentSavedSkeleton />}
@@ -439,48 +452,69 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         </div>
       )}
 
-      {/* Trip Ideas — photo cards */}
-      {templates.length === 0 && <TripIdeasSkeleton />}
-      {templates.length > 0 && <div className="px-5 pt-6 pb-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
-        <h2 className="text-base font-semibold text-foreground mb-3">Trip Ideas</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {templates.map((template) => (
-            <button
-              key={template.id}
-              onClick={() => handleTemplateClick(template)}
-              className="relative overflow-hidden rounded-2xl h-[160px] text-left transition-all hover:shadow-lg active:scale-[0.97] group"
-            >
-              <img
-                src={TEMPLATE_IMAGES[template.destination] || tripTokyo}
-                alt={template.destination}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-                width={640}
-                height={512}
-              />
-              {/* Dark overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              {/* Text */}
-              <div className="relative h-full flex flex-col justify-end p-4">
-                <p className="text-[15px] font-bold text-white leading-tight">{template.destination}</p>
-                <p className="text-[11px] text-white/75 mt-0.5">{template.duration} days · {template.tagline}</p>
-              </div>
-            </button>
-          ))}
+      {/* Trip Ideas — personalized sections by location */}
+      {tripSections.map((section, sIdx) => (
+        <div key={section.title} className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: `${200 + sIdx * 50}ms`, animationFillMode: "both" }}>
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
+            {sIdx === 0 && (
+              <button onClick={handlePlanTrip} className="flex items-center gap-0.5 text-sm text-primary font-medium">
+                Plan yours <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+            {section.trips.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  if (onTripTemplate) {
+                    onTripTemplate({
+                      id: t.id,
+                      destination: t.destination,
+                      duration: t.duration,
+                      vibes: t.vibes,
+                      budget: t.budget,
+                      group_size: t.groupSize,
+                      tagline: t.subtitle,
+                      trip_data: t.tripData,
+                    });
+                  } else {
+                    onNavigateToTab?.("trip");
+                  }
+                }}
+                className="shrink-0 w-[200px] relative overflow-hidden rounded-2xl h-[150px] text-left transition-all hover:shadow-lg active:scale-[0.97] group"
+              >
+                <img
+                  src={t.image}
+                  alt={t.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  width={400}
+                  height={300}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="relative h-full flex flex-col justify-end p-3.5">
+                  <p className="text-sm font-bold text-white leading-tight">{t.title}</p>
+                  <p className="text-[11px] text-white/70 mt-0.5">{t.duration} {t.duration === 1 ? "day" : "days"} · {t.subtitle}</p>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>}
+      ))}
 
       {/* New user CTA */}
       {engagementLevel === "new" && !loading && (
         <div className="px-5 pb-6 animate-fade-in" style={{ animationDelay: "250ms", animationFillMode: "both" }}>
           <div className="rounded-2xl bg-muted/30 p-7 text-center">
-            <Sparkles className="w-8 h-8 text-primary mx-auto mb-3" />
-            <h3 className="font-bold text-foreground mb-1">Start your journey</h3>
+            <Link2 className="w-8 h-8 text-primary mx-auto mb-3" />
+            <h3 className="font-bold text-foreground mb-1">Found a spot on TikTok or Instagram?</h3>
             <p className="text-sm text-muted-foreground mb-5">
-              Discover hidden gems and plan unforgettable trips
+              Save it here, organise your boards, and let AI plan your trip.
             </p>
-            <Button onClick={handleDiscover} className="rounded-full px-6">
-              Explore Spots
+            <Button onClick={() => setShowImportDialog(true)} className="rounded-full px-6">
+              Save Your First Spot
             </Button>
           </div>
         </div>

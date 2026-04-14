@@ -3,17 +3,17 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AppProvider } from "@/context/AppContext";
 import { FeedbackProvider } from "@/context/FeedbackContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { usePageView } from "@/hooks/usePageView";
 import PersistentLayout from "./components/PersistentLayout";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Lazy-loaded routes (not part of the persistent layout)
-const Auth = lazy(() => import("./pages/Auth"));
 const PlaceDetails = lazy(() => import("./pages/PlaceDetails"));
 const CategorySeeAll = lazy(() => import("./pages/CategorySeeAll"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -22,6 +22,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ProfilePage = lazy(() => import("./components/ProfilePage"));
 const Admin = lazy(() => import("./pages/Admin"));
+const ShareTarget = lazy(() => import("./pages/ShareTarget"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,42 +52,45 @@ const RouteFallback = () => (
 );
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppProvider>
-          <FeedbackProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <PageViewTracker />
-              <Suspense fallback={<RouteFallback />}>
-                <Routes>
-                  <Route element={<PersistentLayout />}>
-                    <Route path="/" element={null} />
-                    <Route path="/saved" element={null} />
-                    <Route path="/trip" element={null} />
-                    <Route path="/place/:placeId" element={<PlaceDetails />} />
-                    <Route path="/see-all" element={<CategorySeeAll />} />
-                  </Route>
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/help-support" element={<HelpSupport />} />
-                  <Route path="/admin" element={<Admin />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </TooltipProvider>
-          </FeedbackProvider>
-        </AppProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+  <ErrorBoundary fallbackTitle="Something went wrong">
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AppProvider>
+            <FeedbackProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <PageViewTracker />
+                <Suspense fallback={<RouteFallback />}>
+                  <Routes>
+                    <Route element={<PersistentLayout />}>
+                      <Route path="/" element={null} />
+                      <Route path="/saved" element={null} />
+                      <Route path="/trip" element={null} />
+                      <Route path="/place/:placeId" element={<PlaceDetails />} />
+                      <Route path="/see-all" element={<CategorySeeAll />} />
+                    </Route>
+                    <Route path="/auth" element={<Navigate to="/" replace />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/help-support" element={<HelpSupport />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/share" element={<ShareTarget />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </TooltipProvider>
+            </FeedbackProvider>
+          </AppProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;

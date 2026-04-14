@@ -9,13 +9,13 @@
 @layer base {
   :root {
     /* Warm, calm palette */
-    --background: 0 0% 100%;
+    --background: 35 20% 98%;
     --foreground: 25 20% 18%;
 
-    --card: 40 25% 99%;
+    --card: 37 22% 97%;
     --card-foreground: 25 20% 18%;
 
-    --popover: 40 25% 99%;
+    --popover: 37 22% 97%;
     --popover-foreground: 25 20% 18%;
 
     /* Warm terracotta coral */
@@ -23,22 +23,22 @@
     --primary-foreground: 40 30% 98%;
 
     /* Soft sage */
-    --secondary: 140 20% 92%;
+    --secondary: 140 18% 93%;
     --secondary-foreground: 140 25% 30%;
 
     /* Muted warm gray */
-    --muted: 30 15% 92%;
-    --muted-foreground: 25 10% 50%;
+    --muted: 32 16% 91%;
+    --muted-foreground: 25 12% 48%;
 
     /* Light sage accent */
-    --accent: 140 25% 88%;
+    --accent: 140 22% 89%;
     --accent-foreground: 140 30% 25%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 20% 88%;
-    --input: 30 20% 90%;
+    --border: 32 18% 87%;
+    --input: 32 18% 89%;
     --ring: 15 60% 58%;
 
     --radius: 1rem;

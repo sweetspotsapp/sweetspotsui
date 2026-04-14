@@ -15,17 +15,21 @@ import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import { usePendingInvites } from "@/hooks/usePendingInvites";
 import type { OnboardingData } from "@/context/AppContext";
+import { SS_RESUME_TRIP } from "@/lib/storageKeys";
+import AuthDialog from "@/components/AuthDialog";
 
 type TabType = "home" | "discover" | "saved" | "trip";
 type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { 
-    hasCompletedOnboarding, 
-    setUserMood, 
+  const {
+    hasCompletedOnboarding,
+    setUserMood,
     completeOnboarding,
     setOnboardingData,
+    showAuthDialog,
+    setShowAuthDialog,
   } = useApp();
   
   const location = useLocation();
@@ -49,10 +53,10 @@ const Index = () => {
     const state = location.state as { openTrip?: boolean } | null;
     if (state?.openTrip) {
       setActiveTab("trip");
-      const storedId = sessionStorage.getItem('sweetspots_resume_trip');
+      const storedId = sessionStorage.getItem(SS_RESUME_TRIP);
       if (storedId) {
         setResumeTripId(storedId);
-        sessionStorage.removeItem('sweetspots_resume_trip');
+        sessionStorage.removeItem(SS_RESUME_TRIP);
       }
       window.history.replaceState({}, '');
     }
@@ -79,7 +83,11 @@ const Index = () => {
     setOnboardingData(data);
     if (data.mood) setUserMood(data.mood);
     setAppState("loading");
-    setTimeout(() => { completeOnboarding(data.mood || "", []); setAppState("main"); }, 800);
+    setTimeout(() => {
+      completeOnboarding(data.mood || "", []);
+      setActiveTab(data.mood ? "discover" : "home");
+      setAppState("main");
+    }, 800);
   };
 
   const handleMoodSubmit = (mood: string) => {
@@ -88,18 +96,12 @@ const Index = () => {
     setTimeout(() => { completeOnboarding(mood, []); setAppState("main"); }, 1000);
   };
 
-  const handleSkip = () => {
-    sessionStorage.setItem('sweetspots_skip_mode', 'true');
-    setAppState("loading");
-    setTimeout(() => { completeOnboarding("", []); setAppState("main"); }, 800);
-  };
-
   const handleTabChange = (tab: TabType) => {
     if (tab === "trip") {
-      const storedId = sessionStorage.getItem('sweetspots_resume_trip');
+      const storedId = sessionStorage.getItem(SS_RESUME_TRIP);
       if (storedId) {
         setResumeTripId(storedId);
-        sessionStorage.removeItem('sweetspots_resume_trip');
+        sessionStorage.removeItem(SS_RESUME_TRIP);
       }
     }
     setActiveTab(tab);
@@ -113,10 +115,9 @@ const Index = () => {
     );
   }
 
-  if (appState === "onboarding") return <EntryScreen onComplete={handleOnboardingComplete} onSkip={handleSkip} />;
+  if (appState === "onboarding") return <EntryScreen onComplete={handleOnboardingComplete} />;
   if (appState === "loading") {
-    const isSkipMode = sessionStorage.getItem('sweetspots_skip_mode') === 'true';
-    return <LoadingTransition isSkipMode={isSkipMode} />;
+    return <LoadingTransition />;
   }
 
   return (
@@ -142,10 +143,17 @@ const Index = () => {
         </ErrorBoundary>
       </div>
       
-      <BottomNav 
-        activeTab={activeTab} 
+      <BottomNav
+        activeTab={activeTab}
         onTabChange={handleTabChange}
         tripBadgeCount={pendingCount}
+      />
+      <AuthDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        defaultMode="signup"
+        title="Sign in to save more spots"
+        description="You've saved 3 spots already! Sign in to keep building your collection."
       />
     </div>
   );

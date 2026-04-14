@@ -4,6 +4,7 @@ import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "@/hooks/useLocation";
 import BoardMapView from "./saved/BoardMapView";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { useNavigate } from "react-router-dom";
@@ -14,15 +15,7 @@ const MapPage = () => {
   const navigate = useNavigate();
   const [places, setPlaces] = useState<RankedPlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-
-  // Get user location
-  useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {} // silently fail
-    );
-  }, []);
+  const { location: userLocation } = useLocation();
 
   // Load all saved places with their place data
   useEffect(() => {

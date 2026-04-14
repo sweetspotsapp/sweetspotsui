@@ -84,16 +84,19 @@ const BoardCard = ({
   const hasOptions = !isAllSaved && (onRename || onDelete || onEdit);
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       className={cn(
-        "relative w-full rounded-2xl overflow-hidden bg-card",
+        "relative w-full rounded-2xl overflow-hidden bg-card cursor-pointer",
         "active:scale-[0.98] transition-all duration-200 group",
         "opacity-0 animate-fade-up hover:shadow-lg"
       )}
-      style={{ 
-        animationDelay: `${animationDelay}ms`, 
-        animationFillMode: 'forwards' 
+      style={{
+        animationDelay: `${animationDelay}ms`,
+        animationFillMode: 'forwards'
       }}
     >
       {/* Cover Collage */}
@@ -157,7 +160,7 @@ const BoardCard = ({
           {count} {count === 1 ? 'spot' : 'spots'}
         </p>
       </div>
-    </button>
+    </div>
   );
 };
 

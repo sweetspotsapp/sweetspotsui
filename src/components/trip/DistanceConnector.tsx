@@ -1,4 +1,5 @@
 import { Car, Footprints } from "lucide-react";
+import { haversineKm } from "@/lib/placeUtils";
 
 interface DistanceConnectorProps {
   fromLat?: number;
@@ -9,26 +10,13 @@ interface DistanceConnectorProps {
   distanceText?: string;
 }
 
-// Haversine formula to calculate distance between two coordinates
-const haversineDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
 const DistanceConnector = ({ fromLat, fromLng, toLat, toLng, durationText, distanceText }: DistanceConnectorProps) => {
   if (!fromLat || !fromLng || !toLat || !toLng) return null;
 
   // Use pre-computed Routes API data if available, otherwise fall back to Haversine
   const hasRouteData = !!durationText && !!distanceText;
   
-  const distanceKm = haversineDistance(fromLat, fromLng, toLat, toLng);
+  const distanceKm = haversineKm(fromLat, fromLng, toLat, toLng);
   const isWalkable = hasRouteData 
     ? distanceText.includes('m') && !distanceText.includes('km') && parseInt(distanceText) < 1500
     : distanceKm < 1.5;

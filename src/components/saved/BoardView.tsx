@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List, Link2, Search, ExternalLink } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List, Link2, Search, ExternalLink, CalendarDays } from "lucide-react";
+import { SS_BOARD_TO_TRIP } from "@/lib/storageKeys";
 import ImportLinkDialog from "./ImportLinkDialog";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
@@ -15,18 +16,8 @@ const formatPriceLevel = (priceLevel: number | null | undefined): string | null 
   return '$'.repeat(Math.max(1, Math.min(priceLevel, 4)));
 };
 
-// Haversine distance calculation
-const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+import { haversineMeters } from "@/lib/placeUtils";
+import { getPlacePhotoUrl } from "@/lib/photoLoader";
 
 interface BoardViewProps {
   board: Board | "all";
@@ -77,17 +68,24 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
       
       setIsLoadingBoardPlaces(true);
       try {
-        const { data, error } = await supabase
-          .from('places')
-          .select('*')
-          .in('place_id', board.placeIds);
-          
-        if (error) {
-          console.error('Error fetching board places:', error);
-          return;
+        // Batch fetch in chunks of 50 to avoid query limits
+        const BATCH_SIZE = 50;
+        const placeIds = board.placeIds;
+        let allData: any[] = [];
+        for (let i = 0; i < placeIds.length; i += BATCH_SIZE) {
+          const batch = placeIds.slice(i, i + BATCH_SIZE);
+          const { data: batchData, error: batchError } = await supabase
+            .from('places')
+            .select('*')
+            .in('place_id', batch);
+          if (batchError) {
+            console.error('Error fetching board places batch:', batchError);
+            continue;
+          }
+          if (batchData) allData = allData.concat(batchData);
         }
-        
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const data = allData;
+        const error = null;
         
         const fetchedPlaces: RankedPlace[] = (data || []).map(place => ({
           place_id: place.place_id,
@@ -104,9 +102,8 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           score: 0,
           why: place.ai_reason || '',
           photo_name: place.photo_name,
-          photos: place.photos?.slice(0, 3).map((photoPath: string) => 
-            `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`
-          ) || (place.photo_name ? [`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`] : undefined),
+          photos: place.photos?.slice(0, 3).map((p: string) => getPlacePhotoUrl(p)!).filter(Boolean)
+            || (place.photo_name ? [getPlacePhotoUrl(place.photo_name)!] : undefined),
           filter_tags: place.filter_tags,
           price_level: place.price_level,
         }));
@@ -139,7 +136,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     }
     return {
       ...place,
-      distance_meters: calculateDistance(userLocation.lat, userLocation.lng, place.lat, place.lng)
+      distance_meters: haversineMeters(userLocation.lat, userLocation.lng, place.lat, place.lng)
     };
   });
   
@@ -212,19 +209,12 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     }
     // Try place's own photos array (already resolved URLs from suggest-places or saved places)
     if (place.photos?.[0]) {
-      // Check if it's already a URL or needs to be converted
       const photo = place.photos[0];
-      if (photo.startsWith('http')) {
-        return photo;
-      }
-      // Convert photo path to edge function URL
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photo)}&maxWidthPx=400`;
+      if (photo.startsWith('http')) return photo;
+      return getPlacePhotoUrl(photo) || '';
     }
-    // Try photo_name
     if (place.photo_name) {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`;
+      return getPlacePhotoUrl(place.photo_name) || '';
     }
     // Fallback
     return `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400`;
@@ -304,6 +294,23 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
             </p>
           </div>
         </div>
+
+        {/* Plan a Trip CTA */}
+        {boardPlaceIds.length >= 2 && (
+          <button
+            onClick={() => {
+              sessionStorage.setItem(SS_BOARD_TO_TRIP, JSON.stringify({
+                placeIds: boardPlaceIds,
+                boardName: boardName,
+              }));
+              navigate("/", { state: { openTrip: true } });
+            }}
+            className="mx-4 mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors active:scale-[0.98]"
+          >
+            <CalendarDays className="w-4 h-4" />
+            Plan a trip with these spots
+          </button>
+        )}
 
         {/* Sort & Map Bar */}
         <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border/50">

@@ -6,6 +6,7 @@ import ProfileSlideMenu from "./ProfileSlideMenu";
 import LoginReminderBanner from "./LoginReminderBanner";
 import { useNavigate, useLocation as useRouterLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { LS_IMPORT_TIP_DISMISSED } from "@/lib/storageKeys";
 import type { RankedPlace } from "@/hooks/useSearch";
 import { useBoards, Board } from "@/hooks/useBoards";
 import { useApp } from "@/context/AppContext";
@@ -22,18 +23,8 @@ import EmptyState from "./saved/EmptyState";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
 
-// Haversine distance calculation
-const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+import { haversineMeters } from "@/lib/placeUtils";
+import { getPlacePhotoUrl } from "@/lib/photoLoader";
 
 type SortOption = "recent" | "alphabetical" | "most-saved";
 
@@ -64,7 +55,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showAddSpotMenu, setShowAddSpotMenu] = useState(false);
   const [tipDismissed, setTipDismissed] = useState(() => 
-    localStorage.getItem('sweetspots_import_tip_dismissed') === 'true'
+    localStorage.getItem(LS_IMPORT_TIP_DISMISSED) === 'true'
   );
   // Handle openBoard state from navigation (e.g., when returning from place details)
   useEffect(() => {
@@ -98,25 +89,36 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
       setIsLoadingPlaces(true);
       try {
         const placeIdsArray = Array.from(savedPlaceIds);
-        
-        const { data, error } = await supabase
-          .from('places')
-          .select('*')
-          .in('place_id', placeIdsArray);
+
+        // Supabase .in() has a practical limit; batch in chunks of 50
+        const BATCH_SIZE = 50;
+        let allData: any[] = [];
+        for (let i = 0; i < placeIdsArray.length; i += BATCH_SIZE) {
+          const batch = placeIdsArray.slice(i, i + BATCH_SIZE);
+          const { data: batchData, error: batchError } = await supabase
+            .from('places')
+            .select('*')
+            .in('place_id', batch);
+          if (batchError) {
+            console.error('Error fetching saved places batch:', batchError);
+            continue;
+          }
+          if (batchData) allData = allData.concat(batchData);
+        }
+        const data = allData;
+        const error = null;
 
         if (error) {
           console.error('Error fetching saved places:', error);
           return;
         }
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
         // Convert to RankedPlace format with distance calculation
         const places: RankedPlace[] = (data || []).map(place => {
           let distance_meters: number | null = null;
           
           // Calculate distance if we have user location and place coordinates
           if (userLocation && place.lat && place.lng) {
-            distance_meters = calculateDistance(
+            distance_meters = haversineMeters(
               userLocation.lat, userLocation.lng,
               place.lat, place.lng
             );
@@ -137,9 +139,8 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
             score: 0,
             why: place.ai_reason || '',
             photo_name: place.photo_name,
-            photos: place.photos?.slice(0, 3).map((photoPath: string) => 
-              `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`
-            ) || (place.photo_name ? [`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`] : undefined),
+            photos: place.photos?.slice(0, 3).map((p: string) => getPlacePhotoUrl(p)!).filter(Boolean)
+              || (place.photo_name ? [getPlacePhotoUrl(place.photo_name)!] : undefined),
             filter_tags: place.filter_tags,
             price_level: place.price_level,
           };
@@ -154,15 +155,15 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
           const urls: string[] = [];
           
           // photo_name is the most reliable reference - always use it first
-          if (place.photo_name) {
-            urls.push(`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`);
-          }
-          
+          const mainUrl = getPlacePhotoUrl(place.photo_name);
+          if (mainUrl) urls.push(mainUrl);
+
           // Add photos array entries that differ from photo_name
           if (place.photos && place.photos.length > 0) {
             for (const photoPath of place.photos.slice(0, 3)) {
               if (photoPath !== place.photo_name) {
-                urls.push(`${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoPath)}&maxWidthPx=400`);
+                const url = getPlacePhotoUrl(photoPath);
+                if (url) urls.push(url);
               }
             }
           }
@@ -388,7 +389,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
                 <button
                   onClick={() => {
                     setTipDismissed(true);
-                    localStorage.setItem('sweetspots_import_tip_dismissed', 'true');
+                    localStorage.setItem(LS_IMPORT_TIP_DISMISSED, 'true');
                   }}
                   className="p-0.5 text-muted-foreground hover:text-foreground"
                 >

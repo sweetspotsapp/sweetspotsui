@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
             <p style="color: #666; font-size: 15px; line-height: 1.6;">
               Open SweetSpots to view the full itinerary, including all the spots, timings, and insider tips.
             </p>
-            <a href="https://sweetspotsui.lovable.app" 
+            <a href="https://www.findyoursweetspots.com" 
                style="display: inline-block; margin-top: 16px; padding: 12px 28px; background-color: #f97316; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px;">
               View Trip
             </a>

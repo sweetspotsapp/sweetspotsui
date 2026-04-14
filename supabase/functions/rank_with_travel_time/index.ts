@@ -78,11 +78,11 @@ function mapModeToGeoapify(mode: 'drive' | 'walk' | 'bike'): string {
   return modeMap[mode] || 'drive';
 }
 
-// AI-powered semantic relevance check using Lovable AI
+// AI-powered semantic relevance check using Gemini AI
 async function getAIRelevanceScores(
   prompt: string,
   places: Place[],
-  lovableApiKey: string
+  geminiApiKey: string
 ): Promise<Map<string, number>> {
   const relevanceMap = new Map<string, number>();
   
@@ -130,16 +130,16 @@ ${placesInfo.map((p, i) => `${i}. ${p.name} (${p.categories || 'Unknown'})`).joi
 Return JSON array of [index, score] pairs for relevant places (score >= 40):`;
 
   try {
-    console.log('Calling Lovable AI for semantic relevance...');
+    console.log('Calling Gemini AI for semantic relevance...');
     
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${geminiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -149,7 +149,7 @@ Return JSON array of [index, score] pairs for relevant places (score >= 40):`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
+      console.error('Gemini AI error:', response.status, errorText);
       // Fallback: give all places a neutral score
       places.forEach(p => relevanceMap.set(p.place_id, 50));
       return relevanceMap;
@@ -365,7 +365,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
     if (!geoapifyApiKey) {
       console.error('GEOAPIFY_API_KEY not configured');
@@ -375,10 +375,10 @@ serve(async (req) => {
       );
     }
 
-    if (!lovableApiKey) {
-      console.error('LOVABLE_API_KEY not configured');
+    if (!geminiApiKey) {
+      console.error('GEMINI_API_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'Lovable API key not configured' }),
+        JSON.stringify({ error: 'Gemini API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -487,7 +487,7 @@ serve(async (req) => {
     }
 
     // Get AI relevance scores - this filters out irrelevant places
-    const aiRelevanceScores = await getAIRelevanceScores(prompt, validPlaces, lovableApiKey);
+    const aiRelevanceScores = await getAIRelevanceScores(prompt, validPlaces, geminiApiKey);
     
     // Filter to only include places that passed AI relevance check
     const relevantPlaces = validPlaces.filter(p => aiRelevanceScores.has(p.place_id));

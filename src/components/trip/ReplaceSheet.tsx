@@ -68,8 +68,8 @@ const ReplaceSheet = ({ isOpen, onClose, currentName, destination, onSelectPlace
         const { data, error } = await supabase.functions.invoke("place-autocomplete", {
           body: { input: `${searchQuery} in ${destination}` },
         });
-        if (!error && data?.predictions) {
-          setSearchResults(data.predictions.slice(0, 6));
+        if (!error && data?.suggestions) {
+          setSearchResults(data.suggestions.slice(0, 6));
         }
       } catch (e) {
         console.error("Search failed:", e);

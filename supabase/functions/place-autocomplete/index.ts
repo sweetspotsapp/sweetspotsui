@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { input, lat, lng } = await req.json();
+    const { input, lat, lng, types } = await req.json();
 
     if (!input || input.trim().length < 2) {
       return new Response(JSON.stringify({ suggestions: [] }), {
@@ -29,8 +29,12 @@ serve(async (req) => {
 
     const body: Record<string, unknown> = {
       input: input.trim(),
-      includedPrimaryTypes: ["(regions)"],
     };
+
+    // Default to regions for location picker; callers can pass "establishment" etc.
+    if (types) {
+      body.includedPrimaryTypes = Array.isArray(types) ? types : [types];
+    }
 
     if (lat && lng) {
       body.locationBias = {

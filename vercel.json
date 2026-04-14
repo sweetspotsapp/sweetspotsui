@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/og/:placeId", "destination": "/api/og/[placeId]" },
+    { "source": "/((?!api|assets|icon-|apple-|sweetspots-|og-|sw\\.js|workbox-).*)", "destination": "/index.html" }
+  ]
+}

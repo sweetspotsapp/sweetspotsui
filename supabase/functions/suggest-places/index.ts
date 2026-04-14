@@ -41,7 +41,7 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
@@ -108,7 +108,7 @@ serve(async (req) => {
     let vibeQuery = (boardName && String(boardName).trim()) || "";
 
     // AI: compress the saved places into a short keyword query that feels like a vibe (not a location)
-    if (lovableApiKey) {
+    if (geminiApiKey) {
       try {
         const savedSummary = saved
           .slice(0, 8)
@@ -128,14 +128,14 @@ Top vibe tags: ${sortedTags.join(", ") || "(none)"}
 
 Return ONLY JSON: {"query": "..."}`;
 
-        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const aiResp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${lovableApiKey}`,
+            Authorization: `Bearer ${geminiApiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: "gemini-3-flash-preview",
             messages: [
               {
                 role: "system",

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
+import { useApp } from "@/context/AppContext";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { useSubscription } from "@/hooks/useSubscription";
 import { 
@@ -29,14 +30,16 @@ interface ProfileSlideMenuProps {
 const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlideMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { resetOnboarding } = useApp();
   const { theme, setTheme } = useTheme();
   const { avatarUrl, username } = useProfileInfo();
   const { isPro } = useSubscription();
 
   const handleLogout = async () => {
     await signOut();
+    resetOnboarding();
     onClose();
-    navigate("/auth");
+    navigate("/");
   };
 
   const handleViewProfile = () => {
@@ -176,14 +179,17 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isDestructive = 'isDestructive' in item && item.isDestructive;
+              // Use <div> for items with interactive trailing elements (e.g. Switch)
+              // to avoid nesting <button> inside <button>.
+              const Tag = item.id === "appearance" ? "div" : "button";
               return (
-                <button
+                <Tag
                   key={item.id}
                   onClick={item.onClick}
                   className={cn(
-                    "flex items-center gap-3 w-full p-3 rounded-xl transition-colors",
-                    isDestructive 
-                      ? "hover:bg-destructive/10 text-destructive mt-4" 
+                    "flex items-center gap-3 w-full p-3 rounded-xl transition-colors cursor-pointer",
+                    isDestructive
+                      ? "hover:bg-destructive/10 text-destructive mt-4"
                       : "hover:bg-muted/50"
                   )}
                 >
@@ -203,7 +209,7 @@ const ProfileSlideMenu = ({ isOpen, onClose, onNavigateToProfile }: ProfileSlide
                     {item.label}
                   </span>
                   {item.trailing}
-                </button>
+                </Tag>
               );
             })}
           </div>

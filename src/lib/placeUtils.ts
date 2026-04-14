@@ -75,7 +75,10 @@ export const parseOpeningHours = (openingHours: { open_now: boolean; weekday_tex
   });
 };
 
-export const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+/** Haversine distance in kilometres between two lat/lng pairs. Returns 0 if any coordinate is null/undefined/NaN. */
+export const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  if (lat1 == null || lng1 == null || lat2 == null || lng2 == null ||
+      isNaN(lat1) || isNaN(lng1) || isNaN(lat2) || isNaN(lng2)) return 0;
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
@@ -83,3 +86,10 @@ export const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
+
+/** Haversine distance in metres. */
+export const haversineMeters = (lat1: number, lng1: number, lat2: number, lng2: number): number =>
+  haversineKm(lat1, lng1, lat2, lng2) * 1000;
+
+/** @deprecated Use haversineKm instead */
+export const calculateDistance = haversineKm;

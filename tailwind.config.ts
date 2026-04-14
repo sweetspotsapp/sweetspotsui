@@ -128,13 +128,23 @@ export default {
   			'slide-in-right': {
   				from: { transform: 'translateX(100%)' },
   				to: { transform: 'translateX(0)' }
+  			},
+  			'snake-draw': {
+  				from: { strokeDashoffset: '2500' },
+  				to: { strokeDashoffset: '0' }
+  			},
+  			'snake-fill': {
+  				from: { opacity: '0' },
+  				to: { opacity: '1' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
   			'slide-in-bottom': 'slide-in-bottom 0.25s ease-out',
-  			'slide-in-right': 'slide-in-right 0.25s ease-out'
+  			'slide-in-right': 'slide-in-right 0.25s ease-out',
+  			'snake-draw': 'snake-draw 1.8s ease-in-out forwards',
+  			'snake-fill': 'snake-fill 0.6s ease-in 1.8s forwards'
   		}
   	}
   },

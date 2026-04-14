@@ -2,7 +2,8 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import LoginReminderBanner from "./LoginReminderBanner";
-import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, IceCreamCone, Map, List, ArrowRight } from "lucide-react";
+import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, Map, List, ArrowRight } from "lucide-react";
+import SweetSpotsLoader from "./SweetSpotsLoader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
@@ -27,6 +28,8 @@ import { useRecentSearches } from "@/hooks/useRecentSearches";
 import BoardMapView from "./saved/BoardMapView";
 import { useFeedback } from "@/context/FeedbackContext";
 import type { RankedPlace } from "@/hooks/useSearch";
+import { useAnonLimits } from "@/hooks/useAnonLimits";
+import AuthDialog from "./AuthDialog";
 
 // Extended MockPlace with lat/lng for map view
 interface MockPlaceWithCoords extends MockPlace {
@@ -114,7 +117,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
 
   return (
     <div className="mb-8 group/section">
-      <div className="flex items-center justify-between px-4 lg:px-8 mb-3">
+      <div className="flex items-center justify-between px-4 lg:px-8 mb-3 lg:max-w-3xl lg:mx-auto">
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         <button onClick={handleSeeAll} className="flex items-center gap-1 text-sm text-primary font-medium hover:underline cursor-pointer">
           See all <ChevronRight className="w-4 h-4" />
@@ -137,7 +140,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
           ))}
         </div>
       </div>
-      <div className="hidden lg:grid grid-cols-3 lg:grid-cols-4 gap-4 px-8">
+      <div className="hidden lg:grid grid-cols-3 gap-3 px-8 lg:max-w-3xl lg:mx-auto">
         {places.map((place) => (
           <PlaceCardCompact key={place.id} place={place} onSave={toggleSave} isSaved={isSaved(place.id)} onClick={() => onPlaceClick(place)} featured={featured} showDistance={showDistance} saveCount={saveCounts[place.id] || 0} isGridItem />
         ))}
@@ -146,12 +149,13 @@ const SectionRow: React.FC<SectionRowProps> = ({
   );
 };
 
-const CACHE_KEY = 'sweetspots_search_cache';
-const SUMMARY_CACHE_KEY = 'sweetspots_summary_cache';
-const CACHE_VERSION_KEY = 'sweetspots_cache_version';
-const CACHED_MOOD_KEY = 'sweetspots_cached_mood';
-const CACHED_LOCATION_KEY = 'sweetspots_cached_location';
-const SKIP_MODE_KEY = 'sweetspots_skip_mode';
+import { SS_SEARCH_CACHE, SS_SUMMARY_CACHE, SS_CACHE_VERSION, SS_CACHED_MOOD, SS_CACHED_LOCATION } from '@/lib/storageKeys';
+
+const CACHE_KEY = SS_SEARCH_CACHE;
+const SUMMARY_CACHE_KEY = SS_SUMMARY_CACHE;
+const CACHE_VERSION_KEY = SS_CACHE_VERSION;
+const CACHED_MOOD_KEY = SS_CACHED_MOOD;
+const CACHED_LOCATION_KEY = SS_CACHED_LOCATION;
 const CURRENT_CACHE_VERSION = '2';
 
 const getTimeBasedPrompt = (): string => {
@@ -175,7 +179,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
   const { location: userLocation, setManualLocation } = useLocation();
   const { isPro } = useSubscription();
-  const { searchesLeft, hasReachedLimit, increment: incrementSearchCount } = useSearchLimit(isPro);
+  const { searchesLeft, hasReachedLimit, dailyLimit, isAdmin, increment: incrementSearchCount } = useSearchLimit(isPro);
+  const { checkLimit: checkAnonLimit, recordUsage: recordAnonUsage, gateType: anonGateType, gateMessage: anonGateMessage, dismissGate: dismissAnonGate } = useAnonLimits();
   const hasLoadedInitial = useRef(false);
   const hasConsumedSearchParam = useRef(false);
 
@@ -194,23 +199,12 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     return [];
   };
 
-  const isSkipModeOnMount = useRef(() => {
-    const skipMode = sessionStorage.getItem(SKIP_MODE_KEY) === 'true';
-    if (skipMode) {
-      sessionStorage.removeItem(CACHE_KEY);
-      sessionStorage.removeItem(SUMMARY_CACHE_KEY);
-      sessionStorage.removeItem(CACHED_MOOD_KEY);
-      sessionStorage.removeItem(SKIP_MODE_KEY);
-      return true;
-    }
-    return false;
-  });
-  const wasSkipMode = useRef(isSkipModeOnMount.current());
+  const hadNoMood = useRef(!userMood);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
-  const [searchValue, setSearchValue] = useState(wasSkipMode.current ? "" : userMood || "");
+  const [searchValue, setSearchValue] = useState(hadNoMood.current ? "" : userMood || "");
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   const searchHints = useMemo(() => [
@@ -230,7 +224,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   }, [searchHints.length]);
 
   useEffect(() => {
-    if (userMood && !searchValue && !wasSkipMode.current) setSearchValue(userMood);
+    if (userMood && !searchValue && !hadNoMood.current) setSearchValue(userMood);
   }, [userMood]);
 
   useEffect(() => {
@@ -249,7 +243,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(() => {
-    if (wasSkipMode.current) return null;
+    if (hadNoMood.current) return null;
     try {
       const version = sessionStorage.getItem(CACHE_VERSION_KEY);
       if (version !== CURRENT_CACHE_VERSION) return null;
@@ -257,14 +251,14 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     } catch { return null; }
   });
   const [searchResults, setSearchResults] = useState<MockPlace[]>(() => {
-    if (wasSkipMode.current) return [];
+    if (hadNoMood.current) return [];
     return getCachedResults();
   });
   const placeIds = useMemo(() => searchResults.map((p) => p.id), [searchResults]);
   const saveCounts = usePlaceSaveCounts(placeIds);
   const recentSearches = useRecentSearches();
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
-    if (wasSkipMode.current) return true;
+    if (hadNoMood.current) return true;
     return getCachedResults().length === 0;
   });
   const [needsLocationPermission, setNeedsLocationPermission] = useState(false);
@@ -309,8 +303,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     const currentMood = userMood?.trim() || "";
     const moodChanged = currentMood !== "" && currentMood !== cachedMood;
 
-    if (hasLoadedInitial.current && !moodChanged && !wasSkipMode.current) return;
-    if (!wasSkipMode.current && !moodChanged && searchResults.length > 0) {
+    if (hasLoadedInitial.current && !moodChanged && !hadNoMood.current) return;
+    if (!hadNoMood.current && !moodChanged && searchResults.length > 0) {
       hasLoadedInitial.current = true;
       setIsInitialLoading(false);
       return;
@@ -329,9 +323,9 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
       }
       try {
         let searchPrompt: string;
-        if (wasSkipMode.current) {
+        if (hadNoMood.current) {
           searchPrompt = getTimeBasedPrompt();
-          wasSkipMode.current = false;
+          hadNoMood.current = false;
         } else {
           searchPrompt = currentMood || "popular restaurants and cafes nearby";
         }
@@ -399,6 +393,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     if (!query.trim()) return;
     const trimmed = query.trim();
     if (searchInFlightRef.current && trimmed === lastSearchQueryRef.current) return;
+    // Anonymous user gate — allow 2 free searches
+    if (!user && !checkAnonLimit("search")) return;
     if (hasReachedLimit) { setShowUpgrade(true); return; }
 
     searchInFlightRef.current = true;
@@ -426,6 +422,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
         setAiSummary(result.summary || null);
         toast.success(`Found ${result.places.length} spots for you!`);
         incrementSearchCount();
+        if (!user) recordAnonUsage("search");
         trackSearch(trimmed);
       } else if (result && result.places.length === 0) {
         toast.info("No places found. Try a different search.");
@@ -493,7 +490,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   const removeFilter = (filterId: string) => { const n = new Set(activeFilters); n.delete(filterId); setActiveFilters(n); };
 
   const handleLocationChange = (newLocation: string) => {
-    setOnboardingData({ ...(onboardingData || { trip_intention: null, budget: null, travel_personality: [] }), explore_location: newLocation });
+    setOnboardingData({ ...(onboardingData || { explore_location: null }), explore_location: newLocation });
     setIsLocationPickerOpen(false);
   };
 
@@ -619,15 +616,56 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
             </div>
           </form>
         </div>
-        {user && isPro ? (
-          <p className="text-xs mt-1.5 px-1 flex items-center gap-1 text-amber-600">
-            <Sparkles className="w-3 h-3" /> PRO · Unlimited searches
-          </p>
-        ) : user && searchesLeft <= 3 ? (
-          <p className="text-xs text-muted-foreground mt-1.5 px-1">
-            {hasReachedLimit ? "Daily limit reached — upgrade for unlimited searches" : `${searchesLeft} search${searchesLeft === 1 ? "" : "es"} left today`}
-          </p>
+        {user && (isPro || isAdmin) ? null : user ? (
+          <div className="flex items-center gap-2 mt-1.5 px-1">
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: dailyLimit }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    i < dailyLimit - searchesLeft
+                      ? "bg-muted-foreground/30"
+                      : hasReachedLimit
+                        ? "bg-destructive/40"
+                        : "bg-primary/60"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {hasReachedLimit ? (
+                <button onClick={() => setShowUpgrade(true)} className="text-primary font-medium hover:underline">
+                  Limit reached · Upgrade
+                </button>
+              ) : (
+                `${searchesLeft}/${dailyLimit} searches today`
+              )}
+            </p>
+          </div>
         ) : null}
+      </div>
+
+      {/* Mood quick-switch pills */}
+      <div className="px-4 pb-2 lg:hidden">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {["chill vibes", "coffee", "date night", "outdoor", "late night", "live music", "brunch", "family friendly"].map((mood) => {
+            const isActive = searchValue.toLowerCase() === mood.toLowerCase();
+            return (
+              <button
+                key={mood}
+                onClick={() => triggerSearch(mood)}
+                disabled={isSearching}
+                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/70 text-muted-foreground hover:bg-primary/10 hover:text-primary border border-border/50"
+                }`}
+              >
+                {mood}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Recent searches */}
@@ -673,6 +711,29 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
             </div>
           </div>
 
+          {/* Desktop mood pills */}
+          <div className="hidden lg:block px-8 pb-2">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide max-w-2xl mx-auto">
+              {["chill vibes", "coffee", "date night", "outdoor", "late night", "live music", "brunch", "family friendly"].map((mood) => {
+                const isActive = searchValue.toLowerCase() === mood.toLowerCase();
+                return (
+                  <button
+                    key={mood}
+                    onClick={() => triggerSearch(mood)}
+                    disabled={isSearching}
+                    className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted/70 text-muted-foreground hover:bg-primary/10 hover:text-primary border border-border/50"
+                    }`}
+                  >
+                    {mood}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <LoginReminderBanner />
 
           {/* Active Filter Chips */}
@@ -687,15 +748,35 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
           )}
 
           {isSearching || isInitialLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-              <div className="relative">
-                <div className="animate-[bounce_1.5s_ease-in-out_infinite]"><IceCreamCone className="w-10 h-10 text-primary drop-shadow-md" strokeWidth={1.5} /></div>
-                <div className="absolute inset-0 w-10 h-10 border-2 border-primary/20 rounded-full animate-ping" />
-                <Sparkles className="absolute -top-1 -right-2 w-4 h-4 text-amber-400 animate-pulse" />
-                <Sparkles className="absolute -bottom-1 -left-2 w-3 h-3 text-pink-400 animate-pulse delay-200" />
+            <div className="px-4 lg:px-8 max-w-3xl mx-auto">
+              {/* Logo + status */}
+              <div className="flex flex-col items-center pt-6 pb-6">
+                <SweetSpotsLoader size="sm" />
+                <p className="text-foreground font-medium mt-4">Finding your SweetSpots...</p>
               </div>
-              <p className="text-foreground font-medium mt-4">Finding your SweetSpots...</p>
-              <p className="text-muted-foreground text-sm mt-1">Scooping up the best places</p>
+              {/* Skeleton cards */}
+              <div className="space-y-6">
+                {[1, 2].map((section) => (
+                  <div key={section}>
+                    <div className="h-4 w-28 bg-muted rounded-full mb-3 animate-pulse" />
+                    <div className="grid grid-cols-3 gap-3">
+                      {[1, 2, 3].map((card) => (
+                        <div key={card} className="rounded-2xl overflow-hidden border border-border/50 bg-card">
+                          <div className="aspect-[4/3] bg-muted animate-pulse" />
+                          <div className="p-3 space-y-2">
+                            <div className="h-3.5 w-3/4 bg-muted rounded-full animate-pulse" />
+                            <div className="h-3 w-1/2 bg-muted/70 rounded-full animate-pulse" />
+                            <div className="flex items-center gap-2">
+                              <div className="h-3 w-8 bg-muted/70 rounded-full animate-pulse" />
+                              <div className="h-3 w-12 bg-muted/70 rounded-full animate-pulse" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : needsLocationPermission ? (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -757,6 +838,15 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
       <ProfileSlideMenu isOpen={isProfileMenuOpen} onClose={() => setIsProfileMenuOpen(false)} onNavigateToProfile={onNavigateToProfile} />
       <LocationPickerModal isOpen={isLocationPickerOpen} onClose={() => setIsLocationPickerOpen(false)} onSelectLocation={handleLocationChange} currentLocation={onboardingData?.explore_location} />
       <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      {anonGateType && anonGateMessage && (
+        <AuthDialog
+          open={!!anonGateType}
+          onOpenChange={(open) => { if (!open) dismissAnonGate(); }}
+          defaultMode="signup"
+          title={anonGateMessage.title}
+          description={anonGateMessage.description}
+        />
+      )}
     </div>
   );
 };

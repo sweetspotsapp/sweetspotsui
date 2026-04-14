@@ -343,7 +343,7 @@ const MapLoader = forwardRef<HTMLDivElement, MapLoaderProps>(
             <MapPin className="w-12 h-12 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
               {isRefererError 
-                ? "Map API key needs domain authorization. Please update your Google Cloud Console settings to allow *.lovable.app and *.lovableproject.com"
+                ? "Map API key needs domain authorization. Please update your Google Cloud Console to allow www.findyoursweetspots.com"
                 : "Failed to load map. Please try again later."}
             </p>
           </div>

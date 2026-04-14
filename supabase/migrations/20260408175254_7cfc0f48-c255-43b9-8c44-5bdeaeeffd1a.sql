@@ -49,6 +49,5 @@ TO authenticated
 USING (public.has_role(auth.uid(), 'admin'))
 WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
--- Seed existing admin
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('335117fc-f79d-474a-87b7-6abfdd462eb3', 'admin');
+-- Admin seed: run manually after first signup
+-- INSERT INTO public.user_roles (user_id, role) VALUES ('YOUR_USER_ID', 'admin');

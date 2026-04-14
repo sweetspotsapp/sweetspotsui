@@ -32,12 +32,12 @@ interface PlaceData {
 }
 
 /**
- * Generate filter tags for a batch of places using Lovable AI
+ * Generate filter tags for a batch of places using Gemini AI
  */
 async function generateFilterTags(places: PlaceData[]): Promise<Map<string, string[]>> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  if (!LOVABLE_API_KEY) {
-    throw new Error('LOVABLE_API_KEY not configured');
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY not configured');
   }
 
   const results = new Map<string, string[]>();
@@ -77,14 +77,14 @@ Valid tags and their meanings:
 Respond with a JSON object where keys are the place indices (0, 1, 2...) and values are arrays of applicable tags.
 Example: {"0": ["halal", "family-friendly"], "1": ["free-wifi", "outdoor-seating"], "2": ["pet-friendly", "large-groups"]}`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${GEMINI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Analyze these places and return filter tags:\n\n${placesInfo}` }

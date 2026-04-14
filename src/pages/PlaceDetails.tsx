@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { haversineKm } from '@/lib/placeUtils';
 import { ArrowLeft, Star, MapPin, DollarSign, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -287,15 +288,6 @@ const parseOpeningHours = (openingHours: OpeningHoursData | null) => {
   });
 };
 
-// Calculate distance using Haversine formula
-const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-  const R = 6371; // Earth's radius in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
 const PlaceDetailsPage = () => {
   const {
     placeId
@@ -359,7 +351,7 @@ const PlaceDetailsPage = () => {
   // Calculate distance when we have both user location and place
   useEffect(() => {
     if (userLocation && place?.lat && place?.lng) {
-      const dist = calculateDistance(userLocation.lat, userLocation.lng, place.lat, place.lng);
+      const dist = haversineKm(userLocation.lat, userLocation.lng, place.lat, place.lng);
       setDistanceKm(Math.round(dist * 10) / 10);
     }
   }, [userLocation, place]);
@@ -421,12 +413,12 @@ const PlaceDetailsPage = () => {
       const placeLng = data.lng;
       const nearbyPlaces = related.filter(p => {
         if (!p.lat || !p.lng) return false;
-        const dist = calculateDistance(placeLat, placeLng, p.lat, p.lng);
+        const dist = haversineKm(placeLat, placeLng, p.lat, p.lng);
         return dist <= 20;
       }).map(p => {
         const placeCategories = p.categories || [];
         const meaningfulMatches = placeCategories.filter((cat: string) => meaningfulCategories.includes(cat)).length;
-        const dist = calculateDistance(placeLat, placeLng, p.lat!, p.lng!);
+        const dist = haversineKm(placeLat, placeLng, p.lat!, p.lng!);
         return {
           ...p,
           score: meaningfulMatches,
@@ -439,7 +431,7 @@ const PlaceDetailsPage = () => {
         name: p.name,
         image: p.photo_name ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}` : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
         rating: p.rating || 4.0,
-        distance: userLocation && p.lat && p.lng ? Math.round(calculateDistance(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round(p.distanceFromPlace * 10) / 10
+        distance: userLocation && p.lat && p.lng ? Math.round(haversineKm(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round(p.distanceFromPlace * 10) / 10
       }));
       setRelatedPlaces(formattedRelated);
 
@@ -703,7 +695,7 @@ const PlaceDetailsPage = () => {
           name: p.name,
           image: p.photo_name ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}` : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
           rating: p.rating || 4.0,
-          distance: userLocation && p.lat && p.lng ? Math.round(calculateDistance(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round((Math.random() * 3 + 0.5) * 10) / 10
+          distance: userLocation && p.lat && p.lng ? Math.round(haversineKm(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round((Math.random() * 3 + 0.5) * 10) / 10
         }));
         setAiSimilarPlaces(formatted);
         setHasLoadedAiSimilar(true);

@@ -1,1 +1,1 @@
-UPDATE trips SET start_date = '2026-04-09', end_date = '2026-04-09' WHERE id = 'd7875aff-ebe5-40ef-a924-d9f8e54425ad';
+-- Data fix for old project, no-op on fresh installs

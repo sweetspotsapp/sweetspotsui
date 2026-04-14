@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP } from "@/lib/storageKeys";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ShareTripDialog from "./trip/ShareTripDialog";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -21,6 +22,8 @@ import { useTripLimit } from "@/hooks/useTripLimit";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useLiveTrip } from "@/hooks/useLiveTrip";
 import UpgradeModal from "./UpgradeModal";
+import { useAnonLimits } from "@/hooks/useAnonLimits";
+import AuthDialog from "./AuthDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 type Phase = "list" | "view";
@@ -36,6 +39,7 @@ interface TripPageProps {
 const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }: TripPageProps) => {
   const { user } = useAuth();
   const { isPro } = useSubscription();
+  const { checkLimit: checkAnonLimit, recordUsage: recordAnonUsage, gateType: anonGateType, gateMessage: anonGateMessage, dismissGate: dismissAnonGate } = useAnonLimits();
   const {
     generate, swap, isGenerating, isSwapping,
     savedTrips, sharedTrips, pendingInvites, isLoading,
@@ -65,10 +69,34 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     }
   }, [resumeTripId, savedTrips, isLoading]);
 
+  // Auto-open create modal with pre-selected board places
+  useEffect(() => {
+    const raw = sessionStorage.getItem(SS_BOARD_TO_TRIP);
+    if (raw) {
+      sessionStorage.removeItem(SS_BOARD_TO_TRIP);
+      try {
+        const { placeIds, boardName } = JSON.parse(raw);
+        if (placeIds?.length) {
+          setPrefillParams({
+            name: boardName ? `${boardName} Trip` : "",
+            destination: "",
+            startDate: "",
+            vibes: [],
+            budget: "mid-range",
+            groupSize: 2,
+            mustIncludePlaceIds: placeIds,
+            boardIds: [],
+          });
+          setShowCreateModal(true);
+        }
+      } catch { /* ignore bad data */ }
+    }
+  }, []);
+
   // Store current editing ID so ActivityCard can reference it for back-navigation
   useEffect(() => {
     if (phase === "view" && editingId) {
-      sessionStorage.setItem('sweetspots_resume_trip', editingId);
+      sessionStorage.setItem(SS_RESUME_TRIP, editingId);
     }
   }, [phase, editingId]);
 
@@ -116,7 +144,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     }
   }, []);
 
-  // Instantly save a pre-built template trip (no AI generation)
+  // Handle trip template from HomePage curated trips
   useEffect(() => {
     if (tripTemplate) {
       const { destination, duration, vibes, budget, group_size, trip_data } = tripTemplate;
@@ -137,30 +165,34 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
         boardIds: [],
       };
 
-      const tripDataTyped: TripData = trip_data as TripData;
+      // If template has full trip_data, save directly (legacy DB templates)
+      if (trip_data) {
+        const tripDataTyped: TripData = trip_data as TripData;
+        setEditingId(null);
+        setTripData(tripDataTyped);
+        setTripParams(params);
+        setShowCreateModal(false);
+        onTemplateConsumed?.();
 
-      setEditingId(null);
-      setTripData(tripDataTyped);
-      setTripParams(params);
-      setShowCreateModal(false);
-      onTemplateConsumed?.();
+        (async () => {
+          const id = await saveTrip(params, tripDataTyped);
+          if (id) setEditingId(id);
+          setPhase("view");
 
-      // Save directly then enrich with coordinates in background
-      (async () => {
-        const id = await saveTrip(params, tripDataTyped);
-        if (id) setEditingId(id);
-        setPhase("view");
-
-        // Enrich with coordinates in background
-        const enriched = await enrichActivitiesWithCoords(tripDataTyped, destination);
-        if (enriched !== tripDataTyped) {
-          setTripData(enriched);
-          // Update saved trip with enriched data
-          if (id) {
-            await saveTrip(params, enriched, id);
+          const enriched = await enrichActivitiesWithCoords(tripDataTyped, destination);
+          if (enriched !== tripDataTyped) {
+            setTripData(enriched);
+            if (id) await saveTrip(params, enriched, id);
           }
-        }
-      })();
+        })();
+      } else {
+        // Curated trip — open CreateTripModal pre-filled
+        setEditingId(null);
+        setTripData(null);
+        setPrefillParams(params);
+        setShowCreateModal(true);
+        onTemplateConsumed?.();
+      }
     }
   }, [tripTemplate]);
 
@@ -252,6 +284,11 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
   };
 
   const handleGenerate = async (params: TripParams) => {
+    // Anonymous user gate — allow 1 free trip
+    if (!user && !checkAnonLimit("trip")) {
+      setShowCreateModal(false);
+      return;
+    }
     // Check trip limit for free users
     if (hasReachedTripLimit) {
       setShowCreateModal(false);
@@ -264,6 +301,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     const result = await generate(params);
     if (result) {
       incrementTripCount();
+      if (!user) recordAnonUsage("trip");
       const resultWithContext: TripData = {
         ...result,
         _meta: {
@@ -412,7 +450,15 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
         />
       )}
 
-      <GeneratingOverlay isVisible={isGenerating} />
+      <GeneratingOverlay
+        isVisible={isGenerating}
+        destination={tripParams?.destination}
+        duration={
+          tripParams?.startDate && tripParams?.endDate
+            ? Math.max(1, Math.ceil((new Date(tripParams.endDate).getTime() - new Date(tripParams.startDate).getTime()) / 86400000) + 1)
+            : undefined
+        }
+      />
     </div>
 
     {/* Create Trip Modal */}
@@ -439,6 +485,15 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
       />
     )}
     <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+    {anonGateType && anonGateMessage && (
+      <AuthDialog
+        open={!!anonGateType}
+        onOpenChange={(open) => { if (!open) dismissAnonGate(); }}
+        defaultMode="signup"
+        title={anonGateMessage.title}
+        description={anonGateMessage.description}
+      />
+    )}
     </>
   );
 };

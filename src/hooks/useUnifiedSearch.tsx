@@ -40,17 +40,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 // hitting the API twice (e.g. from cascading React effects or StrictMode).
 const pendingRequests = new Map<string, Promise<SearchResult | null>>();
 
-// Generate photo URL using the place-photo proxy
-const getPhotoUrl = (photoName: string | null): string | null => {
-  if (!photoName) return null;
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=400`;
-};
-
-// Generate cache key
-const getCacheKey = (prompt: string, lat: number, lng: number, radiusM: number): string => {
-  return `${prompt.toLowerCase().trim()}-${lat.toFixed(3)}-${lng.toFixed(3)}-${radiusM}`;
-};
+import { getPlacePhotoUrl } from '@/lib/photoLoader';
 
 interface UseUnifiedSearchReturn {
   places: UnifiedPlace[];
@@ -160,10 +150,15 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
         
         if (lat === undefined || lng === undefined) {
           if (!locationName) {
-            // No location name provided, need GPS
-            const location = await getLocation();
-            lat = location.lat;
-            lng = location.lng;
+            // No location name provided, try GPS — fall back gracefully if denied
+            try {
+              const location = await getLocation();
+              lat = location.lat;
+              lng = location.lng;
+            } catch {
+              // Geo failed — proceed without coordinates, backend will use IP-based location
+              console.warn("Geolocation unavailable, proceeding without coordinates");
+            }
           }
           // If locationName is provided, let the backend geocode it
         }
@@ -233,7 +228,7 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
           // Add photo URLs to places
           const placesWithPhotos: UnifiedPlace[] = (data.places || []).map((place: UnifiedPlace) => ({
             ...place,
-            photo_url: getPhotoUrl(place.photo_name),
+            photo_url: getPlacePhotoUrl(place.photo_name),
           }));
 
           return {

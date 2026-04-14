@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, ArrowRight, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,10 +21,19 @@ interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  defaultMode?: "signin" | "signup";
+  title?: string;
+  description?: string;
 }
 
-const AuthDialog = ({ open, onOpenChange, onSuccess }: AuthDialogProps) => {
+const AuthDialog = ({ open, onOpenChange, onSuccess, defaultMode, title, description }: AuthDialogProps) => {
   const [isSignUp, setIsSignUp] = useState(false);
+
+  useEffect(() => {
+    if (open && defaultMode) {
+      setIsSignUp(defaultMode === "signup");
+    }
+  }, [open, defaultMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,12 +138,12 @@ const AuthDialog = ({ open, onOpenChange, onSuccess }: AuthDialogProps) => {
       <DialogContent className="sm:max-w-md p-0 gap-0 rounded-2xl overflow-hidden">
         <DialogHeader className="p-5 pb-2">
           <DialogTitle className="text-xl font-bold text-foreground">
-            {isSignUp ? "Create your account" : "Sign in to save"}
+            {title || (isSignUp ? "Create your account" : "Welcome back")}
           </DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            {isSignUp 
-              ? "Sign up to save your favorite spots" 
-              : "Sign in to save places and build your collection"}
+            {description || (isSignUp
+              ? "Sign up to save your favorite spots"
+              : "Sign in to save places and build your collection")}
           </p>
         </DialogHeader>
 

@@ -53,15 +53,25 @@ export const useBoards = (): UseBoardsReturn => {
         return;
       }
 
-      // Fetch all board_places for this user
-      const { data: boardPlacesData, error: placesError } = await supabase
-        .from('board_places')
-        .select('board_id, place_id')
-        .eq('user_id', user.id);
+      // Fetch all board_places for this user (paginated to handle large collections)
+      let boardPlacesData: { board_id: string; place_id: string }[] = [];
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: page, error: placesError } = await supabase
+          .from('board_places')
+          .select('board_id, place_id')
+          .eq('user_id', user.id)
+          .range(from, from + PAGE_SIZE - 1);
 
-      if (placesError) {
-        console.error('Error loading board places:', placesError);
-        return;
+        if (placesError) {
+          console.error('Error loading board places:', placesError);
+          return;
+        }
+        if (page) boardPlacesData = boardPlacesData.concat(page);
+        hasMore = (page?.length || 0) === PAGE_SIZE;
+        from += PAGE_SIZE;
       }
 
       // Group place IDs by board

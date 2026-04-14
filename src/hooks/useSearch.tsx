@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { withRetry } from "@/lib/errorHandler";
+import { haversineMeters } from "@/lib/placeUtils";
 
 export interface RankedPlace {
   place_id: string;
@@ -43,45 +44,25 @@ export const useSearch = (): UseSearchReturn => {
   const [error, setError] = useState<string | null>(null);
   const { session } = useAuth();
 
+  // Geolocation is provided by the shared useLocation hook where possible.
+  // This fallback is only used when useSearch needs on-demand location inside a callback.
   const getLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error("Geolocation is not supported by your browser. Please use a modern browser."));
+        reject(new Error("Geolocation is not supported by your browser."));
         return;
       }
-
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => {
-          console.error("Geolocation failed:", err.message, err.code);
-          let errorMessage = "Unable to get your location. ";
-          
-          switch (err.code) {
-            case err.PERMISSION_DENIED:
-              errorMessage += "Please enable location access in your browser settings and try again.";
-              break;
-            case err.POSITION_UNAVAILABLE:
-              errorMessage += "Location information is unavailable. Please check your device's location settings.";
-              break;
-            case err.TIMEOUT:
-              errorMessage += "Location request timed out. Please try again.";
-              break;
-            default:
-              errorMessage += "Please enable location access to get recommendations near you.";
-          }
-          
-          reject(new Error(errorMessage));
+          const msgs: Record<number, string> = {
+            1: "Please enable location access in your browser settings.",
+            2: "Location information is unavailable.",
+            3: "Location request timed out. Please try again.",
+          };
+          reject(new Error(msgs[err.code] || "Unable to get your location."));
         },
-        {
-          enableHighAccuracy: false,
-          timeout: 15000,
-          maximumAge: 300000,
-        }
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
       );
     });
   };
@@ -184,8 +165,8 @@ export const useSearch = (): UseSearchReturn => {
           provider: place.provider,
           photo_name: place.photo_name,
           eta_seconds: null, // Can add travel time calculation later
-          distance_meters: place.lat && place.lng ? 
-            Math.round(haversineDistance(location.lat, location.lng, place.lat, place.lng)) : null,
+          distance_meters: place.lat && place.lng ?
+            Math.round(haversineMeters(location.lat, location.lng, place.lat, place.lng)) : null,
           score: 100 - index, // Maintain AI ranking order
           why: place.ai_reason || "",
           ai_reason: place.ai_reason,
@@ -220,18 +201,3 @@ export const useSearch = (): UseSearchReturn => {
   return { search, isSearching, error, clearError };
 };
 
-// Haversine distance calculation in meters
-function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRad(deg: number): number {
-  return deg * (Math.PI / 180);
-}

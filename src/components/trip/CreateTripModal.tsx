@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, X, MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, DollarSign, Home, Plane, ChevronDown, ChevronUp, Upload, Lock, Check, Navigation } from "lucide-react";
+import { ArrowLeft, X, MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, DollarSign, Lock, Check, Navigation } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -108,7 +108,6 @@ const CreateTripModal = ({
   const [customVibe, setCustomVibe] = useState("");
   const [vibeDetails, setVibeDetails] = useState("");
   
-  const [showUploadSection, setShowUploadSection] = useState(false);
   const [showBrowse, setShowBrowse] = useState(false);
 
   // Step 2: Planning Style
@@ -331,8 +330,6 @@ const CreateTripModal = ({
               addCustomVibe={addCustomVibe}
               vibeDetails={vibeDetails}
               setVibeDetails={setVibeDetails}
-              showUploadSection={showUploadSection}
-              setShowUploadSection={setShowUploadSection}
               duration={duration}
             />
           ) : (
@@ -463,8 +460,6 @@ interface Step1Props {
   addCustomVibe: () => void;
   vibeDetails: string;
   setVibeDetails: (v: string) => void;
-  showUploadSection: boolean;
-  setShowUploadSection: (v: boolean) => void;
   duration: number;
 }
 
@@ -473,8 +468,7 @@ const Step1Content = ({
   startDate, setStartDate, endDate, setEndDate,
   hasEndDate, setHasEndDate, vibes, toggleVibe,
   customVibe, setCustomVibe, addCustomVibe,
-  vibeDetails, setVibeDetails,
-  showUploadSection, setShowUploadSection, duration,
+  vibeDetails, setVibeDetails, duration,
 }: Step1Props) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { predictions, isLoading } = usePlaceAutocomplete(showSuggestions ? destination : "");
@@ -697,36 +691,6 @@ const Step1Content = ({
       </div>
     </div>
 
-    {/* Upload Section (Coming Soon) */}
-    <div className="space-y-1.5">
-      <button
-        onClick={() => setShowUploadSection(!showUploadSection)}
-        className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <Upload className="w-3.5 h-3.5" />
-        Upload documents
-        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full">Optional</span>
-        {showUploadSection ? <ChevronUp className="w-3 h-3 ml-auto" /> : <ChevronDown className="w-3 h-3 ml-auto" />}
-      </button>
-      {showUploadSection && (
-        <div className="space-y-2 pl-5">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-border bg-muted/20 opacity-50 cursor-not-allowed">
-            <Home className="w-4 h-4 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Accommodation receipt</p>
-              <p className="text-[10px] text-muted-foreground">Coming Soon</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-border bg-muted/20 opacity-50 cursor-not-allowed">
-            <Plane className="w-4 h-4 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Flight ticket</p>
-              <p className="text-[10px] text-muted-foreground">Coming Soon</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
   </div>
   );
 };

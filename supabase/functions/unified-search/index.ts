@@ -253,7 +253,7 @@ function generateWhyString(
 // Translate natural language prompts to Google-searchable keywords
 async function translatePromptToKeywords(
   prompt: string,
-  lovableApiKey: string,
+  geminiApiKey: string,
   supabaseClient: any
 ): Promise<{ keywords: string; intent: string }> {
   // Mood/vibe words that Google doesn't understand - these MUST be translated
@@ -301,14 +301,14 @@ async function translatePromptToKeywords(
   try {
     console.log(`Translating natural language to keywords (containsMoodWords: ${containsMoodWords})...`);
     
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${geminiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
+        model: 'gemini-2.5-flash-lite',
         messages: [
           {
             role: 'system',
@@ -393,7 +393,7 @@ const VALID_FILTER_TAGS = [
 // Generate filter_tags for places using AI
 async function generateFilterTagsWithAI(
   places: PlaceCandidate[],
-  lovableApiKey: string
+  geminiApiKey: string
 ): Promise<Map<string, string[]>> {
   const tagsMap = new Map<string, string[]>();
   
@@ -436,14 +436,14 @@ Only include places that have at least one tag. Use only tags from the valid lis
   try {
     console.log(`Generating filter_tags for ${placesToProcess.length} places...`);
     
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${geminiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
+        model: 'gemini-2.5-flash-lite',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -520,7 +520,7 @@ Only include places that have at least one tag. Use only tags from the valid lis
 async function getAIRelevanceAndSummary(
   prompt: string,
   places: PlaceCandidate[],
-  lovableApiKey: string
+  geminiApiKey: string
 ): Promise<{ relevanceMap: Map<string, number>; summary: string }> {
   const relevanceMap = new Map<string, number>();
   let summary = "";
@@ -583,16 +583,16 @@ Respond with a JSON object:
 }`;
 
   try {
-    console.log('Calling Lovable AI for relevance scoring...');
+    console.log('Calling Gemini AI for relevance scoring...');
     
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${geminiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -602,7 +602,7 @@ Respond with a JSON object:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
+      console.error('Gemini AI error:', response.status, errorText);
       
       // Handle rate limiting
       if (response.status === 429) {
@@ -719,9 +719,9 @@ serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY_BE')!;
     const geoapifyApiKey = Deno.env.get('GEOAPIFY_API_KEY');
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
-    if (!googleMapsApiKey || !geoapifyApiKey || !lovableApiKey) {
+    if (!googleMapsApiKey || !geoapifyApiKey || !geminiApiKey) {
       return new Response(
         JSON.stringify({ error: 'Required API keys not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -906,7 +906,7 @@ serve(async (req) => {
 
     // ============ STEP 0: Translate natural language to keywords ============
     const translationStartTime = Date.now();
-    const { keywords, intent } = await translatePromptToKeywords(prompt, lovableApiKey, supabaseAdmin);
+    const { keywords, intent } = await translatePromptToKeywords(prompt, geminiApiKey, supabaseAdmin);
     console.log(`⏱️  Translation: ${Date.now() - translationStartTime}ms`);
 
     // ============ SEARCH RESULT CACHE ============
@@ -1226,7 +1226,7 @@ serve(async (req) => {
       // 2b: AI relevance scoring + summary (skipped on cache hit)
       cachedSearch
         ? Promise.resolve({ relevanceMap, summary })
-        : getAIRelevanceAndSummary(intent || prompt, validCandidates, lovableApiKey),
+        : getAIRelevanceAndSummary(intent || prompt, validCandidates, geminiApiKey),
 
       // 2c: Get authenticated user ID + fetch profile + saved places (moved from earlier sequential code)
       (async () => {
@@ -1257,8 +1257,8 @@ serve(async (req) => {
       })(),
       
       // 2f: Generate filter_tags for places that need them (skipped on cache hit)
-      (!cachedSearch && placesNeedingTags.length > 0 && lovableApiKey)
-        ? generateFilterTagsWithAI(placesNeedingTags, lovableApiKey)
+      (!cachedSearch && placesNeedingTags.length > 0 && geminiApiKey)
+        ? generateFilterTagsWithAI(placesNeedingTags, geminiApiKey)
         : Promise.resolve(new Map<string, string[]>()),
     ]);
 

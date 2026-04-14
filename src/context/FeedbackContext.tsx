@@ -2,7 +2,9 @@ import { createContext, useContext, useState, useRef, useCallback, useEffect, Re
 import SearchFeedbackDialog from "@/components/SearchFeedbackDialog";
 import { useAuth } from "@/hooks/useAuth";
 
-const FEEDBACK_SESSION_KEY = "sweetspots_feedback_shown";
+import { SS_FEEDBACK_SHOWN } from "@/lib/storageKeys";
+
+const FEEDBACK_SESSION_KEY = SS_FEEDBACK_SHOWN;
 
 interface FeedbackContextType {
   trackSearch: (searchPrompt?: string) => void;

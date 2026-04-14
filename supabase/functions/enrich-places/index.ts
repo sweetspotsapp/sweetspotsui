@@ -110,7 +110,7 @@ function extractGoogleFilterTags(googlePlace: any): string[] {
 }
 
 /**
- * Generate filter tags for a batch of places using Lovable AI
+ * Generate filter tags for a batch of places using Gemini AI
  */
 async function generateFilterTags(
   places: Array<{
@@ -122,9 +122,9 @@ async function generateFilterTags(
     ai_reason: string;
   }>
 ): Promise<Map<string, string[]>> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  if (!LOVABLE_API_KEY) {
-    console.error('LOVABLE_API_KEY not configured, skipping filter tag generation');
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+  if (!GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY not configured, skipping filter tag generation');
     return new Map();
   }
 
@@ -166,14 +166,14 @@ Valid tags and their meanings:
 Respond with a JSON object where keys are the place indices (0, 1, 2...) and values are arrays of ADDITIONAL applicable tags (don't repeat Known tags).
 Example: {"0": ["halal", "large-groups"], "1": ["free-wifi"], "2": []}`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${GEMINI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Analyze these places and return filter tags:\n\n${placesInfo}` }
@@ -215,7 +215,7 @@ Example: {"0": ["halal", "large-groups"], "1": ["free-wifi"], "2": []}`;
 }
 
 /**
- * Generate unique AI insights for a place using Lovable AI
+ * Generate unique AI insights for a place using Gemini AI
  */
 async function generatePlaceInsights(
   place: {
@@ -226,9 +226,9 @@ async function generatePlaceInsights(
     reviews: Review[] | null;
   }
 ): Promise<PlaceInsights | null> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  if (!LOVABLE_API_KEY) {
-    console.error('LOVABLE_API_KEY not configured, skipping insight generation');
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+  if (!GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY not configured, skipping insight generation');
     return null;
   }
 
@@ -272,14 +272,14 @@ Location: ${place.address || 'Unknown'}
 Reviews:
 ${reviewTexts || 'No reviews available - make educated inferences based on category and price level'}`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${GEMINI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

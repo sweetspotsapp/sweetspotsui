@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Mail, Users, Search, TrendingUp, Eye, CheckCircle, Trash2, Clock, BarChart3, DollarSign, Zap } from "lucide-react";
+import { ArrowLeft, Mail, Users, Search, TrendingUp, Eye, CheckCircle, Trash2, Clock, BarChart3, DollarSign, Zap, Lock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
+
+const ADMIN_EMAILS = ["ilhamrazakofficial@gmail.com", "sweetspotsai@gmail.com"];
 
 interface ContactSubmission {
   id: string;
@@ -65,20 +68,22 @@ const Admin = () => {
     checkAdmin();
   }, [user]);
 
-  // Fetch data
+  // Fetch data only after admin role is positively confirmed
   useEffect(() => {
-    if (!isAdmin) return;
+    if (isAdmin !== true) return;
     fetchData();
   }, [isAdmin]);
 
-  // Fetch revenue when tab changes
+  // Fetch revenue when tab changes — only if confirmed admin
   useEffect(() => {
-    if (isAdmin && activeTab === "revenue" && !revenue) {
+    if (isAdmin !== true) return;
+    if (activeTab === "revenue" && !revenue) {
       fetchRevenue();
     }
   }, [isAdmin, activeTab]);
 
   const fetchRevenue = async () => {
+    if (isAdmin !== true) return;
     setRevenueLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("admin-revenue");
@@ -93,6 +98,7 @@ const Admin = () => {
   };
 
   const fetchData = async () => {
+    if (isAdmin !== true) return;
     setLoading(true);
     try {
       const [
@@ -166,24 +172,122 @@ const Admin = () => {
   const estimatedTripCost = (stats?.totalTrips || 0) * 0.05; // ~$0.05 per trip generation
   const totalEstimatedCost = estimatedSearchCost + estimatedTripCost;
 
-  if (isAdmin === null) {
+  // Admin login form state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+
+    const email = loginEmail.trim().toLowerCase();
+    if (!ADMIN_EMAILS.includes(email)) {
+      setLoginError("This email is not authorized for admin access.");
+      return;
+    }
+
+    setLoginLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: loginPassword,
+      });
+      if (error) {
+        setLoginError(error.message);
+      }
+    } catch {
+      setLoginError("Something went wrong. Please try again.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // Show login form if not logged in
+  if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="space-y-4 w-full max-w-md p-6">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-64 w-full rounded-2xl" />
+      <div className="flex items-center justify-center min-h-screen bg-background px-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Admin Login</h1>
+            <p className="text-sm text-muted-foreground mt-1">Authorized personnel only</p>
+          </div>
+
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
+              <Input
+                type="email"
+                placeholder="admin@example.com"
+                value={loginEmail}
+                onChange={(e) => { setLoginEmail(e.target.value); setLoginError(""); }}
+                required
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Password</label>
+              <Input
+                type="password"
+                placeholder="Enter password"
+                value={loginPassword}
+                onChange={(e) => { setLoginPassword(e.target.value); setLoginError(""); }}
+                required
+              />
+            </div>
+
+            {loginError && (
+              <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{loginError}</p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={loginLoading}>
+              {loginLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {loginLoading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+
+          <button
+            onClick={() => navigate("/")}
+            className="w-full text-center text-sm text-muted-foreground hover:text-foreground mt-4 py-2 transition-colors"
+          >
+            Back to app
+          </button>
         </div>
       </div>
     );
   }
 
+  // Checking admin role...
+  if (isAdmin === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Logged in but not admin
   if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-4">
+        <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <Lock className="w-8 h-8 text-destructive" />
+        </div>
         <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
-        <p className="text-muted-foreground text-center">You don't have permission to access this page.</p>
-        <Button onClick={() => navigate("/")} variant="outline">Go Home</Button>
+        <p className="text-muted-foreground text-center">
+          {user.email} doesn't have admin permissions.
+        </p>
+        <div className="flex gap-3">
+          <Button onClick={() => navigate("/")} variant="outline">Go Home</Button>
+          <Button onClick={() => supabase.auth.signOut()} variant="ghost">Sign Out</Button>
+        </div>
       </div>
     );
   }

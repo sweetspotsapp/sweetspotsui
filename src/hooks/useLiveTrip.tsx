@@ -111,6 +111,36 @@ export const useLiveTrip = (trips: SavedTrip[]): LiveTripInfo => {
     [persistChecked]
   );
 
+  // Flush any pending debounced save when the user navigates away or closes the tab
+  useEffect(() => {
+    const flush = () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = undefined;
+        // Fire a synchronous save via sendBeacon (best-effort)
+        if (user && liveTrip) {
+          const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/trips?id=eq.${liveTrip.id}&user_id=eq.${user.id}`;
+          const body = JSON.stringify({ checked_activities: checkedActivities });
+          const headers = {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Prefer': 'return=minimal',
+          };
+          // sendBeacon doesn't support custom headers, so fall back to fetch keepalive
+          try {
+            fetch(url, { method: 'PATCH', headers, body, keepalive: true });
+          } catch {
+            // Best effort — nothing more we can do on page close
+          }
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
+  }, [user, liveTrip, checkedActivities]);
+
   // Compute progress for current day (excludes cancelled from total)
   const progress = useMemo(() => {
     if (!liveTrip?.trip_data?.days) return { done: 0, total: 0, percentage: 0 };

@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
@@ -12,7 +11,6 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
       devOptions: {
@@ -25,9 +23,9 @@ export default defineConfig(({ mode }) => ({
         "icon-512.png",
       ],
       manifest: {
-        name: "SweetSpots — Find places that feel right",
+        name: "SweetSpots — Save spots, plan trips",
         short_name: "SweetSpots",
-        description: "Discover places that match your vibe. No searching, no comparing — just tell us your mood.",
+        description: "Save places you find on TikTok & Instagram, then let AI plan your perfect trip.",
         start_url: "/",
         display: "standalone",
         background_color: "#FFFFFF",
@@ -50,6 +48,15 @@ export default defineConfig(({ mode }) => ({
             purpose: "maskable",
           },
         ],
+        share_target: {
+          action: "/share",
+          method: "GET",
+          params: {
+            title: "title",
+            text: "text",
+            url: "url",
+          },
+        },
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
@@ -77,6 +84,9 @@ export default defineConfig(({ mode }) => ({
       },
     }),
   ].filter(Boolean),
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

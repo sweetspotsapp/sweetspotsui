@@ -29,3 +29,22 @@ export function getEdgeFunctionPhotoUrl(photoName: string, maxWidth = 400, maxHe
 export async function loadPhoto(photoName: string, maxWidth = 400, maxHeight = 400): Promise<string | null> {
   return getStoragePhotoUrl(photoName, maxWidth, maxHeight);
 }
+
+/**
+ * Convenience: build a place photo URL from a photo_name string.
+ * Returns null when photoName is falsy.
+ * Use this everywhere instead of inline template strings.
+ */
+export function getPlacePhotoUrl(photoName: string | null | undefined, maxWidth = 400): string | null {
+  if (!photoName) return null;
+  return `${SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=${maxWidth}`;
+}
+
+/**
+ * Convert a photos array (raw photo_name strings or already-resolved URLs)
+ * into an array of resolved photo URLs. Handles mixed inputs safely.
+ */
+export function resolvePhotoUrls(photos: string[] | null | undefined, maxWidth = 400): string[] {
+  if (!photos || photos.length === 0) return [];
+  return photos.map(p => p.startsWith('http') ? p : getPlacePhotoUrl(p, maxWidth)!).filter(Boolean);
+}

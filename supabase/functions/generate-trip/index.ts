@@ -54,8 +54,8 @@ serve(async (req) => {
     }
     const { destination, startDate, endDate, budget, groupSize, vibes, vibeDetails, mustIncludePlaceIds, accommodations } = parsed.data;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -163,14 +163,14 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
       },
     };
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${GEMINI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gemini-3-flash-preview",
         messages: [
           { role: "system", content: "You are a well-traveled friend who makes amazing trip plans. Write all copy in a casual, warm tone — like a friend giving advice over coffee, not a travel brochure. The traveler's stated vibes, mood, and description are your PRIMARY guide — every activity must reflect what they asked for. Never fall back to generic tourist itineraries. Return structured trip plans using the provided tool with realistic cost estimates." },
           { role: "user", content: prompt },
@@ -201,15 +201,15 @@ Estimate costs realistically: free for parks/landmarks, $5-15 for cafes, $15-50 
 
     // Retry once if no tool call returned
     if (!toolCall) {
-      console.warn("No tool call in first response, retrying with google/gemini-2.5-flash...");
-      const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      console.warn("No tool call in first response, retrying with gemini-2.5-flash...");
+      const retryResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${GEMINI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "gemini-2.5-flash",
           messages: [
             { role: "system", content: "You are a travel planning expert who deeply personalizes itineraries based on the traveler's vibes and description. You MUST use the create_trip tool to return your response. Do not respond with plain text." },
             { role: "user", content: prompt },

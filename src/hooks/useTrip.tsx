@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useToast } from "./use-toast";
+import { LS_LOCAL_TRIPS, LS_LOCAL_ITINERARIES } from "@/lib/storageKeys";
 
 export interface Activity {
   name: string;
@@ -102,18 +103,18 @@ interface SwapParams {
   activityDescription?: string;
 }
 
-const LOCAL_STORAGE_KEY = "sweetspots_local_trips";
+const LOCAL_STORAGE_KEY = LS_LOCAL_TRIPS;
 
 const loadLocalTrips = (): SavedTrip[] => {
   try {
     // Try new key first, fall back to old key for migration
     let raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) {
-      raw = localStorage.getItem("sweetspots_local_itineraries");
+      raw = localStorage.getItem(LS_LOCAL_ITINERARIES);
       if (raw) {
         // Migrate old data
         localStorage.setItem(LOCAL_STORAGE_KEY, raw);
-        localStorage.removeItem("sweetspots_local_itineraries");
+        localStorage.removeItem(LS_LOCAL_ITINERARIES);
       }
     }
     if (!raw) return [];
