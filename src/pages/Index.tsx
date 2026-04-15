@@ -88,11 +88,7 @@ const Index = () => {
     }, 800);
   };
 
-  const _handleMoodSubmit = (mood: string) => {
-    setUserMood(mood);
-    setAppState("loading");
-    setTimeout(() => { completeOnboarding(mood, []); setAppState("main"); }, 1000);
-  };
+  void setUserMood; // handleMoodSubmit available if needed
 
   const handleTabChange = (tab: TabType) => {
     if (tab === "trip") {

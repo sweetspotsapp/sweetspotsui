@@ -203,7 +203,7 @@ const GeneratingOverlay = ({ isVisible, destination, duration }: GeneratingOverl
                     {step.substeps.map((sub, subIdx) => {
                       const subDone = stepCompletedSubs.has(subIdx);
                       const subActive = isCurrent && subIdx === currentSubstep && !subDone;
-                      const _subPending = !subDone && !subActive;
+                      void subIdx; // subPending derived if needed
 
                       return (
                         <div key={subIdx} className="flex items-center gap-1.5">

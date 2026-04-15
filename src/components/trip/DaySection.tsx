@@ -44,10 +44,7 @@ interface RouteData {
 }
 
 /** Check if a place is currently open based on stored opening_hours */
-function _getOpenStatus(_activity: Activity): { isOpen: boolean; label: string; variant: "open" | "closed" | "closing" } | null {
-  // We don't have opening_hours on Activity type directly, skip for now
-  return null;
-}
+// getOpenStatus placeholder — no opening_hours on Activity type yet
 
 const AddPlaceInput = ({ onAdd }: { onAdd: (place: { name: string; placeId?: string; category: string; description: string }) => void }) => {
   const [isOpen, setIsOpen] = useState(false);

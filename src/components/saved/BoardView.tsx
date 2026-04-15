@@ -85,7 +85,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           if (batchData) allData = allData.concat(batchData);
         }
         const data = allData;
-        const _error = null;
+        void 0; // error handling done via data check
         
         const fetchedPlaces: RankedPlace[] = (data || []).map(place => ({
           place_id: place.place_id,

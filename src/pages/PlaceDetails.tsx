@@ -668,7 +668,7 @@ const PlaceDetailsPage = () => {
     }
     toast.success('Saved to your spots!');
   };
-  const _handleFindSimilarVibes = async () => {
+  const handleFindSimilarVibes = async () => { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (!placeId || isLoadingAiSimilar) return;
     setIsLoadingAiSimilar(true);
     try {

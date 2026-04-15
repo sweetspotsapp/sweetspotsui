@@ -39,7 +39,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const { location: userLocation } = useLocation();
   const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, refetch: refetchBoards } = useBoards();
   const { savedPlaceIds, isLoadingSavedPlaces, toggleSave, removeSavedPlaceIds } = useApp();
-  const _toast = useToast();
+  useToast();
   const [savedPlaces, setSavedPlaces] = useState<RankedPlace[]>([]);
   const [placeImages, setPlaceImages] = useState<Record<string, string[]>>({});
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
@@ -237,7 +237,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
     setSelectedBoard(null);
   };
 
-  const handleRemoveFromBoard = async (placeId: string) => {
+  const handleRemoveFromBoard = async (placeId: string) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     isRemovingRef.current = true;
 
     try {

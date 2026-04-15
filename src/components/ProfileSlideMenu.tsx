@@ -6,6 +6,8 @@ import { useApp } from "@/context/AppContext";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { useSubscription } from "@/hooks/useSubscription";
 import { 
+  User,
+  Settings,
   Sun, 
   Moon, 
   Crown, 

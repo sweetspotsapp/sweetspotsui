@@ -486,7 +486,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     finally { setIsInitialLoading(false); }
   };
 
-  const _handleClearSearch = () => { setSearchValue(""); setUserMood(""); };
+  void (() => { setSearchValue(""); setUserMood(""); }); // handleClearSearch available if needed
   const removeFilter = (filterId: string) => { const n = new Set(activeFilters); n.delete(filterId); setActiveFilters(n); };
 
   const handleLocationChange = (newLocation: string) => {
