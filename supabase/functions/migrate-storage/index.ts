@@ -60,8 +60,8 @@ async function migrateBucket(
     return { migrated: 0, message: "no files at this offset" };
   }
 
-  // Filter out folders
-  const realFiles = files.filter((f: any) => f.id);
+  // Filter out folders and skip files starting with "places/"
+  const realFiles = files.filter((f: any) => f.id && !f.name.startsWith("places/"));
 
   let migrated = 0;
   let errors: string[] = [];
