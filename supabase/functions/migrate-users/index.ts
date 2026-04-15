@@ -37,8 +37,11 @@ Deno.serve(async (req) => {
     for (const user of users) {
       try {
         const { error: createError } = await target.auth.admin.createUser({
+          id: user.id, // preserve original UUID
           email: user.email,
+          phone: user.phone || undefined,
           email_confirm: true,
+          phone_confirm: !!user.phone,
           user_metadata: user.user_metadata || {},
           app_metadata: user.app_metadata || {},
           // Password hash cannot be transferred via Admin API
