@@ -5,23 +5,24 @@ const corsHeaders = {
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const TABLES_ORDER = [
-  "places",           // no FK deps, must be first (others reference it)
-  "profiles",         // references auth.users only
-  "query_cache",      // no FK
-  "searches",         // references auth.users
-  "trip_templates",   // no FK
-  "user_roles",       // references auth.users
-  "boards",           // references auth.users
-  "trips",            // references auth.users
-  "contact_submissions", // no FK
-  "search_feedback",  // no FK
-  "saved_places",     // references places
-  "place_interactions", // references places
-  "board_places",     // references boards
-  "shared_trips",     // references trips
+  "places",
+  "profiles",
+  "query_cache",
+  "searches",
+  "trip_templates",
+  "user_roles",
+  "boards",
+  "trips",
+  "contact_submissions",
+  "search_feedback",
+  "saved_places",
+  "place_interactions",
+  "board_places",
+  "shared_trips",
 ];
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 50;
+const TIME_LIMIT_MS = 50_000; // stop after 50s to return before gateway timeout
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -32,65 +33,48 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const sourceUrl = Deno.env.get("SUPABASE_URL")!;
-    const sourceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const targetUrl = Deno.env.get("MIGRATION_TARGET_URL")!;
-    const targetKey = Deno.env.get("MIGRATION_TARGET_SECRET_KEY")!;
-
-    const source = createClient(sourceUrl, sourceKey);
-    const target = createClient(targetUrl, targetKey);
+    const source = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const target = createClient(Deno.env.get("MIGRATION_TARGET_URL")!, Deno.env.get("MIGRATION_TARGET_SECRET_KEY")!);
 
     const tablesToMigrate = table ? [table] : TABLES_ORDER;
     const report: Record<string, any> = {};
+    const startTime = Date.now();
+    let timedOut = false;
 
     for (const t of tablesToMigrate) {
-      const startOffset = table ? (offset || 0) : 0;
+      if (timedOut) { report[t] = { status: "skipped_timeout" }; continue; }
+
+      const startOffset = (table && offset != null) ? offset : 0;
       let currentOffset = startOffset;
       let totalMigrated = 0;
-      let hasMore = true;
 
-      while (hasMore) {
-        const { data, error } = await source
-          .from(t)
-          .select("*")
-          .range(currentOffset, currentOffset + BATCH_SIZE - 1);
-
-        if (error) {
-          report[t] = { error: error.message };
+      while (true) {
+        if (Date.now() - startTime > TIME_LIMIT_MS) {
+          report[t] = { migrated: totalMigrated, from_offset: startOffset, stopped_at: currentOffset, reason: "timeout" };
+          timedOut = true;
           break;
         }
 
-        if (!data || data.length === 0) {
-          hasMore = false;
-          break;
-        }
+        const { data, error } = await source.from(t).select("*").range(currentOffset, currentOffset + BATCH_SIZE - 1);
 
-        // Upsert to target
-        const primaryKey = getPrimaryKey(t);
-        const { error: upsertError } = await target
-          .from(t)
-          .upsert(data, { onConflict: primaryKey });
+        if (error) { report[t] = { error: error.message }; break; }
+        if (!data || data.length === 0) { report[t] = { migrated: totalMigrated, complete: true }; break; }
+
+        const { error: upsertError } = await target.from(t).upsert(data, { onConflict: getPrimaryKey(t) });
 
         if (upsertError) {
-          report[t] = { error: upsertError.message, migrated: totalMigrated, offset: currentOffset };
-          hasMore = false;
+          report[t] = { error: upsertError.message, migrated: totalMigrated, stopped_at: currentOffset };
           break;
         }
 
         totalMigrated += data.length;
         currentOffset += BATCH_SIZE;
 
-        if (data.length < BATCH_SIZE) {
-          hasMore = false;
-        }
-      }
-
-      if (!report[t]) {
-        report[t] = { migrated: totalMigrated, from_offset: startOffset };
+        if (data.length < BATCH_SIZE) { report[t] = { migrated: totalMigrated, complete: true }; break; }
       }
     }
 
-    return new Response(JSON.stringify({ report }), {
+    return new Response(JSON.stringify({ report, timed_out: timedOut, elapsed_ms: Date.now() - startTime }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
@@ -101,20 +85,10 @@ Deno.serve(async (req) => {
 
 function getPrimaryKey(table: string): string {
   const keys: Record<string, string> = {
-    places: "place_id",
-    profiles: "id",
-    query_cache: "cache_key",
-    searches: "id",
-    trip_templates: "id",
-    user_roles: "id",
-    boards: "id",
-    trips: "id",
-    contact_submissions: "id",
-    search_feedback: "id",
-    saved_places: "id",
-    place_interactions: "id",
-    board_places: "id",
-    shared_trips: "id",
+    places: "place_id", profiles: "id", query_cache: "cache_key", searches: "id",
+    trip_templates: "id", user_roles: "id", boards: "id", trips: "id",
+    contact_submissions: "id", search_feedback: "id", saved_places: "id",
+    place_interactions: "id", board_places: "id", shared_trips: "id",
   };
   return keys[table] || "id";
 }
