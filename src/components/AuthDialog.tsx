@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Mail, Lock, ArrowRight, Loader2, X } from "lucide-react";
+import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

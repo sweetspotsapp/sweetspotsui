@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, X, MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, DollarSign, Lock, Check, Navigation } from "lucide-react";
+import { ArrowLeft, X, MapPin, CalendarDays, Users, Minus, Plus, Sparkles, Loader2, Lock, Navigation } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -10,13 +10,13 @@ import BoardPicker from "./BoardPicker";
 import CurrencyPicker, { CURRENCIES } from "./CurrencyPicker";
 import BrowseForTrip from "./BrowseForTrip";
 import type { TripParams } from "@/hooks/useTrip";
-import type { DateRange } from "react-day-picker";
+
 import { Input } from "@/components/ui/input";
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-const BUDGET_OPTIONS = ["$", "$$", "$$$", "$$$$"];
+
 const VIBE_OPTIONS = ["Foodie", "Adventure", "Chill", "Nightlife", "Culture", "Shopping", "Nature"];
 
 // Tiny SVG weather icons for calendar cells

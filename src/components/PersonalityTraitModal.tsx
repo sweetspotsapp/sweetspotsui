@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { X, Sparkles, RotateCcw, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import type { PersonalityTrait } from "@/hooks/useVibeDNA";
@@ -78,7 +77,7 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
   if (!trait) return null;
 
   const traitId = TRAIT_LABEL_TO_ID[trait.label];
-  const isCustomVibe = !traitId;
+  void traitId; // isCustomVibe derivable from !traitId
   const insight = traitId ? (TRAIT_INSIGHTS[traitId] || {
     why: trait.description,
     based_on: "Your browsing and saving patterns across the app.",

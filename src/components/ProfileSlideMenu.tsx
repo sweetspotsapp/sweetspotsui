@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,8 +6,8 @@ import { useApp } from "@/context/AppContext";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { useSubscription } from "@/hooks/useSubscription";
 import { 
-  User, 
-  Settings, 
+  User,
+  Settings,
   Sun, 
   Moon, 
   Crown, 
@@ -17,8 +17,6 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface ProfileSlideMenuProps {

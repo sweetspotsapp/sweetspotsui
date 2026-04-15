@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Check, Sparkles, X, Crown, CreditCard, ChevronRight } from "lucide-react";
+import { Check, Sparkles, X, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription, STRIPE_CONFIG } from "@/hooks/useSubscription";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 

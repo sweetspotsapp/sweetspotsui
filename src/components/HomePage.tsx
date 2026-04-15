@@ -16,7 +16,7 @@ import ProfileSlideMenu from "./ProfileSlideMenu";
 
 import { useLocation as useGeoLocation } from "@/hooks/useLocation";
 import { CURATED_SECTIONS, detectRegion } from "@/data/curatedTrips";
-import type { CuratedTrip, TripSection } from "@/data/curatedTrips";
+import type { TripSection } from "@/data/curatedTrips";
 
 export interface DBTripTemplate {
   id: string;

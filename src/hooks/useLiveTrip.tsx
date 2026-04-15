@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
-import type { SavedTrip, TripData } from "./useTrip";
+import type { SavedTrip } from "./useTrip";
 import { parseISO, differenceInDays, isWithinInterval, startOfDay } from "date-fns";
 
 export type ActivityStatus = "done" | "cancelled" | "skipped";

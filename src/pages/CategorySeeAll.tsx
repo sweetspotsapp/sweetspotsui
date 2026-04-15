@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Navigation, Heart } from "lucide-react";
 import { MockPlace } from "@/components/PlaceCardCompact";

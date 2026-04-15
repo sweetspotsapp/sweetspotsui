@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { haversineKm } from '@/lib/placeUtils';
-import { ArrowLeft, Star, MapPin, DollarSign, Search } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -310,9 +310,6 @@ const PlaceDetailsPage = () => {
   } = useSavedPlaces();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
   const [relatedPlaces, setRelatedPlaces] = useState<RelatedPlace[]>([]);
-  const [aiSimilarPlaces, setAiSimilarPlaces] = useState<RelatedPlace[]>([]);
-  const [isLoadingAiSimilar, setIsLoadingAiSimilar] = useState(false);
-  const [hasLoadedAiSimilar, setHasLoadedAiSimilar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
@@ -321,7 +318,7 @@ const PlaceDetailsPage = () => {
   } | null>(null);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [showSaveToBoardDialog, setShowSaveToBoardDialog] = useState(false);
-  const { user } = useAuth();
+  const { } = useAuth();
 
   // Handle back navigation - return to board view if we came from one
   const handleBack = () => {
@@ -667,48 +664,6 @@ const PlaceDetailsPage = () => {
       toggleSave(placeId);
     }
     toast.success('Saved to your spots!');
-  };
-  const handleFindSimilarVibes = async () => {
-    if (!placeId || isLoadingAiSimilar) return;
-    setIsLoadingAiSimilar(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-similar-vibes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          placeId
-        })
-      });
-      if (!response.ok) {
-        if (response.status === 429) {
-          toast.error('Too many requests. Please try again later.');
-          return;
-        }
-        throw new Error('Failed to find similar places');
-      }
-      const data = await response.json();
-      if (data.similarPlaces && data.similarPlaces.length > 0) {
-        const formatted: RelatedPlace[] = data.similarPlaces.map((p: any) => ({
-          id: p.place_id,
-          name: p.name,
-          image: p.photo_name ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}` : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
-          rating: p.rating || 4.0,
-          distance: userLocation && p.lat && p.lng ? Math.round(haversineKm(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round((Math.random() * 3 + 0.5) * 10) / 10
-        }));
-        setAiSimilarPlaces(formatted);
-        setHasLoadedAiSimilar(true);
-        toast.success('Found places with similar vibes!');
-      } else {
-        toast.info('No similar places found');
-      }
-    } catch (error) {
-      console.error('Error finding similar vibes:', error);
-      toast.error('Failed to find similar places');
-    } finally {
-      setIsLoadingAiSimilar(false);
-    }
   };
   if (isLoading) {
     return <div className="min-h-screen bg-background max-w-[420px] mx-auto">
