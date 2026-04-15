@@ -24,12 +24,20 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     const photoName = url.searchParams.get('photo_name');
+    const placeId = url.searchParams.get('place_id');
     const maxWidth = url.searchParams.get('maxWidthPx') || '400';
     const maxHeight = url.searchParams.get('maxHeightPx') || '400';
 
     if (!photoName) {
       return new Response(
         JSON.stringify({ error: 'Missing photo_name parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!placeId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing place_id parameter' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -47,9 +55,8 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Storage path: use Google photo_name as natural path + size variant
-    // e.g. places/ChIJ.../photos/AXCi.../400x400
-    const storagePath = `${photoName}/${maxWidth}x${maxHeight}`;
+    // Flat storage path: {placeId}.jpg
+    const storagePath = `${placeId}.jpg`;
 
     // === CHECK CACHE: Try Supabase Storage first ===
     const { data: cachedBlob, error: downloadError } = await supabase.storage
@@ -70,7 +77,7 @@ serve(async (req) => {
     }
 
     // === CACHE MISS: Fetch from Google Places API (with retry for 429) ===
-    console.log('Cache MISS — fetching from Google:', photoName);
+    console.log('Cache MISS — fetching from Google:', photoName, '→', storagePath);
     const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}&key=${googleMapsApiKey}`;
     
     let response: Response | null = null;
