@@ -60,7 +60,8 @@ const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   is_open_now: place.is_open_now,
   ai_score: place.score,
   ratings_total: place.ratings_total || 0,
-  unique_vibes: place.unique_vibes
+  unique_vibes: place.unique_vibes,
+  photo_name: place.photo_name,
 });
 
 const FILTER_LABELS: Record<string, string> = {

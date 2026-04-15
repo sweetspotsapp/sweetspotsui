@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Star, Heart, Navigation, Clock, Users } from "lucide-react";
+import { getEdgeFunctionPhotoUrl } from "@/lib/photoLoader";
 
 // Dummy place type for mock data
 export interface MockPlace {
@@ -15,6 +16,7 @@ export interface MockPlace {
   ai_category?: string;
   is_open_now?: boolean | null;
   unique_vibes?: string | null;
+  photo_name?: string | null;
 }
 
 interface PlaceCardCompactProps {
@@ -58,8 +60,10 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
   isGridItem = false,
   saveCount = 0,
 }) => {
+  const [triedEdge, setTriedEdge] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [imgSrc, setImgSrc] = useState(place.image);
   const [flyingClone, setFlyingClone] = useState<{
     src: string;
     startRect: DOMRect;
@@ -72,7 +76,17 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
     return `https://source.unsplash.com/400x300/?restaurant,food&${place.name.slice(0, 3)}`;
   };
 
-  const imageUrl = place.image || getPlaceholderImage();
+  const handleImageError = () => {
+    if (!triedEdge && place.photo_name && place.id) {
+      // Storage miss → try edge function (fetches from Google + caches)
+      setImgSrc(getEdgeFunctionPhotoUrl(place.photo_name, place.id, 400, 400));
+      setTriedEdge(true);
+    } else {
+      setImageError(true);
+    }
+  };
+
+  const imageUrl = imageError ? getPlaceholderImage() : (imgSrc || getPlaceholderImage());
   const vibeTag = getVibeTag(place);
 
   const handleSave = (e: React.MouseEvent) => {
@@ -148,10 +162,10 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
         className={`relative rounded-2xl overflow-hidden bg-muted ${featured ? 'aspect-[4/3]' : 'aspect-[3/4]'}`}
       >
         <img
-          src={imageError ? getPlaceholderImage() : imageUrl}
+          src={imageUrl}
           alt={place.name}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={() => setImageError(true)}
+          onError={handleImageError}
         />
 
         {/* Save button */}
