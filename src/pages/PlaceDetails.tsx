@@ -383,9 +383,9 @@ const PlaceDetailsPage = () => {
       placeIds.forEach(id => {
         const placeData = placesData?.find(p => p.place_id === id);
         const photos = placeData?.photos as string[] | null;
-        if (photos?.[0]) {
+        if (placeData?.place_id) {
           const img = new Image();
-          img.src = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(photos[0])}`;
+          img.src = getStoragePhotoUrl(placeData.place_id);
         }
       });
     } catch (err) {
@@ -426,7 +426,7 @@ const PlaceDetailsPage = () => {
       const formattedRelated: RelatedPlace[] = topRelated.map(p => ({
         id: p.place_id,
         name: p.name,
-        image: p.photo_name ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}` : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+        image: p.place_id ? getStoragePhotoUrl(p.place_id) : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
         rating: p.rating || 4.0,
         distance: userLocation && p.lat && p.lng ? Math.round(haversineKm(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round(p.distanceFromPlace * 10) / 10
       }));
@@ -718,9 +718,8 @@ const PlaceDetailsPage = () => {
   const saved = placeId ? isSaved(placeId) : false;
   const priceRange = getPriceRangeFromLevel(place.price_level, place.categories);
 
-  // Generate image URLs from photos array (real Google photos)
-  const basePhotoUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=`;
-  const placeImages = place.photos && place.photos.length > 0 ? place.photos.map(photoName => `${basePhotoUrl}${encodeURIComponent(photoName)}`) : place.photo_name ? [`${basePhotoUrl}${encodeURIComponent(place.photo_name)}`] : ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
+  // Generate image URL using flat storage format
+  const placeImages = placeId ? [getStoragePhotoUrl(placeId)] : ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
 
   // Parse opening hours for display
   const openingHoursDisplay = parseOpeningHours(place.opening_hours);

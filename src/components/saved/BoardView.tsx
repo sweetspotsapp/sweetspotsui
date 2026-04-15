@@ -102,8 +102,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           score: 0,
           why: place.ai_reason || '',
           photo_name: place.photo_name,
-          photos: place.photos?.slice(0, 3).map((p: string) => getPlacePhotoUrl(p)!).filter(Boolean)
-            || (place.photo_name ? [getPlacePhotoUrl(place.photo_name)!] : undefined),
+          photos: place.place_id ? [getPlacePhotoUrl(place.place_id)!].filter(Boolean) : undefined,
           filter_tags: place.filter_tags,
           price_level: place.price_level,
         }));
@@ -211,11 +210,8 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     if (place.photos?.[0]) {
       const photo = place.photos[0];
       if (photo.startsWith('http')) return photo;
-      return getPlacePhotoUrl(photo) || '';
     }
-    if (place.photo_name) {
-      return getPlacePhotoUrl(place.photo_name) || '';
-    }
+    return getPlacePhotoUrl(place.place_id) || '';
     // Fallback
     return `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400`;
   };
