@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const BUCKET = 'place-photos';
+const BATCH_SIZE = 50; // Process 50 places per invocation
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,137 +19,121 @@ serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+    // Get offset from query param for pagination
+    const url = new URL(req.url);
+    const offset = parseInt(url.searchParams.get('offset') || '0');
+
     const migrated: string[] = [];
     const skipped: string[] = [];
     const errors: string[] = [];
-    let offset = 0;
-    const limit = 100;
 
-    // List all files in the bucket (paginated)
-    while (true) {
-      // List top-level folders (place_id folders like "places/ChIJ...")
-      // The old format is: places/{place_id}/photos/{photo_ref}/{size}
-      // But storage lists files — we need to walk the structure
-      // Actually the old format stored as: {photoName}/{maxWidth}x{maxHeight}
-      // where photoName = "places/ChIJ.../photos/AXCi..."
-      // So the top-level folder is "places"
-      
-      const { data: files, error: listError } = await supabase.storage
-        .from(BUCKET)
-        .list('places', { limit, offset });
+    // List place_id folders under "places/"
+    const { data: files, error: listError } = await supabase.storage
+      .from(BUCKET)
+      .list('places', { limit: BATCH_SIZE, offset });
 
-      if (listError) {
-        errors.push(`List error at offset ${offset}: ${listError.message}`);
-        break;
-      }
-
-      if (!files || files.length === 0) break;
-
-      // Each entry here is a place_id folder like "ChIJ..."
-      for (const placeFolder of files) {
-        if (!placeFolder.name) continue;
-        const placeId = placeFolder.name;
-        const newPath = `${placeId}.jpg`;
-
-        // Check if already migrated
-        const { data: existingBlob } = await supabase.storage
-          .from(BUCKET)
-          .download(newPath);
-
-        if (existingBlob) {
-          skipped.push(placeId);
-          continue;
-        }
-
-        // Walk into places/{placeId}/photos/{photoRef}/{size}
-        const { data: photosFolder } = await supabase.storage
-          .from(BUCKET)
-          .list(`places/${placeId}/photos`, { limit: 1 });
-
-        if (!photosFolder || photosFolder.length === 0) {
-          skipped.push(`${placeId} (no photos subfolder)`);
-          continue;
-        }
-
-        const photoRef = photosFolder[0].name;
-
-        // List size variants
-        const { data: sizeFiles } = await supabase.storage
-          .from(BUCKET)
-          .list(`places/${placeId}/photos/${photoRef}`, { limit: 10 });
-
-        if (!sizeFiles || sizeFiles.length === 0) {
-          skipped.push(`${placeId} (no size files)`);
-          continue;
-        }
-
-        // Pick first size variant
-        const sizeFile = sizeFiles[0].name;
-        const oldPath = `places/${placeId}/photos/${photoRef}/${sizeFile}`;
-
-        // Download old file
-        const { data: blob, error: dlError } = await supabase.storage
-          .from(BUCKET)
-          .download(oldPath);
-
-        if (dlError || !blob) {
-          errors.push(`Download failed for ${oldPath}: ${dlError?.message}`);
-          continue;
-        }
-
-        // Upload to new flat path
-        const buffer = await blob.arrayBuffer();
-        const { error: uploadError } = await supabase.storage
-          .from(BUCKET)
-          .upload(newPath, buffer, { contentType: blob.type || 'image/jpeg', upsert: false });
-
-        if (uploadError) {
-          if (uploadError.message.includes('already exists')) {
-            skipped.push(placeId);
-          } else {
-            errors.push(`Upload failed for ${newPath}: ${uploadError.message}`);
-          }
-          continue;
-        }
-
-        // Delete ALL old files for this place (all size variants, all photo refs)
-        const { data: allPhotoRefs } = await supabase.storage
-          .from(BUCKET)
-          .list(`places/${placeId}/photos`, { limit: 100 });
-
-        if (allPhotoRefs) {
-          for (const ref of allPhotoRefs) {
-            const { data: allSizes } = await supabase.storage
-              .from(BUCKET)
-              .list(`places/${placeId}/photos/${ref.name}`, { limit: 100 });
-
-            if (allSizes) {
-              const pathsToDelete = allSizes.map(s => `places/${placeId}/photos/${ref.name}/${s.name}`);
-              if (pathsToDelete.length > 0) {
-                await supabase.storage.from(BUCKET).remove(pathsToDelete);
-              }
-            }
-          }
-        }
-
-        migrated.push(placeId);
-      }
-
-      if (files.length < limit) break;
-      offset += limit;
+    if (listError) {
+      return new Response(JSON.stringify({ error: listError.message }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    return new Response(
-      JSON.stringify({
-        migrated: migrated.length,
-        skipped: skipped.length,
-        errors: errors.length,
-        migratedIds: migrated,
-        skippedIds: skipped,
-        errorDetails: errors,
-      }, null, 2),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    if (!files || files.length === 0) {
+      return new Response(JSON.stringify({
+        done: true, message: 'No more files to migrate',
+        migrated: 0, skipped: 0, errors: 0
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    for (const placeFolder of files) {
+      if (!placeFolder.name) continue;
+      const placeId = placeFolder.name;
+      const newPath = `${placeId}.jpg`;
+
+      // Check if already migrated
+      const { data: existingBlob } = await supabase.storage.from(BUCKET).download(newPath);
+      if (existingBlob) {
+        skipped.push(placeId);
+        continue;
+      }
+
+      // Walk into places/{placeId}/photos/{photoRef}/{size}
+      const { data: photosFolder } = await supabase.storage
+        .from(BUCKET)
+        .list(`places/${placeId}/photos`, { limit: 1 });
+
+      if (!photosFolder || photosFolder.length === 0) {
+        skipped.push(`${placeId} (no photos subfolder)`);
+        continue;
+      }
+
+      const photoRef = photosFolder[0].name;
+      const { data: sizeFiles } = await supabase.storage
+        .from(BUCKET)
+        .list(`places/${placeId}/photos/${photoRef}`, { limit: 10 });
+
+      if (!sizeFiles || sizeFiles.length === 0) {
+        skipped.push(`${placeId} (no size files)`);
+        continue;
+      }
+
+      const sizeFile = sizeFiles[0].name;
+      const oldPath = `places/${placeId}/photos/${photoRef}/${sizeFile}`;
+
+      // Download old file
+      const { data: blob, error: dlError } = await supabase.storage.from(BUCKET).download(oldPath);
+      if (dlError || !blob) {
+        errors.push(`Download failed: ${oldPath} - ${dlError?.message}`);
+        continue;
+      }
+
+      // Upload to new flat path
+      const buffer = await blob.arrayBuffer();
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(newPath, buffer, { contentType: blob.type || 'image/jpeg', upsert: false });
+
+      if (uploadError) {
+        if (uploadError.message.includes('already exists')) {
+          skipped.push(placeId);
+        } else {
+          errors.push(`Upload failed: ${newPath} - ${uploadError.message}`);
+        }
+        continue;
+      }
+
+      // Delete old files for this place
+      const { data: allPhotoRefs } = await supabase.storage
+        .from(BUCKET)
+        .list(`places/${placeId}/photos`, { limit: 100 });
+
+      if (allPhotoRefs) {
+        for (const ref of allPhotoRefs) {
+          const { data: allSizes } = await supabase.storage
+            .from(BUCKET)
+            .list(`places/${placeId}/photos/${ref.name}`, { limit: 100 });
+          if (allSizes) {
+            const paths = allSizes.map(s => `places/${placeId}/photos/${ref.name}/${s.name}`);
+            if (paths.length > 0) await supabase.storage.from(BUCKET).remove(paths);
+          }
+        }
+      }
+
+      migrated.push(placeId);
+    }
+
+    const hasMore = files.length === BATCH_SIZE;
+
+    return new Response(JSON.stringify({
+      done: !hasMore,
+      nextOffset: hasMore ? offset + BATCH_SIZE : null,
+      migrated: migrated.length,
+      skipped: skipped.length,
+      errors: errors.length,
+      migratedIds: migrated,
+      skippedIds: skipped,
+      errorDetails: errors,
+    }, null, 2), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
