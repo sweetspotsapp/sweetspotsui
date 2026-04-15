@@ -17,10 +17,7 @@ const categoryColors = [
   { name: "Red", value: "from-red-500 to-rose-600" },
 ];
 
-const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
-  const category = categories?.[0] || "place";
-  return `https://source.unsplash.com/100x100/?${encodeURIComponent(`${category} ${name}`)}`;
-};
+import { getStoragePhotoUrl } from "@/lib/photoLoader";
 
 const CategoryEditor = ({ onClose, editCategory }: CategoryEditorProps) => {
   const { savedPlaceIds, rankedPlaces, createCategory, updateCategory } = useApp();
@@ -125,9 +122,10 @@ const CategoryEditor = ({ onClose, editCategory }: CategoryEditorProps) => {
                   )}
                 >
                   <img 
-                    src={getPlaceholderImage(place.name, place.categories)} 
+                    src={getStoragePhotoUrl(place.place_id)} 
                     alt={place.name}
                     className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-muted"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                   <div className="flex-1 text-left min-w-0">
                     <h3 className="font-medium text-foreground text-sm line-clamp-1">{place.name}</h3>

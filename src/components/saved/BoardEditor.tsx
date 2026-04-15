@@ -26,10 +26,7 @@ const categoryColors = [
   { name: "Pink", value: "from-pink-400 to-fuchsia-600" },
 ];
 
-const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
-  const category = categories?.[0] || "place";
-  return `https://source.unsplash.com/100x100/?${encodeURIComponent(`${category} ${name}`)}`;
-};
+import { getStoragePhotoUrl } from "@/lib/photoLoader";
 
 const BoardEditor = ({ onClose, editBoard, savedPlaces = [] }: BoardEditorProps) => {
   const { createBoard, updateBoard, addPlaceToBoard, removePlaceFromBoard } = useBoards();
@@ -126,7 +123,7 @@ const BoardEditor = ({ onClose, editBoard, savedPlaces = [] }: BoardEditorProps)
                     return place ? (
                       <img
                         key={placeId}
-                        src={place.photos?.[0] || getPlaceholderImage(place.name, place.categories)}
+                        src={place.photos?.[0] || getStoragePhotoUrl(place.place_id)}
                         alt=""
                         className="w-full h-full object-cover rounded-sm"
                       />
@@ -208,7 +205,7 @@ const BoardEditor = ({ onClose, editBoard, savedPlaces = [] }: BoardEditorProps)
                     )}
                   >
                     <img 
-                      src={place.photos?.[0] || getPlaceholderImage(place.name, place.categories)} 
+                      src={place.photos?.[0] || getStoragePhotoUrl(place.place_id)} 
                       alt={place.name}
                       className="w-full h-full object-cover"
                     />

@@ -102,8 +102,8 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           name: r.places.name,
           rating: r.places.rating,
           image: r.places.photo_name
-            ? `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(r.places.photo_name)}&maxWidthPx=400`
-            : `https://source.unsplash.com/400x300/?place&${r.places.name?.slice(0, 3)}`,
+            ? `${supabaseUrl}/storage/v1/object/public/place-photos/${r.place_id}.jpg`
+            : `${supabaseUrl}/functions/v1/place-photo?place_id=${encodeURIComponent(r.place_id)}&maxWidthPx=400&maxHeightPx=400`,
         })));
       }
       setLoading(false);
