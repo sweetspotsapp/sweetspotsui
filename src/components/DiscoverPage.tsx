@@ -2,14 +2,14 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import LoginReminderBanner from "./LoginReminderBanner";
-import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, Map, List, ArrowRight } from "lucide-react";
+import { ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, Map, List, ArrowRight } from "lucide-react";
 import SweetSpotsLoader from "./SweetSpotsLoader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
-import TopPickCard from "./TopPickCard";
+
 import TopPicksSection from "./TopPicksSection";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
@@ -176,8 +176,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, onboardingData, setOnboardingData } = useApp();
-  const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
-  const { location: userLocation, setManualLocation } = useLocation();
+  const { search, isSearching, error: searchError, clearError } = useUnifiedSearch();
+  const { location: userLocation } = useLocation();
   const { isPro } = useSubscription();
   const { searchesLeft, hasReachedLimit, dailyLimit, isAdmin, increment: incrementSearchCount } = useSearchLimit(isPro);
   const { checkLimit: checkAnonLimit, recordUsage: recordAnonUsage, gateType: anonGateType, gateMessage: anonGateMessage, dismissGate: dismissAnonGate } = useAnonLimits();
@@ -486,7 +486,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     finally { setIsInitialLoading(false); }
   };
 
-  const handleClearSearch = () => { setSearchValue(""); setUserMood(""); };
+  const _handleClearSearch = () => { setSearchValue(""); setUserMood(""); };
   const removeFilter = (filterId: string) => { const n = new Set(activeFilters); n.delete(filterId); setActiveFilters(n); };
 
   const handleLocationChange = (newLocation: string) => {

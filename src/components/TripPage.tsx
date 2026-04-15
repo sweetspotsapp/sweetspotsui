@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, CalendarDays, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2, CheckCircle2 } from "lucide-react";
+import { Plus, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2, CheckCircle2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,7 +45,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     savedTrips, sharedTrips, pendingInvites, isLoading,
     saveTrip, deleteTrip, completeTrip, acceptInvite, ignoreInvite,
   } = useTrip();
-  const { hasReachedLimit: hasReachedTripLimit, tripsUsedThisMonth, monthlyLimit, increment: incrementTripCount } = useTripLimit(isPro);
+  const { hasReachedLimit: hasReachedTripLimit, increment: incrementTripCount } = useTripLimit(isPro);
   const liveTrip = useLiveTrip(savedTrips);
 
   const [phase, setPhase] = useState<Phase>("list");
@@ -81,6 +81,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
             name: boardName ? `${boardName} Trip` : "",
             destination: "",
             startDate: "",
+            endDate: "",
             vibes: [],
             budget: "mid-range",
             groupSize: 2,

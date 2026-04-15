@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigation, DollarSign, Clock, ChevronDown, ChevronUp, Info, ExternalLink } from 'lucide-react';
+import { DollarSign, Clock, ChevronDown, ChevronUp, Info, ExternalLink } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,

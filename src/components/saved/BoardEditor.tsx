@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Check, Image } from "lucide-react";
 import { useBoards, Board } from "@/hooks/useBoards";
-import { useSavedPlaces } from "@/hooks/useSavedPlaces";
+
 import { cn } from "@/lib/utils";
 
 interface BoardEditorProps {

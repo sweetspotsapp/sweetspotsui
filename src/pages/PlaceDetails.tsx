@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { haversineKm } from '@/lib/placeUtils';
-import { ArrowLeft, Star, MapPin, DollarSign, Search } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -310,9 +310,9 @@ const PlaceDetailsPage = () => {
   } = useSavedPlaces();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
   const [relatedPlaces, setRelatedPlaces] = useState<RelatedPlace[]>([]);
-  const [aiSimilarPlaces, setAiSimilarPlaces] = useState<RelatedPlace[]>([]);
+  const [_aiSimilarPlaces, setAiSimilarPlaces] = useState<RelatedPlace[]>([]);
   const [isLoadingAiSimilar, setIsLoadingAiSimilar] = useState(false);
-  const [hasLoadedAiSimilar, setHasLoadedAiSimilar] = useState(false);
+  const [_hasLoadedAiSimilar, setHasLoadedAiSimilar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
@@ -321,7 +321,7 @@ const PlaceDetailsPage = () => {
   } | null>(null);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [showSaveToBoardDialog, setShowSaveToBoardDialog] = useState(false);
-  const { user } = useAuth();
+  const { } = useAuth();
 
   // Handle back navigation - return to board view if we came from one
   const handleBack = () => {
@@ -668,7 +668,7 @@ const PlaceDetailsPage = () => {
     }
     toast.success('Saved to your spots!');
   };
-  const handleFindSimilarVibes = async () => {
+  const _handleFindSimilarVibes = async () => {
     if (!placeId || isLoadingAiSimilar) return;
     setIsLoadingAiSimilar(true);
     try {

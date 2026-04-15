@@ -136,7 +136,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Auth dialog state for prompting login when saving
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [pendingSavePlaceId, setPendingSavePlaceId] = useState<string | null>(null);
+  const [pendingSavePlaceId] = useState<string | null>(null);
   
   // Free actions tracking for soft wall (persisted in sessionStorage)
   const [freeActionsUsed, setFreeActionsUsed] = useState<number>(() => {

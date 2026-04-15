@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Star, Heart, Navigation, Sparkles, Clock } from "lucide-react";
+import { Star, Heart, Navigation, Clock } from "lucide-react";
 import { MockPlace } from "./PlaceCardCompact";
 
 interface TopPickCardProps {

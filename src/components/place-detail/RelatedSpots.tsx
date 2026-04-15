@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Star, Navigation, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 interface RelatedPlace {
   id: string;
   name: string;

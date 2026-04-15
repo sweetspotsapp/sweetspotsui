@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { LucideIcon, Moon, Volume2, Coffee, Users, Sparkles, Camera, Utensils, MapPin, Music, Wine, Heart, Compass } from "lucide-react";
+import { LucideIcon, Moon, Volume2, Coffee, Users, Camera, Utensils, Music, Wine, Heart, Compass } from "lucide-react";
 
 interface VibeScore {
   label: string;

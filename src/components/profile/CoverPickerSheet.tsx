@@ -1,4 +1,4 @@
-import { Upload, Loader2 } from "lucide-react";
+import { Upload } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useRef } from "react";

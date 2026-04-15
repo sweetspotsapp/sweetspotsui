@@ -6,8 +6,6 @@ import { useApp } from "@/context/AppContext";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { useSubscription } from "@/hooks/useSubscription";
 import { 
-  User, 
-  Settings, 
   Sun, 
   Moon, 
   Crown, 
@@ -17,8 +15,6 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface ProfileSlideMenuProps {

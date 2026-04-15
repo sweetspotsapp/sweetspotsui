@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
+import { Plus, SortAsc, Loader2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -37,9 +37,9 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const routerLocation = useRouterLocation();
   const { user } = useAuth();
   const { location: userLocation } = useLocation();
-  const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, updateBoard, refetch: refetchBoards } = useBoards();
+  const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, refetch: refetchBoards } = useBoards();
   const { savedPlaceIds, isLoadingSavedPlaces, toggleSave, removeSavedPlaceIds } = useApp();
-  const { toast } = useToast();
+  const _toast = useToast();
   const [savedPlaces, setSavedPlaces] = useState<RankedPlace[]>([]);
   const [placeImages, setPlaceImages] = useState<Record<string, string[]>>({});
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);

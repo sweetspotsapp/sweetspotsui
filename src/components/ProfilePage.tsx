@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, TrendingUp, Loader2, Settings, ChevronRight, RotateCcw } from "lucide-react";
 import { useApp } from "@/context/AppContext";

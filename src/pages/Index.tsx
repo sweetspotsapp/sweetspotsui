@@ -5,8 +5,6 @@ import HomePage from "@/components/HomePage";
 import DiscoverPage from "@/components/DiscoverPage";
 import SavedPage from "@/components/SavedPage";
 import TripPage from "@/components/TripPage";
-import ProfilePage from "@/components/ProfilePage";
-import MapPage from "@/components/MapPage";
 import EntryScreen from "@/components/EntryScreen";
 import LoadingTransition from "@/components/LoadingTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -22,7 +20,7 @@ type TabType = "home" | "discover" | "saved" | "trip";
 type AppState = "onboarding" | "loading" | "main";
 
 const Index = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const {
     hasCompletedOnboarding,
     setUserMood,
@@ -90,7 +88,7 @@ const Index = () => {
     }, 800);
   };
 
-  const handleMoodSubmit = (mood: string) => {
+  const _handleMoodSubmit = (mood: string) => {
     setUserMood(mood);
     setAppState("loading");
     setTimeout(() => { completeOnboarding(mood, []); setAppState("main"); }, 1000);

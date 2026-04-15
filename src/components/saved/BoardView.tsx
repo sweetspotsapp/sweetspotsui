@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List, Link2, Search, ExternalLink, CalendarDays } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Heart, Sparkles, Loader2, Map, List, Search, ExternalLink, CalendarDays } from "lucide-react";
 import { SS_BOARD_TO_TRIP } from "@/lib/storageKeys";
 import ImportLinkDialog from "./ImportLinkDialog";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -38,7 +38,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   const { location: userLocation } = useLocation();
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
-  const [filterBy] = useState<FilterOption>("all");
+  const [_filterBy] = useState<FilterOption>("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places);
   const [showAddSpotMenu, setShowAddSpotMenu] = useState(false);
@@ -85,7 +85,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           if (batchData) allData = allData.concat(batchData);
         }
         const data = allData;
-        const error = null;
+        const _error = null;
         
         const fetchedPlaces: RankedPlace[] = (data || []).map(place => ({
           place_id: place.place_id,
