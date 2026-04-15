@@ -310,9 +310,9 @@ const PlaceDetailsPage = () => {
   } = useSavedPlaces();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
   const [relatedPlaces, setRelatedPlaces] = useState<RelatedPlace[]>([]);
-  const [_aiSimilarPlaces, setAiSimilarPlaces] = useState<RelatedPlace[]>([]);
-  const [isLoadingAiSimilar, setIsLoadingAiSimilar] = useState(false);
-  const [_hasLoadedAiSimilar, setHasLoadedAiSimilar] = useState(false);
+  const [_aiSimilarPlaces] = useState<RelatedPlace[]>([]);
+  const [isLoadingAiSimilar] = useState(false);
+  const [_hasLoadedAiSimilar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
