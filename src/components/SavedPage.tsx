@@ -37,7 +37,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const routerLocation = useRouterLocation();
   const { user } = useAuth();
   const { location: userLocation } = useLocation();
-  const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, refetch: refetchBoards } = useBoards();
+  const { boards, isLoading: boardsLoading, deleteBoard, refetch: refetchBoards } = useBoards();
   const { savedPlaceIds, isLoadingSavedPlaces, toggleSave, removeSavedPlaceIds } = useApp();
   useToast();
   const [savedPlaces, setSavedPlaces] = useState<RankedPlace[]>([]);
