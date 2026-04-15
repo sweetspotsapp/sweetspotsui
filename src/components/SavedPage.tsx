@@ -237,35 +237,6 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
     setSelectedBoard(null);
   };
 
-  const handleRemoveFromBoard = async (placeId: string) => { // eslint-disable-line @typescript-eslint/no-unused-vars
-    isRemovingRef.current = true;
-
-    try {
-      if (selectedBoard === "all") {
-        // Immediately update local state (optimistic)
-        setSavedPlaces(prev => prev.filter(p => p.place_id !== placeId));
-
-        // Remove from saved places in DB (also clears from all boards)
-        await toggleSave(placeId);
-
-        // Refresh boards so counts + board.placeIds update immediately
-        await refetchBoards();
-        return;
-      }
-
-      if (selectedBoard) {
-        await removePlaceFromBoard(selectedBoard.id, placeId);
-        // Update the selectedBoard state as well (optimistic)
-        setSelectedBoard(prev =>
-          prev && prev !== "all"
-            ? { ...prev, placeIds: prev.placeIds.filter(id => id !== placeId) }
-            : prev
-        );
-      }
-    } finally {
-      isRemovingRef.current = false;
-    }
-  };
 
   const isLoading = boardsLoading || isLoadingSavedPlaces || isLoadingPlaces;
   const hasBoards = boards.length > 0 || savedPlaces.length > 0;
