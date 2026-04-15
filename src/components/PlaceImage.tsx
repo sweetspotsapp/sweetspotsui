@@ -9,7 +9,6 @@ interface PlaceImageProps {
   className?: string;
   maxWidth?: number;
   maxHeight?: number;
-  fallbackSrc?: string;
 }
 
 /**
@@ -23,7 +22,6 @@ const PlaceImage = ({
   className,
   maxWidth = 400,
   maxHeight = 400,
-  fallbackSrc,
 }: PlaceImageProps) => {
   const [src, setSrc] = useState<string | null>(() =>
     placeId ? getStoragePhotoUrl(placeId) : null
@@ -48,9 +46,6 @@ const PlaceImage = ({
   }, [photoName, placeId, triedEdge, maxWidth, maxHeight]);
 
   if (failed || !src) {
-    if (fallbackSrc) {
-      return <img src={fallbackSrc} alt={alt} className={className} />;
-    }
     return (
       <div className={cn("bg-muted flex items-center justify-center", className)}>
         <span className="text-muted-foreground/40 text-xs">No photo</span>
