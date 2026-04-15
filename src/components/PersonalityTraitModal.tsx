@@ -1,5 +1,4 @@
 import { X, Sparkles, RotateCcw, ArrowRight, Loader2 } from "lucide-react";
-import { X, Sparkles, RotateCcw, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import type { PersonalityTrait } from "@/hooks/useVibeDNA";
 
