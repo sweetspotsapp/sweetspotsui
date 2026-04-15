@@ -21,7 +21,7 @@ const TABLES_ORDER = [
   "shared_trips",     // references trips
 ];
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
