@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const BUCKET = 'place-photos';
-const BATCH_SIZE = 50; // Process 50 places per invocation
+const BATCH_SIZE = 10; // Process 10 places per invocation to avoid timeout
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
