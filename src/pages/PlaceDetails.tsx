@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { haversineKm } from '@/lib/placeUtils';
-import { ArrowLeft, Star, MapPin, DollarSign, Search } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,6 +21,7 @@ import BottomNav from '@/components/BottomNav';
 import SaveToBoardDialog from '@/components/saved/SaveToBoardDialog';
 import StreetViewPreview from '@/components/place-detail/StreetViewPreview';
 import { useAuth } from '@/hooks/useAuth';
+import { getStoragePhotoUrl } from '@/lib/photoLoader';
 interface OpeningHoursData {
   open_now: boolean;
   weekday_text: string[];
@@ -310,9 +311,6 @@ const PlaceDetailsPage = () => {
   } = useSavedPlaces();
   const [place, setPlace] = useState<PlaceDetails | null>(null);
   const [relatedPlaces, setRelatedPlaces] = useState<RelatedPlace[]>([]);
-  const [aiSimilarPlaces, setAiSimilarPlaces] = useState<RelatedPlace[]>([]);
-  const [isLoadingAiSimilar, setIsLoadingAiSimilar] = useState(false);
-  const [hasLoadedAiSimilar, setHasLoadedAiSimilar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
@@ -321,7 +319,7 @@ const PlaceDetailsPage = () => {
   } | null>(null);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [showSaveToBoardDialog, setShowSaveToBoardDialog] = useState(false);
-  const { user } = useAuth();
+  const { } = useAuth();
 
   // Handle back navigation - return to board view if we came from one
   const handleBack = () => {
@@ -385,10 +383,10 @@ const PlaceDetailsPage = () => {
       // Pre-load thumbnail images for faster display
       placeIds.forEach(id => {
         const placeData = placesData?.find(p => p.place_id === id);
-        const photos = placeData?.photos as string[] | null;
-        if (photos?.[0]) {
+        
+        if (placeData?.place_id) {
           const img = new Image();
-          img.src = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(photos[0])}`;
+          img.src = getStoragePhotoUrl(placeData.place_id);
         }
       });
     } catch (err) {
@@ -429,7 +427,7 @@ const PlaceDetailsPage = () => {
       const formattedRelated: RelatedPlace[] = topRelated.map(p => ({
         id: p.place_id,
         name: p.name,
-        image: p.photo_name ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}` : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+        image: getStoragePhotoUrl(p.place_id),
         rating: p.rating || 4.0,
         distance: userLocation && p.lat && p.lng ? Math.round(haversineKm(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round(p.distanceFromPlace * 10) / 10
       }));
@@ -668,48 +666,6 @@ const PlaceDetailsPage = () => {
     }
     toast.success('Saved to your spots!');
   };
-  const handleFindSimilarVibes = async () => {
-    if (!placeId || isLoadingAiSimilar) return;
-    setIsLoadingAiSimilar(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-similar-vibes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          placeId
-        })
-      });
-      if (!response.ok) {
-        if (response.status === 429) {
-          toast.error('Too many requests. Please try again later.');
-          return;
-        }
-        throw new Error('Failed to find similar places');
-      }
-      const data = await response.json();
-      if (data.similarPlaces && data.similarPlaces.length > 0) {
-        const formatted: RelatedPlace[] = data.similarPlaces.map((p: any) => ({
-          id: p.place_id,
-          name: p.name,
-          image: p.photo_name ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(p.photo_name)}` : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
-          rating: p.rating || 4.0,
-          distance: userLocation && p.lat && p.lng ? Math.round(haversineKm(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round((Math.random() * 3 + 0.5) * 10) / 10
-        }));
-        setAiSimilarPlaces(formatted);
-        setHasLoadedAiSimilar(true);
-        toast.success('Found places with similar vibes!');
-      } else {
-        toast.info('No similar places found');
-      }
-    } catch (error) {
-      console.error('Error finding similar vibes:', error);
-      toast.error('Failed to find similar places');
-    } finally {
-      setIsLoadingAiSimilar(false);
-    }
-  };
   if (isLoading) {
     return <div className="min-h-screen bg-background max-w-[420px] mx-auto">
         <div className="absolute top-4 left-4 z-30">
@@ -763,9 +719,8 @@ const PlaceDetailsPage = () => {
   const saved = placeId ? isSaved(placeId) : false;
   const priceRange = getPriceRangeFromLevel(place.price_level, place.categories);
 
-  // Generate image URLs from photos array (real Google photos)
-  const basePhotoUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/place-photo?photo_name=`;
-  const placeImages = place.photos && place.photos.length > 0 ? place.photos.map(photoName => `${basePhotoUrl}${encodeURIComponent(photoName)}`) : place.photo_name ? [`${basePhotoUrl}${encodeURIComponent(place.photo_name)}`] : ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
+  // Generate image URL using flat storage format
+  const placeImages = placeId ? [getStoragePhotoUrl(placeId)] : [];
 
   // Parse opening hours for display
   const openingHoursDisplay = parseOpeningHours(place.opening_hours);

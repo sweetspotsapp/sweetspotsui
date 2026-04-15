@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, User, Settings, SortAsc, Loader2, Link2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
+import { Plus, SortAsc, Loader2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -37,9 +37,9 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const routerLocation = useRouterLocation();
   const { user } = useAuth();
   const { location: userLocation } = useLocation();
-  const { boards, isLoading: boardsLoading, deleteBoard, removePlaceFromBoard, updateBoard, refetch: refetchBoards } = useBoards();
+  const { boards, isLoading: boardsLoading, deleteBoard, refetch: refetchBoards } = useBoards();
   const { savedPlaceIds, isLoadingSavedPlaces, toggleSave, removeSavedPlaceIds } = useApp();
-  const { toast } = useToast();
+  useToast();
   const [savedPlaces, setSavedPlaces] = useState<RankedPlace[]>([]);
   const [placeImages, setPlaceImages] = useState<Record<string, string[]>>({});
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
@@ -139,8 +139,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
             score: 0,
             why: place.ai_reason || '',
             photo_name: place.photo_name,
-            photos: place.photos?.slice(0, 3).map((p: string) => getPlacePhotoUrl(p)!).filter(Boolean)
-              || (place.photo_name ? [getPlacePhotoUrl(place.photo_name)!] : undefined),
+            photos: place.place_id ? [getPlacePhotoUrl(place.place_id)!].filter(Boolean) : undefined,
             filter_tags: place.filter_tags,
             price_level: place.price_level,
           };
@@ -148,28 +147,13 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
         setSavedPlaces(places);
 
-        // Build photo map - prioritize photo_name (most reliable), then photos array
+        // Build photo map using flat place_id storage URLs
         const photoMap: Record<string, string[]> = {};
         
         for (const place of data || []) {
-          const urls: string[] = [];
-          
-          // photo_name is the most reliable reference - always use it first
-          const mainUrl = getPlacePhotoUrl(place.photo_name);
-          if (mainUrl) urls.push(mainUrl);
-
-          // Add photos array entries that differ from photo_name
-          if (place.photos && place.photos.length > 0) {
-            for (const photoPath of place.photos.slice(0, 3)) {
-              if (photoPath !== place.photo_name) {
-                const url = getPlacePhotoUrl(photoPath);
-                if (url) urls.push(url);
-              }
-            }
-          }
-          
-          if (urls.length > 0) {
-            photoMap[place.place_id] = urls.slice(0, 3);
+          const url = getPlacePhotoUrl(place.place_id);
+          if (url) {
+            photoMap[place.place_id] = [url];
           }
         }
         
@@ -237,35 +221,6 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
     setSelectedBoard(null);
   };
 
-  const handleRemoveFromBoard = async (placeId: string) => {
-    isRemovingRef.current = true;
-
-    try {
-      if (selectedBoard === "all") {
-        // Immediately update local state (optimistic)
-        setSavedPlaces(prev => prev.filter(p => p.place_id !== placeId));
-
-        // Remove from saved places in DB (also clears from all boards)
-        await toggleSave(placeId);
-
-        // Refresh boards so counts + board.placeIds update immediately
-        await refetchBoards();
-        return;
-      }
-
-      if (selectedBoard) {
-        await removePlaceFromBoard(selectedBoard.id, placeId);
-        // Update the selectedBoard state as well (optimistic)
-        setSelectedBoard(prev =>
-          prev && prev !== "all"
-            ? { ...prev, placeIds: prev.placeIds.filter(id => id !== placeId) }
-            : prev
-        );
-      }
-    } finally {
-      isRemovingRef.current = false;
-    }
-  };
 
   const isLoading = boardsLoading || isLoadingSavedPlaces || isLoadingPlaces;
   const hasBoards = boards.length > 0 || savedPlaces.length > 0;

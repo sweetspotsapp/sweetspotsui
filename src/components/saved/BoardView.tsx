@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, DollarSign, Heart, Sparkles, Loader2, Map, List, Link2, Search, ExternalLink, CalendarDays } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2, MapPin, Star, SortAsc, Heart, Sparkles, Loader2, Map, List, Search, ExternalLink, CalendarDays } from "lucide-react";
 import { SS_BOARD_TO_TRIP } from "@/lib/storageKeys";
 import ImportLinkDialog from "./ImportLinkDialog";
 import type { RankedPlace } from "@/hooks/useSearch";
@@ -38,7 +38,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
   const { location: userLocation } = useLocation();
   const [showMenu, setShowMenu] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
-  const [filterBy] = useState<FilterOption>("all");
+  const [_filterBy] = useState<FilterOption>("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [localPlaces, setLocalPlaces] = useState<RankedPlace[]>(places);
   const [showAddSpotMenu, setShowAddSpotMenu] = useState(false);
@@ -85,7 +85,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           if (batchData) allData = allData.concat(batchData);
         }
         const data = allData;
-        const error = null;
+        void 0; // error handling done via data check
         
         const fetchedPlaces: RankedPlace[] = (data || []).map(place => ({
           place_id: place.place_id,
@@ -102,8 +102,7 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
           score: 0,
           why: place.ai_reason || '',
           photo_name: place.photo_name,
-          photos: place.photos?.slice(0, 3).map((p: string) => getPlacePhotoUrl(p)!).filter(Boolean)
-            || (place.photo_name ? [getPlacePhotoUrl(place.photo_name)!] : undefined),
+          photos: place.place_id ? [getPlacePhotoUrl(place.place_id)!].filter(Boolean) : undefined,
           filter_tags: place.filter_tags,
           price_level: place.price_level,
         }));
@@ -211,13 +210,8 @@ const BoardView = ({ board, places, placeImages = {}, onClose, onEdit, onDelete,
     if (place.photos?.[0]) {
       const photo = place.photos[0];
       if (photo.startsWith('http')) return photo;
-      return getPlacePhotoUrl(photo) || '';
     }
-    if (place.photo_name) {
-      return getPlacePhotoUrl(place.photo_name) || '';
-    }
-    // Fallback
-    return `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400`;
+    return getPlacePhotoUrl(place.place_id) || '';
   };
 
   const handlePlaceClick = (place: RankedPlace) => {

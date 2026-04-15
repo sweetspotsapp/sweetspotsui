@@ -9,11 +9,7 @@ interface CategoryDetailProps {
   onEdit: () => void;
 }
 
-const getPlaceholderImage = (name: string, categories?: string[] | null): string => {
-  const category = categories?.[0] || "place";
-  const encoded = encodeURIComponent(`${category} ${name}`);
-  return `https://source.unsplash.com/400x600/?${encoded}`;
-};
+import { getStoragePhotoUrl } from "@/lib/photoLoader";
 
 const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
   const navigate = useNavigate();
@@ -105,9 +101,10 @@ const CategoryDetail = ({ category, onClose, onEdit }: CategoryDetailProps) => {
                   onClick={() => handlePlaceClick(place.place_id)}
                 >
                   <img 
-                    src={getPlaceholderImage(place.name, place.categories)} 
+                    src={getStoragePhotoUrl(place.place_id)} 
                     alt={place.name}
                     className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-muted"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <h3 className="font-semibold text-foreground text-sm line-clamp-1">{place.name}</h3>

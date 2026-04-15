@@ -61,7 +61,7 @@ const ImageCarousel = ({ images, placeName }: ImageCarouselProps) => {
               alt={`${placeName} - Photo ${i + 1}`}
               className="w-full h-full object-cover"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = `https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800`;
+                (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
             {/* Gradient overlay at bottom */}

@@ -1,15 +1,15 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, Home, Plane, X, MapPin, Calendar, Users, Compass, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, X, MapPin, Calendar, Users, CheckCircle2 } from "lucide-react";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
 import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import DaySection from "./DaySection";
 import TripMapView from "./TripMapView";
-import type { TripData, TripDay, SwapAlternative, TripParams } from "@/hooks/useTrip";
+import type { TripData, SwapAlternative, TripParams } from "@/hooks/useTrip";
 import type { ActivityStatus } from "@/hooks/useLiveTrip";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
-import { useWeatherForecast, type DayForecast } from "@/hooks/useWeatherForecast";
+import { useWeatherForecast } from "@/hooks/useWeatherForecast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Small weather icon for trip info bar

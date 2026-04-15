@@ -2,14 +2,15 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import LoginReminderBanner from "./LoginReminderBanner";
-import { Menu, Search, ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, Map, List, ArrowRight } from "lucide-react";
+import { ChevronRight, ChevronLeft, ChevronDown, X, Settings, Loader2, MapPin, Sparkles, SlidersHorizontal, Map, List, ArrowRight } from "lucide-react";
 import SweetSpotsLoader from "./SweetSpotsLoader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
 import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
-import TopPickCard from "./TopPickCard";
+import { getStoragePhotoUrl } from "@/lib/photoLoader";
+
 import TopPicksSection from "./TopPicksSection";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
 import TravelPersonalityFilterModal, { FilterState } from "./TravelPersonalityFilterModal";
@@ -46,7 +47,7 @@ interface MockPlaceWithCoords extends MockPlace {
 const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   id: place.place_id,
   name: place.name,
-  image: place.photo_url || `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`,
+  image: place.photo_url || getStoragePhotoUrl(place.place_id),
   rating: place.rating || 4.0,
   distance_km: place.distance_meters ? Math.round(place.distance_meters / 100) / 10 : 1.0,
   categories: place.categories || [],
@@ -59,7 +60,8 @@ const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   is_open_now: place.is_open_now,
   ai_score: place.score,
   ratings_total: place.ratings_total || 0,
-  unique_vibes: place.unique_vibes
+  unique_vibes: place.unique_vibes,
+  photo_name: place.photo_name,
 });
 
 const FILTER_LABELS: Record<string, string> = {
@@ -176,8 +178,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { userMood, setUserMood, isSaved: isPlaceSaved, toggleSave: togglePlaceSave, onboardingData, setOnboardingData } = useApp();
-  const { search, isSearching, error: searchError, clearError, summary: searchSummary } = useUnifiedSearch();
-  const { location: userLocation, setManualLocation } = useLocation();
+  const { search, isSearching, error: searchError, clearError } = useUnifiedSearch();
+  const { location: userLocation } = useLocation();
   const { isPro } = useSubscription();
   const { searchesLeft, hasReachedLimit, dailyLimit, isAdmin, increment: incrementSearchCount } = useSearchLimit(isPro);
   const { checkLimit: checkAnonLimit, recordUsage: recordAnonUsage, gateType: anonGateType, gateMessage: anonGateMessage, dismissGate: dismissAnonGate } = useAnonLimits();
@@ -486,7 +488,7 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
     finally { setIsInitialLoading(false); }
   };
 
-  const handleClearSearch = () => { setSearchValue(""); setUserMood(""); };
+  void (() => { setSearchValue(""); setUserMood(""); }); // handleClearSearch available if needed
   const removeFilter = (filterId: string) => { const n = new Set(activeFilters); n.delete(filterId); setActiveFilters(n); };
 
   const handleLocationChange = (newLocation: string) => {
@@ -565,14 +567,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   }, [filteredResults]);
 
   const getPlaceImage = useCallback((place: RankedPlace) => {
-    if (place.photo_name) {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`;
-    }
-    const original = filteredResults.find((p) => p.id === place.place_id);
-    if (original?.image && !original.image.includes('unsplash')) return original.image;
-    return `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`;
-  }, [filteredResults]);
+    return getStoragePhotoUrl(place.place_id);
+  }, []);
 
   const handleMapPlaceClick = useCallback((place: RankedPlace) => {
     navigate(`/place/${place.place_id}`, { state: { ai_reason: place.ai_reason } });

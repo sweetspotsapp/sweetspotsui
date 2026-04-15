@@ -31,7 +31,7 @@ interface VirtualBoard {
 
 const BoardPicker = ({ selectedPlaceIds, onPlaceIdsChange, selectedBoardIds, onBoardIdsChange, destination, onBrowse }: BoardPickerProps) => {
   const { user } = useAuth();
-  const { boards, isLoading } = useBoards();
+  const { boards } = useBoards();
   const { savedPlaceIds } = useSavedPlaces();
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
   const [placesMap, setPlacesMap] = useState<Record<string, PlaceInfo[]>>({});
