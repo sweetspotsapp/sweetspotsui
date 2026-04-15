@@ -21,8 +21,8 @@ const TABLES_ORDER = [
   "shared_trips",
 ];
 
-const BATCH_SIZE = 100;
-const TIME_LIMIT_MS = 120_000; // stop after 120s to avoid 150s timeout
+const BATCH_SIZE = 50;
+const TIME_LIMIT_MS = 50_000; // stop after 50s to return before gateway timeout
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
