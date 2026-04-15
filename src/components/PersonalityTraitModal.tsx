@@ -77,7 +77,7 @@ const PersonalityTraitModal: React.FC<PersonalityTraitModalProps> = ({
   if (!trait) return null;
 
   const traitId = TRAIT_LABEL_TO_ID[trait.label];
-  const _isCustomVibe = !traitId;
+  void traitId; // isCustomVibe derivable from !traitId
   const insight = traitId ? (TRAIT_INSIGHTS[traitId] || {
     why: trait.description,
     based_on: "Your browsing and saving patterns across the app.",
