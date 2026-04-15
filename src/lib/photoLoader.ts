@@ -1,50 +1,40 @@
 /**
- * Photo loader — uses storage-first URLs directly, falling back to
- * edge function only when the <img> fires an error.
- * No HEAD requests — eliminates 1 HTTP call per photo.
+ * Photo loader — flat storage format: {placeId}.jpg
+ * Storage-first URLs, falling back to edge function on <img> error.
  */
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = 'place-photos';
 
 /**
- * Build the public storage URL for a cached photo.
+ * Build the public storage URL for a cached photo (flat: {placeId}.jpg).
  */
-export function getStoragePhotoUrl(photoName: string, maxWidth = 400, maxHeight = 400): string {
-  const storagePath = `${photoName}/${maxWidth}x${maxHeight}`;
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`;
+export function getStoragePhotoUrl(placeId: string): string {
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${placeId}.jpg`;
 }
 
 /**
  * Build the edge function URL (fallback that fetches from Google + caches).
  */
-export function getEdgeFunctionPhotoUrl(photoName: string, maxWidth = 400, maxHeight = 400): string {
-  return `${SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}`;
+export function getEdgeFunctionPhotoUrl(photoName: string, placeId: string, maxWidth = 400, maxHeight = 400): string {
+  return `${SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&place_id=${encodeURIComponent(placeId)}&maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}`;
 }
 
 /**
- * Returns the storage URL directly — no network check.
- * Components should use onError on <img> to fall back to getEdgeFunctionPhotoUrl.
+ * Convenience: build a place photo URL from a photo_name + place_id.
+ * Returns storage URL (flat) for direct access.
+ * Returns null when placeId is falsy.
  */
-export async function loadPhoto(photoName: string, maxWidth = 400, maxHeight = 400): Promise<string | null> {
-  return getStoragePhotoUrl(photoName, maxWidth, maxHeight);
+export function getPlacePhotoUrl(placeId: string | null | undefined): string | null {
+  if (!placeId) return null;
+  return getStoragePhotoUrl(placeId);
 }
 
 /**
- * Convenience: build a place photo URL from a photo_name string.
- * Returns null when photoName is falsy.
- * Use this everywhere instead of inline template strings.
+ * Convert a photos array into resolved photo URLs using place_id for storage.
+ * Since we store one photo per place_id, this returns the single storage URL.
  */
-export function getPlacePhotoUrl(photoName: string | null | undefined, maxWidth = 400): string | null {
-  if (!photoName) return null;
-  return `${SUPABASE_URL}/functions/v1/place-photo?photo_name=${encodeURIComponent(photoName)}&maxWidthPx=${maxWidth}`;
-}
-
-/**
- * Convert a photos array (raw photo_name strings or already-resolved URLs)
- * into an array of resolved photo URLs. Handles mixed inputs safely.
- */
-export function resolvePhotoUrls(photos: string[] | null | undefined, maxWidth = 400): string[] {
-  if (!photos || photos.length === 0) return [];
-  return photos.map(p => p.startsWith('http') ? p : getPlacePhotoUrl(p, maxWidth)!).filter(Boolean);
+export function resolvePhotoUrls(placeId: string | null | undefined): string[] {
+  if (!placeId) return [];
+  return [getStoragePhotoUrl(placeId)];
 }

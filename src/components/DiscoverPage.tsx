@@ -9,6 +9,7 @@ import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
+import { getStoragePhotoUrl } from "@/lib/photoLoader";
 
 import TopPicksSection from "./TopPicksSection";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";
@@ -565,9 +566,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   }, [filteredResults]);
 
   const getPlaceImage = useCallback((place: RankedPlace) => {
-    if (place.photo_name) {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      return `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(place.photo_name)}&maxWidthPx=400`;
+    if (place.place_id) {
+      return getStoragePhotoUrl(place.place_id);
     }
     const original = filteredResults.find((p) => p.id === place.place_id);
     if (original?.image && !original.image.includes('unsplash')) return original.image;

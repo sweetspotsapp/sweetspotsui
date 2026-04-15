@@ -228,7 +228,7 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
           // Add photo URLs to places
           const placesWithPhotos: UnifiedPlace[] = (data.places || []).map((place: UnifiedPlace) => ({
             ...place,
-            photo_url: getPlacePhotoUrl(place.photo_name),
+            photo_url: getPlacePhotoUrl(place.place_id),
           }));
 
           return {
