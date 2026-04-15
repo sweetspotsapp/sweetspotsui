@@ -427,7 +427,7 @@ const PlaceDetailsPage = () => {
       const formattedRelated: RelatedPlace[] = topRelated.map(p => ({
         id: p.place_id,
         name: p.name,
-        image: p.place_id ? getStoragePhotoUrl(p.place_id) : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400',
+        image: getStoragePhotoUrl(p.place_id),
         rating: p.rating || 4.0,
         distance: userLocation && p.lat && p.lng ? Math.round(haversineKm(userLocation.lat, userLocation.lng, p.lat, p.lng) * 10) / 10 : Math.round(p.distanceFromPlace * 10) / 10
       }));
@@ -720,7 +720,7 @@ const PlaceDetailsPage = () => {
   const priceRange = getPriceRangeFromLevel(place.price_level, place.categories);
 
   // Generate image URL using flat storage format
-  const placeImages = placeId ? [getStoragePhotoUrl(placeId)] : ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
+  const placeImages = placeId ? [getStoragePhotoUrl(placeId)] : [];
 
   // Parse opening hours for display
   const openingHoursDisplay = parseOpeningHours(place.opening_hours);

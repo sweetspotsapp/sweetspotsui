@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Navigation, Heart } from "lucide-react";
 import { MockPlace } from "@/components/PlaceCardCompact";
 import { useSavedPlaces } from "@/hooks/useSavedPlaces";
+import { getStoragePhotoUrl, getEdgeFunctionPhotoUrl } from "@/lib/photoLoader";
 
 interface LocationState {
   places: MockPlace[];
@@ -31,9 +32,10 @@ const CategorySeeAll = () => {
     navigate(`/place/${place.id}`, { state: { place } });
   };
 
-  const getPlaceholderImage = (name: string) => {
-    return `https://source.unsplash.com/400x600/?restaurant,food&${name.slice(0, 3)}`;
-  };
+  // Track image error state per place
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [triedEdge, setTriedEdge] = useState<Record<string, boolean>>({});
+  const [imgSrcs, setImgSrcs] = useState<Record<string, string>>({});
 
   // Get vibe tag from place data
   const getVibeTag = (place: MockPlace): string | null => {
@@ -81,9 +83,19 @@ const CategorySeeAll = () => {
         <div className="columns-2 md:columns-3 lg:columns-4 gap-3 space-y-3">
           {places.map((place, index) => {
             const saved = isSaved(place.id);
-            const imageUrl = place.image || getPlaceholderImage(place.name);
+            const imageUrl = imgSrcs[place.id] || place.image || getStoragePhotoUrl(place.id);
+            const hasError = imageErrors[place.id];
             // Vary heights for Pinterest effect
             const isLarge = index % 3 === 0;
+
+            const handleImgError = () => {
+              if (!triedEdge[place.id] && (place.photo_name || place.id)) {
+                setImgSrcs(prev => ({ ...prev, [place.id]: getEdgeFunctionPhotoUrl(place.photo_name || '', place.id, 400, 400) }));
+                setTriedEdge(prev => ({ ...prev, [place.id]: true }));
+              } else {
+                setImageErrors(prev => ({ ...prev, [place.id]: true }));
+              }
+            };
 
             return (
               <div
@@ -97,14 +109,18 @@ const CategorySeeAll = () => {
                   }`}
                 >
                   {/* Image */}
-                  <img
-                    src={imageUrl}
-                    alt={place.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = getPlaceholderImage(place.name);
-                    }}
-                  />
+                  {hasError ? (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <span className="text-muted-foreground/40 text-xs">No photo</span>
+                    </div>
+                  ) : (
+                    <img
+                      src={imageUrl}
+                      alt={place.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={handleImgError}
+                    />
+                  )}
 
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />

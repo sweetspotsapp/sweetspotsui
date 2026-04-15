@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Star, Heart, Navigation, Clock } from "lucide-react";
 import { MockPlace } from "./PlaceCardCompact";
+import { getEdgeFunctionPhotoUrl, getStoragePhotoUrl } from "@/lib/photoLoader";
 
 interface TopPickCardProps {
   place: MockPlace;
@@ -36,6 +37,8 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
   showDistance = true
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [triedEdge, setTriedEdge] = useState(false);
+  const [imgSrc, setImgSrc] = useState(place.image || getStoragePhotoUrl(place.id));
   const [isAnimating, setIsAnimating] = useState(false);
   const [flyingClone, setFlyingClone] = useState<{
     src: string;
@@ -44,11 +47,17 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
   } | null>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
-  const getPlaceholderImage = () => {
-    return `https://source.unsplash.com/400x400/?restaurant,food&${place.name.slice(0, 3)}`;
+  const handleImageError = () => {
+    if (!triedEdge && place.photo_name && place.id) {
+      setImgSrc(getEdgeFunctionPhotoUrl(place.photo_name, place.id, 400, 400));
+      setTriedEdge(true);
+    } else if (!triedEdge && place.id) {
+      setImgSrc(getEdgeFunctionPhotoUrl('', place.id, 400, 400));
+      setTriedEdge(true);
+    } else {
+      setImageError(true);
+    }
   };
-
-  const imageUrl = place.image || getPlaceholderImage();
   const vibeTag = getVibeTag(place);
 
   const handleSave = (e: React.MouseEvent) => {
@@ -65,7 +74,7 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
 
     if (imageRect && savedTabRect) {
       setFlyingClone({
-        src: imageError ? getPlaceholderImage() : imageUrl,
+        src: imgSrc,
         startRect: imageRect,
         endRect: savedTabRect,
       });
@@ -116,12 +125,18 @@ const TopPickCard: React.FC<TopPickCardProps> = ({
         ref={imageRef}
         className="relative rounded-2xl overflow-hidden bg-muted aspect-[3/4]"
       >
-        <img
-          src={imageError ? getPlaceholderImage() : imageUrl}
-          alt={place.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={() => setImageError(true)}
-        />
+        {imageError ? (
+          <div className="w-full h-full bg-muted flex items-center justify-center">
+            <span className="text-muted-foreground/40 text-xs">No photo</span>
+          </div>
+        ) : (
+          <img
+            src={imgSrc}
+            alt={place.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={handleImageError}
+          />
+        )}
 
         {/* Save button */}
         <button

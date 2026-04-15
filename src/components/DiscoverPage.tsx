@@ -47,7 +47,7 @@ interface MockPlaceWithCoords extends MockPlace {
 const unifiedToMockPlace = (place: UnifiedPlace): MockPlaceWithCoords => ({
   id: place.place_id,
   name: place.name,
-  image: place.photo_url || `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`,
+  image: place.photo_url || getStoragePhotoUrl(place.place_id),
   rating: place.rating || 4.0,
   distance_km: place.distance_meters ? Math.round(place.distance_meters / 100) / 10 : 1.0,
   categories: place.categories || [],
@@ -567,13 +567,8 @@ const DiscoverPage = ({ onNavigateToProfile }: DiscoverPageProps) => {
   }, [filteredResults]);
 
   const getPlaceImage = useCallback((place: RankedPlace) => {
-    if (place.place_id) {
-      return getStoragePhotoUrl(place.place_id);
-    }
-    const original = filteredResults.find((p) => p.id === place.place_id);
-    if (original?.image && !original.image.includes('unsplash')) return original.image;
-    return `https://source.unsplash.com/400x300/?restaurant,cafe&${place.name.slice(0, 3)}`;
-  }, [filteredResults]);
+    return getStoragePhotoUrl(place.place_id);
+  }, []);
 
   const handleMapPlaceClick = useCallback((place: RankedPlace) => {
     navigate(`/place/${place.place_id}`, { state: { ai_reason: place.ai_reason } });
