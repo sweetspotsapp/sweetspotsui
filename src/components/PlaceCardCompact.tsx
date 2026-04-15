@@ -162,10 +162,10 @@ const PlaceCardCompact: React.FC<PlaceCardCompactProps> = ({
         className={`relative rounded-2xl overflow-hidden bg-muted ${featured ? 'aspect-[4/3]' : 'aspect-[3/4]'}`}
       >
         <img
-          src={imageError ? getPlaceholderImage() : imageUrl}
+          src={imageUrl}
           alt={place.name}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={() => setImageError(true)}
+          onError={handleImageError}
         />
 
         {/* Save button */}
