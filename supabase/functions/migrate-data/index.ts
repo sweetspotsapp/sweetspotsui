@@ -5,24 +5,18 @@ const corsHeaders = {
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const TABLES_ORDER = [
-  "places",
-  "profiles",
-  "query_cache",
-  "searches",
-  "trip_templates",
-  "user_roles",
-  "boards",
-  "trips",
-  "contact_submissions",
-  "search_feedback",
-  "saved_places",
-  "place_interactions",
-  "board_places",
-  "shared_trips",
+  "places", "profiles", "query_cache", "searches", "trip_templates",
+  "user_roles", "boards", "trips", "contact_submissions", "search_feedback",
+  "saved_places", "place_interactions", "board_places", "shared_trips",
 ];
 
+// Tables that reference auth.users and may have orphan rows
+const FK_SENSITIVE = ["profiles", "searches", "user_roles", "boards", "trips",
+  "saved_places", "place_interactions", "board_places", "shared_trips",
+  "search_feedback"];
+
 const BATCH_SIZE = 50;
-const TIME_LIMIT_MS = 50_000; // stop after 50s to return before gateway timeout
+const TIME_LIMIT_MS = 50_000;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -47,30 +41,45 @@ Deno.serve(async (req) => {
       const startOffset = (table && offset != null) ? offset : 0;
       let currentOffset = startOffset;
       let totalMigrated = 0;
+      let totalSkipped = 0;
+      const skipReasons: string[] = [];
 
       while (true) {
         if (Date.now() - startTime > TIME_LIMIT_MS) {
-          report[t] = { migrated: totalMigrated, from_offset: startOffset, stopped_at: currentOffset, reason: "timeout" };
+          report[t] = { migrated: totalMigrated, skipped: totalSkipped, from_offset: startOffset, stopped_at: currentOffset, reason: "timeout", skipReasons: skipReasons.slice(0, 5) };
           timedOut = true;
           break;
         }
 
         const { data, error } = await source.from(t).select("*").range(currentOffset, currentOffset + BATCH_SIZE - 1);
-
         if (error) { report[t] = { error: error.message }; break; }
-        if (!data || data.length === 0) { report[t] = { migrated: totalMigrated, complete: true }; break; }
+        if (!data || data.length === 0) { report[t] = { migrated: totalMigrated, skipped: totalSkipped, complete: true }; break; }
 
-        const { error: upsertError } = await target.from(t).upsert(data, { onConflict: getPrimaryKey(t) });
+        const pk = getPrimaryKey(t);
 
-        if (upsertError) {
-          report[t] = { error: upsertError.message, migrated: totalMigrated, stopped_at: currentOffset };
-          break;
+        if (FK_SENSITIVE.includes(t)) {
+          // Insert row by row, skip FK failures
+          for (const row of data) {
+            const { error: upsErr } = await target.from(t).upsert(row, { onConflict: pk });
+            if (upsErr) {
+              totalSkipped++;
+              if (skipReasons.length < 5) skipReasons.push(`${row[pk] || 'unknown'}: ${upsErr.message.substring(0, 100)}`);
+            } else {
+              totalMigrated++;
+            }
+          }
+        } else {
+          // Batch upsert for non-FK tables
+          const { error: upsertError } = await target.from(t).upsert(data, { onConflict: pk });
+          if (upsertError) {
+            report[t] = { error: upsertError.message, migrated: totalMigrated, stopped_at: currentOffset };
+            break;
+          }
+          totalMigrated += data.length;
         }
 
-        totalMigrated += data.length;
         currentOffset += BATCH_SIZE;
-
-        if (data.length < BATCH_SIZE) { report[t] = { migrated: totalMigrated, complete: true }; break; }
+        if (data.length < BATCH_SIZE) { report[t] = { migrated: totalMigrated, skipped: totalSkipped, complete: true, skipReasons: skipReasons.length > 0 ? skipReasons : undefined }; break; }
       }
     }
 
