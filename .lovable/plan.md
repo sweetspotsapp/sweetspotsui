@@ -1,54 +1,58 @@
 
 
-# Plan: Flatten Photo Cache to Place ID Naming
+# Plan: Remove Unsplash Fallbacks, Always Re-fetch via Edge Function
 
 ## Summary
-Change photo storage from deep nested paths (`places/ChIJ.../photos/AXCi.../400x400`) to flat files using place ID (`ChIJ....jpg`). Migrate all 646 existing files.
+Remove all Unsplash placeholder image URLs across the app. When a photo isn't cached in storage, fall back to the `place-photo` edge function (which fetches from Google and caches). If even that fails, show a neutral "No photo" placeholder (gray `bg-muted` box).
 
-## What Changes
+## Changes
 
-### 1. Edge Function: `place-photo/index.ts`
-- Change storage path from `${photoName}/${maxWidth}x${maxHeight}` to `${placeId}.jpg` (flat)
-- Accept a new `place_id` query param (required for cache key)
-- Extract place ID from the photo_name if not provided separately
-- On cache miss: fetch from Google, store as `{place_id}.jpg`, return image
-- On cache hit: return stored file directly
+### 1. `PlaceCardCompact.tsx`
+- Remove `getPlaceholderImage()` function
+- On image error: try edge function if `photo_name` + `place_id` available, otherwise show `bg-muted` "No photo" div
+- Remove Unsplash from `imageUrl` fallback logic
 
-### 2. Frontend: `src/lib/photoLoader.ts`
-- `getStoragePhotoUrl(placeId)` → returns `/storage/v1/object/public/place-photos/{placeId}.jpg`
-- `getEdgeFunctionPhotoUrl(photoName, placeId, maxWidth)` → passes both photo_name and place_id
-- `getPlacePhotoUrl(photoName, placeId)` → convenience wrapper
-- `resolvePhotoUrls` updated accordingly
-- All functions now take `placeId` as a parameter
+### 2. `PlaceImage.tsx`
+- Remove `fallbackSrc` prop (no longer needed)
+- Already correct — shows "No photo" on final failure
 
-### 3. Frontend: `src/components/PlaceImage.tsx`
-- Accept `placeId` prop alongside `photoName`
-- Use flat storage URL for initial attempt, edge function as fallback
+### 3. `TopPickCard.tsx`
+- Remove `getPlaceholderImage()`, use edge function fallback same pattern as PlaceCardCompact
 
-### 4. Frontend: `src/components/PlaceCard.tsx`
-- Pass `place.place_id` to the updated photo helpers
+### 4. `CategorySeeAll.tsx`
+- Remove `getPlaceholderImage()`, use storage URL + edge function fallback
 
-### 5. All other photo consumers
-- `DiscoverPage.tsx`, `PlaceDetails.tsx`, `SavedPage.tsx`, `BoardView.tsx`, `MapPage.tsx` — update `getPlaceImage` helpers to use `place_id` for storage URLs
+### 5. `CategoryDetail.tsx`
+- Remove Unsplash placeholder function, use storage/edge function pattern
 
-### 6. Migration Edge Function: `migrate-photos`
-- One-time edge function that:
-  1. Lists all objects in `place-photos` bucket
-  2. For each, extracts place_id from path (`places/{place_id}/photos/...`)
-  3. Downloads the file and re-uploads as `{place_id}.jpg`
-  4. Deletes the old nested file
-- Run manually after deployment to rename all 646 files
+### 6. `CategoryEditor.tsx` + `BoardEditor.tsx`
+- Remove Unsplash placeholders for small thumbnails, use storage URL
 
-## Technical Detail
+### 7. `DiscoverPage.tsx`
+- In `unifiedToMockPlace`: use `getStoragePhotoUrl(place.place_id)` instead of Unsplash
+- In `getImageForPlace`: remove Unsplash fallback, return storage URL or edge function URL
 
-**New storage path**: `{place_id}.jpg` (e.g., `ChIJ9xw8kWX5MIgRkHjuh9HkS5Q.jpg`)
+### 8. `HomePage.tsx`
+- Replace Unsplash fallback with edge function URL using `photo_name` + `place_id`
 
-**Place ID extraction** from current `photo_name`:
+### 9. `PlaceDetails.tsx`
+- Replace Unsplash fallbacks in related spots and hero image with storage/edge function URLs
+
+### 10. `ImageCarousel.tsx`
+- Replace `onError` Unsplash fallback with edge function call or "No photo" state
+
+### 11. `mockPlaces.ts` (skip)
+- These are demo/mock data — leave as-is since they're not real places
+
+### 12. `tripHelpers.ts` (skip)
+- These are curated destination cover images (Tokyo, Bali etc.), not place photos — leave as-is
+
+## Fallback Strategy
 ```
-places/ChIJ9xw8kWX5MIgRkHjuh9HkS5Q/photos/AXCi.../400x400
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        This is the place_id
+1. Try: storage URL → {placeId}.jpg
+2. On error: edge function URL → fetches from Google, caches, returns image
+3. On error: show bg-muted "No photo" div
 ```
 
-**Breaking change handling**: The edge function will check both old and new paths during a transition period, so no photos break while migration runs.
+This ensures every photo miss triggers a cache-fill for future loads.
 
