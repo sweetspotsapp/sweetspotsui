@@ -3,7 +3,7 @@ import { Heart, Clock, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 import { getStoragePhotoUrl, getEdgeFunctionPhotoUrl } from "@/lib/photoLoader";
-import type { RankedPlace } from "@/hooks/useSearch";
+
 
 // Build photo URL — flat storage format: {placeId}.jpg
 const getPhotoUrl = (placeId: string | null): string | null => {

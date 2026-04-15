@@ -9,6 +9,7 @@ import { useApp } from "@/context/AppContext";
 import { Input } from "./ui/input";
 import SlideOutMenu from "./SlideOutMenu";
 import PlaceCardCompact, { MockPlace } from "./PlaceCardCompact";
+import { getStoragePhotoUrl } from "@/lib/photoLoader";
 
 import TopPicksSection from "./TopPicksSection";
 import SaveToBoardDialog from "./saved/SaveToBoardDialog";

@@ -21,6 +21,7 @@ import BottomNav from '@/components/BottomNav';
 import SaveToBoardDialog from '@/components/saved/SaveToBoardDialog';
 import StreetViewPreview from '@/components/place-detail/StreetViewPreview';
 import { useAuth } from '@/hooks/useAuth';
+import { getStoragePhotoUrl } from '@/lib/photoLoader';
 interface OpeningHoursData {
   open_now: boolean;
   weekday_text: string[];
@@ -382,7 +383,7 @@ const PlaceDetailsPage = () => {
       // Pre-load thumbnail images for faster display
       placeIds.forEach(id => {
         const placeData = placesData?.find(p => p.place_id === id);
-        const photos = placeData?.photos as string[] | null;
+        
         if (placeData?.place_id) {
           const img = new Image();
           img.src = getStoragePhotoUrl(placeData.place_id);
