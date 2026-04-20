@@ -31,20 +31,20 @@ const DistanceConnector = ({ fromLat, fromLng, toLat, toLng, durationText, dista
     <div className="flex items-center gap-2 px-6 py-1">
       {/* Vertical line */}
       <div className="flex flex-col items-center">
-        <div className="w-px h-3 bg-border" />
-        <div className="w-1.5 h-1.5 rounded-full bg-border" />
-        <div className="w-px h-3 bg-border" />
+        <div className="w-px h-3 bg-background/30" />
+        <div className="w-1.5 h-1.5 rounded-full bg-background/30" />
+        <div className="w-px h-3 bg-background/30" />
       </div>
       
       {/* Distance info */}
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-xs text-background font-medium">
         {isWalkable ? (
           <Footprints className="w-3 h-3" />
         ) : (
           <Car className="w-3 h-3" />
         )}
         <span>{displayDistance}</span>
-        <span className="text-border">·</span>
+        <span className="text-background/40">·</span>
         <span>{displayDuration}</span>
       </div>
     </div>
