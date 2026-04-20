@@ -345,7 +345,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors",
-          isActive ? "hover:bg-background/5" : "hover:bg-muted/50 border-orange-600 border-solid"
+          isActive ? "hover:bg-foreground/5" : "hover:bg-muted/50 border-orange-600 border-solid"
         )}
       >
         <div className={cn(
@@ -363,7 +363,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           )}
           <span className={cn(
             "block font-medium text-sm",
-            isActive ? "text-background/70" : "text-foreground/70"
+            isActive ? "text-foreground/80" : "text-foreground/70"
           )}>
             {liveProgress
               ? `${liveProgress.done}/${liveProgress.total} done`
@@ -372,14 +372,14 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp className={cn("w-4 h-4", isActive ? "text-background/60" : "text-foreground/60")} />
+          <ChevronUp className={cn("w-4 h-4", isActive ? "text-foreground/60" : "text-foreground/60")} />
         ) : (
-          <ChevronDown className={cn("w-4 h-4", isActive ? "text-background/60" : "text-foreground/60")} />
+          <ChevronDown className={cn("w-4 h-4", isActive ? "text-foreground/60" : "text-foreground/60")} />
         )}
       </button>
 
       {isOpen && (
-        <div className={cn("border-t", isActive ? "border-background/10" : "border-border")}>
+        <div className={cn("border-t", isActive ? "border-foreground/10" : "border-border")}>
           {day.slots.map((slot, slotIndex) => {
             const prevSlot = slotIndex > 0 ? day.slots[slotIndex - 1] : null;
             const prevLastActivity = prevSlot?.activities?.[prevSlot.activities.length - 1];
@@ -393,7 +393,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
             return (
               <div key={slotIndex}>
                 {prevLastActivity && firstActivity && !isEditing && (
-                  <div className={cn("border-t", isActive ? "border-background/10" : "border-border")}>
+                  <div className={cn("border-t", isActive ? "border-foreground/10" : "border-border")}>
                     <DistanceConnector
                       fromLat={prevLastActivity.lat}
                       fromLng={prevLastActivity.lng}
@@ -405,11 +405,11 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                   </div>
                 )}
 
-                <div className={cn(slotIndex > 0 && !prevLastActivity && (isActive ? "border-t border-background/10" : "border-t border-border"))}>
-                  <div className={cn("px-4 py-2", isActive ? "bg-background/5" : "bg-muted/50")}>
+                <div className={cn(slotIndex > 0 && !prevLastActivity && (isActive ? "border-t border-foreground/10" : "border-t border-border"))}>
+                  <div className={cn("px-4 py-2", isActive ? "bg-foreground/5" : "bg-muted/50")}>
                     <span className={cn(
                       "text-xs font-semibold uppercase tracking-wider text-left",
-                      isActive ? "text-amber-600" : "text-foreground/60"
+                      isActive ? "text-primary" : "text-foreground/60"
                     )}>
                       {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
