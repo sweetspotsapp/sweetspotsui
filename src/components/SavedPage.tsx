@@ -268,13 +268,13 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
   return (
     <>
-      <div className="min-h-screen bg-background pb-20 max-w-md mx-auto">
+      <div className="min-h-screen bg-background pb-20 max-w-7xl mx-auto">
         <AppHeader 
           onSettingsClick={() => setIsProfileMenuOpen(true)}
         />
 
         {/* Page Title */}
-        <div className="px-4 pt-6 pb-4">
+        <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           <h1 className="text-2xl font-bold text-foreground">Saved Spots</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Your curated collection of favorite places
@@ -290,7 +290,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
         ) : (
           <>
             {/* Sort Bar */}
-            <div className="flex items-center justify-between px-4 pb-4">
+            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 pb-4">
               <span className="text-xs text-muted-foreground font-medium">
                 {boards.length + 1} boards
               </span>
@@ -330,7 +330,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
 
             {/* Import tip banner for users with few saves */}
             {!tipDismissed && savedPlaces.length >= 1 && (
-              <div className="mx-4 mb-4 flex items-center gap-3 p-3 rounded-xl bg-accent/50 border border-border">
+              <div className="mx-4 sm:mx-6 lg:mx-8 mb-4 flex items-center gap-3 p-3 rounded-xl bg-accent/50 border border-border">
                 <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
                 <p className="text-xs text-muted-foreground flex-1">
                   Paste an Instagram or TikTok link to quickly save spots you've been eyeing
@@ -353,11 +353,11 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
               </div>
             )}
 
-            {/* Pinterest-Style Masonry Grid */}
-            <div className="px-4 pb-6">
+            {/* Pinterest-Style Responsive Grid */}
+            <div className="px-4 sm:px-6 lg:px-8 pb-6">
               {(boardsLoading || isLoadingPlaces) && (
-                <div className="grid grid-cols-2 gap-3">
-                  {[1, 2, 3, 4].map(i => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                     <div key={i} className="rounded-2xl overflow-hidden">
                       <Skeleton className="h-[160px] w-full rounded-2xl" />
                       <div className="pt-2 space-y-1">
@@ -368,7 +368,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
                   ))}
                 </div>
               )}
-              {!boardsLoading && !isLoadingPlaces && <div className="grid grid-cols-2 gap-3">
+              {!boardsLoading && !isLoadingPlaces && <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 {/* All Saved Board - Always First */}
                 <BoardCard
                   isAllSaved
