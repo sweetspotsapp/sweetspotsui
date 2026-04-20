@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, X, MapPin, Calendar, Users, CheckCircle2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
 import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
@@ -72,7 +73,19 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
+  const [editMenuOpen, setEditMenuOpen] = useState(false);
   const todayRef = useRef<HTMLDivElement>(null);
+
+  // Detect if user has made unsaved edits while in editing mode
+  const isDirty = useMemo(() => {
+    if (!isEditing || !editSnapshot) return false;
+    try {
+      return JSON.stringify(tripData) !== JSON.stringify(editSnapshot);
+    } catch {
+      return false;
+    }
+  }, [isEditing, editSnapshot, tripData]);
+
 
   // Fetch weather for the trip destination
   const { forecast } = useWeatherForecast(tripParams?.destination || null);
@@ -228,45 +241,44 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
         </button>
         <div className="flex items-center gap-2">
           {isEditing ? (
-            <>
-              <button
-                onClick={handleCancelEditing}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-              >
-                <X className="w-4 h-4" /> Cancel
-              </button>
-              <button
-                onClick={handleSaveEditing}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all"
-              >
-                <Save className="w-4 h-4" /> Save Changes
-              </button>
-            </>
+            <button
+              onClick={handleCancelEditing}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <X className="w-4 h-4" /> Cancel
+            </button>
           ) : (
-            <>
-              <button
-                onClick={handleStartEditing}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </button>
-              {onSave && (
+            <Popover open={editMenuOpen} onOpenChange={setEditMenuOpen}>
+              <PopoverTrigger asChild>
                 <button
-                  onClick={onSave}
-                  className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all active:scale-[0.97]"
                 >
-                  <Save className="w-3.5 h-3.5" /> Save
+                  <Pencil className="w-3.5 h-3.5" /> Edit
                 </button>
-              )}
-              <button
-                onClick={onRegenerate}
-                disabled={isGenerating}
-                className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
-              >
-                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                Regenerate
-              </button>
-            </>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-44 p-1.5">
+                <button
+                  onClick={() => {
+                    setEditMenuOpen(false);
+                    handleStartEditing();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <Pencil className="w-4 h-4" /> Edit trip
+                </button>
+                <button
+                  onClick={() => {
+                    setEditMenuOpen(false);
+                    onRegenerate();
+                  }}
+                  disabled={isGenerating}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                  Regenerate
+                </button>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       </div>
@@ -405,6 +417,21 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
       {/* Finish Trip section — only in live mode */}
       {isLive && !isEditing && onCompleteTrip && (
         <FinishTripSection onComplete={onCompleteTrip} />
+      )}
+
+      {/* Sticky Save bar — only when editing AND has unsaved changes */}
+      {isEditing && isDirty && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
+          <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">You have unsaved changes</p>
+            <button
+              onClick={handleSaveEditing}
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all active:scale-[0.97]"
+            >
+              <Save className="w-4 h-4" /> Save changes
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
