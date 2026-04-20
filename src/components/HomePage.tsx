@@ -5,7 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
-import { SS_RESUME_TRIP, lsRecsCache } from "@/lib/storageKeys";
+import { SS_RESUME_TRIP, SS_OPEN_CREATE_TRIP, lsRecsCache } from "@/lib/storageKeys";
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning, Link2 } from "lucide-react";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
 import { useWeatherForecast } from "@/hooks/useWeatherForecast";
@@ -168,7 +168,10 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     return CURATED_SECTIONS[region] || CURATED_SECTIONS.global;
   }, [onboardingData?.explore_location, geoLocation?.lat]);
 
-  const handlePlanTrip = () => onNavigateToTab?.("trip");
+  const handlePlanTrip = () => {
+    sessionStorage.setItem(SS_OPEN_CREATE_TRIP, "1");
+    onNavigateToTab?.("trip");
+  };
   const handleGoToTrip = (tripId: string) => {
     sessionStorage.setItem(SS_RESUME_TRIP, tripId);
     onNavigateToTab?.("trip");
