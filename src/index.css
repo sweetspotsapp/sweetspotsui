@@ -51,10 +51,10 @@
     --warm-sand: 35 30% 85%;
     --text-soft: 25 15% 45%;
 
-    /* Shadows */
-    --shadow-soft: 0 4px 20px -4px hsl(25 20% 18% / 0.08);
-    --shadow-card: 0 8px 32px -8px hsl(25 20% 18% / 0.1);
-    --shadow-elevated: 0 16px 48px -12px hsl(25 20% 18% / 0.15);
+    /* Shadows — soft, tactile, layered */
+    --shadow-soft: 0 1px 2px hsl(25 20% 18% / 0.04), 0 4px 16px -6px hsl(25 20% 18% / 0.08);
+    --shadow-card: 0 2px 4px hsl(25 20% 18% / 0.04), 0 12px 28px -10px hsl(25 20% 18% / 0.12);
+    --shadow-elevated: 0 4px 8px hsl(25 20% 18% / 0.06), 0 24px 48px -16px hsl(25 20% 18% / 0.18);
 
     /* Transitions */
     --transition-gentle: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -107,9 +107,9 @@
     --warm-sand: 35 15% 25%;
     --text-soft: 30 10% 60%;
 
-    --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
-    --shadow-card: 0 8px 32px -8px hsl(0 0% 0% / 0.4);
-    --shadow-elevated: 0 16px 48px -12px hsl(0 0% 0% / 0.5);
+    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.2), 0 4px 16px -6px hsl(0 0% 0% / 0.3);
+    --shadow-card: 0 2px 4px hsl(0 0% 0% / 0.25), 0 12px 28px -10px hsl(0 0% 0% / 0.4);
+    --shadow-elevated: 0 4px 8px hsl(0 0% 0% / 0.3), 0 24px 48px -16px hsl(0 0% 0% / 0.5);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
