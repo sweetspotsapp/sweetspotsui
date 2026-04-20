@@ -473,6 +473,25 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
                   height={520}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                {(t as any).isCommunity && (
+                  <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/90 backdrop-blur-sm shadow-sm max-w-[140px]">
+                    {(t as any).authorAvatarUrl ? (
+                      <img
+                        src={(t as any).authorAvatarUrl}
+                        alt=""
+                        className="w-4 h-4 rounded-full object-cover shrink-0"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full bg-primary/20 text-primary text-[8px] font-semibold flex items-center justify-center shrink-0">
+                        {((t as any).authorUsername?.[0] || "?").toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-[10px] font-medium text-foreground truncate">
+                      {(t as any).authorUsername || "Community"}
+                    </span>
+                  </div>
+                )}
                 <div className="relative h-full flex flex-col justify-end p-4">
                   <p className="text-base font-bold text-white leading-tight tracking-tight">{t.title}</p>
                   <p className="text-[11px] text-white/75 mt-1">{t.duration} {t.duration === 1 ? "day" : "days"} · {t.subtitle}</p>
