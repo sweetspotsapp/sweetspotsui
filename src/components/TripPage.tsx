@@ -1,11 +1,22 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2, CheckCircle2 } from "lucide-react";
+import { Plus, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2, CheckCircle2, Globe, GlobeLock, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { usePublishTrip } from "@/hooks/usePublishTrip";
 import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP, SS_OPEN_CREATE_TRIP, SS_CREATE_TRIP_PARAMS } from "@/lib/storageKeys";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ShareTripDialog from "./trip/ShareTripDialog";
@@ -892,6 +903,10 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
       : trip.trip_data.summary
     : trip.vibes?.slice(0, 3).join(" · ") || trip.destination;
 
+  const { isPublished, isMutating: isPublishMutating, publish, unpublish } = usePublishTrip(trip.id);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [showUnpublishConfirm, setShowUnpublishConfirm] = useState(false);
+
   return (
     <div
       className="rounded-2xl bg-card border border-border overflow-hidden shadow-soft opacity-0 animate-fade-up hover:shadow-card hover:-translate-y-0.5 transition-all duration-300 group relative"
@@ -918,6 +933,22 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onShare(trip)}>
               <Share2 className="w-4 h-4 mr-2" /> Share Trip
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                if (isPublished) setShowUnpublishConfirm(true);
+                else setShowPublishConfirm(true);
+              }}
+              disabled={isPublishMutating}
+            >
+              {isPublishMutating ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : isPublished ? (
+                <GlobeLock className="w-4 h-4 mr-2" />
+              ) : (
+                <Globe className="w-4 h-4 mr-2" />
+              )}
+              {isPublished ? "Unpublish" : "Publish"}
             </DropdownMenuItem>
             {(category === "current" || category === "upcoming") && onComplete && (
               <DropdownMenuItem onClick={() => onComplete(trip.id)} className="text-green-600 focus:text-green-600">
@@ -1032,6 +1063,67 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
           <div className="absolute inset-0 bg-gradient-to-l from-transparent to-card/10" />
         </div>
       </button>
+
+      {/* Publish confirmation */}
+      <AlertDialog open={showPublishConfirm} onOpenChange={setShowPublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Want to publish to SweetSpots?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This itinerary will be visible to all SweetSpots users, and others will be able to reuse it as a template.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPublishMutating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!trip.trip_data) return;
+                const tripParams: TripParams = {
+                  destination: trip.destination,
+                  vibes: trip.vibes ?? [],
+                  budget: trip.budget,
+                  groupSize: trip.group_size,
+                } as TripParams;
+                const ok = await publish({
+                  tripParams,
+                  tripData: trip.trip_data as TripData,
+                  tripName: trip.name ?? null,
+                });
+                if (ok) setShowPublishConfirm(false);
+              }}
+              disabled={isPublishMutating || !trip.trip_data}
+            >
+              {isPublishMutating ? "Publishing…" : "Publish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unpublish confirmation */}
+      <AlertDialog open={showUnpublishConfirm} onOpenChange={setShowUnpublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unpublish from SweetSpots?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This itinerary will be removed from the public templates and will no longer be discoverable by other users.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPublishMutating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                const ok = await unpublish();
+                if (ok) setShowUnpublishConfirm(false);
+              }}
+              disabled={isPublishMutating}
+            >
+              {isPublishMutating ? "Removing…" : "Unpublish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
