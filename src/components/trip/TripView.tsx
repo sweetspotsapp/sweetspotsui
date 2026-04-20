@@ -241,45 +241,44 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
         </button>
         <div className="flex items-center gap-2">
           {isEditing ? (
-            <>
-              <button
-                onClick={handleCancelEditing}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-              >
-                <X className="w-4 h-4" /> Cancel
-              </button>
-              <button
-                onClick={handleSaveEditing}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all"
-              >
-                <Save className="w-4 h-4" /> Save Changes
-              </button>
-            </>
+            <button
+              onClick={handleCancelEditing}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <X className="w-4 h-4" /> Cancel
+            </button>
           ) : (
-            <>
-              <button
-                onClick={handleStartEditing}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </button>
-              {onSave && (
+            <Popover open={editMenuOpen} onOpenChange={setEditMenuOpen}>
+              <PopoverTrigger asChild>
                 <button
-                  onClick={onSave}
-                  className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all active:scale-[0.97]"
                 >
-                  <Save className="w-3.5 h-3.5" /> Save
+                  <Pencil className="w-3.5 h-3.5" /> Edit
                 </button>
-              )}
-              <button
-                onClick={onRegenerate}
-                disabled={isGenerating}
-                className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
-              >
-                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                Regenerate
-              </button>
-            </>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-44 p-1.5">
+                <button
+                  onClick={() => {
+                    setEditMenuOpen(false);
+                    handleStartEditing();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <Pencil className="w-4 h-4" /> Edit trip
+                </button>
+                <button
+                  onClick={() => {
+                    setEditMenuOpen(false);
+                    onRegenerate();
+                  }}
+                  disabled={isGenerating}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                  Regenerate
+                </button>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       </div>
