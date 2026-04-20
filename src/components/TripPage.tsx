@@ -1063,6 +1063,67 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
           <div className="absolute inset-0 bg-gradient-to-l from-transparent to-card/10" />
         </div>
       </button>
+
+      {/* Publish confirmation */}
+      <AlertDialog open={showPublishConfirm} onOpenChange={setShowPublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Want to publish to SweetSpots?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This itinerary will be visible to all SweetSpots users, and others will be able to reuse it as a template.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPublishMutating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!trip.trip_data) return;
+                const tripParams: TripParams = {
+                  destination: trip.destination,
+                  vibes: trip.vibes ?? [],
+                  budget: trip.budget,
+                  groupSize: trip.group_size,
+                } as TripParams;
+                const ok = await publish({
+                  tripParams,
+                  tripData: trip.trip_data as TripData,
+                  tripName: trip.name ?? null,
+                });
+                if (ok) setShowPublishConfirm(false);
+              }}
+              disabled={isPublishMutating || !trip.trip_data}
+            >
+              {isPublishMutating ? "Publishing…" : "Publish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unpublish confirmation */}
+      <AlertDialog open={showUnpublishConfirm} onOpenChange={setShowUnpublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unpublish from SweetSpots?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This itinerary will be removed from the public templates and will no longer be discoverable by other users.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPublishMutating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                const ok = await unpublish();
+                if (ok) setShowUnpublishConfirm(false);
+              }}
+              disabled={isPublishMutating}
+            >
+              {isPublishMutating ? "Removing…" : "Unpublish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
