@@ -336,8 +336,8 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
 
   return (
     <div className={cn(
-      "rounded-2xl bg-foreground/90 overflow-hidden shadow-card",
-      isLive && isToday && "ring-2 ring-primary/40"
+      "rounded-2xl overflow-hidden shadow-card",
+      isLive && isToday ? "bg-foreground/95 ring-2 ring-primary/40" : "bg-muted-foreground/25"
     )}>
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -350,13 +350,10 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           <span className={cn("text-sm font-bold", isLive && isToday ? "text-primary-foreground" : "text-background")}>{dayIndex + 1}</span>
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-background">{day.label}</span>
-            {isLive && isToday && (
-              <span className="text-[9px] font-bold text-primary-foreground bg-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider">Today</span>
-            )}
-          </div>
-          <span className="text-xs text-background/60 block">
+          {isLive && isToday && (
+            <span className="text-[9px] font-bold text-primary-foreground bg-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider inline-block mb-0.5">Today</span>
+          )}
+          <span className="text-xs text-background/70 block">
             {liveProgress
               ? `${liveProgress.done}/${liveProgress.total} done`
               : `${day.slots.reduce((acc, s) => acc + s.activities.length, 0)} activities`}
