@@ -181,8 +181,37 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   // Personalized trip ideas based on user's location
   const tripSections = useMemo((): TripSection[] => {
     const region = detectRegion(onboardingData?.explore_location, geoLocation?.lat);
-    return CURATED_SECTIONS[region] || CURATED_SECTIONS.global;
-  }, [onboardingData?.explore_location, geoLocation?.lat]);
+    const baseSections = CURATED_SECTIONS[region] || CURATED_SECTIONS.global;
+    if (!communityTrips.length) return baseSections;
+
+    // Convert community trips to CuratedTrip-shaped items and prepend to first section
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const community = communityTrips.map((c) => ({
+      id: `community-${c.id}`,
+      title: c.destination,
+      destination: c.destination,
+      subtitle: c.tagline || `By ${c.author_username || "a SweetSpots user"}`,
+      duration: c.duration,
+      groupSize: c.group_size,
+      budget: c.budget,
+      vibes: c.vibes,
+      image: c.cover_image
+        || `${supabaseUrl}/storage/v1/object/public/place-photos/placeholder.jpg`,
+      tripData: c.trip_data,
+      authorUsername: c.author_username,
+      authorAvatarUrl: c.author_avatar_url,
+      isCommunity: true,
+    } as any));
+
+    // Inject community trips at the top of the first section
+    const updated = [...baseSections];
+    if (updated[0]) {
+      updated[0] = { ...updated[0], trips: [...community, ...updated[0].trips] };
+    } else {
+      updated.push({ title: "From the Community", trips: community as any });
+    }
+    return updated;
+  }, [onboardingData?.explore_location, geoLocation?.lat, communityTrips]);
 
   const handlePlanTrip = () => {
     // Open the Create Trip modal in-place (no tab navigation)
