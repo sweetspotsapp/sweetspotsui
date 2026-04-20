@@ -88,6 +88,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDiscoverMenu, setShowDiscoverMenu] = useState(false);
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplatePreviewData | null>(null);
   const [communityTrips, setCommunityTrips] = useState<Array<{
     id: string;
     destination: string;
