@@ -40,6 +40,7 @@ const WeatherIcon = ({ icon, size = 14 }: { icon: string; size?: number }) => {
 interface TripViewProps {
   tripData: TripData;
   tripParams?: TripParams | null;
+  tripId?: string | null;
   onBack: () => void;
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
