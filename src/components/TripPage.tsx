@@ -702,10 +702,10 @@ const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdi
       {/* New Trip button */}
       <button
         onClick={onCreateNew}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl border-2 border-dashed border-primary/30 text-primary font-medium hover:bg-primary/5 transition-colors"
+        className="inline-flex items-center justify-center gap-2 h-11 lg:h-12 px-4 lg:px-6 rounded-full bg-primary text-primary-foreground shadow-soft hover:shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all w-full"
       >
-        <Plus className="w-5 h-5" />
-        New Trip
+        <Plus className="w-4 h-4" />
+        <span className="text-sm lg:text-base font-semibold">New Trip</span>
       </button>
 
       {/* Trip Invitations */}
