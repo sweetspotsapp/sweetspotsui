@@ -73,7 +73,19 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
+  const [editMenuOpen, setEditMenuOpen] = useState(false);
   const todayRef = useRef<HTMLDivElement>(null);
+
+  // Detect if user has made unsaved edits while in editing mode
+  const isDirty = useMemo(() => {
+    if (!isEditing || !editSnapshot) return false;
+    try {
+      return JSON.stringify(tripData) !== JSON.stringify(editSnapshot);
+    } catch {
+      return false;
+    }
+  }, [isEditing, editSnapshot, tripData]);
+
 
   // Fetch weather for the trip destination
   const { forecast } = useWeatherForecast(tripParams?.destination || null);
