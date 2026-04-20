@@ -144,12 +144,7 @@ const BoardCard = ({
           </DropdownMenu>
         )}
         
-        {/* All Saved Badge */}
-        {isAllSaved && (
-          <div className="absolute top-2 left-2 p-1.5 rounded-full bg-primary">
-            <Heart className="w-3.5 h-3.5 text-primary-foreground fill-primary-foreground" />
-          </div>
-        )}
+        {/* All Saved Badge removed per design */}
       </div>
 
       {/* Board Info */}
