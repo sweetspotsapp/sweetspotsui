@@ -305,6 +305,26 @@ const TripView = ({ tripData, tripParams, tripId, onBack, onSwap, onReplace, onR
                     <Share2 className="w-4 h-4" /> Share trip
                   </button>
                 )}
+                {tripId && (
+                  <button
+                    onClick={() => {
+                      setEditMenuOpen(false);
+                      if (isPublished) setShowUnpublishConfirm(true);
+                      else setShowPublishConfirm(true);
+                    }}
+                    disabled={isPublishMutating}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                  >
+                    {isPublishMutating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : isPublished ? (
+                      <GlobeLock className="w-4 h-4" />
+                    ) : (
+                      <Globe className="w-4 h-4" />
+                    )}
+                    {isPublished ? "Unpublish" : "Publish"}
+                  </button>
+                )}
               </PopoverContent>
             </Popover>
           )}
