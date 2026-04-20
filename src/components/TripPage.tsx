@@ -903,6 +903,10 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
       : trip.trip_data.summary
     : trip.vibes?.slice(0, 3).join(" · ") || trip.destination;
 
+  const { isPublished, isMutating: isPublishMutating, publish, unpublish } = usePublishTrip(trip.id);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [showUnpublishConfirm, setShowUnpublishConfirm] = useState(false);
+
   return (
     <div
       className="rounded-2xl bg-card border border-border overflow-hidden shadow-soft opacity-0 animate-fade-up hover:shadow-card hover:-translate-y-0.5 transition-all duration-300 group relative"
