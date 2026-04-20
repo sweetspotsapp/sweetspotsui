@@ -447,6 +447,7 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
         <TripView
           tripData={tripData}
           tripParams={tripParams}
+          tripId={editingId}
           onBack={handleBackToList}
           onSwap={handleSwap}
           onReplace={handleReplaceActivity}
