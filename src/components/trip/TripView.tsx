@@ -379,7 +379,7 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
         </div>
       ) : (
         tripData.days.map((day, dayIndex) => (
-          <div key={dayIndex} ref={isLive && dayIndex === currentDayIndex ? todayRef : undefined}>
+          <div key={dayIndex} ref={isLive && dayIndex === currentDayIndex ? todayRef : undefined} className="bg-white">
             <DaySection
               day={day}
               dayIndex={dayIndex}
