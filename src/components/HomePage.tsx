@@ -5,7 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
-import { SS_RESUME_TRIP, SS_OPEN_CREATE_TRIP, SS_CREATE_TRIP_PARAMS, lsRecsCache } from "@/lib/storageKeys";
+import { SS_RESUME_TRIP, SS_CREATE_TRIP_PARAMS, lsRecsCache } from "@/lib/storageKeys";
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning, Link2 } from "lucide-react";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
 import CreateTripModal from "./trip/CreateTripModal";
@@ -549,6 +549,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         onClose={() => setShowCreateTripModal(false)}
         onGenerate={handleCreateTripGenerate}
         onCreateOwn={() => setShowCreateTripModal(false)}
+        isGenerating={false}
       />
     </div>
   );
