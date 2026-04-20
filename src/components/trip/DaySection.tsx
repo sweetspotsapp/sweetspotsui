@@ -345,7 +345,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors",
-          isActive ? "hover:bg-background/5" : "hover:bg-muted/50 border-orange-600 border-solid"
+          isActive ? "hover:bg-foreground/5" : "hover:bg-muted/50 border-orange-600 border-solid"
         )}
       >
         <div className={cn(
@@ -363,7 +363,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           )}
           <span className={cn(
             "block font-medium text-sm",
-            isActive ? "text-background/70" : "text-foreground/70"
+            isActive ? "text-background/80" : "text-foreground/70"
           )}>
             {liveProgress
               ? `${liveProgress.done}/${liveProgress.total} done`
@@ -401,15 +401,16 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                       toLng={firstActivity.lng}
                       durationText={crossSlotRoute?.durationText}
                       distanceText={crossSlotRoute?.distanceText}
+                      isOnDark={isActive}
                     />
                   </div>
                 )}
 
-                <div className={cn(slotIndex > 0 && !prevLastActivity && (isActive ? "border-t border-background/10" : "border-t border-border"))}>
-                  <div className={cn("px-4 py-2", isActive ? "bg-background/5" : "bg-muted/50")}>
+                <div className={cn(slotIndex > 0 && !prevLastActivity && (isActive ? "border-t border-foreground/10" : "border-t border-border"))}>
+                  <div className={cn("px-4 py-2", isActive ? "bg-foreground/5" : "bg-muted/50")}>
                     <span className={cn(
                       "text-xs font-semibold uppercase tracking-wider text-left",
-                      isActive ? "text-amber-600" : "text-foreground/60"
+                      isActive ? "text-primary" : "text-foreground/60"
                     )}>
                       {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
@@ -481,6 +482,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                                 toLng={nextActivity.lng}
                                 durationText={routeData?.durationText}
                                 distanceText={routeData?.distanceText}
+                                isOnDark={isActive}
                               />
                             )}
                           </div>
