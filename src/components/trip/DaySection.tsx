@@ -371,7 +371,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
       </button>
 
       {isOpen && (
-        <div className="border-t border-border">
+        <div className="border-t border-background/10">
           {day.slots.map((slot, slotIndex) => {
             const prevSlot = slotIndex > 0 ? day.slots[slotIndex - 1] : null;
             const prevLastActivity = prevSlot?.activities?.[prevSlot.activities.length - 1];
@@ -385,7 +385,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
             return (
               <div key={slotIndex}>
                 {prevLastActivity && firstActivity && !isEditing && (
-                  <div className="border-t border-border/30">
+                  <div className="border-t border-background/10">
                     <DistanceConnector
                       fromLat={prevLastActivity.lat}
                       fromLng={prevLastActivity.lng}
@@ -397,9 +397,9 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                   </div>
                 )}
 
-                <div className={cn(slotIndex > 0 && !prevLastActivity && "border-t border-border/50")}>
-                  <div className="px-4 py-2 bg-muted/20">
-                    <span className="text-xs font-medium text-muted-foreground">
+                <div className={cn(slotIndex > 0 && !prevLastActivity && "border-t border-background/10")}>
+                  <div className="px-4 py-2 bg-background/5">
+                    <span className="text-xs font-medium text-background/70">
                       {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
                   </div>
