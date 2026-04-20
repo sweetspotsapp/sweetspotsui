@@ -63,13 +63,6 @@ const TemplatePreviewSheet = ({ open, onOpenChange, template, onUseItinerary }: 
               />
             )}
             <div className="absolute inset-0 bg-black/30" />
-            <button
-              onClick={() => onOpenChange(false)}
-              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors z-10"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
             <div className="absolute top-4 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/80 backdrop-blur-sm">
               <Sparkles className="w-3 h-3 text-primary" />
               <span className="text-[11px] font-semibold text-foreground uppercase tracking-wide">Template</span>
