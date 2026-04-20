@@ -972,26 +972,30 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
             {tagline}
           </p>
 
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5">
-            {trip.vibes && trip.vibes.length > 0 && (
-              <div className="flex items-center gap-1">
-                {trip.vibes.slice(0, 2).map(v => (
-                  <span key={v} className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{v}</span>
-                ))}
-              </div>
-            )}
-            {budgetLabel && (
-              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                <DollarSign className="w-3 h-3" /> {budgetLabel}
-              </span>
-            )}
-            {spotCount > 0 && (
-              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                <MapPin className="w-3 h-3" /> {spotCount} spots
-              </span>
-            )}
-          </div>
+          {/* Vibes row */}
+          {trip.vibes && trip.vibes.length > 0 && (
+            <div className="flex items-center gap-1 mt-2.5">
+              {trip.vibes.slice(0, 2).map(v => (
+                <span key={v} className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{v}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Budget + spots row */}
+          {(budgetLabel || spotCount > 0) && (
+            <div className="flex items-center gap-x-3 gap-y-1 mt-1.5 flex-wrap">
+              {budgetLabel && (
+                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                  <DollarSign className="w-3 h-3" /> {budgetLabel}
+                </span>
+              )}
+              {spotCount > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                  <MapPin className="w-3 h-3" /> {spotCount} spots
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Date line */}
           <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
