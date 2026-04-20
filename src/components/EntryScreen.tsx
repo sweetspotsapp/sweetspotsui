@@ -62,12 +62,6 @@ const EntryScreen = ({ onComplete }: EntryScreenProps) => {
     setShowSuggestions(false);
   };
 
-  const handleConfirmCity = () => {
-    if (locationInput.trim()) {
-      setExploreLocation(locationInput.trim());
-      setShowSuggestions(false);
-    }
-  };
 
   const handleSelectNearby = () => {
     setExploreLocation("nearby");
