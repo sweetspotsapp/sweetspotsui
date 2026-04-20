@@ -451,20 +451,21 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               <button
                 key={t.id}
                 onClick={() => {
-                  if (onTripTemplate) {
-                    onTripTemplate({
-                      id: t.id,
-                      destination: t.destination,
-                      duration: t.duration,
-                      vibes: t.vibes,
-                      budget: t.budget,
-                      group_size: t.groupSize,
-                      tagline: t.subtitle,
-                      trip_data: t.tripData,
-                    });
-                  } else {
-                    onNavigateToTab?.("trip");
-                  }
+                  setPreviewTemplate({
+                    id: t.id,
+                    title: t.title,
+                    destination: t.destination,
+                    duration: t.duration,
+                    vibes: t.vibes,
+                    budget: t.budget,
+                    groupSize: (t as any).groupSize ?? 2,
+                    tagline: t.subtitle,
+                    image: t.image,
+                    tripData: (t as any).tripData,
+                    authorUsername: (t as any).authorUsername,
+                    authorAvatarUrl: (t as any).authorAvatarUrl,
+                    isCommunity: (t as any).isCommunity,
+                  });
                 }}
                 className="shrink-0 w-[170px] relative overflow-hidden rounded-2xl h-[230px] text-left shadow-soft transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] group"
               >
