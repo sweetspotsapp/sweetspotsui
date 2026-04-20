@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP } from "@/lib/storageKeys";
+import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP, SS_OPEN_CREATE_TRIP } from "@/lib/storageKeys";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ShareTripDialog from "./trip/ShareTripDialog";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -91,6 +91,18 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
           setShowCreateModal(true);
         }
       } catch { /* ignore bad data */ }
+    }
+  }, []);
+
+  // Auto-open create modal when triggered from elsewhere (e.g. Home "Plan a Trip" button)
+  useEffect(() => {
+    const flag = sessionStorage.getItem(SS_OPEN_CREATE_TRIP);
+    if (flag) {
+      sessionStorage.removeItem(SS_OPEN_CREATE_TRIP);
+      setEditingId(null);
+      setTripData(null);
+      setPrefillParams(null);
+      setShowCreateModal(true);
     }
   }, []);
 

@@ -5,7 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
-import { SS_RESUME_TRIP, lsRecsCache } from "@/lib/storageKeys";
+import { SS_RESUME_TRIP, SS_OPEN_CREATE_TRIP, lsRecsCache } from "@/lib/storageKeys";
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning, Link2 } from "lucide-react";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
 import { useWeatherForecast } from "@/hooks/useWeatherForecast";
@@ -168,7 +168,10 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     return CURATED_SECTIONS[region] || CURATED_SECTIONS.global;
   }, [onboardingData?.explore_location, geoLocation?.lat]);
 
-  const handlePlanTrip = () => onNavigateToTab?.("trip");
+  const handlePlanTrip = () => {
+    sessionStorage.setItem(SS_OPEN_CREATE_TRIP, "1");
+    onNavigateToTab?.("trip");
+  };
   const handleGoToTrip = (tripId: string) => {
     sessionStorage.setItem(SS_RESUME_TRIP, tripId);
     onNavigateToTab?.("trip");
@@ -369,92 +372,9 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
 
       <ImportLinkDialog open={showImportDialog} onClose={() => setShowImportDialog(false)} />
 
-      {/* Recently Saved */}
-      {loading && user && <RecentSavedSkeleton />}
-      {!loading && recentlySaved.length > 0 && (
-        <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "150ms", animationFillMode: "both" }}>
-          <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-base font-semibold text-foreground">Recently Saved</h2>
-            <button onClick={() => onNavigateToTab?.("saved")} className="flex items-center gap-0.5 text-sm text-primary font-medium">
-              See all <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
-            {recentlySaved.map((place) => (
-              <div
-                key={place.place_id}
-                className="shrink-0 w-[140px] rounded-2xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-all active:scale-[0.97]"
-                onClick={() => navigate(`/place/${place.place_id}`)}
-              >
-                <div className="h-[100px] bg-muted">
-                  <img src={place.image} alt={place.name} className="w-full h-full object-cover" loading="lazy" width={140} height={100} />
-                </div>
-                <div className="p-2.5">
-                  <p className="text-xs font-semibold text-foreground truncate">{place.name}</p>
-                  {place.rating && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{place.rating.toFixed(1)} rating</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Spots You Might Like */}
-      {recsEnabled && recsLoading && <RecsSkeleton />}
-      {recsEnabled && !recsLoading && recommendations.length > 0 && (
-        <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "180ms", animationFillMode: "both" }}>
-          <div className="flex items-center justify-between px-5 mb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <h2 className="text-base font-semibold text-foreground">Spots You Might Like</h2>
-            </div>
-            <button onClick={handleDiscover} className="flex items-center gap-0.5 text-sm text-primary font-medium">
-              More <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
-            {recommendations.map((rec) => {
-              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-              const imgSrc = rec.photo_name
-                ? `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(rec.photo_name)}&maxWidthPx=400`
-                : null;
-              return (
-                <div
-                  key={rec.place_id}
-                  className="shrink-0 w-[160px] rounded-2xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-all active:scale-[0.97] border border-border/40"
-                  onClick={() => navigate(`/place/${rec.place_id}`)}
-                >
-                  <div className="h-[110px] bg-muted relative">
-                    {imgSrc ? (
-                      <img src={imgSrc} alt={rec.name} className="w-full h-full object-cover" loading="lazy" width={160} height={110} />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                        <Star className="w-6 h-6 text-muted-foreground/40" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2.5">
-                    <p className="text-xs font-semibold text-foreground truncate">{rec.name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{rec.ai_reason}</p>
-                    {rec.rating && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                        <span className="text-[11px] text-muted-foreground">{rec.rating.toFixed(1)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Trip Ideas — personalized sections by location */}
+      {/* Trip Ideas — personalized sections by location (surfaced early to encourage planning) */}
       {tripSections.map((section, sIdx) => (
-        <div key={section.title} className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: `${200 + sIdx * 50}ms`, animationFillMode: "both" }}>
+        <div key={section.title} className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: `${150 + sIdx * 50}ms`, animationFillMode: "both" }}>
           <div className="flex items-center justify-between px-5 mb-3">
             <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
             {sIdx === 0 && (
@@ -503,6 +423,89 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           </div>
         </div>
       ))}
+
+      {/* Spots You Might Like */}
+      {recsEnabled && recsLoading && <RecsSkeleton />}
+      {recsEnabled && !recsLoading && recommendations.length > 0 && (
+        <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
+          <div className="flex items-center justify-between px-5 mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <h2 className="text-base font-semibold text-foreground">Spots You Might Like</h2>
+            </div>
+            <button onClick={handleDiscover} className="flex items-center gap-0.5 text-sm text-primary font-medium">
+              More <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+            {recommendations.map((rec) => {
+              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+              const imgSrc = rec.photo_name
+                ? `${supabaseUrl}/functions/v1/place-photo?photo_name=${encodeURIComponent(rec.photo_name)}&maxWidthPx=400`
+                : null;
+              return (
+                <div
+                  key={rec.place_id}
+                  className="shrink-0 w-[160px] rounded-2xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-all active:scale-[0.97] border border-border/40"
+                  onClick={() => navigate(`/place/${rec.place_id}`)}
+                >
+                  <div className="h-[110px] bg-muted relative">
+                    {imgSrc ? (
+                      <img src={imgSrc} alt={rec.name} className="w-full h-full object-cover" loading="lazy" width={160} height={110} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-muted">
+                        <Star className="w-6 h-6 text-muted-foreground/40" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-xs font-semibold text-foreground truncate">{rec.name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{rec.ai_reason}</p>
+                    {rec.rating && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                        <span className="text-[11px] text-muted-foreground">{rec.rating.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recently Saved — moved to bottom to reduce distraction from planning */}
+      {loading && user && <RecentSavedSkeleton />}
+      {!loading && recentlySaved.length > 0 && (
+        <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "240ms", animationFillMode: "both" }}>
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="text-base font-semibold text-foreground">Recently Saved</h2>
+            <button onClick={() => onNavigateToTab?.("saved")} className="flex items-center gap-0.5 text-sm text-primary font-medium">
+              See all <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+            {recentlySaved.map((place) => (
+              <div
+                key={place.place_id}
+                className="shrink-0 w-[140px] rounded-2xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-all active:scale-[0.97]"
+                onClick={() => navigate(`/place/${place.place_id}`)}
+              >
+                <div className="h-[100px] bg-muted">
+                  <img src={place.image} alt={place.name} className="w-full h-full object-cover" loading="lazy" width={140} height={100} />
+                </div>
+                <div className="p-2.5">
+                  <p className="text-xs font-semibold text-foreground truncate">{place.name}</p>
+                  {place.rating && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{place.rating.toFixed(1)} rating</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* New user CTA */}
       {engagementLevel === "new" && !loading && (
