@@ -113,13 +113,14 @@ const TripView = ({ tripData, tripParams, tripId, onBack, onSwap, onReplace, onR
     return forecast.get(todayStr) || null;
   }, [forecast]);
 
-  // Ensure all activities have stable drag IDs
+  // Ensure all activities have stable drag IDs (skip in read-only mode)
   useEffect(() => {
+    if (readOnly) return;
     const withIds = ensureDragIds(tripData);
     if (withIds !== tripData && onSaveEdits) {
       onSaveEdits(withIds);
     }
-  }, [tripData]);
+  }, [tripData, readOnly]);
 
   // Auto-scroll to today's section in live mode
   useEffect(() => {
@@ -250,89 +251,95 @@ const TripView = ({ tripData, tripParams, tripId, onBack, onSwap, onReplace, onR
   return (
     <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl px-4 md:px-6 lg:px-8 py-4 space-y-6 relative">
       {/* Back + Actions */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          All Trips
-        </button>
-        <div className="flex items-center gap-2">
-          {isEditing ? (
+      {!hideBack || !readOnly ? (
+        <div className="flex items-center justify-between">
+          {!hideBack ? (
             <button
-              onClick={handleCancelEditing}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <X className="w-4 h-4" /> Cancel
+              <ArrowLeft className="w-4 h-4" />
+              All Trips
             </button>
-          ) : (
-            <Popover open={editMenuOpen} onOpenChange={setEditMenuOpen}>
-              <PopoverTrigger asChild>
+          ) : <span />}
+          {!readOnly && (
+            <div className="flex items-center gap-2">
+              {isEditing ? (
                 <button
-                  aria-label="Trip options"
-                  className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all active:scale-[0.97]"
+                  onClick={handleCancelEditing}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                 >
-                  <MoreHorizontal className="w-4 h-4" />
+                  <X className="w-4 h-4" /> Cancel
                 </button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-44 p-1.5">
-                <button
-                  onClick={() => {
-                    setEditMenuOpen(false);
-                    handleStartEditing();
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                >
-                  <Pencil className="w-4 h-4" /> Edit trip
-                </button>
-                <button
-                  onClick={() => {
-                    setEditMenuOpen(false);
-                    onRegenerate();
-                  }}
-                  disabled={isGenerating}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                >
-                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                  Regenerate
-                </button>
-                {onShare && (
-                  <button
-                    onClick={() => {
-                      setEditMenuOpen(false);
-                      onShare();
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Share2 className="w-4 h-4" /> Share trip
-                  </button>
-                )}
-                {tripId && (
-                  <button
-                    onClick={() => {
-                      setEditMenuOpen(false);
-                      if (isPublished) setShowUnpublishConfirm(true);
-                      else setShowPublishConfirm(true);
-                    }}
-                    disabled={isPublishMutating}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                  >
-                    {isPublishMutating ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : isPublished ? (
-                      <GlobeLock className="w-4 h-4" />
-                    ) : (
-                      <Globe className="w-4 h-4" />
+              ) : (
+                <Popover open={editMenuOpen} onOpenChange={setEditMenuOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      aria-label="Trip options"
+                      className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all active:scale-[0.97]"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-44 p-1.5">
+                    <button
+                      onClick={() => {
+                        setEditMenuOpen(false);
+                        handleStartEditing();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" /> Edit trip
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditMenuOpen(false);
+                        onRegenerate();
+                      }}
+                      disabled={isGenerating}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                      {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                      Regenerate
+                    </button>
+                    {onShare && (
+                      <button
+                        onClick={() => {
+                          setEditMenuOpen(false);
+                          onShare();
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Share2 className="w-4 h-4" /> Share trip
+                      </button>
                     )}
-                    {isPublished ? "Unpublish" : "Publish"}
-                  </button>
-                )}
-              </PopoverContent>
-            </Popover>
+                    {tripId && (
+                      <button
+                        onClick={() => {
+                          setEditMenuOpen(false);
+                          if (isPublished) setShowUnpublishConfirm(true);
+                          else setShowPublishConfirm(true);
+                        }}
+                        disabled={isPublishMutating}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                      >
+                        {isPublishMutating ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : isPublished ? (
+                          <GlobeLock className="w-4 h-4" />
+                        ) : (
+                          <Globe className="w-4 h-4" />
+                        )}
+                        {isPublished ? "Unpublish" : "Publish"}
+                      </button>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
           )}
         </div>
-      </div>
+      ) : null}
 
       {/* Editing banner */}
       {isEditing && (
