@@ -300,12 +300,12 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
 
       {/* ─── Compact Trip Info Bar (replaces hero) ─── */}
       {!isEditing && (
-        <div className="px-4 py-3 rounded-2xl bg-foreground/95 ring-2 ring-primary/40 shadow-card">
+        <div className="px-4 py-3 rounded-2xl bg-foreground/95 ring-2 ring-primary/40 shadow-card bg-slate-50 text-black">
           {tripParams?.name && (
-            <h2 className="text-lg font-bold text-background">{tripParams.name}</h2>
+            <h2 className="text-lg font-bold text-background text-amber-600">{tripParams.name}</h2>
           )}
           <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-sm text-background/70 flex items-center gap-1.5">
+            <p className="text-background/70 flex items-center gap-1.5 text-amber-600 text-base">
               <MapPin className="w-3.5 h-3.5" />
               {tripParams?.destination}
             </p>
@@ -326,16 +326,16 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
             )}
           </div>
           {tripData.summary && (
-            <p className="text-xs text-background/60 mt-2 leading-relaxed line-clamp-2">{tripData.summary}</p>
+            <p className="text-background/60 mt-2 leading-relaxed line-clamp-2 text-sm text-black">{tripData.summary}</p>
           )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-xs text-background/70">
-            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-primary" />{tripData.days.length} days</span>
-            <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-primary" />{totalSpots} spots</span>
+            <span className="flex items-center gap-1 text-black"><Calendar className="w-3.5 h-3.5 text-primary" />{tripData.days.length} days</span>
+            <span className="flex items-center gap-1 text-black"><MapPin className="w-3.5 h-3.5 text-primary" />{totalSpots} spots</span>
             {budgetSummary.grandTotal > 0 && (
-              <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5 text-primary" />${budgetSummary.grandTotal.toLocaleString()}</span>
+              <span className="flex items-center gap-1 text-black"><DollarSign className="w-3.5 h-3.5 text-primary" />${budgetSummary.grandTotal.toLocaleString()}</span>
             )}
             {tripParams && tripParams.groupSize > 1 && (
-              <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-primary" />{tripParams.groupSize} people</span>
+              <span className="flex items-center gap-1 text-black"><Users className="w-3.5 h-3.5 text-primary" />{tripParams.groupSize} people</span>
             )}
           </div>
           {tripParams?.vibes && tripParams.vibes.length > 0 && (
