@@ -481,6 +481,57 @@ const TripView = ({ tripData, tripParams, tripId, onBack, onSwap, onReplace, onR
           </div>
         </div>
       )}
+
+      {/* Publish confirmation */}
+      <AlertDialog open={showPublishConfirm} onOpenChange={setShowPublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Want to publish to SweetSpots?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This itinerary will be visible to all SweetSpots users, and others will be able to reuse it as a template.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!tripParams) return;
+                const ok = await publish({ tripParams, tripData, tripName: (tripData as any)?.name ?? null });
+                if (ok) setShowPublishConfirm(false);
+              }}
+              disabled={isPublishMutating || !tripParams}
+            >
+              {isPublishMutating ? "Publishing…" : "Publish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unpublish confirmation */}
+      <AlertDialog open={showUnpublishConfirm} onOpenChange={setShowUnpublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unpublish from SweetSpots?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This itinerary will be removed from the public templates and will no longer be discoverable by other users.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                const ok = await unpublish();
+                if (ok) setShowUnpublishConfirm(false);
+              }}
+              disabled={isPublishMutating}
+            >
+              {isPublishMutating ? "Removing…" : "Unpublish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
