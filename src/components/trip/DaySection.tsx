@@ -302,9 +302,16 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
     return routeDataMap.get(`${fromLat},${fromLng}->${toLat},${toLng}`);
   };
 
-  const dayTotal = day.slots.reduce((total, slot) => 
-    total + slot.activities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0), 0
-  );
+  const allActivities = day.slots.flatMap(s => s.activities);
+  const spotsCount = allActivities.length;
+  const dayTotal = allActivities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
+  // Cost range: ±15% buffer to reflect typical variability
+  const costLow = dayTotal > 0 ? Math.round(dayTotal * 0.85) : 0;
+  const costHigh = dayTotal > 0 ? Math.round(dayTotal * 1.15) : 0;
+  // Top 3 unique vibe categories for the day
+  const vibeCategories = Array.from(
+    new Set(allActivities.map(a => a.category).filter(Boolean))
+  ).slice(0, 3);
 
   // For live mode: find first unchecked activity as "current"
   const findFirstUnchecked = (): string | null => {
