@@ -23,6 +23,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ProfilePage = lazy(() => import("./components/ProfilePage"));
 const Admin = lazy(() => import("./pages/Admin"));
 const ShareTarget = lazy(() => import("./pages/ShareTarget"));
+const SharedTrip = lazy(() => import("./pages/SharedTrip"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,7 @@ const App = () => (
                     <Route path="/help-support" element={<HelpSupport />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/share" element={<ShareTarget />} />
+                    <Route path="/trip/shared/:tripId" element={<SharedTrip />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
