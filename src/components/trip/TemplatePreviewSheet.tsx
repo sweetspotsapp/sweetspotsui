@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { MapPin, Users, DollarSign, Calendar, X, Sparkles } from "lucide-react";
+import { MapPin, Users, DollarSign, Calendar, Sparkles } from "lucide-react";
 import type { TripData } from "@/hooks/useTrip";
 import UseItineraryDialog from "./UseItineraryDialog";
 
