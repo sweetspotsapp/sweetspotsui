@@ -334,26 +334,37 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
     return { done, total };
   })();
 
+  const isActive = !!(isLive && isToday);
+
   return (
     <div className={cn(
       "rounded-2xl overflow-hidden shadow-card",
-      isLive && isToday ? "bg-foreground/95 ring-2 ring-primary/40" : "bg-muted-foreground/25"
+      isActive ? "bg-foreground/95 ring-2 ring-primary/40" : "bg-background border border-border"
     )}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-background/5 transition-colors"
+        className={cn(
+          "w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors",
+          isActive ? "hover:bg-background/5" : "hover:bg-muted/50"
+        )}
       >
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center",
-          isLive && isToday ? "bg-primary text-primary-foreground" : "bg-background/15"
+          isActive ? "bg-primary text-primary-foreground" : "bg-foreground/10"
         )}>
-          <span className={cn("text-sm font-bold", isLive && isToday ? "text-primary-foreground" : "text-background")}>{dayIndex + 1}</span>
+          <span className={cn(
+            "text-sm font-bold",
+            isActive ? "text-primary-foreground" : "text-foreground"
+          )}>{dayIndex + 1}</span>
         </div>
         <div className="flex-1">
-          {isLive && isToday && (
+          {isActive && (
             <span className="text-[9px] font-bold text-primary-foreground bg-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider inline-block mb-0.5">Today</span>
           )}
-          <span className="text-xs text-background/70 block">
+          <span className={cn(
+            "text-xs block font-medium",
+            isActive ? "text-background/70" : "text-foreground/70"
+          )}>
             {liveProgress
               ? `${liveProgress.done}/${liveProgress.total} done`
               : `${day.slots.reduce((acc, s) => acc + s.activities.length, 0)} activities`}
@@ -361,14 +372,14 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-background/60" />
+          <ChevronUp className={cn("w-4 h-4", isActive ? "text-background/60" : "text-foreground/60")} />
         ) : (
-          <ChevronDown className="w-4 h-4 text-background/60" />
+          <ChevronDown className={cn("w-4 h-4", isActive ? "text-background/60" : "text-foreground/60")} />
         )}
       </button>
 
       {isOpen && (
-        <div className="border-t border-background/10">
+        <div className={cn("border-t", isActive ? "border-background/10" : "border-border")}>
           {day.slots.map((slot, slotIndex) => {
             const prevSlot = slotIndex > 0 ? day.slots[slotIndex - 1] : null;
             const prevLastActivity = prevSlot?.activities?.[prevSlot.activities.length - 1];
@@ -382,7 +393,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
             return (
               <div key={slotIndex}>
                 {prevLastActivity && firstActivity && !isEditing && (
-                  <div className="border-t border-background/10">
+                  <div className={cn("border-t", isActive ? "border-background/10" : "border-border")}>
                     <DistanceConnector
                       fromLat={prevLastActivity.lat}
                       fromLng={prevLastActivity.lng}
@@ -394,9 +405,12 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                   </div>
                 )}
 
-                <div className={cn(slotIndex > 0 && !prevLastActivity && "border-t border-background/10")}>
-                  <div className="px-4 py-2 bg-background/5">
-                    <span className="text-xs font-medium text-background/70">
+                <div className={cn(slotIndex > 0 && !prevLastActivity && (isActive ? "border-t border-background/10" : "border-t border-border"))}>
+                  <div className={cn("px-4 py-2", isActive ? "bg-background/5" : "bg-muted/50")}>
+                    <span className={cn(
+                      "text-xs font-semibold uppercase tracking-wider",
+                      isActive ? "text-background/70" : "text-foreground/60"
+                    )}>
                       {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
                   </div>
