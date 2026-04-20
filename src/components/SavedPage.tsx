@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, SortAsc, Loader2, X, Search, ExternalLink } from "lucide-react";
+import { Plus, SortAsc, Loader2, Search, ExternalLink } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -54,7 +54,7 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showAddSpotMenu, setShowAddSpotMenu] = useState(false);
-  const [tipDismissed, setTipDismissed] = useState(() => 
+  const [tipDismissed] = useState(() => 
     localStorage.getItem(LS_IMPORT_TIP_DISMISSED) === 'true'
   );
   // Handle openBoard state from navigation (e.g., when returning from place details)
