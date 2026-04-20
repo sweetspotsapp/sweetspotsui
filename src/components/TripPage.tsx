@@ -94,6 +94,18 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
     }
   }, []);
 
+  // Auto-open create modal when triggered from elsewhere (e.g. Home "Plan a Trip" button)
+  useEffect(() => {
+    const flag = sessionStorage.getItem(SS_OPEN_CREATE_TRIP);
+    if (flag) {
+      sessionStorage.removeItem(SS_OPEN_CREATE_TRIP);
+      setEditingId(null);
+      setTripData(null);
+      setPrefillParams(null);
+      setShowCreateModal(true);
+    }
+  }, []);
+
   // Store current editing ID so ActivityCard can reference it for back-navigation
   useEffect(() => {
     if (phase === "view" && editingId) {
