@@ -388,7 +388,7 @@ const EntryScreen = ({ onComplete }: EntryScreenProps) => {
               value={locationInput}
               onChange={(e) => handleLocationInputChange(e.target.value)}
               placeholder="Search city, suburb, or address..."
-              className={`pl-12 pr-14 h-16 rounded-2xl text-lg ${
+              className={`pl-12 pr-4 h-16 rounded-2xl text-lg ${
                 isLocationConfirmed ? 'border-primary ring-1 ring-primary' : ''
               }`}
               onFocus={() => {
