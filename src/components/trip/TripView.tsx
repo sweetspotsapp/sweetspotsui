@@ -278,6 +278,17 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
                   {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                   Regenerate
                 </button>
+                {onShare && (
+                  <button
+                    onClick={() => {
+                      setEditMenuOpen(false);
+                      onShare();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Share2 className="w-4 h-4" /> Share trip
+                  </button>
+                )}
               </PopoverContent>
             </Popover>
           )}
