@@ -39,6 +39,7 @@ interface TripViewProps {
   isGenerating: boolean;
   onRegenerate: () => void;
   onSave?: () => void;
+  onShare?: () => void;
   onSaveEdits?: (editedTrip: TripData) => void;
   // Live mode props
   isLive?: boolean;
