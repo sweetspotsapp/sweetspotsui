@@ -349,7 +349,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
         )}
       >
         <div className={cn(
-          "w-9 h-9 rounded-xl flex items-center justify-center",
+          "w-9 h-9 rounded-full flex items-center justify-center",
           isActive ? "bg-primary text-primary-foreground" : "bg-foreground/10"
         )}>
           <span className={cn(
