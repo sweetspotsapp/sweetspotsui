@@ -320,22 +320,22 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         </div>
       )}
 
-      {/* Quick Actions — compact horizontal utility buttons */}
+      {/* Quick Actions — equal-width balanced buttons */}
       <div className="px-5 pt-5 pb-2 animate-fade-in" style={{ animationDelay: "100ms", animationFillMode: "both" }}>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={handlePlanTrip}
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-primary text-primary-foreground shadow-soft hover:shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all"
+            className="inline-flex items-center justify-center gap-2 h-11 lg:h-12 px-4 lg:px-6 rounded-full bg-primary text-primary-foreground shadow-soft hover:shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
             <CalendarDays className="w-4 h-4" />
-            <span className="text-sm font-semibold">Plan a Trip</span>
+            <span className="text-sm lg:text-base font-semibold">Plan a Trip</span>
           </button>
           <button
             onClick={() => setShowDiscoverMenu(true)}
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-card text-foreground border border-border/60 shadow-soft hover:bg-muted/60 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+            className="inline-flex items-center justify-center gap-2 h-11 lg:h-12 px-4 lg:px-6 rounded-full bg-card text-foreground border border-border/60 shadow-soft hover:bg-muted/60 hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
             <Search className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">Discover Spots</span>
+            <span className="text-sm lg:text-base font-semibold">Discover Spots</span>
           </button>
         </div>
       </div>
