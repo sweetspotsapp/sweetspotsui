@@ -252,9 +252,10 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
             <Popover open={editMenuOpen} onOpenChange={setEditMenuOpen}>
               <PopoverTrigger asChild>
                 <button
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all active:scale-[0.97]"
+                  aria-label="Trip options"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all active:scale-[0.97]"
                 >
-                  <Pencil className="w-3.5 h-3.5" /> Edit
+                  <MoreHorizontal className="w-4 h-4" />
                 </button>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-44 p-1.5">
