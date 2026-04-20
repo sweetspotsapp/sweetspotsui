@@ -148,16 +148,18 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
         let lng = options?.lng;
         const locationName = options?.locationName;
         
+        let resolvedLocationName = locationName;
         if (lat === undefined || lng === undefined) {
-          if (!locationName) {
+          if (!resolvedLocationName) {
             // No location name provided, try GPS — fall back gracefully if denied
             try {
               const location = await getLocation();
               lat = location.lat;
               lng = location.lng;
             } catch {
-              // Geo failed — proceed without coordinates, backend will use IP-based location
-              console.warn("Geolocation unavailable, proceeding without coordinates");
+              // Geo failed — fall back to a default city so the backend has a location to geocode
+              console.warn("Geolocation unavailable, falling back to default location");
+              resolvedLocationName = "New York";
             }
           }
           // If locationName is provided, let the backend geocode it
