@@ -426,6 +426,8 @@ export type Database = {
       }
       trip_templates: {
         Row: {
+          author_avatar_url: string | null
+          author_username: string | null
           budget: string
           cover_image: string | null
           created_at: string
@@ -434,12 +436,17 @@ export type Database = {
           group_size: number
           id: string
           is_active: boolean
+          published_at: string | null
+          published_by: string | null
+          source_trip_id: string | null
           tagline: string | null
           trip_data: Json
           updated_at: string
           vibes: string[]
         }
         Insert: {
+          author_avatar_url?: string | null
+          author_username?: string | null
           budget?: string
           cover_image?: string | null
           created_at?: string
@@ -448,12 +455,17 @@ export type Database = {
           group_size?: number
           id?: string
           is_active?: boolean
+          published_at?: string | null
+          published_by?: string | null
+          source_trip_id?: string | null
           tagline?: string | null
           trip_data: Json
           updated_at?: string
           vibes?: string[]
         }
         Update: {
+          author_avatar_url?: string | null
+          author_username?: string | null
           budget?: string
           cover_image?: string | null
           created_at?: string
@@ -462,6 +474,9 @@ export type Database = {
           group_size?: number
           id?: string
           is_active?: boolean
+          published_at?: string | null
+          published_by?: string | null
+          source_trip_id?: string | null
           tagline?: string | null
           trip_data?: Json
           updated_at?: string

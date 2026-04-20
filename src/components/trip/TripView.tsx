@@ -1,5 +1,16 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, X, MapPin, Calendar, Users, CheckCircle2, Share2, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, RotateCcw, Loader2, Save, Pencil, Map, List, DollarSign, X, MapPin, Calendar, Users, CheckCircle2, Share2, MoreHorizontal, Globe, GlobeLock } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { usePublishTrip } from "@/hooks/usePublishTrip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
@@ -29,6 +40,7 @@ const WeatherIcon = ({ icon, size = 14 }: { icon: string; size?: number }) => {
 interface TripViewProps {
   tripData: TripData;
   tripParams?: TripParams | null;
+  tripId?: string | null;
   onBack: () => void;
   onSwap: (dayIndex: number, slotIndex: number, activityIndex: number) => Promise<SwapAlternative[] | undefined>;
   onReplace: (dayIndex: number, slotIndex: number, activityIndex: number, newActivity: { name: string; description: string; category: string }) => void;
@@ -70,12 +82,15 @@ function ensureDragIds(trip: TripData): TripData {
   return changed ? updated : trip;
 }
 
-const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onShare, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity, onCompleteTrip }: TripViewProps) => {
+const TripView = ({ tripData, tripParams, tripId, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onShare, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity, onCompleteTrip }: TripViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
   const [editMenuOpen, setEditMenuOpen] = useState(false);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [showUnpublishConfirm, setShowUnpublishConfirm] = useState(false);
   const todayRef = useRef<HTMLDivElement>(null);
+  const { isPublished, isMutating: isPublishMutating, publish, unpublish } = usePublishTrip(tripId ?? null);
 
   // Detect if user has made unsaved edits while in editing mode
   const isDirty = useMemo(() => {
@@ -290,6 +305,26 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
                     <Share2 className="w-4 h-4" /> Share trip
                   </button>
                 )}
+                {tripId && (
+                  <button
+                    onClick={() => {
+                      setEditMenuOpen(false);
+                      if (isPublished) setShowUnpublishConfirm(true);
+                      else setShowPublishConfirm(true);
+                    }}
+                    disabled={isPublishMutating}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                  >
+                    {isPublishMutating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : isPublished ? (
+                      <GlobeLock className="w-4 h-4" />
+                    ) : (
+                      <Globe className="w-4 h-4" />
+                    )}
+                    {isPublished ? "Unpublish" : "Publish"}
+                  </button>
+                )}
               </PopoverContent>
             </Popover>
           )}
@@ -446,6 +481,57 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
           </div>
         </div>
       )}
+
+      {/* Publish confirmation */}
+      <AlertDialog open={showPublishConfirm} onOpenChange={setShowPublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Want to publish to SweetSpots?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This itinerary will be visible to all SweetSpots users, and others will be able to reuse it as a template.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!tripParams) return;
+                const ok = await publish({ tripParams, tripData, tripName: (tripData as any)?.name ?? null });
+                if (ok) setShowPublishConfirm(false);
+              }}
+              disabled={isPublishMutating || !tripParams}
+            >
+              {isPublishMutating ? "Publishing…" : "Publish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unpublish confirmation */}
+      <AlertDialog open={showUnpublishConfirm} onOpenChange={setShowUnpublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unpublish from SweetSpots?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This itinerary will be removed from the public templates and will no longer be discoverable by other users.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                const ok = await unpublish();
+                if (ok) setShowUnpublishConfirm(false);
+              }}
+              disabled={isPublishMutating}
+            >
+              {isPublishMutating ? "Removing…" : "Unpublish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -85,6 +85,19 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDiscoverMenu, setShowDiscoverMenu] = useState(false);
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
+  const [communityTrips, setCommunityTrips] = useState<Array<{
+    id: string;
+    destination: string;
+    duration: number;
+    vibes: string[];
+    budget: string;
+    group_size: number;
+    tagline: string | null;
+    trip_data: any;
+    cover_image: string | null;
+    author_username: string | null;
+    author_avatar_url: string | null;
+  }>>([]);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -113,6 +126,23 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     };
     fetchData();
   }, [user]);
+
+  // Fetch community-published trip templates (newest first)
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("trip_templates")
+      .select("id, destination, duration, vibes, budget, group_size, tagline, trip_data, cover_image, author_username, author_avatar_url, published_by")
+      .eq("is_active", true)
+      .not("published_by", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(12)
+      .then(({ data }) => {
+        if (!active || !data) return;
+        setCommunityTrips(data as any);
+      });
+    return () => { active = false; };
+  }, []);
 
   // Fetch notification_settings to check recommendations preference
   const [recsEnabled, setRecsEnabled] = useState(true);
@@ -168,8 +198,37 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   // Personalized trip ideas based on user's location
   const tripSections = useMemo((): TripSection[] => {
     const region = detectRegion(onboardingData?.explore_location, geoLocation?.lat);
-    return CURATED_SECTIONS[region] || CURATED_SECTIONS.global;
-  }, [onboardingData?.explore_location, geoLocation?.lat]);
+    const baseSections = CURATED_SECTIONS[region] || CURATED_SECTIONS.global;
+    if (!communityTrips.length) return baseSections;
+
+    // Convert community trips to CuratedTrip-shaped items and prepend to first section
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const community = communityTrips.map((c) => ({
+      id: `community-${c.id}`,
+      title: c.destination,
+      destination: c.destination,
+      subtitle: c.tagline || `By ${c.author_username || "a SweetSpots user"}`,
+      duration: c.duration,
+      groupSize: c.group_size,
+      budget: c.budget,
+      vibes: c.vibes,
+      image: c.cover_image
+        || `${supabaseUrl}/storage/v1/object/public/place-photos/placeholder.jpg`,
+      tripData: c.trip_data,
+      authorUsername: c.author_username,
+      authorAvatarUrl: c.author_avatar_url,
+      isCommunity: true,
+    } as any));
+
+    // Inject community trips at the top of the first section
+    const updated = [...baseSections];
+    if (updated[0]) {
+      updated[0] = { ...updated[0], trips: [...community, ...updated[0].trips] };
+    } else {
+      updated.push({ title: "From the Community", trips: community as any });
+    }
+    return updated;
+  }, [onboardingData?.explore_location, geoLocation?.lat, communityTrips]);
 
   const handlePlanTrip = () => {
     // Open the Create Trip modal in-place (no tab navigation)
@@ -414,6 +473,25 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
                   height={520}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                {(t as any).isCommunity && (
+                  <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/90 backdrop-blur-sm shadow-sm max-w-[140px]">
+                    {(t as any).authorAvatarUrl ? (
+                      <img
+                        src={(t as any).authorAvatarUrl}
+                        alt=""
+                        className="w-4 h-4 rounded-full object-cover shrink-0"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full bg-primary/20 text-primary text-[8px] font-semibold flex items-center justify-center shrink-0">
+                        {((t as any).authorUsername?.[0] || "?").toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-[10px] font-medium text-foreground truncate">
+                      {(t as any).authorUsername || "Community"}
+                    </span>
+                  </div>
+                )}
                 <div className="relative h-full flex flex-col justify-end p-4">
                   <p className="text-base font-bold text-white leading-tight tracking-tight">{t.title}</p>
                   <p className="text-[11px] text-white/75 mt-1">{t.duration} {t.duration === 1 ? "day" : "days"} · {t.subtitle}</p>
