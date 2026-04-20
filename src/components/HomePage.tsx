@@ -9,6 +9,7 @@ import { SS_RESUME_TRIP, SS_CREATE_TRIP_PARAMS, lsRecsCache } from "@/lib/storag
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning, Link2 } from "lucide-react";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
 import CreateTripModal from "./trip/CreateTripModal";
+import TemplatePreviewSheet, { type TemplatePreviewData } from "./trip/TemplatePreviewSheet";
 import type { TripParams } from "@/hooks/useTrip";
 import { useWeatherForecast } from "@/hooks/useWeatherForecast";
 import { Skeleton } from "./ui/skeleton";
