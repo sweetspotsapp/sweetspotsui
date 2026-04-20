@@ -47,7 +47,10 @@ export const useLiveTrip = (trips: SavedTrip[]): LiveTripInfo => {
     if (!liveTrip) return 0;
     const today = startOfDay(new Date());
     const start = startOfDay(parseISO(liveTrip.start_date));
-    return Math.max(0, differenceInDays(today, start));
+    const totalDays = liveTrip.trip_data?.days?.length ?? 0;
+    const rawIndex = differenceInDays(today, start);
+    const maxIndex = Math.max(0, totalDays - 1);
+    return Math.min(maxIndex, Math.max(0, rawIndex));
   }, [liveTrip]);
 
   // Load checked_activities from DB when trip changes
