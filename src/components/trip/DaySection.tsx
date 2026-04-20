@@ -347,7 +347,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
   return (
     <div className={cn(
       "rounded-2xl overflow-hidden shadow-card",
-      isActive ? "bg-foreground/95 ring-2 ring-primary/40" : "bg-background border border-border"
+      isActive ? "bg-foreground/95 ring-2 ring-primary/40" : "bg-background border border-primary"
     )}>
       <button
         onClick={() => setIsOpen(!isOpen)}
