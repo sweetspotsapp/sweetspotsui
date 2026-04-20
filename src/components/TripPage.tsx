@@ -662,14 +662,14 @@ const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdi
         <p className="text-sm text-muted-foreground mt-1">Your curated travel plans</p>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2">
+      {/* Filter Tabs — horizontal scroll on mobile to avoid overflow */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4" style={{ WebkitOverflowScrolling: "touch" }}>
         {FILTERS.map(f => (
           <button
             key={f.id}
             onClick={() => setActiveFilter(f.id)}
             className={cn(
-              "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+              "shrink-0 h-9 px-4 inline-flex items-center justify-center rounded-full text-sm font-medium whitespace-nowrap transition-all",
               activeFilter === f.id
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
