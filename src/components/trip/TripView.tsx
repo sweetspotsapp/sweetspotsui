@@ -325,7 +325,7 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="flex items-center gap-1 text-xs text-background/70">
+                    <span className="flex items-center gap-1 text-xs text-foreground/70">
                       <WeatherIcon icon={todayWeather.icon} size={14} />
                       {todayWeather.tempHigh}°C
                     </span>
