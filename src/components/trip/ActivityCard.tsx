@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeftRight, ExternalLink, Heart, Trash2, MoreVertical, Check, SkipForward, X, Navigation } from "lucide-react";
+import { ArrowLeftRight, ExternalLink, Heart, Trash2, MoreVertical, Check, X, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReplaceSheet from "./ReplaceSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useTrip";
@@ -259,12 +259,6 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-500/20 transition-colors whitespace-nowrap"
                 >
                   <Check className="w-3.5 h-3.5" /> Been here
-                </button>
-                <button
-                  onClick={onSkip}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-                >
-                  <SkipForward className="w-3.5 h-3.5" /> Skip
                 </button>
                 <button
                   onClick={onCancel}

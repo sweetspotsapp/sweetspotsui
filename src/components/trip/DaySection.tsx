@@ -350,11 +350,11 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
       >
         <div className={cn(
           "w-9 h-9 rounded-full flex items-center justify-center",
-          isActive ? "bg-primary text-primary-foreground" : "bg-foreground/10 bg-amber-600"
-        )}>,search:
+          isActive ? "bg-primary text-primary-foreground" : "bg-amber-600"
+        )}>
           <span className={cn(
             "text-sm font-bold",
-            isActive ? "text-primary-foreground" : "text-foreground text-slate-50"
+            isActive ? "text-primary-foreground" : "text-slate-50"
           )}>{dayIndex + 1}</span>
         </div>
         <div className="flex-1">
@@ -406,11 +406,11 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                 )}
 
                 <div className={cn(slotIndex > 0 && !prevLastActivity && (isActive ? "border-t border-background/10" : "border-t border-border"))}>
-                  <div className={cn("px-4 py-2", isActive ? "bg-background/5 bg-current" : "bg-muted/50")}>
+                  <div className={cn("px-4 py-2", isActive ? "bg-background/5" : "bg-muted/50")}>
                     <span className={cn(
-                      "text-xs font-semibold uppercase tracking-wider",
-                      isActive ? "text-background/70 text-amber-600 text-left" : "text-foreground/60"
-                    )}>,search:
+                      "text-xs font-semibold uppercase tracking-wider text-left",
+                      isActive ? "text-amber-600" : "text-foreground/60"
+                    )}>
                       {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
                   </div>
