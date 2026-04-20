@@ -29,6 +29,8 @@ export interface DBTripTemplate {
   group_size: number;
   tagline: string | null;
   trip_data: any;
+  /** Optional user-provided overrides from the "Use Itinerary" dialog */
+  overrides?: { name?: string; startDate?: string };
 }
 
 interface HomePageProps {
