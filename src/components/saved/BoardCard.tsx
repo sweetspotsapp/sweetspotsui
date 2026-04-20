@@ -113,7 +113,7 @@ const BoardCard = ({
               <button
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Board options"
-                className="absolute top-2 right-2 h-6 w-10 inline-flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm
+                className="absolute top-2 right-2 h-7 w-14 inline-flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm
                            opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-black/60"
               >
                 <MoreHorizontal className="w-4 h-4 text-white" />
