@@ -227,7 +227,8 @@ const DroppableSlot = ({ dayIndex, slotIndex, children }: { dayIndex: number; sl
 };
 
 const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping, isEditing, onRemoveActivity, onAddActivity, onMoveToDay, totalDays, isLive, isToday, checkedActivities, onToggleActivity, onUndoActivity }: DaySectionProps) => {
-  const [isOpen, setIsOpen] = useState(true);
+  // Default: expand the first day (or today's day in live mode), collapse upcoming days
+  const [isOpen, setIsOpen] = useState(isLive ? !!isToday : dayIndex === 0);
   const [routeDataMap, setRouteDataMap] = useState<Map<string, RouteData>>(new Map());
 
   useEffect(() => {
