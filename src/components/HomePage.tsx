@@ -372,37 +372,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
 
       <ImportLinkDialog open={showImportDialog} onClose={() => setShowImportDialog(false)} />
 
-      {/* Recently Saved */}
-      {loading && user && <RecentSavedSkeleton />}
-      {!loading && recentlySaved.length > 0 && (
-        <div className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: "150ms", animationFillMode: "both" }}>
-          <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-base font-semibold text-foreground">Recently Saved</h2>
-            <button onClick={() => onNavigateToTab?.("saved")} className="flex items-center gap-0.5 text-sm text-primary font-medium">
-              See all <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
-            {recentlySaved.map((place) => (
-              <div
-                key={place.place_id}
-                className="shrink-0 w-[140px] rounded-2xl overflow-hidden bg-card cursor-pointer hover:shadow-md transition-all active:scale-[0.97]"
-                onClick={() => navigate(`/place/${place.place_id}`)}
-              >
-                <div className="h-[100px] bg-muted">
-                  <img src={place.image} alt={place.name} className="w-full h-full object-cover" loading="lazy" width={140} height={100} />
-                </div>
-                <div className="p-2.5">
-                  <p className="text-xs font-semibold text-foreground truncate">{place.name}</p>
-                  {place.rating && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{place.rating.toFixed(1)} rating</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Recently Saved — moved to bottom */}
 
       {/* Spots You Might Like */}
       {recsEnabled && recsLoading && <RecsSkeleton />}
