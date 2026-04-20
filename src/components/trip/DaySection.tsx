@@ -345,7 +345,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors",
-          isActive ? "hover:bg-background/5" : "hover:bg-muted/50"
+          isActive ? "hover:bg-background/5" : "hover:bg-muted/50 border-orange-600 border-solid"
         )}
       >
         <div className={cn(
@@ -354,7 +354,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
         )}>
           <span className={cn(
             "text-sm font-bold",
-            isActive ? "text-primary-foreground" : "text-foreground"
+            isActive ? "text-primary-foreground" : "text-foreground text-slate-50"
           )}>{dayIndex + 1}</span>
         </div>
         <div className="flex-1">
@@ -362,7 +362,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
             <span className="text-[9px] font-bold text-primary-foreground bg-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider inline-block mb-0.5">Today</span>
           )}
           <span className={cn(
-            "text-xs block font-medium",
+            "block font-medium text-sm",
             isActive ? "text-background/70" : "text-foreground/70"
           )}>
             {liveProgress
