@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP } from "@/lib/storageKeys";
+import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP, SS_OPEN_CREATE_TRIP } from "@/lib/storageKeys";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ShareTripDialog from "./trip/ShareTripDialog";
 import ProfileSlideMenu from "./ProfileSlideMenu";
