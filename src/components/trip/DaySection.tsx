@@ -363,7 +363,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           )}
           <span className={cn(
             "block font-medium text-sm",
-            isActive ? "text-foreground/80" : "text-foreground/70"
+            isActive ? "text-background/80" : "text-foreground/70"
           )}>
             {liveProgress
               ? `${liveProgress.done}/${liveProgress.total} done`
@@ -372,14 +372,14 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp className={cn("w-4 h-4", isActive ? "text-foreground/60" : "text-foreground/60")} />
+          <ChevronUp className={cn("w-4 h-4", isActive ? "text-background/60" : "text-foreground/60")} />
         ) : (
-          <ChevronDown className={cn("w-4 h-4", isActive ? "text-foreground/60" : "text-foreground/60")} />
+          <ChevronDown className={cn("w-4 h-4", isActive ? "text-background/60" : "text-foreground/60")} />
         )}
       </button>
 
       {isOpen && (
-        <div className={cn("border-t", isActive ? "border-foreground/10" : "border-border")}>
+        <div className={cn("border-t", isActive ? "border-background/10" : "border-border")}>
           {day.slots.map((slot, slotIndex) => {
             const prevSlot = slotIndex > 0 ? day.slots[slotIndex - 1] : null;
             const prevLastActivity = prevSlot?.activities?.[prevSlot.activities.length - 1];
@@ -393,7 +393,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
             return (
               <div key={slotIndex}>
                 {prevLastActivity && firstActivity && !isEditing && (
-                  <div className={cn("border-t", isActive ? "border-foreground/10" : "border-border")}>
+                  <div className={cn("border-t", isActive ? "border-background/10" : "border-border")}>
                     <DistanceConnector
                       fromLat={prevLastActivity.lat}
                       fromLng={prevLastActivity.lng}
@@ -401,6 +401,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                       toLng={firstActivity.lng}
                       durationText={crossSlotRoute?.durationText}
                       distanceText={crossSlotRoute?.distanceText}
+                      isOnDark={isActive}
                     />
                   </div>
                 )}
@@ -481,6 +482,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                                 toLng={nextActivity.lng}
                                 durationText={routeData?.durationText}
                                 distanceText={routeData?.distanceText}
+                                isOnDark={isActive}
                               />
                             )}
                           </div>
