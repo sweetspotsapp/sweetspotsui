@@ -320,26 +320,22 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         </div>
       )}
 
-      {/* Quick Actions */}
+      {/* Quick Actions — compact horizontal utility buttons */}
       <div className="px-5 pt-5 pb-2 animate-fade-in" style={{ animationDelay: "100ms", animationFillMode: "both" }}>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-wrap gap-2.5">
           <button
             onClick={handlePlanTrip}
-            className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-muted/40 transition-all hover:bg-muted/60 active:scale-[0.97] group"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-primary text-primary-foreground shadow-soft hover:shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <CalendarDays className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Plan a Trip</span>
+            <CalendarDays className="w-4 h-4" />
+            <span className="text-sm font-semibold">Plan a Trip</span>
           </button>
           <button
             onClick={() => setShowDiscoverMenu(true)}
-            className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-muted/40 transition-all hover:bg-muted/60 active:scale-[0.97] group"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-card text-foreground border border-border/60 shadow-soft hover:bg-muted/60 hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <Search className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Discover Spots</span>
+            <Search className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold">Discover Spots</span>
           </button>
         </div>
       </div>
@@ -407,7 +403,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
                     onNavigateToTab?.("trip");
                   }
                 }}
-                className="shrink-0 w-[200px] relative overflow-hidden rounded-2xl h-[150px] text-left transition-all hover:shadow-lg active:scale-[0.97] group"
+                className="shrink-0 w-[170px] relative overflow-hidden rounded-2xl h-[230px] text-left shadow-soft transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] group"
               >
                 <img
                   src={t.image}
@@ -415,12 +411,12 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                   width={400}
-                  height={300}
+                  height={520}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="relative h-full flex flex-col justify-end p-3.5">
-                  <p className="text-sm font-bold text-white leading-tight">{t.title}</p>
-                  <p className="text-[11px] text-white/70 mt-0.5">{t.duration} {t.duration === 1 ? "day" : "days"} · {t.subtitle}</p>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="relative h-full flex flex-col justify-end p-4">
+                  <p className="text-base font-bold text-white leading-tight tracking-tight">{t.title}</p>
+                  <p className="text-[11px] text-white/75 mt-1">{t.duration} {t.duration === 1 ? "day" : "days"} · {t.subtitle}</p>
                 </div>
               </button>
             ))}
