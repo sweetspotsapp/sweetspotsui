@@ -1,11 +1,22 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2, CheckCircle2 } from "lucide-react";
+import { Plus, MapPin, Trash2, Copy, Pencil, ChevronRight, Compass, Clock, DollarSign, MoreHorizontal, Share2, CheckCircle2, Globe, GlobeLock, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { usePublishTrip } from "@/hooks/usePublishTrip";
 import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP, SS_OPEN_CREATE_TRIP, SS_CREATE_TRIP_PARAMS } from "@/lib/storageKeys";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ShareTripDialog from "./trip/ShareTripDialog";
