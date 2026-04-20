@@ -138,7 +138,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
       </div>
       <span
         className={cn(
-          "text-sm font-semibold text-foreground truncate mt-1",
+          "text-[15px] font-bold text-foreground truncate mt-1 leading-snug tracking-tight",
           !isEditing && activity.placeId && "cursor-pointer hover:text-primary transition-colors",
           isCancelled && "line-through text-muted-foreground"
         )}
@@ -147,9 +147,9 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
         {activity.name}
       </span>
       {activity.time && (
-        <span className="text-[11px] text-muted-foreground">{activity.time}</span>
+        <span className="text-[11px] text-muted-foreground/80 font-medium mt-0.5">{activity.time}</span>
       )}
-      <p className={cn("text-xs text-muted-foreground mt-0.5", isCancelled && "line-through")}>{activity.description}</p>
+      <p className={cn("text-xs text-muted-foreground/80 mt-0.5 line-clamp-2", isCancelled && "line-through")}>{activity.description}</p>
       <div className="flex items-center gap-2 mt-1">
         {activity.estimatedCost !== undefined && activity.estimatedCost > 0 && (
           <span className="text-xs font-medium text-primary">${activity.estimatedCost}/pp</span>
@@ -167,13 +167,13 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
   return (
     <>
       <div className={cn(
-        "rounded-xl transition-all relative",
-        isEditing ? "bg-card border border-primary/20 shadow-sm select-none" : "bg-card border border-border/50 hover:border-border",
+        "rounded-xl transition-all relative bg-card shadow-soft hover:shadow-card",
+        isEditing && "ring-1 ring-primary/30 select-none",
         isDragging && "opacity-30 border-dashed border-2 border-primary/40 shadow-none scale-[0.98]",
-        isCurrentActivity && !liveStatus && "border-primary/40 ring-1 ring-primary/20 shadow-md",
-        isDone && "bg-green-50/50 dark:bg-green-950/10 border-green-200/50 dark:border-green-800/30",
-        isCancelled && "bg-muted/30 border-border/30",
-        isSkipped && "bg-muted/20 border-border/30 opacity-60"
+        isCurrentActivity && !liveStatus && "ring-2 ring-primary/40 shadow-card",
+        isDone && "bg-green-50/50 dark:bg-green-950/10 ring-1 ring-green-200/50 dark:ring-green-800/30",
+        isCancelled && "bg-muted/30 shadow-none",
+        isSkipped && "bg-muted/20 shadow-none opacity-60"
       )}>
         {isEditing && (
           <div className="absolute top-2 right-2 flex items-center gap-1.5 z-30" ref={moveMenuRef}>
