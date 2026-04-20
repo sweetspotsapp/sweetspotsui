@@ -341,22 +341,22 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
     )}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-background/5 transition-colors"
       >
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center",
-          isLive && isToday ? "bg-primary text-primary-foreground" : "bg-primary/10"
+          isLive && isToday ? "bg-primary text-primary-foreground" : "bg-background/15"
         )}>
-          <span className={cn("text-sm font-bold", isLive && isToday ? "text-primary-foreground" : "text-primary")}>{dayIndex + 1}</span>
+          <span className={cn("text-sm font-bold", isLive && isToday ? "text-primary-foreground" : "text-background")}>{dayIndex + 1}</span>
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">{day.label}</span>
+            <span className="text-sm font-semibold text-background">{day.label}</span>
             {isLive && isToday && (
               <span className="text-[9px] font-bold text-primary-foreground bg-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider">Today</span>
             )}
           </div>
-          <span className="text-xs text-muted-foreground block">
+          <span className="text-xs text-background/60 block">
             {liveProgress
               ? `${liveProgress.done}/${liveProgress.total} done`
               : `${day.slots.reduce((acc, s) => acc + s.activities.length, 0)} activities`}
@@ -364,9 +364,9 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          <ChevronUp className="w-4 h-4 text-background/60" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          <ChevronDown className="w-4 h-4 text-background/60" />
         )}
       </button>
 
