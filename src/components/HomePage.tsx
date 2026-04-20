@@ -5,9 +5,11 @@ import { useApp } from "@/context/AppContext";
 import { useUpcomingTrip } from "@/hooks/useUpcomingTrip";
 import { useProfileInfo } from "@/hooks/useProfileInfo";
 import { supabase } from "@/integrations/supabase/client";
-import { SS_RESUME_TRIP, SS_OPEN_CREATE_TRIP, lsRecsCache } from "@/lib/storageKeys";
+import { SS_RESUME_TRIP, SS_CREATE_TRIP_PARAMS, lsRecsCache } from "@/lib/storageKeys";
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning, Link2 } from "lucide-react";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
+import CreateTripModal from "./trip/CreateTripModal";
+import type { TripParams } from "@/hooks/useTrip";
 import { useWeatherForecast } from "@/hooks/useWeatherForecast";
 import { Skeleton } from "./ui/skeleton";
 import { Button } from "./ui/button";
@@ -82,6 +84,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [recsLoading, setRecsLoading] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDiscoverMenu, setShowDiscoverMenu] = useState(false);
+  const [showCreateTripModal, setShowCreateTripModal] = useState(false);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -169,7 +172,13 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   }, [onboardingData?.explore_location, geoLocation?.lat]);
 
   const handlePlanTrip = () => {
-    sessionStorage.setItem(SS_OPEN_CREATE_TRIP, "1");
+    // Open the Create Trip modal in-place (no tab navigation)
+    setShowCreateTripModal(true);
+  };
+  const handleCreateTripGenerate = (params: TripParams) => {
+    // Hand off params to TripPage which will run generation, then switch tab
+    sessionStorage.setItem(SS_CREATE_TRIP_PARAMS, JSON.stringify(params));
+    setShowCreateTripModal(false);
     onNavigateToTab?.("trip");
   };
   const handleGoToTrip = (tripId: string) => {
@@ -377,11 +386,6 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         <div key={section.title} className="pt-6 pb-2 animate-fade-in" style={{ animationDelay: `${150 + sIdx * 50}ms`, animationFillMode: "both" }}>
           <div className="flex items-center justify-between px-5 mb-3">
             <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
-            {sIdx === 0 && (
-              <button onClick={handlePlanTrip} className="flex items-center gap-0.5 text-sm text-primary font-medium">
-                Plan yours <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
           </div>
           <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
             {section.trips.map((t) => (
@@ -539,6 +543,14 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
           </div>
         </div>
       )}
+      {/* Create Trip Modal — opened from "Plan a Trip" quick action */}
+      <CreateTripModal
+        isOpen={showCreateTripModal}
+        onClose={() => setShowCreateTripModal(false)}
+        onGenerate={handleCreateTripGenerate}
+        onCreateOwn={() => setShowCreateTripModal(false)}
+        isGenerating={false}
+      />
     </div>
   );
 };

@@ -25,3 +25,4 @@ export const SS_CACHE_VERSION = 'sweetspots_cache_version';
 export const SS_CACHED_MOOD = 'sweetspots_cached_mood';
 export const SS_BOARD_TO_TRIP = 'sweetspots_board_to_trip';
 export const SS_OPEN_CREATE_TRIP = 'sweetspots_open_create_trip';
+export const SS_CREATE_TRIP_PARAMS = 'sweetspots_create_trip_params';

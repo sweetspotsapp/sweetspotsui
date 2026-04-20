@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, SortAsc, Loader2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
+import { Plus, SortAsc, Loader2, X, Search, ExternalLink } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -328,28 +328,34 @@ const SavedPage = ({ onNavigateToProfile }: SavedPageProps) => {
               </div>
             </div>
 
-            {/* Import tip banner for users with few saves */}
+            {/* Import link bar — styled like the Discover search bar */}
             {!tipDismissed && savedPlaces.length >= 1 && (
-              <div className="mx-4 sm:mx-6 lg:mx-8 mb-4 flex items-center gap-3 p-3 rounded-xl bg-accent/50 border border-border">
-                <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
-                <p className="text-xs text-muted-foreground flex-1">
-                  Paste an Instagram or TikTok link to quickly save spots you've been eyeing
-                </p>
-                <button
-                  onClick={() => setShowImportDialog(true)}
-                  className="text-xs font-semibold text-primary whitespace-nowrap hover:underline"
-                >
-                  Paste Link
-                </button>
-                <button
-                  onClick={() => {
-                    setTipDismissed(true);
-                    localStorage.setItem(LS_IMPORT_TIP_DISMISSED, 'true');
-                  }}
-                  className="p-0.5 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+              <div className="px-4 sm:px-6 lg:px-8 mb-4">
+                <div className="relative flex items-center max-w-2xl">
+                  <ExternalLink className="absolute left-4 w-5 h-5 text-muted-foreground pointer-events-none" />
+                  <button
+                    onClick={() => setShowImportDialog(true)}
+                    className="w-full h-14 pl-11 pr-24 rounded-2xl bg-muted/50 border border-border/50 text-left text-base text-muted-foreground/80 shadow-sm hover:bg-muted/70 transition-colors truncate"
+                  >
+                    Paste an Instagram, TikTok, or Google Maps link
+                  </button>
+                  <button
+                    onClick={() => setShowImportDialog(true)}
+                    className="absolute right-3 h-9 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-sm hover:bg-primary/90 transition-colors"
+                  >
+                    Paste
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTipDismissed(true);
+                      localStorage.setItem(LS_IMPORT_TIP_DISMISSED, 'true');
+                    }}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm"
+                    aria-label="Dismiss"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             )}
 
