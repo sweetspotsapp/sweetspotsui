@@ -9,6 +9,7 @@ import { SS_RESUME_TRIP, SS_CREATE_TRIP_PARAMS, lsRecsCache } from "@/lib/storag
 import { CalendarDays, Search, ChevronRight, Sparkles, ArrowRight, Star, CloudRain, CloudSnow, Cloud, Sun, CloudLightning, Link2 } from "lucide-react";
 import ImportLinkDialog from "./saved/ImportLinkDialog";
 import CreateTripModal from "./trip/CreateTripModal";
+import TemplatePreviewSheet, { type TemplatePreviewData } from "./trip/TemplatePreviewSheet";
 import type { TripParams } from "@/hooks/useTrip";
 import { useWeatherForecast } from "@/hooks/useWeatherForecast";
 import { Skeleton } from "./ui/skeleton";
@@ -29,6 +30,8 @@ export interface DBTripTemplate {
   group_size: number;
   tagline: string | null;
   trip_data: any;
+  /** Optional user-provided overrides from the "Use Itinerary" dialog */
+  overrides?: { name?: string; startDate?: string };
 }
 
 interface HomePageProps {
@@ -85,6 +88,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDiscoverMenu, setShowDiscoverMenu] = useState(false);
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplatePreviewData | null>(null);
   const [communityTrips, setCommunityTrips] = useState<Array<{
     id: string;
     destination: string;
@@ -447,20 +451,21 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
               <button
                 key={t.id}
                 onClick={() => {
-                  if (onTripTemplate) {
-                    onTripTemplate({
-                      id: t.id,
-                      destination: t.destination,
-                      duration: t.duration,
-                      vibes: t.vibes,
-                      budget: t.budget,
-                      group_size: t.groupSize,
-                      tagline: t.subtitle,
-                      trip_data: t.tripData,
-                    });
-                  } else {
-                    onNavigateToTab?.("trip");
-                  }
+                  setPreviewTemplate({
+                    id: t.id,
+                    title: t.title,
+                    destination: t.destination,
+                    duration: t.duration,
+                    vibes: t.vibes,
+                    budget: t.budget,
+                    groupSize: (t as any).groupSize ?? 2,
+                    tagline: t.subtitle,
+                    image: t.image,
+                    tripData: (t as any).tripData,
+                    authorUsername: (t as any).authorUsername,
+                    authorAvatarUrl: (t as any).authorAvatarUrl,
+                    isCommunity: (t as any).isCommunity,
+                  });
                 }}
                 className="shrink-0 w-[170px] relative overflow-hidden rounded-2xl h-[230px] text-left shadow-soft transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] group"
               >
@@ -624,6 +629,32 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         onGenerate={handleCreateTripGenerate}
         onCreateOwn={() => setShowCreateTripModal(false)}
         isGenerating={false}
+      />
+
+      {/* Template preview bottom sheet — read-only with "Use Itinerary" CTA */}
+      <TemplatePreviewSheet
+        open={!!previewTemplate}
+        onOpenChange={(o) => { if (!o) setPreviewTemplate(null); }}
+        template={previewTemplate}
+        onUseItinerary={({ name, startDate }) => {
+          if (!previewTemplate) return;
+          if (onTripTemplate) {
+            onTripTemplate({
+              id: previewTemplate.id,
+              destination: previewTemplate.destination,
+              duration: previewTemplate.duration,
+              vibes: previewTemplate.vibes,
+              budget: previewTemplate.budget,
+              group_size: previewTemplate.groupSize,
+              tagline: previewTemplate.tagline,
+              trip_data: previewTemplate.tripData,
+              overrides: { name, startDate },
+            });
+          } else {
+            onNavigateToTab?.("trip");
+          }
+          setPreviewTemplate(null);
+        }}
       />
     </div>
   );
