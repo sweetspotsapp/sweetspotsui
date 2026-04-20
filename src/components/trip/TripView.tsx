@@ -82,12 +82,15 @@ function ensureDragIds(trip: TripData): TripData {
   return changed ? updated : trip;
 }
 
-const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onShare, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity, onCompleteTrip }: TripViewProps) => {
+const TripView = ({ tripData, tripParams, tripId, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onShare, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity, onCompleteTrip }: TripViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
   const [editMenuOpen, setEditMenuOpen] = useState(false);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [showUnpublishConfirm, setShowUnpublishConfirm] = useState(false);
   const todayRef = useRef<HTMLDivElement>(null);
+  const { isPublished, isMutating: isPublishMutating, publish, unpublish } = usePublishTrip(tripId ?? null);
 
   // Detect if user has made unsaved edits while in editing mode
   const isDirty = useMemo(() => {
