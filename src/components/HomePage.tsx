@@ -320,26 +320,22 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         </div>
       )}
 
-      {/* Quick Actions */}
+      {/* Quick Actions — compact horizontal utility buttons */}
       <div className="px-5 pt-5 pb-2 animate-fade-in" style={{ animationDelay: "100ms", animationFillMode: "both" }}>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-wrap gap-2.5">
           <button
             onClick={handlePlanTrip}
-            className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-muted/40 transition-all hover:bg-muted/60 active:scale-[0.97] group"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-primary text-primary-foreground shadow-soft hover:shadow-card hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <CalendarDays className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Plan a Trip</span>
+            <CalendarDays className="w-4 h-4" />
+            <span className="text-sm font-semibold">Plan a Trip</span>
           </button>
           <button
             onClick={() => setShowDiscoverMenu(true)}
-            className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-muted/40 transition-all hover:bg-muted/60 active:scale-[0.97] group"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-card text-foreground border border-border/60 shadow-soft hover:bg-muted/60 hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <Search className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Discover Spots</span>
+            <Search className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold">Discover Spots</span>
           </button>
         </div>
       </div>
