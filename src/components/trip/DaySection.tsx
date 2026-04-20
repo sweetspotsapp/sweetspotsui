@@ -336,8 +336,8 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
 
   return (
     <div className={cn(
-      "rounded-2xl bg-card border border-border overflow-hidden",
-      isLive && isToday && "ring-1 ring-primary/20 border-primary/30"
+      "rounded-2xl bg-card overflow-hidden shadow-card",
+      isLive && isToday ? "ring-2 ring-primary/40" : "ring-1 ring-border/40"
     )}>
       <button
         onClick={() => setIsOpen(!isOpen)}
