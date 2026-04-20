@@ -934,6 +934,22 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
             <DropdownMenuItem onClick={() => onShare(trip)}>
               <Share2 className="w-4 h-4 mr-2" /> Share Trip
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                if (isPublished) setShowUnpublishConfirm(true);
+                else setShowPublishConfirm(true);
+              }}
+              disabled={isPublishMutating}
+            >
+              {isPublishMutating ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : isPublished ? (
+                <GlobeLock className="w-4 h-4 mr-2" />
+              ) : (
+                <Globe className="w-4 h-4 mr-2" />
+              )}
+              {isPublished ? "Unpublish" : "Publish"}
+            </DropdownMenuItem>
             {(category === "current" || category === "upcoming") && onComplete && (
               <DropdownMenuItem onClick={() => onComplete(trip.id)} className="text-green-600 focus:text-green-600">
                 <CheckCircle2 className="w-4 h-4 mr-2" /> Complete Trip
