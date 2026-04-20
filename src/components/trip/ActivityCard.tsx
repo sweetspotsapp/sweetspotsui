@@ -138,7 +138,7 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
       </div>
       <span
         className={cn(
-          "text-[15px] font-bold text-foreground truncate mt-1 leading-snug tracking-tight text-amber-600",,search:
+          "text-[15px] font-bold text-foreground truncate mt-1 leading-snug tracking-tight text-amber-600",
           !isEditing && activity.placeId && "cursor-pointer hover:text-primary transition-colors",
           isCancelled && "line-through text-muted-foreground"
         )}
