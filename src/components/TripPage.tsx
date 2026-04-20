@@ -882,7 +882,7 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="h-7 min-w-11 px-3.5 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background border border-border/50 shadow-sm transition-colors inline-flex items-center justify-center sm:h-8 sm:min-w-12 sm:px-4"
+              className="h-6 w-10 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background border border-border/50 shadow-sm transition-colors inline-flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
               aria-label="Trip options"
             >
