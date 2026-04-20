@@ -127,6 +127,23 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
     fetchData();
   }, [user]);
 
+  // Fetch community-published trip templates (newest first)
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("trip_templates")
+      .select("id, destination, duration, vibes, budget, group_size, tagline, trip_data, cover_image, author_username, author_avatar_url, published_by")
+      .eq("is_active", true)
+      .not("published_by", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(12)
+      .then(({ data }) => {
+        if (!active || !data) return;
+        setCommunityTrips(data as any);
+      });
+    return () => { active = false; };
+  }, []);
+
   // Fetch notification_settings to check recommendations preference
   const [recsEnabled, setRecsEnabled] = useState(true);
   useEffect(() => {
