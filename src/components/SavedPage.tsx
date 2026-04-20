@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, SortAsc, Loader2, X, Lightbulb, Search, ExternalLink } from "lucide-react";
+import { Plus, SortAsc, Loader2, X, Search, ExternalLink } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 import AppHeader from "./AppHeader";
 import ProfileSlideMenu from "./ProfileSlideMenu";
