@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeftRight, ExternalLink, Heart, Trash2, MoreVertical, Check, SkipForward, X, Navigation } from "lucide-react";
+import { ArrowLeftRight, ExternalLink, Heart, Trash2, MoreVertical, Check, X, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReplaceSheet from "./ReplaceSheet";
 import type { Activity, SwapAlternative } from "@/hooks/useTrip";
