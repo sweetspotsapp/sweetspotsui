@@ -457,6 +457,10 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
           isGenerating={isGenerating}
           onRegenerate={() => tripParams && handleGenerate(tripParams)}
           onSave={handleSave}
+          onShare={editingId ? () => {
+            const t = savedTrips.find(s => s.id === editingId);
+            if (t) setShareTrip({ id: t.id, name: t.name || t.destination });
+          } : undefined}
           onSaveEdits={async (edited) => {
             setTripData(edited);
             if (tripParams) {
