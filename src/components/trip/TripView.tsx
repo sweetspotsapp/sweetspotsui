@@ -418,6 +418,21 @@ const TripView = ({ tripData, tripParams, onBack, onSwap, onReplace, onRemoveAct
       {isLive && !isEditing && onCompleteTrip && (
         <FinishTripSection onComplete={onCompleteTrip} />
       )}
+
+      {/* Sticky Save bar — only when editing AND has unsaved changes */}
+      {isEditing && isDirty && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
+          <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">You have unsaved changes</p>
+            <button
+              onClick={handleSaveEditing}
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all active:scale-[0.97]"
+            >
+              <Save className="w-4 h-4" /> Save changes
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
