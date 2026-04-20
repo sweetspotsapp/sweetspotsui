@@ -336,27 +336,27 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
 
   return (
     <div className={cn(
-      "rounded-2xl bg-card overflow-hidden shadow-card",
-      isLive && isToday ? "ring-2 ring-primary/40" : "ring-1 ring-border/40"
+      "rounded-2xl bg-foreground/90 overflow-hidden shadow-card",
+      isLive && isToday && "ring-2 ring-primary/40"
     )}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-background/5 transition-colors"
       >
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center",
-          isLive && isToday ? "bg-primary text-primary-foreground" : "bg-primary/10"
+          isLive && isToday ? "bg-primary text-primary-foreground" : "bg-background/15"
         )}>
-          <span className={cn("text-sm font-bold", isLive && isToday ? "text-primary-foreground" : "text-primary")}>{dayIndex + 1}</span>
+          <span className={cn("text-sm font-bold", isLive && isToday ? "text-primary-foreground" : "text-background")}>{dayIndex + 1}</span>
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">{day.label}</span>
+            <span className="text-sm font-semibold text-background">{day.label}</span>
             {isLive && isToday && (
               <span className="text-[9px] font-bold text-primary-foreground bg-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider">Today</span>
             )}
           </div>
-          <span className="text-xs text-muted-foreground block">
+          <span className="text-xs text-background/60 block">
             {liveProgress
               ? `${liveProgress.done}/${liveProgress.total} done`
               : `${day.slots.reduce((acc, s) => acc + s.activities.length, 0)} activities`}
@@ -364,14 +364,14 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          <ChevronUp className="w-4 h-4 text-background/60" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          <ChevronDown className="w-4 h-4 text-background/60" />
         )}
       </button>
 
       {isOpen && (
-        <div className="border-t border-border">
+        <div className="border-t border-background/10">
           {day.slots.map((slot, slotIndex) => {
             const prevSlot = slotIndex > 0 ? day.slots[slotIndex - 1] : null;
             const prevLastActivity = prevSlot?.activities?.[prevSlot.activities.length - 1];
@@ -385,7 +385,7 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
             return (
               <div key={slotIndex}>
                 {prevLastActivity && firstActivity && !isEditing && (
-                  <div className="border-t border-border/30">
+                  <div className="border-t border-background/10">
                     <DistanceConnector
                       fromLat={prevLastActivity.lat}
                       fromLng={prevLastActivity.lng}
@@ -397,9 +397,9 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                   </div>
                 )}
 
-                <div className={cn(slotIndex > 0 && !prevLastActivity && "border-t border-border/50")}>
-                  <div className="px-4 py-2 bg-muted/20">
-                    <span className="text-xs font-medium text-muted-foreground">
+                <div className={cn(slotIndex > 0 && !prevLastActivity && "border-t border-background/10")}>
+                  <div className="px-4 py-2 bg-background/5">
+                    <span className="text-xs font-medium text-background/70">
                       {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
                   </div>
