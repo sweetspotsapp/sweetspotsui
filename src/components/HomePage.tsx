@@ -85,6 +85,19 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDiscoverMenu, setShowDiscoverMenu] = useState(false);
   const [showCreateTripModal, setShowCreateTripModal] = useState(false);
+  const [communityTrips, setCommunityTrips] = useState<Array<{
+    id: string;
+    destination: string;
+    duration: number;
+    vibes: string[];
+    budget: string;
+    group_size: number;
+    tagline: string | null;
+    trip_data: any;
+    cover_image: string | null;
+    author_username: string | null;
+    author_avatar_url: string | null;
+  }>>([]);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
