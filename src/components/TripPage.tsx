@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP, SS_OPEN_CREATE_TRIP } from "@/lib/storageKeys";
+import { SS_RESUME_TRIP, SS_BOARD_TO_TRIP, SS_OPEN_CREATE_TRIP, SS_CREATE_TRIP_PARAMS } from "@/lib/storageKeys";
 import LoginReminderBanner from "./LoginReminderBanner";
 import ShareTripDialog from "./trip/ShareTripDialog";
 import ProfileSlideMenu from "./ProfileSlideMenu";
@@ -103,6 +103,19 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
       setTripData(null);
       setPrefillParams(null);
       setShowCreateModal(true);
+    }
+    // Auto-generate when params were submitted from Home modal
+    const paramsRaw = sessionStorage.getItem(SS_CREATE_TRIP_PARAMS);
+    if (paramsRaw) {
+      sessionStorage.removeItem(SS_CREATE_TRIP_PARAMS);
+      try {
+        const params = JSON.parse(paramsRaw) as TripParams;
+        setEditingId(null);
+        setTripData(null);
+        setPrefillParams(null);
+        // Defer to next tick so generate state hooks are ready
+        setTimeout(() => { handleGenerate(params); }, 0);
+      } catch { /* ignore */ }
     }
   }, []);
 
