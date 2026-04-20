@@ -62,12 +62,6 @@ const EntryScreen = ({ onComplete }: EntryScreenProps) => {
     setShowSuggestions(false);
   };
 
-  const handleConfirmCity = () => {
-    if (locationInput.trim()) {
-      setExploreLocation(locationInput.trim());
-      setShowSuggestions(false);
-    }
-  };
 
   const handleSelectNearby = () => {
     setExploreLocation("nearby");
@@ -394,7 +388,7 @@ const EntryScreen = ({ onComplete }: EntryScreenProps) => {
               value={locationInput}
               onChange={(e) => handleLocationInputChange(e.target.value)}
               placeholder="Search city, suburb, or address..."
-              className={`pl-12 pr-14 h-16 rounded-2xl text-lg ${
+              className={`pl-12 pr-4 h-16 rounded-2xl text-lg ${
                 isLocationConfirmed ? 'border-primary ring-1 ring-primary' : ''
               }`}
               onFocus={() => {
@@ -403,18 +397,6 @@ const EntryScreen = ({ onComplete }: EntryScreenProps) => {
               }}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             />
-            {locationInput.trim() && (
-              <button
-                onClick={isLocationConfirmed ? handleLocationNext : handleConfirmCity}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                  isLocationConfirmed
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            )}
 
             {showSuggestions && !isLoading && predictions.length === 0 && locationInput.trim().length >= 2 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-20 p-4 text-center">
