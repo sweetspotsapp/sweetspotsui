@@ -8,7 +8,7 @@ import { toast } from "sonner";
 const SharedTrip = () => {
   const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const ranRef = useRef(false);
 
