@@ -350,11 +350,11 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
       >
         <div className={cn(
           "w-9 h-9 rounded-full flex items-center justify-center",
-          isActive ? "bg-primary text-primary-foreground" : "bg-foreground/10 bg-amber-600"
-        )}>,search:
+          isActive ? "bg-primary text-primary-foreground" : "bg-amber-600"
+        )}>
           <span className={cn(
             "text-sm font-bold",
-            isActive ? "text-primary-foreground" : "text-foreground text-slate-50"
+            isActive ? "text-primary-foreground" : "text-slate-50"
           )}>{dayIndex + 1}</span>
         </div>
         <div className="flex-1">
