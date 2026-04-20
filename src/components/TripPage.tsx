@@ -43,7 +43,15 @@ type TripFilter = "all" | "upcoming" | "current" | "past" | "completed";
 interface TripPageProps {
   resumeTripId?: string | null;
   onResumed?: () => void;
-  tripTemplate?: { destination: string; duration: number; vibes: string[]; budget: string; group_size: number; trip_data: any } | null;
+  tripTemplate?: {
+    destination: string;
+    duration: number;
+    vibes: string[];
+    budget: string;
+    group_size: number;
+    trip_data: any;
+    overrides?: { name?: string; startDate?: string };
+  } | null;
   onTemplateConsumed?: () => void;
 }
 
@@ -184,14 +192,19 @@ const TripPage = ({ resumeTripId, onResumed, tripTemplate, onTemplateConsumed }:
   // Handle trip template from HomePage curated trips
   useEffect(() => {
     if (tripTemplate) {
-      const { destination, duration, vibes, budget, group_size, trip_data } = tripTemplate;
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() + 7);
+      const { destination, duration, vibes, budget, group_size, trip_data, overrides } = tripTemplate;
+
+      // Use user-provided start date if given, else default to one week from now
+      const startDate = overrides?.startDate ? new Date(overrides.startDate) : (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return d;
+      })();
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + duration - 1);
 
       const params: TripParams = {
-        name: `${destination} Trip`,
+        name: overrides?.name?.trim() || `${destination} Trip`,
         destination,
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0],
