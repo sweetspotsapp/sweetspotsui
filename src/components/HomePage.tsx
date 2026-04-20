@@ -403,7 +403,7 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
                     onNavigateToTab?.("trip");
                   }
                 }}
-                className="shrink-0 w-[200px] relative overflow-hidden rounded-2xl h-[150px] text-left transition-all hover:shadow-lg active:scale-[0.97] group"
+                className="shrink-0 w-[170px] relative overflow-hidden rounded-2xl h-[230px] text-left shadow-soft transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] group"
               >
                 <img
                   src={t.image}
@@ -411,12 +411,12 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                   width={400}
-                  height={300}
+                  height={520}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="relative h-full flex flex-col justify-end p-3.5">
-                  <p className="text-sm font-bold text-white leading-tight">{t.title}</p>
-                  <p className="text-[11px] text-white/70 mt-0.5">{t.duration} {t.duration === 1 ? "day" : "days"} · {t.subtitle}</p>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="relative h-full flex flex-col justify-end p-4">
+                  <p className="text-base font-bold text-white leading-tight tracking-tight">{t.title}</p>
+                  <p className="text-[11px] text-white/75 mt-1">{t.duration} {t.duration === 1 ? "day" : "days"} · {t.subtitle}</p>
                 </div>
               </button>
             ))}
