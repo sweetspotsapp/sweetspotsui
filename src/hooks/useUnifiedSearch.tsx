@@ -169,7 +169,7 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
         lastSearchRef.current = { prompt, lat: lat || 0, lng: lng || 0, radiusM, mode };
 
         // Build cache key (include locationName if used)
-        const cacheKeyLocation = locationName || `${lat?.toFixed(3)}-${lng?.toFixed(3)}`;
+        const cacheKeyLocation = resolvedLocationName || `${lat?.toFixed(3)}-${lng?.toFixed(3)}`;
         const cacheKey = `${prompt.toLowerCase().trim()}-${cacheKeyLocation}-${radiusM}`;
         if (!skipCache) {
           const cached = searchCache.get(cacheKey);
@@ -190,7 +190,7 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
           return pendingRequests.get(cacheKey)!;
         }
 
-        console.log('Searching:', { prompt, lat, lng, locationName, radiusM, mode });
+        console.log('Searching:', { prompt, lat, lng, locationName: resolvedLocationName, radiusM, mode });
 
         // Build request body - include location_name if provided
         const requestBody: Record<string, unknown> = { 
@@ -205,8 +205,8 @@ export const useUnifiedSearch = (): UseUnifiedSearchReturn => {
           requestBody.lng = lng;
         }
         
-        if (locationName) {
-          requestBody.location_name = locationName;
+        if (resolvedLocationName) {
+          requestBody.location_name = resolvedLocationName;
         }
 
         // Wrap the network call in a tracked promise so the deduplication
