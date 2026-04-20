@@ -256,9 +256,9 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
               <div className="flex items-center gap-2">
                 <button
                   onClick={onCheck}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-500/20 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-500/20 transition-colors whitespace-nowrap"
                 >
-                  <Check className="w-3.5 h-3.5" /> Been here ✓
+                  <Check className="w-3.5 h-3.5" /> Been here
                 </button>
                 <button
                   onClick={onSkip}
