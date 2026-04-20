@@ -1000,15 +1000,15 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
           </h3>
 
           {/* Tagline */}
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
+          <p className="text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed text-base">
             {tagline}
           </p>
 
           {/* Vibes row */}
           {trip.vibes && trip.vibes.length > 0 && (
-            <div className="flex items-center gap-1 mt-2.5">
+            <div className="flex items-center mt-2.5 mx-0 px-0 gap-[8px]">
               {trip.vibes.slice(0, 2).map(v => (
-                <span key={v} className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{v}</span>
+                <span key={v} className="font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full text-sm">{v}</span>
               ))}
             </div>
           )}
@@ -1017,12 +1017,12 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
           {(budgetLabel || spotCount > 0) && (
             <div className="flex items-center gap-x-3 gap-y-1 mt-1.5 flex-wrap">
               {budgetLabel && (
-                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-0.5 text-muted-foreground text-sm">
                   <DollarSign className="w-3 h-3" /> {budgetLabel}
                 </span>
               )}
               {spotCount > 0 && (
-                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-0.5 text-muted-foreground text-sm">
                   <MapPin className="w-3 h-3" /> {spotCount} spots
                 </span>
               )}
@@ -1030,7 +1030,7 @@ const TripCard = ({ trip, index, onView, onEdit, onDuplicate, onDelete, onComple
           )}
 
           {/* Date line */}
-          <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+          <p className="text-muted-foreground mt-1.5 flex items-center gap-1 text-sm">
             <Clock className="w-3 h-3" />
             {startDate} – {endDate}
           </p>
