@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Send, Loader2, UserPlus } from "lucide-react";
+import { X, Send, Loader2, UserPlus, Link2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -15,6 +15,20 @@ const ShareTripDialog = ({ isOpen, onClose, tripId, tripName }: ShareTripDialogP
   const { user } = useAuth();
   const [input, setInput] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const shareUrl = `${window.location.origin}/trip/shared/${tripId}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success("Link copied", { description: "Anyone signed in can open this trip." });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Couldn't copy link");
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -108,6 +122,32 @@ const ShareTripDialog = ({ isOpen, onClose, tripId, tripName }: ShareTripDialogP
         <p className="text-sm text-muted-foreground">
           Enter your friend's SweetSpots ID or email to share <span className="font-medium text-foreground">"{tripName}"</span>.
         </p>
+
+        {/* Share link */}
+        <div className="rounded-xl border border-border bg-muted/40 p-3 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+            <Link2 className="w-3.5 h-3.5 text-primary" />
+            Share link
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={shareUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-background text-foreground text-xs font-mono truncate focus:outline-none"
+            />
+            <button
+              onClick={handleCopyLink}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Anyone with the link can view this trip after signing in to Sweetspots.
+          </p>
+        </div>
 
         <div className="space-y-3">
           <input
