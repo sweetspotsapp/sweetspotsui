@@ -261,12 +261,6 @@ const ActivityCard = ({ activity, onSwap, onReplace, isSwapping, isEditing, onRe
                   <Check className="w-3.5 h-3.5" /> Been here
                 </button>
                 <button
-                  onClick={onSkip}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-                >
-                  <SkipForward className="w-3.5 h-3.5" /> Skip
-                </button>
-                <button
                   onClick={onCancel}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
                 >
