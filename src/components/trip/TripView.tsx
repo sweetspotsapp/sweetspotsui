@@ -61,6 +61,9 @@ interface TripViewProps {
   onToggleActivity?: (key: string, status: ActivityStatus) => void;
   onUndoActivity?: (key: string) => void;
   onCompleteTrip?: () => void;
+  // Read-only template preview mode — hides actions, editing, publish/share, back button
+  readOnly?: boolean;
+  hideBack?: boolean;
 }
 
 // Assign stable drag IDs to all activities
@@ -82,7 +85,7 @@ function ensureDragIds(trip: TripData): TripData {
   return changed ? updated : trip;
 }
 
-const TripView = ({ tripData, tripParams, tripId, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onShare, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity, onCompleteTrip }: TripViewProps) => {
+const TripView = ({ tripData, tripParams, tripId, onBack, onSwap, onReplace, onRemoveActivity, onAddActivity, onDragReorder, isSwapping, isGenerating, onRegenerate, onSave, onShare, onSaveEdits, isLive, currentDayIndex = 0, checkedActivities, liveProgress, onToggleActivity, onUndoActivity, onCompleteTrip, readOnly = false, hideBack = false }: TripViewProps) => {
   const [showMap, setShowMap] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<TripData | null>(null);
