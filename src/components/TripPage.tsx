@@ -668,20 +668,35 @@ const TripList = ({ trips, sharedTrips, pendingInvites, isLoading, onView, onEdi
 
       {/* Filter Tabs — horizontal scroll on mobile to avoid overflow */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4" style={{ WebkitOverflowScrolling: "touch" }}>
-        {FILTERS.map(f => (
-          <button
-            key={f.id}
-            onClick={() => setActiveFilter(f.id)}
-            className={cn(
-              "shrink-0 h-9 px-4 inline-flex items-center justify-center rounded-full text-sm font-medium whitespace-nowrap transition-all",
-              activeFilter === f.id
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
+        {FILTERS.map(f => {
+          const activeStyles: Record<TripFilter, string> = {
+            all: "bg-primary text-primary-foreground",
+            upcoming: "bg-blue-500 text-white",
+            current: "bg-green-500 text-white",
+            completed: "bg-slate-400 text-white",
+            past: "bg-slate-600 text-white",
+          };
+          const inactiveStyles: Record<TripFilter, string> = {
+            all: "bg-primary/10 text-primary hover:bg-primary/20",
+            upcoming: "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20",
+            current: "bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20",
+            completed: "bg-slate-400/15 text-slate-600 dark:text-slate-300 hover:bg-slate-400/25",
+            past: "bg-slate-600/15 text-slate-700 dark:text-slate-200 hover:bg-slate-600/25",
+          };
+          const isActive = activeFilter === f.id;
+          return (
+            <button
+              key={f.id}
+              onClick={() => setActiveFilter(f.id)}
+              className={cn(
+                "shrink-0 h-9 px-4 inline-flex items-center justify-center rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                isActive ? `${activeStyles[f.id]} shadow-sm` : inactiveStyles[f.id]
+              )}
+            >
+              {f.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* New Trip button */}
