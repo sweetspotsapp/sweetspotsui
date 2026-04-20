@@ -1,4 +1,5 @@
 import { MoreHorizontal, Heart, Pencil, Trash2, ExternalLink } from "lucide-react";
+// Heart retained for empty-state collage icon
 import { cn } from "@/lib/utils";
 import type { Board } from "@/hooks/useBoards";
 import {
