@@ -630,6 +630,32 @@ const HomePage = ({ onNavigateToProfile, onNavigateToTab, onTripTemplate }: Home
         onCreateOwn={() => setShowCreateTripModal(false)}
         isGenerating={false}
       />
+
+      {/* Template preview bottom sheet — read-only with "Use Itinerary" CTA */}
+      <TemplatePreviewSheet
+        open={!!previewTemplate}
+        onOpenChange={(o) => { if (!o) setPreviewTemplate(null); }}
+        template={previewTemplate}
+        onUseItinerary={({ name, startDate }) => {
+          if (!previewTemplate) return;
+          if (onTripTemplate) {
+            onTripTemplate({
+              id: previewTemplate.id,
+              destination: previewTemplate.destination,
+              duration: previewTemplate.duration,
+              vibes: previewTemplate.vibes,
+              budget: previewTemplate.budget,
+              group_size: previewTemplate.groupSize,
+              tagline: previewTemplate.tagline,
+              trip_data: previewTemplate.tripData,
+              overrides: { name, startDate },
+            });
+          } else {
+            onNavigateToTab?.("trip");
+          }
+          setPreviewTemplate(null);
+        }}
+      />
     </div>
   );
 };
