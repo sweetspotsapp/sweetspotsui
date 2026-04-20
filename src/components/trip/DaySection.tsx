@@ -406,11 +406,11 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
                 )}
 
                 <div className={cn(slotIndex > 0 && !prevLastActivity && (isActive ? "border-t border-background/10" : "border-t border-border"))}>
-                  <div className={cn("px-4 py-2", isActive ? "bg-background/5 bg-current" : "bg-muted/50")}>
+                  <div className={cn("px-4 py-2", isActive ? "bg-background/5" : "bg-muted/50")}>
                     <span className={cn(
-                      "text-xs font-semibold uppercase tracking-wider",
-                      isActive ? "text-background/70 text-amber-600 text-left" : "text-foreground/60"
-                    )}>,search:
+                      "text-xs font-semibold uppercase tracking-wider text-left",
+                      isActive ? "text-amber-600" : "text-foreground/60"
+                    )}>
                       {TIME_LABELS[slot.time] || "—"} {slot.time}
                     </span>
                   </div>
