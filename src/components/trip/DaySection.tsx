@@ -302,9 +302,16 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
     return routeDataMap.get(`${fromLat},${fromLng}->${toLat},${toLng}`);
   };
 
-  const dayTotal = day.slots.reduce((total, slot) => 
-    total + slot.activities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0), 0
-  );
+  const allActivities = day.slots.flatMap(s => s.activities);
+  const spotsCount = allActivities.length;
+  const dayTotal = allActivities.reduce((sum, a) => sum + (a.estimatedCost || 0), 0);
+  // Cost range: ±15% buffer to reflect typical variability
+  const costLow = dayTotal > 0 ? Math.round(dayTotal * 0.85) : 0;
+  const costHigh = dayTotal > 0 ? Math.round(dayTotal * 1.15) : 0;
+  // Top 3 unique vibe categories for the day
+  const vibeCategories = Array.from(
+    new Set(allActivities.map(a => a.category).filter(Boolean))
+  ).slice(0, 3);
 
   // For live mode: find first unchecked activity as "current"
   const findFirstUnchecked = (): string | null => {
@@ -368,14 +375,31 @@ const DaySection = ({ day, dayIndex, destination, onSwap, onReplace, isSwapping,
           )}>
             {liveProgress
               ? `${liveProgress.done}/${liveProgress.total} done`
-              : `${day.slots.reduce((acc, s) => acc + s.activities.length, 0)} activities`}
-            {dayTotal > 0 && ` · ~$${dayTotal}/pp`}
+              : `${spotsCount} ${spotsCount === 1 ? "spot" : "spots"}`}
+            {!liveProgress && dayTotal > 0 && ` · $${costLow}-${costHigh}/pp`}
           </span>
+          {!isOpen && !liveProgress && vibeCategories.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {vibeCategories.map((vibe) => (
+                <span
+                  key={vibe}
+                  className={cn(
+                    "text-[10px] font-medium px-2 py-0.5 rounded-full",
+                    isActive
+                      ? "bg-background/15 text-background/90"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {vibe}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         {isOpen ? (
-          <ChevronUp className={cn("w-4 h-4", isActive ? "text-background/60" : "text-foreground/60")} />
+          <ChevronUp className={cn("w-4 h-4 shrink-0", isActive ? "text-background/60" : "text-foreground/60")} />
         ) : (
-          <ChevronDown className={cn("w-4 h-4", isActive ? "text-background/60" : "text-foreground/60")} />
+          <ChevronDown className={cn("w-4 h-4 shrink-0", isActive ? "text-background/60" : "text-foreground/60")} />
         )}
       </button>
 
