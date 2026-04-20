@@ -54,7 +54,7 @@ const TemplatePreviewSheet = ({ open, onOpenChange, template, onUseItinerary }: 
           className="p-0 h-[92vh] rounded-t-3xl border-t border-border/40 bg-background flex flex-col overflow-hidden"
         >
           {/* Hero image header */}
-          <div className="relative h-56 shrink-0">
+          <div className="relative h-36 shrink-0 bg-muted">
             {template.image && (
               <img
                 src={template.image}
@@ -62,7 +62,7 @@ const TemplatePreviewSheet = ({ open, onOpenChange, template, onUseItinerary }: 
                 className="absolute inset-0 w-full h-full object-cover"
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-black/20" />
+            <div className="absolute inset-0 bg-black/30" />
             <button
               onClick={() => onOpenChange(false)}
               className="absolute top-4 right-4 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors z-10"
@@ -74,10 +74,10 @@ const TemplatePreviewSheet = ({ open, onOpenChange, template, onUseItinerary }: 
               <Sparkles className="w-3 h-3 text-primary" />
               <span className="text-[11px] font-semibold text-foreground uppercase tracking-wide">Template</span>
             </div>
-            <div className="absolute bottom-4 left-5 right-5">
-              <h2 className="text-2xl font-bold text-white tracking-tight drop-shadow-md">{template.title}</h2>
+            <div className="absolute bottom-3 left-5 right-5">
+              <h2 className="text-xl font-bold text-white tracking-tight">{template.title}</h2>
               {template.tagline && (
-                <p className="text-sm text-white/85 mt-1 line-clamp-2 drop-shadow">{template.tagline}</p>
+                <p className="text-xs text-white/85 mt-0.5 line-clamp-1">{template.tagline}</p>
               )}
             </div>
           </div>
