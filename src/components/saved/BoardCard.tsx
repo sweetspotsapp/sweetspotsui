@@ -1,5 +1,4 @@
 import { MoreHorizontal, Heart, Pencil, Trash2, ExternalLink } from "lucide-react";
-// Heart retained for empty-state collage icon
 import { cn } from "@/lib/utils";
 import type { Board } from "@/hooks/useBoards";
 import {
@@ -21,23 +20,23 @@ interface BoardCardProps {
   animationDelay?: number;
 }
 
-const BoardCard = ({ 
-  board, 
-  isAllSaved = false, 
+const BoardCard = ({
+  board,
+  isAllSaved = false,
   savedCount = 0,
   coverImages = [],
-  onClick, 
+  onClick,
   onRename,
   onDelete,
   onEdit,
-  animationDelay = 0 
+  animationDelay = 0,
 }: BoardCardProps) => {
   const name = isAllSaved ? "All Saved" : board?.name || "";
   const count = isAllSaved ? savedCount : board?.placeIds.length || 0;
 
   // Pinterest-style collage layout based on image count
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.style.display = 'none';
+    e.currentTarget.style.display = "none";
   };
 
   const renderCollage = () => {
@@ -52,12 +51,7 @@ const BoardCard = ({
     if (coverImages.length === 1) {
       return (
         <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40">
-          <img 
-            src={coverImages[0]} 
-            alt={name}
-            className="w-full h-full object-cover"
-            onError={handleImgError}
-          />
+          <img src={coverImages[0]} alt={name} className="w-full h-full object-cover" onError={handleImgError} />
         </div>
       );
     }
@@ -89,31 +83,35 @@ const BoardCard = ({
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       className={cn(
         "relative w-full rounded-2xl overflow-hidden bg-card cursor-pointer",
         "active:scale-[0.98] transition-all duration-200 group",
-        "opacity-0 animate-fade-up hover:shadow-lg"
+        "opacity-0 animate-fade-up hover:shadow-lg",
       )}
       style={{
         animationDelay: `${animationDelay}ms`,
-        animationFillMode: 'forwards'
+        animationFillMode: "forwards",
       }}
     >
       {/* Cover Collage */}
       <div className="aspect-[4/5] relative overflow-hidden bg-muted">
         {renderCollage()}
-        
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-        
+
         {/* Options Dropdown */}
         {hasOptions && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 onClick={(e) => e.stopPropagation()}
-                aria-label="Board options"
-                className="absolute top-2 right-2 h-3 w-6 inline-flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm
+                className="absolute top-0 right-2 p-1.5 rounded-full bg-black/40 backdrop-blur-sm 
                            opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-black/60"
               >
                 <MoreHorizontal className="w-4 h-4 text-white" />
@@ -121,20 +119,33 @@ const BoardCard = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
               {onRename && (
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(); }}>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRename();
+                  }}
+                >
                   <Pencil className="w-4 h-4 mr-2" />
                   Rename
                 </DropdownMenuItem>
               )}
               {onEdit && (
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
               )}
               {onDelete && (
-                <DropdownMenuItem 
-                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -144,17 +155,20 @@ const BoardCard = ({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        
-        {/* All Saved Badge removed per design */}
+
+        {/* All Saved Badge */}
+        {isAllSaved && (
+          <div className="absolute top-2 left-2 p-1.5 rounded-full bg-primary">
+            <Heart className="w-3.5 h-3.5 text-primary-foreground fill-primary-foreground" />
+          </div>
+        )}
       </div>
 
       {/* Board Info */}
       <div className="p-3 text-left bg-card">
-        <h3 className="font-semibold text-foreground text-sm line-clamp-1">
-          {name}
-        </h3>
+        <h3 className="font-semibold text-foreground text-sm line-clamp-1">{name}</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {count} {count === 1 ? 'spot' : 'spots'}
+          {count} {count === 1 ? "spot" : "spots"}
         </p>
       </div>
     </div>
